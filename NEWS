@@ -1,0 +1,91 @@
+iconic 0.9.3 (2026-07-22)
+=========================
+
+## New features
+
+* Added `se_method = "composite"` option to `iconic_estimate()` and
+  `analyze_mediation_robust()`, implementing the closed-form JT-comp
+  composite null hypothesis test of Huang (2019) for the natural indirect
+  effect (NIE) p-value. The composite test accounts for the three-case
+  structure of H0: alpha_M * beta_M = 0 and provides higher power than
+  the Sobel/delta test when signals are sparse. The test statistic is
+  p_comp = F(ab/sqrt(Var(a))) + F(ab/sqrt(Var(b))) - F(ab), where F is
+  the CDF of the standard normal product distribution and Var(a)/Var(b)
+  are estimated per estimator across all tests sharing that estimator
+  (i.e., across mediators and outcome features within each method),
+  clamped to [1, 1.5]. Only the NIE p-value changes; all point estimates,
+  standard errors, and the NDE p-value are unchanged. The output
+  additionally includes `var_a` and `var_b` columns for transparency.
+  Exported function: `composite_p_value()`.
+
+* Added `alpha_M`, `alpha_se`, `beta_M`, `beta_M_se` columns to the
+  return value of all eight mediation estimators, enabling the composite
+  test and providing users with the raw stage-1 and stage-2 regression
+  coefficients and standard errors.
+
+## Bug fixes
+
+* Fixed composite test grouping in `.apply_composite_pvalues()`: variance
+  is now estimated per method across all tests (mediators and outcome
+  features) sharing that estimator, rather than per (method, mediator)
+  group. The previous grouping gave one test per group when the outcome
+  was scalar (the real case study design), falling back to Var = 1 and
+  making the composite test a no-op. The method-only grouping correctly
+  estimates Var(a) from the variation in stage-1 regressions M_m ~ Z
+  across mediators.
+
+* Fixed bootstrap p-value computation in `.with_se()`: when
+  `se_method = "bootstrap"`, the NDE and NIE p-values are now recomputed
+  as two-sided Wald tests using the bootstrap standard errors
+  (2 * pnorm(-abs(estimate / bootstrap_se))), rather than retaining the
+  delta-method p-values. This ensures the reported p-values are
+  consistent with the reported bootstrap confidence intervals.
+
+* Fixed a duplicate field in the return list of `fit_iv2sls_mediation2()`
+  where `alpha_M`, `alpha_se`, `beta_M`, `beta_M_se` were listed twice.
+
+* Fixed missing `alpha_M`, `alpha_se`, `beta_M`, `beta_M_se` fields in
+  the return list of `fit_pgc_mediation2()`, which caused
+  `data.frame()` errors in downstream `row()` construction.
+
+## Documentation
+
+* Updated vignette (`iconic-walkthrough.Rmd`) with a new "Standard errors
+  and p-values (`se_method`)" section comparing the three inference
+  options (delta, bootstrap, composite), including the JT-comp formula,
+  what changes in the output, and known limitations.
+
+* Updated README with a `se_method` comparison table and composite null
+  explanation.
+
+* Updated test suite: added `test-v0.9.3-composite.R` with 25 tests
+  covering `.np_cdf()`, `composite_p_value()`, `.apply_composite_pvalues()`,
+  end-to-end integration via both `analyze_mediation_robust()` and
+  `iconic_estimate()`, and the real case study design (scalar outcome,
+  multiple mediators). Fixed stale `expect_named()` calls in
+  `test-mediation.R` and `test-estimators.R`.
+
+
+iconic 0.9.2 (2026-07-21)
+=========================
+
+* GAN-based generative texture model for synthetic data construction.
+* Gaussian copula model for mediator panel feature-level joint distribution.
+* `infer_confounding()` for data-driven confounding parameter estimation.
+* `iconic_prospect()` for prospective analysis without instruments/NCs.
+* `iconic_diagnose()` with instrument-strength, NC validity, and
+  path-completeness assessment.
+* Eight mediation estimators (UNADJ, DIRECT, COCA, IV2SLS, PGC, IV2SLS2,
+  PGC2, PGC2Gm) with NDE/NIE decomposition.
+* `iconic_sensitivity()` degradation surface over instrument exogeneity
+  violations.
+* `iconic_recommend()` estimator ranking by identification tier and
+  robustness.
+* Publication figure plotting functions (ggplot2 + patchwork).
+* Multi-core parallelization via `n_cores` argument.
+
+
+iconic 0.9.0 (2026-07-15)
+=========================
+
+* Initial public release.

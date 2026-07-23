@@ -23,7 +23,7 @@ The package provides a toy simulation where the ground truth is known exactly, a
 ## Installation
 
 ```r
-remotes::install_github("karrixxa/iconic")
+remotes::install_github("sbresnahan/iconic")
 ```
 
 Dependencies: `AER`, `MASS`, `parallel`, `torch` (all on CRAN). The `torch` package is a hard dependency that enables the GAN-based texture generation; the feature-level Gaussian copula learns the mediator panel's full joint distribution.

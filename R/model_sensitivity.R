@@ -253,7 +253,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
   # Calibrate to user data
   if (is.null(n_samples)) n_samples <- data$n
   if (is.null(phi)) {
-    if (!is.null(diagnosis) && !is.na(diagnosis$instrument_strength$F_Gm)) {
+    if (!is.null(diagnosis) && !all(is.na(diagnosis$instrument_strength$F_Gm))) {
       # Strong Gm -> phi = 0.8; weak -> phi = 0.3; none -> phi = 0
       F_gm <- diagnosis$instrument_strength$F_Gm
       # F_Gm can be a vector (panel); use median as scalar summary

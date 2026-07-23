@@ -1,7 +1,7 @@
 Package: iconic
 Title: Causal Model Selection with Genetic Instruments and Negative
         Controls
-Version: 0.9.3
+Version: 0.9.3.1
 Author: Sean T. Bresnahan [aut, cre], Charis Xiong [aut]
 Maintainer: Sean T. Bresnahan <stbresnahan@mdanderson.org>
 Authors@R: c(
@@ -70,8 +70,8 @@ Suggests: testthat (>= 3.0.0), ggplot2, patchwork, scales, knitr,
         rmarkdown
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-URL: https://github.com/sbresnahan/iconic
-BugReports: https://github.com/sbresnahan/iconic/issues
+URL: https://github.com/karrixxa/iconic
+BugReports: https://github.com/karrixxa/iconic/issues
 Config/roxygen2/version: 8.0.0
 NeedsCompilation: no
 Packaged: 2026-07-22 13:09:21 UTC; root

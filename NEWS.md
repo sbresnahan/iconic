@@ -1,3 +1,22 @@
+# iconic 0.9.3.1
+
+## Bug fixes
+
+- **Panel instrument-strength scalar coercion**: `infer_confounding()`,
+  `iconic_sensitivity()`, and `iconic_prospect()` crashed with
+  `'length = N' in coercion to 'logical(1)'` when the mediator instrument
+  (Gm) was a panel (one F-statistic per gene). The diagnosis object
+  stores `F_Gm` as a vector, but `infer_confounding()` and the `phi`
+  calibration in `iconic_sensitivity()` used scalar comparisons
+  (`is.na(F_Gm) || F_Gm < 10`, `F_gm >= 100`). The prospective summary
+  builder in `iconic_prospect()` passed the vector to `sprintf("%.1f",
+  ...)`. All three sites now collapse to `F_Gm_median` (a scalar) when
+  `length(F_Gm) > 1`, using the pre-existing `F_Gm_median` field from
+  `iconic_diagnose()`. The same fix is applied to `F_G` for symmetry.
+
+  Affected files: `R/infer_confounding.R`, `R/model_sensitivity.R`,
+  `R/prospect.R`.
+
 # iconic 0.9.2
 
 This release addresses coauthor (JYH) comments on the proximal-completeness

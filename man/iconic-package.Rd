@@ -11,8 +11,8 @@ Provides a model selection workflow for causal inference with genetic instrument
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/sbresnahan/iconic}
-  \item Report bugs at \url{https://github.com/sbresnahan/iconic/issues}
+  \item \url{https://github.com/karrixxa/iconic}
+  \item Report bugs at \url{https://github.com/karrixxa/iconic/issues}
 }
 
 }

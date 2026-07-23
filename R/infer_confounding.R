@@ -120,11 +120,18 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
   }
 
   # ── Instrument strength from diagnosis ──
+  # F_G and F_Gm can be vectors (one F-stat per mediator) when the
+  # instrument is a panel.  Use the median as a scalar summary for the
+  # gap-based inference checks below.
   F_G <- NA_real_
   F_Gm <- NA_real_
   if (!is.null(diagnosis)) {
     F_G  <- diagnosis$instrument_strength$F_G
     F_Gm <- diagnosis$instrument_strength$F_Gm
+    if (length(F_G) > 1)
+      F_G <- diagnosis$instrument_strength$F_G_median
+    if (length(F_Gm) > 1)
+      F_Gm <- diagnosis$instrument_strength$F_Gm_median
   }
 
   # ═══ conf_strength (delta): UNADJ–IV2SLS gap ═══

@@ -302,12 +302,14 @@ iconic_prospect <- function(data,
     sprintf("  Target instrument strength (gamma_G): %.1f", target_gamma_G))
 
   # Instrument strength at target
-  if (!is.na(rep_diag$instrument_strength$F_G))
-    lines <- c(lines, sprintf("  First-stage F (G) at target: %.1f",
-                              rep_diag$instrument_strength$F_G))
-  if (!is.na(rep_diag$instrument_strength$F_Gm))
-    lines <- c(lines, sprintf("  First-stage F (Gm) at target: %.1f",
-                              rep_diag$instrument_strength$F_Gm))
+  F_G_val  <- rep_diag$instrument_strength$F_G
+  F_Gm_val <- rep_diag$instrument_strength$F_Gm
+  if (length(F_G_val) > 1)  F_G_val  <- rep_diag$instrument_strength$F_G_median
+  if (length(F_Gm_val) > 1) F_Gm_val <- rep_diag$instrument_strength$F_Gm_median
+  if (!is.na(F_G_val))
+    lines <- c(lines, sprintf("  First-stage F (G) at target: %.1f", F_G_val))
+  if (!is.na(F_Gm_val))
+    lines <- c(lines, sprintf("  First-stage F (Gm) at target: %.1f", F_Gm_val))
 
   # Phase 1: how UNADJ vs best estimator change with instrument strength
   lines <- c(lines, "", "  Phase 1 — Instrument-strength surface (NDE bias):")

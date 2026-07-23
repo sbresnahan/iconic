@@ -256,6 +256,9 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     if (!is.null(diagnosis) && !is.na(diagnosis$instrument_strength$F_Gm)) {
       # Strong Gm -> phi = 0.8; weak -> phi = 0.3; none -> phi = 0
       F_gm <- diagnosis$instrument_strength$F_Gm
+      # F_Gm can be a vector (panel); use median as scalar summary
+      if (length(F_gm) > 1)
+        F_gm <- diagnosis$instrument_strength$F_Gm_median
       phi <- if (is.na(F_gm)) 0 else if (F_gm >= 100) 0.8 else if (F_gm >= 10) 0.5 else 0.3
     } else {
       phi <- if (data$has_mediator_instrument) 0.8 else 0

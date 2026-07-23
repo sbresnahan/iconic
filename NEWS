@@ -1,3 +1,20 @@
+iconic 0.9.3.1 (2026-07-23)
+===========================
+
+## Bug fixes
+
+* Fixed crash in `infer_confounding()`, `iconic_sensitivity()`, and
+  `iconic_prospect()` when the mediator instrument (Gm) is a panel
+  (one F-statistic per gene). The diagnosis object stores `F_Gm` as a
+  vector, but scalar comparisons (`is.na(F_Gm) || F_Gm < 10`,
+  `F_gm >= 100`) and `sprintf("%.1f", F_Gm)` assumed a scalar. All
+  three sites now collapse to `F_Gm_median` when `length(F_Gm) > 1`.
+  The same fix is applied to `F_G` for symmetry.
+
+  Affected files: `R/infer_confounding.R`, `R/model_sensitivity.R`,
+  `R/prospect.R`.
+
+
 iconic 0.9.3 (2026-07-22)
 =========================
 

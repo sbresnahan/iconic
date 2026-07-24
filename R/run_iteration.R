@@ -98,6 +98,12 @@
 #'   (length n_features). Default NULL → scalar omega applied uniformly.
 #' @param MMExp,MMOut,MMCon,MMCpG Per-pathway confounding multipliers (exposure,
 #'   outcome, controls, methylation). Default 1.
+#' @param outcome_type  \code{"continuous"} (default) or \code{"survival"}
+#'   (v0.9.4).  When \code{"survival"}, the linear predictor is converted to
+#'   \code{surv_time} and \code{surv_event} via an exponential PH model.
+#' @param surv_h0       Baseline hazard for the survival DGP (v0.9.4). Default 0.1.
+#' @param surv_event_frac Target fraction of observed events (v0.9.4). Default 0.6.
+#' @param surv_censor_rate Explicit censoring rate (v0.9.4). Default NULL.
 #' @param seed         Optional RNG seed.
 #'
 #' @return A named list matching [generate_toy_data()] — `Z`, `G` (n x
@@ -149,8 +155,14 @@ run_single_iteration <- function(trained_gan          = NULL,
                                  u_strength            = NULL,
                                  w_coverage_profile    = NULL,
                                  MMExp = 1, MMOut = 1, MMCon = 1, MMCpG = 1,
+                                 # v0.9.4: survival / time-to-event outcome.
+                                 outcome_type          = c("continuous", "survival"),
+                                 surv_h0               = 0.1,
+                                 surv_event_frac       = 0.6,
+                                 surv_censor_rate      = NULL,
                                  seed                  = NULL) {
   if (!is.null(seed)) set.seed(seed)
+  outcome_type <- match.arg(outcome_type)
 
   if (!is.null(effect_size)) { beta_Z <- effect_size; alpha_M <- 0; beta_M <- 0 }
   true_total <- beta_Z + n_mediators * alpha_M * beta_M
@@ -401,6 +413,17 @@ run_single_iteration <- function(trained_gan          = NULL,
   successful <- which(gY_norm >= thr)
   failed     <- which(gY_norm <  thr)
 
+  # v0.9.4: survival outcome — convert the linear predictor to time-to-event.
+  # The first column of Y carries the causal signal; surv_time / surv_event
+  # are scalar vectors.  true_total / true_NDE / true_NIE are on the Cox
+  # log-HR scale.
+  surv <- NULL
+  if (outcome_type == "survival") {
+    surv <- .linpred_to_surv(Y[, 1], h0 = surv_h0,
+                             event_frac = surv_event_frac,
+                             censor_rate = surv_censor_rate)
+  }
+
   out <- list(
     Z                   = Z,
     G                   = matrix(rep(G, p), n, p),
@@ -432,8 +455,19 @@ run_single_iteration <- function(trained_gan          = NULL,
                                # per-confounder strength and per-control
                                # coverage vectors used.
                                u_strength = u_strength,
-                               w_coverage_profile = if (!is.null(wcp)) wcp else list(w1 = om1_vec, w2 = om2_vec))
+                               w_coverage_profile = if (!is.null(wcp)) wcp else list(w1 = om1_vec, w2 = om2_vec),
+                               # v0.9.4
+                               outcome_type = outcome_type,
+                               surv_h0 = surv_h0, surv_event_frac = surv_event_frac,
+                               surv_censor_rate = surv_censor_rate)
   )
+  if (outcome_type == "survival") {
+    out$surv_time  <- surv$surv_time
+    out$surv_event <- surv$surv_event
+    out$outcome_type <- "survival"
+  } else {
+    out$outcome_type <- "continuous"
+  }
   if (phi > 0) out$Gm <- Gm
   out$n_mediators <- n_mediators
 

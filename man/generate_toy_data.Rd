@@ -26,6 +26,10 @@ generate_toy_data(
   feat_cor = 0,
   u_strength = NULL,
   w_coverage_profile = NULL,
+  outcome_type = c("continuous", "survival"),
+  surv_h0 = 0.1,
+  surv_event_frac = 0.6,
+  surv_censor_rate = NULL,
   seed = NULL
 )
 }
@@ -95,6 +99,21 @@ for the length-k vector version (multiple confounders).}
 numeric vectors (v0.9.2, JYH #864): per-control coverage
 of U_XM / U_MY. Default NULL → scalar omega applied
 uniformly (backward compatible).}
+
+\item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
+(v0.9.4).  When \code{"survival"}, the continuous
+linear predictor Y is converted to \code{surv_time}
+and \code{surv_event} via an exponential PH model.}
+
+\item{surv_h0}{Baseline hazard for the survival DGP (v0.9.4).
+Default 0.1.}
+
+\item{surv_event_frac}{Target fraction of observed events (v0.9.4).
+Default 0.6.  The censoring rate is solved
+internally from this.}
+
+\item{surv_censor_rate}{Explicit censoring rate (v0.9.4).  Default NULL
+→ solved from \code{surv_event_frac}.}
 
 \item{seed}{Optional integer RNG seed for reproducibility.}
 }

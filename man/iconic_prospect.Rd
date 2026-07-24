@@ -22,7 +22,12 @@ iconic_prospect(
   bias_threshold = 0.1,
   base_seed = 500,
   n_cores = 1,
-  allow_no_proxy = TRUE
+  allow_no_proxy = TRUE,
+  outcome_type = c("continuous", "survival"),
+  effect_scale = c("loghr", "rmst"),
+  surv_h0 = 0.1,
+  surv_event_frac = 0.6,
+  surv_censor_rate = NULL
 )
 }
 \arguments{
@@ -69,6 +74,15 @@ and a PSOCK cluster on Windows.}
 (default), proceed with the prospective sweep even if the data
 already has instruments/NCs (with a message). When \code{FALSE},
 error if the data already has IV+NC (use iconic_estimate instead).}
+
+\item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
+(v0.9.4).  Threads through to the simulation DGP.}
+
+\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}.  Only
+used when \code{outcome_type = "survival"}.}
+
+\item{surv_h0, surv_event_frac, surv_censor_rate}{Survival DGP parameters
+(v0.9.4).  See \code{\link{generate_toy_data}}.}
 }
 \value{
 An \code{iconic_prospect} S3 object: a named list with

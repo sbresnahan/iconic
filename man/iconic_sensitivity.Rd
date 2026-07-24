@@ -23,7 +23,12 @@ iconic_sensitivity(
   omega_2 = 0.7,
   bias_threshold = 0.1,
   base_seed = 700,
-  n_cores = 1
+  n_cores = 1,
+  outcome_type = NULL,
+  effect_scale = c("loghr", "rmst"),
+  surv_h0 = 0.1,
+  surv_event_frac = 0.6,
+  surv_censor_rate = NULL
 )
 }
 \arguments{

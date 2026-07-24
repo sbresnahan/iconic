@@ -89,6 +89,11 @@
   if (!is.null(data$trained_gan)) {
     return(list(gan = data$trained_gan, source = "data-attached GAN"))
   }
+  # v0.9.4: survival outcomes have no continuous Y matrix, so the GAN
+  # texture model cannot be trained.  Use default (NULL) texture instead.
+  if (!is.null(data$outcome_type) && data$outcome_type == "survival") {
+    return(list(gan = NULL, source = "default texture (survival outcome)"))
+  }
   gan <- .auto_train_gan(data, epochs = epochs)
   list(gan = gan, source = "auto-trained from data")
 }
@@ -219,7 +224,12 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
                                omega_1 = 0.7, omega_2 = 0.7,
                                bias_threshold = 0.10,
                                base_seed = 700,
-                               n_cores = 1) {
+                               n_cores = 1,
+                               outcome_type = NULL,
+                               effect_scale = c("loghr", "rmst"),
+                               surv_h0 = 0.1,
+                               surv_event_frac = 0.6,
+                               surv_censor_rate = NULL) {
   if (!inherits(data, "iconic_data"))
     stop("data must be an iconic_data object from iconic_data().")
   if (!data$is_mediation)
@@ -227,6 +237,13 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
          "Use gan_sensitivity() for total-effect-only sensitivity.")
 
   confounding <- match.arg(confounding)
+  effect_scale <- match.arg(effect_scale)
+
+  # v0.9.4: resolve outcome_type — inherit from data if not explicitly set.
+  if (is.null(outcome_type)) {
+    outcome_type <- if (!is.null(data$outcome_type)) data$outcome_type else "continuous"
+  }
+  outcome_type <- match.arg(outcome_type, c("continuous", "survival"))
 
   # ── Resolve the texture model (v0.7.0) ──
   gan_res <- .resolve_gan(trained_gan, data, epochs = gan_epochs)
@@ -287,8 +304,15 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
         mo_confounding = mo_confounding, phi = phi,
         rho_G1 = r1, rho_G2 = r2, rho_pop = 0,
         separate_U = separate_U, omega_1 = omega_1, omega_2 = omega_2,
-        seed = base_seed + gi * 1000L + i)
-      res <- run_mediation_methods(dat, n_features)
+        seed = base_seed + gi * 1000L + i,
+        outcome_type = outcome_type, surv_h0 = surv_h0,
+        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+      if (outcome_type == "survival") {
+        res <- .run_surv_methods(dat, effect_scale = effect_scale,
+                                 is_mediation = TRUE)
+      } else {
+        res <- run_mediation_methods(dat, n_features)
+      }
       res$iter <- i
       res
     }
@@ -360,6 +384,13 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 #' at which the estimator's assumptions are violated enough to produce
 #' materially biased estimates.
 #' @keywords internal
+#' Safe max of absolute values, returning NA when all values are NA/NaN (internal)
+#' @keywords internal
+.safe_max_abs <- function(x) {
+  x <- abs(x[is.finite(x)])
+  if (length(x) == 0) NA_real_ else max(x)
+}
+
 .find_tipping_points <- function(surface, rho_G1_grid, rho_G2_grid,
                                  threshold) {
   methods <- unique(surface$method)
@@ -372,9 +403,12 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     tip_NDE <- NA_real_
     tip_NIE <- NA_real_
     for (i in seq_len(nrow(edge))) {
-      if (is.na(tip_NDE) && abs(edge$NDE_bias[i]) > threshold)
+      # v0.9.4: guard against NaN/NA bias (e.g. COCA for survival outcomes).
+      if (is.na(tip_NDE) && is.finite(edge$NDE_bias[i]) &&
+          abs(edge$NDE_bias[i]) > threshold)
         tip_NDE <- edge$rho_G2[i]
-      if (is.na(tip_NIE) && abs(edge$NIE_bias[i]) > threshold)
+      if (is.na(tip_NIE) && is.finite(edge$NIE_bias[i]) &&
+          abs(edge$NIE_bias[i]) > threshold)
         tip_NIE <- edge$rho_G2[i]
     }
 
@@ -384,7 +418,8 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 
     tip_NDE_G1 <- NA_real_
     for (i in seq_len(nrow(edge2))) {
-      if (is.na(tip_NDE_G1) && abs(edge2$NDE_bias[i]) > threshold)
+      if (is.na(tip_NDE_G1) && is.finite(edge2$NDE_bias[i]) &&
+          abs(edge2$NDE_bias[i]) > threshold)
         tip_NDE_G1 <- edge2$rho_G1[i]
     }
 
@@ -393,8 +428,8 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
       tip_rho_G2_NDE = tip_NDE,
       tip_rho_G2_NIE = tip_NIE,
       tip_rho_G1_NDE = tip_NDE_G1,
-      max_NDE_bias = max(abs(sub$NDE_bias), na.rm = TRUE),
-      max_NIE_bias = max(abs(sub$NIE_bias), na.rm = TRUE),
+      max_NDE_bias = .safe_max_abs(sub$NDE_bias),
+      max_NIE_bias = .safe_max_abs(sub$NIE_bias),
       stringsAsFactors = FALSE
     )
   })
@@ -418,8 +453,8 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
   for (m in methods) {
     sub <- surface[surface$method == m, ]
     tip <- tipping[tipping$method == m, ]
-    max_nde <- max(abs(sub$NDE_bias), na.rm = TRUE)
-    max_nie <- max(abs(sub$NIE_bias), na.rm = TRUE)
+    max_nde <- .safe_max_abs(sub$NDE_bias)
+    max_nie <- .safe_max_abs(sub$NIE_bias)
     n_tipped <- sum(sub$tipped, na.rm = TRUE)
 
     tip_str <- ""

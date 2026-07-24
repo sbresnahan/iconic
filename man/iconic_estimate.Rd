@@ -13,7 +13,9 @@ iconic_estimate(
   min_f = NULL,
   run_all = FALSE,
   se_method = c("delta", "bootstrap", "composite"),
-  n_boot = 500
+  n_boot = 500,
+  effect_scale = c("loghr", "rmst"),
+  tau = NULL
 )
 }
 \arguments{
@@ -55,13 +57,29 @@ sparse. Only applies in mediation mode. NDE_p and NIE_se are unchanged.}
 
 \item{n_boot}{Integer (v0.9.2): number of bootstrap resamples when
 \code{se_method = "bootstrap"}. Default 500.}
+
+\item{effect_scale}{Character (v0.9.4): \code{"loghr"} (default) or
+\code{"rmst"}.  Only used when \code{data$outcome_type = "survival"}.
+\code{"loghr"} fits Cox proportional-hazards models and reports
+log-hazard ratios.  \code{"rmst"} regresses leave-one-out RMST
+pseudo-observations (Graw et al. 2009) via OLS, reporting effects on
+the restricted-mean-survival-time (time) scale — a collapsible
+alternative where the NDE/NIE product decomposition is exact.  Ignored
+(with a message) when \code{outcome_type = "continuous"}.}
+
+\item{tau}{Numeric (v0.9.4): RMST restriction time horizon.  Default
+\code{NULL} (90th percentile of follow-up).  Used only when
+\code{effect_scale = "rmst"}.}
 }
 \value{
 A data frame.  For total-effect mode: \code{feature}, \code{method},
 \code{beta}, \code{se}, \code{pvalue}, \code{significant}.  For mediation
 mode: \code{feature}, \code{mediator}, \code{method}, \code{NDE},
 \code{NDE_se}, \code{NDE_p}, \code{NIE}, \code{NIE_se}, \code{NIE_p},
-\code{NDE_significant}, \code{NIE_significant}.
+\code{NDE_significant}, \code{NIE_significant}.  When
+\code{outcome_type = "survival"}, estimates are on the log-HR scale
+(\code{effect_scale = "loghr"}) or the RMST/time scale
+(\code{effect_scale = "rmst"}).
 }
 \description{
 Applies all eligible causal estimators to the user's real data
@@ -82,5 +100,12 @@ data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
 diag <- iconic_diagnose(data)
 est <- iconic_estimate(data, diagnosis = diag, n_cores = 4)
 head(est)
+
+# Survival outcome (v0.9.4)
+sdat <- iconic_data(Z = rnorm(100), outcome_type = "survival",
+                    surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+                    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+est <- iconic_estimate(sdat, effect_scale = "loghr")
+est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
 }
 }

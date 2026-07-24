@@ -18,7 +18,12 @@ gan_sensitivity(
   beta_M = 0.3,
   effect_size = NULL,
   base_seed = 700,
-  n_cores = 1
+  n_cores = 1,
+  outcome_type = c("continuous", "survival"),
+  effect_scale = c("loghr", "rmst"),
+  surv_h0 = 0.1,
+  surv_event_frac = 0.6,
+  surv_censor_rate = NULL
 )
 }
 \arguments{
@@ -46,6 +51,20 @@ gan_sensitivity(
 \item{base_seed}{Base RNG seed. Default 700.}
 
 \item{n_cores}{Parallel workers across replicates. Default 1.}
+
+\item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
+(v0.9.4).  When survival, the DGP generates time-to-event outcomes and
+estimation uses the Cox / RMST survival drivers via
+\code{\link[=iconic_estimate]{iconic_estimate()}}.}
+
+\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}.  Only
+used when \code{outcome_type = "survival"}.}
+
+\item{surv_h0}{Baseline hazard for the survival DGP (v0.9.4). Default 0.1.}
+
+\item{surv_event_frac}{Target fraction of observed events (v0.9.4). Default 0.6.}
+
+\item{surv_censor_rate}{Explicit censoring rate (v0.9.4). Default NULL.}
 }
 \value{
 A list with \code{summary} (one row per scenario x method, with

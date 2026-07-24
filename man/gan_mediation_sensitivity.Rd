@@ -25,7 +25,12 @@ gan_mediation_sensitivity(
   alpha_M = 0.5,
   beta_M = 0.3,
   base_seed = 750,
-  n_cores = 1
+  n_cores = 1,
+  outcome_type = c("continuous", "survival"),
+  effect_scale = c("loghr", "rmst"),
+  surv_h0 = 0.1,
+  surv_event_frac = 0.6,
+  surv_censor_rate = NULL
 )
 }
 \arguments{
@@ -69,6 +74,21 @@ generates Gm and includes the 2-stage MR estimator
 \item{base_seed}{Base RNG seed. Default 750.}
 
 \item{n_cores}{Parallel workers across replicates. Default 1.}
+
+\item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
+(v0.9.4).  When survival, the DGP generates time-to-event outcomes and
+estimation uses the Cox / RMST survival mediation drivers via
+\code{\link[=iconic_estimate]{iconic_estimate()}}.}
+
+\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}.  Only
+used when \code{outcome_type = "survival"}.}
+
+\item{surv_h0}{Baseline hazard for survival DGP (v0.9.4).  See
+\code{\link[=run_single_iteration]{run_single_iteration()}}.}
+
+\item{surv_event_frac}{Target event fraction for survival DGP (v0.9.4).}
+
+\item{surv_censor_rate}{Censoring rate for survival DGP (v0.9.4).}
 }
 \value{
 A list with \code{summary} (one row per scenario x method, with

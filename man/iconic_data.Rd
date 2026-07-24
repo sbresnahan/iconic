@@ -6,7 +6,7 @@
 \usage{
 iconic_data(
   Z,
-  Y,
+  Y = NULL,
   M = NULL,
   G = NULL,
   Gm = NULL,
@@ -16,7 +16,10 @@ iconic_data(
   covariates = NULL,
   feature_names = NULL,
   mediator_names = NULL,
-  trained_gan = NULL
+  trained_gan = NULL,
+  outcome_type = c("continuous", "survival"),
+  surv_time = NULL,
+  surv_event = NULL
 )
 }
 \arguments{
@@ -64,13 +67,28 @@ attached to the data object and reused by
 \code{\link{iconic_sensitivity}()} and \code{\link{iconic_prospect}()}
 instead of auto-training a new one.  This avoids retraining when the
 same data is used across multiple workflow steps.}
+
+\item{outcome_type}{Character (v0.9.4): \code{"continuous"} (default,
+backward-compatible) or \code{"survival"}.  When \code{"survival"},
+\code{Y} is not required; instead supply \code{surv_time} and
+\code{surv_event}.  Estimation uses Cox proportional-hazards
+(\code{\link[survival]{coxph}}) or RMST pseudo-observation OLS
+(see \code{effect_scale} in \code{\link{iconic_estimate}()}).}
+
+\item{surv_time}{Numeric follow-up time vector (length n).  Required
+when \code{outcome_type = "survival"}; ignored otherwise.}
+
+\item{surv_event}{Numeric 0/1 event indicator (length n; 1 = event
+observed, 0 = censored).  Required when
+\code{outcome_type = "survival"}; ignored otherwise.}
 }
 \value{
 An \code{iconic_data} S3 object: a named list with \verb{$Z}, \verb{$Y}, \verb{$M},
 \verb{$G}, \verb{$Gm}, \verb{$W}, \verb{$W1}, \verb{$W2}, \verb{$covariates}, \verb{$n}, \verb{$n_features},
 \verb{$n_mediators}, \verb{$has_instrument}, \verb{$has_mediator_instrument},
 \verb{$has_nc}, \verb{$has_path_nc}, \verb{$is_mediation}, \verb{$feature_names},
-\verb{$mediator_names}, \verb{$trained_gan}.
+\verb{$mediator_names}, \verb{$trained_gan}, \verb{$outcome_type}, and (when
+survival) \verb{$surv_time}, \verb{$surv_event}.
 }
 \description{
 Creates an \code{iconic_data} S3 object from the user's real data,
@@ -85,6 +103,15 @@ data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))
 # Full mediation with instruments and NCs
 data <- iconic_data(
   Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+  M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+  W = matrix(rnorm(100 * 10), 10, 100)
+)
+print(data)
+
+# Survival outcome (v0.9.4)
+data <- iconic_data(
+  Z = rnorm(100), outcome_type = "survival",
+  surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
   M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
   W = matrix(rnorm(100 * 10), 10, 100)
 )

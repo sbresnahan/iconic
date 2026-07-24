@@ -316,7 +316,8 @@ tests are available, the point-null value $\text{Var} = 1$ is used.
 ## Step 4: Stress-test — how robust is each estimator?
 
 ```r
-sens <- iconic_sensitivity(data, diagnosis = diag, n_iter = 50)
+# n_iter = 10 for fast vignette rendering; use 50+ in practice.
+sens <- iconic_sensitivity(data, diagnosis = diag, n_iter = 10)
 print(sens)
 # Degradation surface: bias vs instrument exogeneity violations.
 # Tipping points: first rho_G2 (at rho_G1 = 0) where |bias| > 0.10.
@@ -943,8 +944,9 @@ input <- load_real_input_data(example = TRUE)
 str(input, max.level = 1)
 
 # 2. Train the generator (requires torch).
+#    epochs = 20 for fast vignette rendering; use 100-300 in practice.
 gan <- train_gan_on_real_data(input$gan_training_data,
-                                 epochs = 100, seed = 1)
+                                 epochs = 20, seed = 1)
 gan
 ```
 
@@ -1113,13 +1115,14 @@ sensitivity analysis should probe.
 strength, negative-control coverage, and number of latent confounders:
 
 ```{r sens}
+# n_iter = 5 for fast vignette rendering; use 25+ in practice.
 sens <- gan_sensitivity(
   gan,
   conf_grid     = c(0.2, 0.5, 0.8),
   coverage_grid = c(0.3, 0.6, 1.0),
   k_grid        = c(1, 2),
   nc_model      = "proxy",
-  n_iter        = 25,
+  n_iter        = 5,
   n_samples     = 400,
   n_features    = 12
 )
@@ -1152,6 +1155,7 @@ condition: the bridge-function estimators are point identified only when
 there are at least as many valid negative controls as confounders.
 
 ```{r validity}
+# n_iter = 5 for fast vignette rendering; use 20+ in practice.
 validity <- nc_validity_check(
   gan,
   coverage_grid    = c(0.2, 0.5, 1.0),
@@ -1159,7 +1163,7 @@ validity <- nc_validity_check(
   conf_strength    = 0.8,
   n_valid_controls = 1,  # your design provides
                           # 1 distinct valid control
-  n_iter           = 20,
+  n_iter           = 5,
   n_features       = 12
 )
 validity$verdict
@@ -1227,13 +1231,14 @@ alternative arm (true effect $= \tau$) and a null arm (true effect $= 0$) so
 that bias and Type I error can be read off the same sweep.
 
 ```{r pleio-sens}
+# n_iter = 5 for fast vignette rendering; use 25+ in practice.
 pleio_sens <- gan_pleiotropy_sensitivity(
   gan,
   pleio_grid  = c(0, 0.05, 0.10),   # direct G -> Y path strengths
   conf_grid   = c(0.2, 0.5, 0.8),
   tau = 0.25,  # true total effect
                 # for the alternative arm
-  n_iter      = 25,
+  n_iter      = 5,
   n_features  = 10,
   n_samples   = 500
 )
@@ -1374,6 +1379,117 @@ injected as correlated noise.
 The example data (`load_real_input_data(example = TRUE)`) includes
 block-diagonal co-expression modules (within-block $r = 0.5$) so that the
 learned correlations are non-trivial by default.
+
+---
+
+# Survival / time-to-event outcomes
+
+ICONIC v0.9.4 extends the framework to support **Cox proportional hazards**
+and **restricted mean survival time (RMST)** outcomes, motivated by case
+studies where the outcome is overall survival (e.g., smoking $\to$ lung tumor
+expression $\to$ lung cancer survival). All five total-effect estimators and
+all eight mediation estimators have survival counterparts that share the same
+2SPS (two-stage predictor substitution) structure: first-stage regressions
+remain OLS because Z, M, and W are continuous; only the outcome stage switches
+to `survival::coxph` (log-HR scale) or OLS on RMST pseudo-observations (time
+scale).
+
+## Two effect scales
+
+| `effect_scale` | Outcome stage | NDE/NIE decomposition | Collapsible |
+|---|---|---|---|
+| `"loghr"` (default) | `coxph(Surv(time, event) ~ ...)` | Product $\alpha\beta$ on log-HR (approximate) | No |
+| `"rmst"` | OLS on RMST pseudo-observations | Product $\alpha\beta$ on time scale (exact) | Yes |
+
+The Cox log-HR is **non-collapsible**, so the product-of-coefficients
+NIE $= \alpha_M \cdot \beta_M$ on the log-HR scale is an approximation. The
+RMST scale (pseudo-observation OLS) provides the exact decomposition because
+RMST differences are collapsible. RMST pseudo-observations are computed via
+leave-one-out jackknife of Kaplan-Meier RMST (Graw et al. 2009), with the
+truncation time $\tau$ defaulting to the 90th percentile of follow-up.
+
+**COCA incompatibility:** COCA regresses W on Y (W ~ y + Z), placing the
+outcome on the right-hand side — impossible with a `Surv` object. Both
+`fit_coca_surv()` and `fit_coca_mediation_surv()` return `NA` with an
+informative `"reason"` attribute for survival outcomes.
+
+## Creating survival data
+
+Pass `outcome_type = "survival"` with `surv_time` and `surv_event` instead of
+`Y`:
+
+```{r surv-data}
+library(iconic)
+set.seed(42)
+dat <- generate_toy_data(n = 300, beta_Z = 0.25, alpha_M = 0.5,
+                         beta_M = 0.3, conf_str = 0.8, phi = 0.8,
+                         outcome_type = "survival", surv_event_frac = 0.6)
+sdat <- iconic_data(Z = dat$Z, outcome_type = "survival",
+                    surv_time = dat$surv_time, surv_event = dat$surv_event,
+                    M = dat$M, G = dat$G[, 1], Gm = dat$Gm, W = dat$W)
+sdat
+```
+
+## Estimating survival effects
+
+```{r surv-estimate}
+# Total effect on Cox log-HR scale
+est_loghr <- iconic_estimate(sdat, effect_scale = "loghr")
+est_loghr
+
+# Total effect on RMST scale (collapsible, exact NDE/NIE decomposition)
+est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
+est_rmst
+```
+
+The log-HR estimates are interpretable as hazard ratios (exp(beta) = HR),
+while RMST estimates are on a time scale (change in restricted mean survival
+time per unit exposure). The NDE and NIE columns appear when mediation data
+(M, Gm) is supplied.
+
+## Survival simulation benchmark
+
+The toy simulation supports `outcome_type = "survival"` in both
+`generate_toy_data()` and `run_single_iteration()`. The linear predictor is
+converted to time-to-event via an exponential proportional hazards model with
+configurable baseline hazard (`surv_h0`), event fraction
+(`surv_event_frac`), and censoring rate (`surv_censor_rate`). The true effects
+(total, NDE, NIE) are on the Cox log-HR scale.
+
+```{r surv-sim, eval=FALSE}
+# Survival simulation: sweep confounding strength
+# (analogous to sweep_param for continuous outcomes)
+conf_grid <- c(0.2, 0.4, 0.6, 0.8, 1.0)
+results <- data.frame()
+for (cs in conf_grid) {
+  for (i in 1:20) {
+    dat <- generate_toy_data(n = 500, beta_Z = 0.25, alpha_M = 0.5,
+                             beta_M = 0.3, conf_str = cs, phi = 0.8,
+                             outcome_type = "survival", surv_event_frac = 0.6,
+                             seed = 5000 + i)
+    sdat <- iconic_data(Z = dat$Z, outcome_type = "survival",
+                        surv_time = dat$surv_time, surv_event = dat$surv_event,
+                        M = dat$M, G = dat$G[, 1], Gm = dat$Gm, W = dat$W)
+    est <- iconic_estimate(sdat, effect_scale = "loghr")
+    est$conf_str <- cs
+    est$iter <- i
+    results <- rbind(results, est)
+  }
+}
+# Summarise bias vs confounding
+library(dplyr)
+summary <- results %>%
+  group_by(conf_str, method) %>%
+  summarise(NDE_bias = mean(NDE, na.rm = TRUE) - 0.25,
+            NIE_bias = mean(NIE, na.rm = TRUE) - 0.15,
+            .groups = "drop")
+print(summary)
+```
+
+Sensitivity analysis (`iconic_sensitivity()`, `iconic_prospect()`) also
+threads `outcome_type` and `effect_scale` through the simulation engine. The
+GAN texture model is skipped for survival outcomes (it requires continuous Y);
+the default texture is used instead.
 
 ---
 

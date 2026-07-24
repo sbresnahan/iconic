@@ -1,7 +1,7 @@
 Package: iconic
 Title: Causal Model Selection with Genetic Instruments and Negative
         Controls
-Version: 0.9.3.1
+Version: 0.9.4
 Author: Sean T. Bresnahan [aut, cre], Charis Xiong [aut]
 Maintainer: Sean T. Bresnahan <stbresnahan@mdanderson.org>
 Authors@R: c(
@@ -61,17 +61,30 @@ Description: Provides a model selection workflow for causal inference with
     and the exported analysis functions) support multi-core
     parallelization via the n_cores argument, using
     parallel::mclapply on Unix and PSOCK clusters on Windows, with
-    message()-based progress milestones.
+    message()-based progress milestones. Version 0.9.4 adds
+    time-to-event (survival) outcome support: iconic_data() accepts
+    outcome_type = "survival" with surv_time and surv_event arguments,
+    and iconic_estimate() fits all estimators on the Cox log-hazard-ratio
+    scale (effect_scale = "loghr") or the restricted-mean-survival-time
+    scale (effect_scale = "rmst") via two-stage predictor substitution
+    (2SPS), where first-stage regressions remain OLS and only the
+    outcome stage switches to coxph. Mediation (NDE/NIE) is supported
+    on both scales; the RMST scale provides exact product-of-
+    coefficients decomposition while the log-HR scale is approximate
+    due to non-collapsibility. The simulation DGP, sensitivity
+    analysis, and prospective analysis functions all support
+    outcome_type = "survival". COCA is structurally incompatible with
+    survival outcomes and returns NA with an informative reason.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Imports: AER, MASS, parallel, stats, torch, utils
+Imports: AER, MASS, parallel, stats, survival, torch, utils
 Suggests: testthat (>= 3.0.0), ggplot2, patchwork, scales, knitr,
         rmarkdown
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-URL: https://github.com/sbresnahan/iconic
-BugReports: https://github.com/sbresnahan/iconic/issues
+URL: https://github.com/karrixxa/iconic
+BugReports: https://github.com/karrixxa/iconic/issues
 Config/roxygen2/version: 8.0.0
 NeedsCompilation: no
 Packaged: 2026-07-22 13:09:21 UTC; root

@@ -19,7 +19,42 @@
 # v0.4.0: gan_mediation_sensitivity() gains a phi parameter for the
 # mediator instrument (Gm).  When phi > 0, the 2-stage MR estimator
 # (IV2SLS2) is included in the results.
+#
+# v0.9.4: survival / time-to-event outcomes.  When outcome_type = "survival",
+# the simulation generates (surv_time, surv_event) via run_single_iteration()
+# and estimates via iconic_estimate() with the survival drivers, instead of
+# run_methods() / run_mediation_methods().  The summary functions are
+# format-compatible because iconic_estimate() returns the same column names.
 # ============================================================
+
+# v0.9.4: Run survival estimators on a dat list from run_single_iteration().
+# Converts dat to an iconic_data object and calls iconic_estimate().
+# Returns a data frame with the same columns as run_methods() (total-effect)
+# or run_mediation_methods() (mediation), so summarise_results() /
+# summarise_mediation_results() consume it unchanged.
+.run_surv_methods <- function(dat, effect_scale = "loghr", tau = NULL,
+                              is_mediation = FALSE) {
+  G_vec <- if (!is.null(dat$G)) {
+    if (is.matrix(dat$G)) dat$G[, 1] else dat$G
+  } else NULL
+  Gm_vec <- if (!is.null(dat$Gm)) {
+    if (is.matrix(dat$Gm)) dat$Gm[1, ] else dat$Gm
+  } else NULL
+
+  if (is_mediation) {
+    sdat <- iconic_data(
+      Z = dat$Z, outcome_type = "survival",
+      surv_time = dat$surv_time, surv_event = dat$surv_event,
+      M = dat$M, G = G_vec, Gm = Gm_vec,
+      W = t(dat$W))
+  } else {
+    sdat <- iconic_data(
+      Z = dat$Z, outcome_type = "survival",
+      surv_time = dat$surv_time, surv_event = dat$surv_event,
+      G = G_vec, W = t(dat$W))
+  }
+  iconic_estimate(sdat, effect_scale = effect_scale, tau = tau)
+}
 
 #' Benchmark estimators across confounding scenarios on synthetic data
 #'
@@ -41,6 +76,15 @@
 #'   [run_single_iteration()]).
 #' @param base_seed     Base RNG seed. Default 700.
 #' @param n_cores       Parallel workers across replicates. Default 1.
+#' @param outcome_type  \code{"continuous"} (default) or \code{"survival"}
+#'   (v0.9.4).  When survival, the DGP generates time-to-event outcomes and
+#'   estimation uses the Cox / RMST survival drivers via
+#'   [iconic_estimate()].
+#' @param effect_scale  \code{"loghr"} (default) or \code{"rmst"}.  Only
+#'   used when \code{outcome_type = "survival"}.
+#' @param surv_h0       Baseline hazard for the survival DGP (v0.9.4). Default 0.1.
+#' @param surv_event_frac Target fraction of observed events (v0.9.4). Default 0.6.
+#' @param surv_censor_rate Explicit censoring rate (v0.9.4). Default NULL.
 #'
 #' @return A list with `summary` (one row per scenario x method, with
 #'   `conf_strength`, `coverage`, `k`, `true_total` and the columns from
@@ -57,7 +101,14 @@ gan_sensitivity <- function(trained_gan  = NULL,
                             beta_Z = 0.10, alpha_M = 0.50, beta_M = 0.30,
                             effect_size   = NULL,
                             base_seed     = 700,
-                            n_cores       = 1) {
+                            n_cores       = 1,
+                            outcome_type  = c("continuous", "survival"),
+                            effect_scale  = c("loghr", "rmst"),
+                            surv_h0       = 0.1,
+                            surv_event_frac = 0.6,
+                            surv_censor_rate = NULL) {
+  outcome_type <- match.arg(outcome_type)
+  effect_scale <- match.arg(effect_scale)
 
   grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
                       k = k_grid, KEEP.OUT.ATTRS = FALSE)
@@ -72,8 +123,15 @@ gan_sensitivity <- function(trained_gan  = NULL,
         trained_gan, n_synthetic_samples = n_samples, n_features = n_features,
         n_confounders = kk, beta_Z = beta_Z, alpha_M = alpha_M, beta_M = beta_M,
         effect_size = effect_size, conf_strength = cs, coverage = cov,
-        nc_model = nc_model, seed = base_seed + gi * 1000L + i)
-      res <- run_methods(dat, n_features)
+        nc_model = nc_model, seed = base_seed + gi * 1000L + i,
+        outcome_type = outcome_type, surv_h0 = surv_h0,
+        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+      if (outcome_type == "survival") {
+        res <- .run_surv_methods(dat, effect_scale = effect_scale,
+                                 is_mediation = FALSE)
+      } else {
+        res <- run_methods(dat, n_features)
+      }
       res$iter <- i
       res
     }
@@ -257,6 +315,16 @@ nc_validity_check <- function(trained_gan   = NULL,
 #' @param beta_Z,alpha_M,beta_M Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.
 #' @param base_seed     Base RNG seed. Default 750.
 #' @param n_cores       Parallel workers across replicates. Default 1.
+#' @param outcome_type  \code{"continuous"} (default) or \code{"survival"}
+#'   (v0.9.4).  When survival, the DGP generates time-to-event outcomes and
+#'   estimation uses the Cox / RMST survival mediation drivers via
+#'   [iconic_estimate()].
+#' @param effect_scale  \code{"loghr"} (default) or \code{"rmst"}.  Only
+#'   used when \code{outcome_type = "survival"}.
+#' @param surv_h0       Baseline hazard for survival DGP (v0.9.4).  See
+#'   [run_single_iteration()].
+#' @param surv_event_frac Target event fraction for survival DGP (v0.9.4).
+#' @param surv_censor_rate Censoring rate for survival DGP (v0.9.4).
 #'
 #' @return A list with `summary` (one row per scenario x method, with
 #'   `conf_strength`, `coverage`, `k`, `mo_confounding`, `phi`, `true_NDE`,
@@ -287,7 +355,14 @@ gan_mediation_sensitivity <- function(trained_gan    = NULL,
                                       n_features     = 20,
                                       beta_Z = 0.10, alpha_M = 0.50, beta_M = 0.30,
                                       base_seed      = 750,
-                                      n_cores        = 1) {
+                                      n_cores        = 1,
+                                      outcome_type   = c("continuous", "survival"),
+                                      effect_scale   = c("loghr", "rmst"),
+                                      surv_h0        = 0.1,
+                                      surv_event_frac  = 0.6,
+                                      surv_censor_rate = NULL) {
+  outcome_type <- match.arg(outcome_type)
+  effect_scale <- match.arg(effect_scale)
 
   grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
                       k = k_grid, KEEP.OUT.ATTRS = FALSE)
@@ -306,8 +381,15 @@ gan_mediation_sensitivity <- function(trained_gan    = NULL,
         mo_confounding = mo_confounding, phi = phi,
         rho_G1 = rho_G1, rho_G2 = rho_G2, rho_pop = rho_pop,
         separate_U = separate_U, omega_1 = omega_1, omega_2 = omega_2,
-        seed = base_seed + gi * 1000L + i)
-      res <- run_mediation_methods(dat, n_features)
+        seed = base_seed + gi * 1000L + i,
+        outcome_type = outcome_type, surv_h0 = surv_h0,
+        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+      if (outcome_type == "survival") {
+        res <- .run_surv_methods(dat, effect_scale = effect_scale,
+                                 is_mediation = TRUE)
+      } else {
+        res <- run_mediation_methods(dat, n_features)
+      }
       res$iter <- i
       res
     }

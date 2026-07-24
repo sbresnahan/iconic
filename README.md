@@ -23,10 +23,10 @@ The package provides a toy simulation where the ground truth is known exactly, a
 ## Installation
 
 ```r
-remotes::install_github("sbresnahan/iconic")
+remotes::install_github("karrixxa/iconic")
 ```
 
-Dependencies: `AER`, `MASS`, `parallel`, `torch` (all on CRAN). The `torch` package is a hard dependency that enables the GAN-based texture generation; the feature-level Gaussian copula learns the mediator panel's full joint distribution.
+Dependencies: `AER`, `MASS`, `parallel`, `survival`, `torch` (all on CRAN). The `torch` package enables the GAN-based texture generation; the feature-level Gaussian copula learns the mediator panel's full joint distribution. The `survival` package provides Cox proportional hazards and Kaplan-Meier estimators for time-to-event outcomes (v0.9.4).
 
 ---
 
@@ -229,6 +229,62 @@ Each mediation estimator returns `list(NDE, NDE_se, NDE_p, NIE, NIE_se, NIE_p, a
 PGC-2 and PGC2Gm are included in the pipeline only when path-specific negative controls are present (`separate_U = TRUE` or any path-specific parameter is non-default). The five base methods are unchanged whether or not these are available, giving eight estimators total when all inputs are present.
 
 A scalar-bridge mediation variant (`fit_pgc_scalar_mediation()`) is also exported as a standalone fallback.
+
+---
+
+## Survival / time-to-event outcomes (v0.9.4)
+
+ICONIC v0.9.4 extends the framework to support **Cox proportional hazards** and **restricted mean survival time (RMST)** outcomes, motivated by case studies where the outcome is overall survival (e.g., smoking → lung tumor expression → lung cancer survival). All five total-effect estimators and all eight mediation estimators have survival counterparts that share the same 2SPS (two-stage predictor substitution) structure: first-stage regressions (Z~G, M~Z_hat+Gm, bridges) remain OLS because Z, M, and W are continuous; only the outcome stage switches to `survival::coxph` (log-HR scale) or OLS on RMST pseudo-observations (time scale).
+
+### Two effect scales
+
+| `effect_scale` | Outcome stage | NDE/NIE decomposition | Collapsible |
+|---|---|---|---|
+| `"loghr"` (default) | `coxph(Surv(time, event) ~ ...)` | Product α·β on log-HR scale (approximate) | No |
+| `"rmst"` | OLS on RMST pseudo-observations | Product α·β on time scale (exact) | Yes |
+
+The Cox log-HR is **non-collapsible**, so the product-of-coefficients NIE = α·β on the log-HR scale is an approximation. The RMST scale (pseudo-observation OLS) provides the exact decomposition because RMST differences are collapsible. RMST pseudo-observations are computed via leave-one-out jackknife of Kaplan-Meier RMST (Graw et al. 2009), with the truncation time τ defaulting to the 90th percentile of follow-up.
+
+### COCA incompatibility
+
+COCA regresses W on Y (W ~ y + Z), placing the outcome on the right-hand side — impossible with a `Surv` object. Both `fit_coca_surv()` and `fit_coca_mediation_surv()` return `NA` with an informative `"reason"` attribute for survival outcomes.
+
+### Usage
+
+```r
+library(iconic)
+
+# Create survival data: pass surv_time and surv_event instead of Y
+sdat <- iconic_data(
+  Z = pack_years, outcome_type = "survival",
+  surv_time = os_time, surv_event = os_event,
+  M = tumor_expr, G = smoking_prs, Gm = lung_eqtl,
+  W = non_lung_gp_expr)
+
+# Total effect on Cox log-HR scale
+est <- iconic_estimate(sdat, effect_scale = "loghr")
+
+# Total effect on RMST scale (collapsible, exact NDE/NIE decomposition)
+est_rmst <- iconic_estimate(sdat, effect_scale = "rmst", tau = 365)
+
+# Mediation: NDE and NIE under survival
+est_med <- iconic_estimate(sdat, effect_scale = "loghr")
+# Columns: NDE, NDE_se, NDE_p, NIE, NIE_se, NIE_p, ...
+```
+
+### Survival simulation
+
+The toy simulation supports `outcome_type = "survival"` in both `generate_toy_data()` and `run_single_iteration()`. The linear predictor is converted to time-to-event via an exponential proportional hazards model with configurable baseline hazard (`surv_h0`), event fraction (`surv_event_frac`), and censoring rate (`surv_censor_rate`). The true effects (total, NDE, NIE) are on the Cox log-HR scale.
+
+```r
+# Generate survival toy data
+dat <- generate_toy_data(n = 500, beta_Z = 0.25, alpha_M = 0.5, beta_M = 0.3,
+                         conf_str = 0.8, phi = 0.8, outcome_type = "survival",
+                         surv_event_frac = 0.6)
+# dat$surv_time, dat$surv_event are now available
+```
+
+Sensitivity analysis (`iconic_sensitivity()`, `iconic_prospect()`) also threads `outcome_type` and `effect_scale` through the simulation engine. The GAN texture model is skipped for survival outcomes (it requires continuous Y); the default texture is used instead.
 
 ---
 
@@ -452,7 +508,10 @@ iconic/
 │   ├── prospect.R               # iconic_prospect() — prospective analysis without instruments
 │   ├── estimators.R             # fit_direct, fit_coca, fit_iv2sls, fit_pgc, fit_pgc_scalar
 │   ├── mediation.R              # fit_*_mediation, fit_iv2sls_mediation2, fit_pgc_mediation2, analyze_mediation_robust
-│   ├── generate_data.R          # generate_toy_data (internal toy DGP, feat_cor parameter)
+│   ├── surv_estimators.R        # fit_*_surv — Cox/RMST total-effect estimators (v0.9.4)
+│   ├── surv_mediation.R         # fit_*_mediation_surv — Cox/RMST mediation estimators (v0.9.4)
+│   ├── surv_dgp.R               # .linpred_to_surv — exponential PH + censoring (v0.9.4)
+│   ├── generate_data.R          # generate_toy_data (internal toy DGP, feat_cor, survival outcome)
 │   ├── run_methods.R            # run_methods, analyze_methods_robust/parallel, summarise_results
 │   ├── mediation_simulation.R   # run_mediation_sim, sweep_mediation_param, null sims
 │   ├── simulation.R             # run_simulation, sweep_param, run_null_sim, sweep_null_by_conf

@@ -115,6 +115,17 @@
 #'                       numeric vectors (v0.9.2, JYH #864): per-control coverage
 #'                       of U_XM / U_MY. Default NULL → scalar omega applied
 #'                       uniformly (backward compatible).
+#' @param outcome_type   \code{"continuous"} (default) or \code{"survival"}
+#'                       (v0.9.4).  When \code{"survival"}, the continuous
+#'                       linear predictor Y is converted to \code{surv_time}
+#'                       and \code{surv_event} via an exponential PH model.
+#' @param surv_h0        Baseline hazard for the survival DGP (v0.9.4).
+#'                       Default 0.1.
+#' @param surv_event_frac Target fraction of observed events (v0.9.4).
+#'                       Default 0.6.  The censoring rate is solved
+#'                       internally from this.
+#' @param surv_censor_rate Explicit censoring rate (v0.9.4).  Default NULL
+#'                       → solved from \code{surv_event_frac}.
 #' @param seed           Optional integer RNG seed for reproducibility.
 #'
 #' @return A named list with elements Z, G (n x n_features matrix), Y, W, U1, M,
@@ -162,8 +173,19 @@ generate_toy_data <- function(n              = 500,
                               # per-control coverage for heterogeneous U/W.
                               u_strength     = NULL,
                               w_coverage_profile = NULL,
+                              # v0.9.4: survival / time-to-event outcome.
+                              # When "survival", the continuous linear predictor
+                              # Y is converted to (surv_time, surv_event) via
+                              # an exponential PH model with censoring.  The
+                              # true_total / true_NDE / true_NIE are then on
+                              # the Cox log-HR scale.
+                              outcome_type   = c("continuous", "survival"),
+                              surv_h0        = 0.1,
+                              surv_event_frac = 0.6,
+                              surv_censor_rate = NULL,
                               seed           = NULL) {
   if (!is.null(seed)) set.seed(seed)
+  outcome_type <- match.arg(outcome_type)
 
   # ── Determine whether the v0.5.0 DGP is active ──
   v05_active <- rho_G1 != 0 || rho_G2 != 0 || rho_pop != 0 ||
@@ -363,6 +385,19 @@ generate_toy_data <- function(n              = 500,
       Y[, f] <- Y[, f] + rnorm(n, 0, 0.2)
   }
 
+  # v0.9.4: survival outcome — convert the linear predictor to time-to-event.
+  # The first column of Y carries the causal signal (all columns share the
+  # same beta_Z/beta_M/M_eff; they differ only in the confounder loading and
+  # noise, which are nuisance for the survival DGP).  The resulting
+  # surv_time / surv_event are scalar vectors; true_total / true_NDE /
+  # true_NIE are on the Cox log-HR scale.
+  surv <- NULL
+  if (outcome_type == "survival") {
+    surv <- .linpred_to_surv(Y[, 1], h0 = surv_h0,
+                             event_frac = surv_event_frac,
+                             censor_rate = surv_censor_rate)
+  }
+
   out <- list(
     Z = Z,
     G = matrix(rep(G, n_features), n, n_features),
@@ -378,6 +413,13 @@ generate_toy_data <- function(n              = 500,
     true_NDE   = beta_Z,
     true_NIE   = n_mediators * alpha_M * beta_M
   )
+  if (outcome_type == "survival") {
+    out$surv_time  <- surv$surv_time
+    out$surv_event <- surv$surv_event
+    out$outcome_type <- "survival"
+  } else {
+    out$outcome_type <- "continuous"
+  }
   if (phi > 0) out$Gm <- Gm
   out$n_mediators <- n_mediators
 
@@ -394,7 +436,11 @@ generate_toy_data <- function(n              = 500,
     omega_1 = omega_1, omega_2 = omega_2, feat_cor = feat_cor,
     # v0.9.2 (JYH #864)
     u_strength = u_str,
-    w_coverage_profile = wcp
+    w_coverage_profile = wcp,
+    # v0.9.4
+    outcome_type = outcome_type,
+    surv_h0 = surv_h0, surv_event_frac = surv_event_frac,
+    surv_censor_rate = surv_censor_rate
   )
 
   # v0.5.0 extras (only when the v0.5.0 DGP is active)

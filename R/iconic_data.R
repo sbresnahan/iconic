@@ -54,12 +54,24 @@
 #'   \code{\link{iconic_sensitivity}()} and \code{\link{iconic_prospect}()}
 #'   instead of auto-training a new one.  This avoids retraining when the
 #'   same data is used across multiple workflow steps.
+#' @param outcome_type   Character (v0.9.4): \code{"continuous"} (default,
+#'   backward-compatible) or \code{"survival"}.  When \code{"survival"},
+#'   \code{Y} is not required; instead supply \code{surv_time} and
+#'   \code{surv_event}.  Estimation uses Cox proportional-hazards
+#'   (\code{\link[survival]{coxph}}) or RMST pseudo-observation OLS
+#'   (see \code{effect_scale} in \code{\link{iconic_estimate}()}).
+#' @param surv_time      Numeric follow-up time vector (length n).  Required
+#'   when \code{outcome_type = "survival"}; ignored otherwise.
+#' @param surv_event     Numeric 0/1 event indicator (length n; 1 = event
+#'   observed, 0 = censored).  Required when
+#'   \code{outcome_type = "survival"}; ignored otherwise.
 #'
 #' @return An `iconic_data` S3 object: a named list with `$Z`, `$Y`, `$M`,
 #'   `$G`, `$Gm`, `$W`, `$W1`, `$W2`, `$covariates`, `$n`, `$n_features`,
 #'   `$n_mediators`, `$has_instrument`, `$has_mediator_instrument`,
 #'   `$has_nc`, `$has_path_nc`, `$is_mediation`, `$feature_names`,
-#'   `$mediator_names`, `$trained_gan`.
+#'   `$mediator_names`, `$trained_gan`, `$outcome_type`, and (when
+#'   survival) `$surv_time`, `$surv_event`.
 #' @export
 #'
 #' @examples
@@ -74,11 +86,23 @@
 #'   W = matrix(rnorm(100 * 10), 10, 100)
 #' )
 #' print(data)
+#'
+#' # Survival outcome (v0.9.4)
+#' data <- iconic_data(
+#'   Z = rnorm(100), outcome_type = "survival",
+#'   surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+#'   M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+#'   W = matrix(rnorm(100 * 10), 10, 100)
+#' )
+#' print(data)
 #' }
-iconic_data <- function(Z, Y, M = NULL, G = NULL, Gm = NULL, W = NULL,
+iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
                         W1 = NULL, W2 = NULL, covariates = NULL,
                         feature_names = NULL, mediator_names = NULL,
-                        trained_gan = NULL) {
+                        trained_gan = NULL,
+                        outcome_type = c("continuous", "survival"),
+                        surv_time = NULL, surv_event = NULL) {
+  outcome_type <- match.arg(outcome_type)
 
   ## --- Z: exposure ---
   if (missing(Z) || is.null(Z)) stop("Z (exposure) is required.")
@@ -94,16 +118,37 @@ iconic_data <- function(Z, Y, M = NULL, G = NULL, Gm = NULL, W = NULL,
   n <- length(Z)
 
   ## --- Y: outcome ---
-  if (missing(Y) || is.null(Y)) stop("Y (outcome) is required.")
-  Y <- as.matrix(Y)
-  if (nrow(Y) == n) {
-    # User passed samples x features; transpose to features x samples
-    Y <- t(Y)
+  if (outcome_type == "survival") {
+    # Survival outcome: Y is not required; surv_time + surv_event define
+    # the outcome.  n_features = 1 (single time-to-event outcome).
+    if (is.null(surv_time) || is.null(surv_event))
+      stop("When outcome_type = 'survival', surv_time and surv_event ",
+           "are required.")
+    surv_time <- as.numeric(surv_time)
+    surv_event <- as.numeric(surv_event)
+    if (length(surv_time) != n || length(surv_event) != n)
+      stop("surv_time and surv_event must have length n (=", n, ").")
+    if (any(is.na(surv_time)) || any(is.na(surv_event)))
+      stop("surv_time and surv_event must not contain NA values.")
+    if (any(surv_time <= 0))
+      stop("surv_time must be strictly positive.")
+    if (!all(surv_event %in% c(0, 1)))
+      stop("surv_event must be 0/1 (1 = event observed, 0 = censored).")
+    Y <- NULL
+    n_features <- 1L
+  } else {
+    if (missing(Y) || is.null(Y)) stop("Y (outcome) is required ",
+         "(or set outcome_type = 'survival' with surv_time/surv_event).")
+    Y <- as.matrix(Y)
+    if (nrow(Y) == n) {
+      # User passed samples x features; transpose to features x samples
+      Y <- t(Y)
+    }
+    if (ncol(Y) != n)
+      stop("Y must have n samples. If a matrix, pass features x samples ",
+           "(features in rows) or samples x features (samples in rows).")
+    n_features <- nrow(Y)
   }
-  if (ncol(Y) != n)
-    stop("Y must have n samples. If a matrix, pass features x samples ",
-         "(features in rows) or samples x features (samples in rows).")
-  n_features <- nrow(Y)
 
   ## --- M: mediator ---
   is_mediation <- !is.null(M)
@@ -159,7 +204,7 @@ iconic_data <- function(Z, Y, M = NULL, G = NULL, Gm = NULL, W = NULL,
     W <- as.matrix(W)
     if (nrow(W) == n) W <- t(W)
     if (ncol(W) != n) stop("W must have n samples.")
-    if (nrow(W) != n_features)
+    if (nrow(W) != n_features && outcome_type == "continuous")
       warning("W has ", nrow(W), " features but Y has ", n_features,
               ". Using row recycling.")
   }
@@ -201,7 +246,8 @@ iconic_data <- function(Z, Y, M = NULL, G = NULL, Gm = NULL, W = NULL,
 
   ## --- Feature / mediator names ---
   if (is.null(feature_names)) {
-    feature_names <- if (!is.null(rownames(Y))) rownames(Y)
+    feature_names <- if (outcome_type == "survival") "survival"
+                     else if (!is.null(rownames(Y))) rownames(Y)
                      else paste0("feature_", seq_len(n_features))
   }
   if (is_mediation && is.null(mediator_names)) {
@@ -230,7 +276,10 @@ iconic_data <- function(Z, Y, M = NULL, G = NULL, Gm = NULL, W = NULL,
     is_mediation = is_mediation,
     feature_names = feature_names,
     mediator_names = mediator_names,
-    trained_gan = trained_gan
+    trained_gan = trained_gan,
+    outcome_type = outcome_type,
+    surv_time = if (outcome_type == "survival") surv_time else NULL,
+    surv_event = if (outcome_type == "survival") surv_event else NULL
   )
   validate_iconic_data(obj)
   class(obj) <- c("iconic_data", "list")
@@ -297,6 +346,11 @@ validate_iconic_data <- function(obj) {
 as_iconic_data <- function(input, ...) {
   dots <- list(...)
 
+  # Passthrough: if input is already an iconic_data object, return as-is
+  if (inherits(input, "iconic_data")) {
+    return(input)
+  }
+
   # If input is a list with $original_matrices, use the original interface
   if (is.list(input) && !is.null(input$original_matrices)) {
     om <- input$original_matrices
@@ -324,8 +378,14 @@ as_iconic_data <- function(input, ...) {
 #' @param ... Unused.
 #' @export
 print.iconic_data <- function(x, ...) {
-  cat("<iconic_data> ", x$n, " samples, ", x$n_features, " outcome features",
-      sep = "")
+  if (x$outcome_type == "survival") {
+    n_events <- sum(x$surv_event)
+    cat("<iconic_data> ", x$n, " samples, survival outcome (",
+        n_events, " events / ", x$n, ")", sep = "")
+  } else {
+    cat("<iconic_data> ", x$n, " samples, ", x$n_features, " outcome features",
+        sep = "")
+  }
   if (x$is_mediation)
     cat(", ", x$n_mediators, " mediator(s)", sep = "")
   cat("\n")

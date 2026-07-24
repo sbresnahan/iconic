@@ -93,6 +93,12 @@
 #'   (default), proceed with the prospective sweep even if the data
 #'   already has instruments/NCs (with a message). When \code{FALSE},
 #'   error if the data already has IV+NC (use iconic_estimate instead).
+#' @param outcome_type  \code{"continuous"} (default) or \code{"survival"}
+#'   (v0.9.4).  Threads through to the simulation DGP.
+#' @param effect_scale  \code{"loghr"} (default) or \code{"rmst"}.  Only
+#'   used when \code{outcome_type = "survival"}.
+#' @param surv_h0,surv_event_frac,surv_censor_rate Survival DGP parameters
+#'   (v0.9.4).  See \code{\link{generate_toy_data}}.
 #'
 #' @section Defaults:
 #' \tabular{lll}{
@@ -141,13 +147,24 @@ iconic_prospect <- function(data,
                             bias_threshold = 0.10,
                             base_seed = 500,
                             n_cores = 1,
-                            allow_no_proxy = TRUE) {
+                            allow_no_proxy = TRUE,
+                            outcome_type = c("continuous", "survival"),
+                            effect_scale = c("loghr", "rmst"),
+                            surv_h0 = 0.1,
+                            surv_event_frac = 0.6,
+                            surv_censor_rate = NULL) {
   if (!inherits(data, "iconic_data"))
     stop("data must be an iconic_data object from iconic_data().")
   if (!data$is_mediation)
     stop("iconic_prospect requires mediation data (supply M). ",
          "This function answers: 'if I collected instruments/NCs, ",
          "how would my NDE/NIE estimates change?'")
+
+  outcome_type <- match.arg(outcome_type)
+  effect_scale <- match.arg(effect_scale)
+  # v0.9.4: inherit outcome_type from data if not explicitly set
+  if (outcome_type == "continuous" && data$outcome_type == "survival")
+    outcome_type <- "survival"
 
   # v0.9.2 (JYH #503): explicit control over proceed-without-proxy behavior.
   # iconic_prospect is designed for the no-IV/no-NC case, so the default
@@ -210,8 +227,15 @@ iconic_prospect <- function(data,
         n_synthetic_samples = n, n_features = n_features,
         mo_confounding = mo_confounding, phi = phi, gamma_G = gg,
         separate_U = separate_U, omega_1 = omega_1, omega_2 = omega_2,
-        seed = base_seed + as.integer(gg * 10000) + i)
-      res <- run_mediation_methods(dat, n_features)
+        seed = base_seed + as.integer(gg * 10000) + i,
+        outcome_type = outcome_type, surv_h0 = surv_h0,
+        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+      if (outcome_type == "survival") {
+        res <- .run_surv_methods(dat, effect_scale = effect_scale,
+                                 is_mediation = TRUE)
+      } else {
+        res <- run_mediation_methods(dat, n_features)
+      }
       res$iter <- i
       res
     }
@@ -235,8 +259,15 @@ iconic_prospect <- function(data,
       n_synthetic_samples = n, n_features = n_features,
       mo_confounding = mo_confounding, phi = phi, gamma_G = target_gamma_G,
       separate_U = separate_U, omega_1 = omega_1, omega_2 = omega_2,
-      seed = base_seed + 99999 + i)
-    res <- run_mediation_methods(dat, n_features)
+      seed = base_seed + 99999 + i,
+      outcome_type = outcome_type, surv_h0 = surv_h0,
+      surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+    if (outcome_type == "survival") {
+      res <- .run_surv_methods(dat, effect_scale = effect_scale,
+                               is_mediation = TRUE)
+    } else {
+      res <- run_mediation_methods(dat, n_features)
+    }
     res$iter <- i
     res
   }
@@ -252,12 +283,23 @@ iconic_prospect <- function(data,
     n_synthetic_samples = n, n_features = n_features,
     mo_confounding = mo_confounding, phi = phi, gamma_G = target_gamma_G,
     separate_U = separate_U, omega_1 = omega_1, omega_2 = omega_2,
-    seed = base_seed + 77777)
-  rep_idata <- iconic_data(
-    Z = rep_dat$Z, Y = t(rep_dat$Y), M = rep_dat$M,
-    W = t(rep_dat$W), W1 = t(rep_dat$W1), W2 = t(rep_dat$W2),
-    G = rep_dat$G[, 1], Gm = rep_dat$Gm,
-    covariates = rep_dat$synthetic_data)
+    seed = base_seed + 77777,
+    outcome_type = outcome_type, surv_h0 = surv_h0,
+    surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+  if (outcome_type == "survival") {
+    rep_idata <- iconic_data(
+      Z = rep_dat$Z, outcome_type = "survival",
+      surv_time = rep_dat$surv_time, surv_event = rep_dat$surv_event,
+      M = rep_dat$M, W = t(rep_dat$W), W1 = t(rep_dat$W1), W2 = t(rep_dat$W2),
+      G = rep_dat$G[, 1], Gm = rep_dat$Gm,
+      covariates = rep_dat$synthetic_data)
+  } else {
+    rep_idata <- iconic_data(
+      Z = rep_dat$Z, Y = t(rep_dat$Y), M = rep_dat$M,
+      W = t(rep_dat$W), W1 = t(rep_dat$W1), W2 = t(rep_dat$W2),
+      G = rep_dat$G[, 1], Gm = rep_dat$Gm,
+      covariates = rep_dat$synthetic_data)
+  }
   rep_diag <- iconic_diagnose(rep_idata)
 
   # ═══ Summary ═══

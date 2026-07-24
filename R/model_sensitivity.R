@@ -177,6 +177,14 @@
 #' @param n_cores    Number of parallel workers for simulation replicates.
 #'   Default 1 (sequential).  Uses \code{parallel::mclapply} on Unix
 #'   and a PSOCK cluster on Windows.
+#' @param outcome_type  \code{NULL} (inherit from \code{data}, default) or
+#'   \code{"continuous"} / \code{"survival"} (v0.9.4).  When survival, the
+#'   sensitivity sweep uses the Cox / RMST survival mediation drivers.
+#' @param effect_scale  \code{"loghr"} (default) or \code{"rmst"}.  Only
+#'   used when \code{outcome_type = "survival"}.
+#' @param surv_h0       Baseline hazard for survival DGP (v0.9.4). Default 0.1.
+#' @param surv_event_frac Target fraction of observed events (v0.9.4). Default 0.6.
+#' @param surv_censor_rate Explicit censoring rate (v0.9.4). Default NULL.
 #'
 #' @section Defaults:
 #' \tabular{lll}{

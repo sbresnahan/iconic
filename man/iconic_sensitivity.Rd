@@ -81,6 +81,19 @@ annotation. Default 0.10.}
 \item{n_cores}{Number of parallel workers for simulation replicates.
 Default 1 (sequential).  Uses \code{parallel::mclapply} on Unix
 and a PSOCK cluster on Windows.}
+
+\item{outcome_type}{\code{NULL} (inherit from \code{data}, default) or
+\code{"continuous"} / \code{"survival"} (v0.9.4).  When survival, the
+sensitivity sweep uses the Cox / RMST survival mediation drivers.}
+
+\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}.  Only
+used when \code{outcome_type = "survival"}.}
+
+\item{surv_h0}{Baseline hazard for survival DGP (v0.9.4). Default 0.1.}
+
+\item{surv_event_frac}{Target fraction of observed events (v0.9.4). Default 0.6.}
+
+\item{surv_censor_rate}{Explicit censoring rate (v0.9.4). Default NULL.}
 }
 \value{
 An \code{iconic_sensitivity} S3 object: a named list with

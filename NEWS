@@ -1,3 +1,57 @@
+# iconic 0.9.4.1
+
+## Bug fixes
+
+- **Missing `fit_pgc_mediation_surv()` estimator**: the survival
+  mediation driver dispatched both "PGC" and "PGC2" to
+  `fit_pgc_mediation2_surv()` (path-specific bridges), making them
+  identical. In the continuous case, PGC uses
+  `fit_pgc_mediation()` (single W-matrix bridge) and PGC2 uses
+  `fit_pgc_mediation2()` (path-specific W1/W2 bridges). Added the
+  missing `fit_pgc_mediation_surv()` estimator — the survival analogue
+  of `fit_pgc_mediation()` — and updated the dispatch in `estimate.R`
+  so "PGC" routes to it. PGC and PGC2 now produce distinct results.
+
+- **`fit_pgc_mediation2_surv()` numerical instability**: the
+  path-specific bridge estimator could produce catastrophically large
+  coefficient estimates (RMSE 4-150 in benchmarks) when the generated
+  regressors (Z_hat, M_hat, W_hat_Z, W_hat_M) became collinear or
+  extreme in the Cox partial likelihood. Added a numerical-stability
+  guard that rejects estimates whose absolute value exceeds 10 on
+  either scale (log-HR > 10 corresponds to HR > 22,000; RMST shift > 10
+  time units is equally implausible for standardised data), returning
+  NA instead. The same guard is applied to `fit_pgc_mediation_surv()`
+  for consistency.
+
+- **`.fit_surv_outcome_stage()` coefficient-name flexibility**: the
+  shared outcome-stage helper hardcoded `"Z_hat"` and `"M_hat"` as the
+  coefficient names to extract. Generalised to accept `nde_name` and
+  `med_name` parameters (defaulting to `"Z_hat"` / `"M_hat"`), so
+  estimators that use non-instrumented regressors (e.g.,
+  `fit_pgc_mediation_surv()` uses `Z` and `M`) can reuse the helper.
+
+## Benchmark script fixes (generate_manuscript_figures.R)
+
+- **Total-effect truth correction**: `SURV_TRUE_TE_LOGHR` was set to
+  `SURV_TAU + SURV_ALPHA_M * SURV_BETA_M` (0.40), but the total-effect
+  sweep DGP uses `alpha_M = 0, beta_M = 0` (no mediation path), so the
+  true total effect is `beta_Z = 0.25`. Corrected to
+  `SURV_TRUE_TE_LOGHR <- SURV_TAU`.
+
+- **Survival mediation DGP alignment**: the survival mediation
+  benchmark did not set `separate_U`, `mo_confounding`, or `rho_G1`,
+  using defaults (single U, no M-O confounding) instead of the
+  continuous benchmark settings (`MED_SEPARATE = TRUE`,
+  `MED_MO_CONF = 0.8`, `MED_RHO_G1 = 0.3`). Added these parameters and
+  passed `W1`/`W2` to `iconic_data()` so path-specific estimators
+  (PGC2, PGC2Gm) exercise their intended two-bridge design. Updated
+  pre-computed RMST truth values accordingly (NDE: -0.7100 -> -0.7284,
+  NIE: -0.5573 -> -0.6198).
+
+- **PGC2 added to mediation figure**: `surv_med_methods_show` now
+  includes "PGC2" alongside "PGC" and "PGC2Gm", since PGC and PGC2 are
+  now distinct estimators.
+
 # iconic 0.9.4
 
 ## New features

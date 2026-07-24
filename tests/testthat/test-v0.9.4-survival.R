@@ -197,6 +197,46 @@ test_that("fit_pgc_mediation2_surv returns correct structure", {
   expect_true(all(c("NDE", "NIE", "alpha_M", "beta_M") %in% names(r)))
 })
 
+test_that("fit_pgc_mediation_surv returns correct structure", {
+  d <- .make_surv_data(n = 300, phi = 0.8)
+  r <- fit_pgc_mediation_surv(d$time, d$event, d$Z, d$M, d$G, t(d$W))
+  expect_true(all(c("NDE", "NIE", "alpha_M", "beta_M") %in% names(r)))
+  expect_true(is.numeric(r$NDE))
+  expect_true(is.numeric(r$NIE))
+})
+
+test_that("fit_pgc_mediation_surv NIE = alpha_M * beta_M", {
+  d <- .make_surv_data(n = 300, phi = 0.8)
+  r <- fit_pgc_mediation_surv(d$time, d$event, d$Z, d$M, d$G, t(d$W))
+  if (!is.na(r$NIE) && !is.na(r$alpha_M) && !is.na(r$beta_M)) {
+    expect_equal(r$NIE, r$alpha_M * r$beta_M, tolerance = 1e-8)
+  }
+})
+
+test_that("PGC and PGC2 produce distinct results in survival mediation", {
+  # Use separate_U DGP so PGC (single-panel) and PGC2 (path-specific) differ
+  set.seed(123)
+  dat <- iconic::generate_toy_data(
+    n = 500, n_features = 1, beta_Z = 0.25,
+    alpha_M = 0.50, beta_M = 0.30, conf_str = 0.6,
+    w_signal = 0.7, phi = 0.8, mo_confounding = 0.8, rho_G1 = 0.3,
+    separate_U = TRUE, outcome_type = "survival",
+    surv_event_frac = 0.6, seed = 123)
+  sdat <- iconic_data(Z = dat$Z, outcome_type = "survival",
+                      surv_time = dat$surv_time, surv_event = dat$surv_event,
+                      M = dat$M, G = dat$G[, 1], Gm = dat$Gm,
+                      W = dat$W, W1 = dat$W1, W2 = dat$W2)
+  est <- iconic_estimate(sdat, effect_scale = "loghr")
+  pgc  <- est[est$method == "PGC", ]
+  pgc2 <- est[est$method == "PGC2", ]
+  # Both should produce non-NA estimates
+  expect_true(!is.na(pgc$NDE))
+  expect_true(!is.na(pgc2$NDE))
+  # They should NOT be identical (different estimators)
+  expect_true(pgc$NDE != pgc2$NDE)
+  expect_true(pgc$NIE != pgc2$NIE)
+})
+
 test_that("fit_coca_mediation_surv returns NA with reason", {
   d <- .make_surv_data(n = 200, phi = 0.8)
   r <- fit_coca_mediation_surv(d$time, d$event, d$Z, d$M, t(d$W)[, 1])

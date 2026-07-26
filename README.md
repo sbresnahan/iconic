@@ -41,53 +41,58 @@ which are met for your data.
 
 ### Total-effect estimators
 
-- **UNADJ** (confounded reference): OLS of $Y$ on $Z + C$. No identifying
-  assumption; biased by unmeasured confounding. Serves as the bias
-  reference.
-- **DIRECT**: OLS of $Y$ on $Z + G_1 + W + C$. Uses all observables but
-  does not remove unmeasured confounding; structurally biased.
-- **COCA** (Control Outcome Calibration Approach): regresses $W$ on
-  $Y + Z + C$ and recovers $\hat{\tau} = -\hat{\beta}_Z / \hat{\beta}_Y$.
-  Efficient when $W$ is a strong proxy of $U$; unstable when
-  $|\hat{\beta}_Y| \approx 0$. Incompatible with survival outcomes.
-- **IV2SLS** (two-stage least squares): instruments $Z$ with $G_1$ in the
-  first stage, then regresses $Y$ on $\hat{Z} + C$. Requires a valid
-  instrument ($G_1 \perp U$, partial $F \geq 10$).
+- **UNADJ** (confounded reference): ordinary regression of the outcome on
+  the exposure and covariates. No identifying assumption; biased by
+  unmeasured confounding. Serves as the bias reference.
+- **DIRECT**: regression of the outcome on the exposure, instrument,
+  negative controls, and covariates. Uses all observables but does not
+  remove unmeasured confounding; structurally biased.
+- **COCA** (Control Outcome Calibration Approach): regresses the negative
+  controls on the outcome and exposure, then recovers the effect as the
+  ratio of the two coefficients. Efficient when the negative controls are
+  strong proxies of the confounder; unstable when the outcome coefficient
+  is near zero. Incompatible with survival outcomes.
+- **IV2SLS** (two-stage least squares): instruments the exposure with the
+  genetic instrument in the first stage, then regresses the outcome on the
+  fitted exposure. Requires a valid instrument (independent of the
+  confounder, first-stage F-statistic at least 10).
 - **PGC** (proximal g-computation): three-stage estimator that builds a
-  bridge $\hat{W}$ from the negative controls and includes it in the
-  outcome regression. Requires negative-control completeness
-  ($\dim(W_\text{valid}) \geq k$).
+  bridge proxy from the negative controls and includes it in the outcome
+  regression. Requires negative-control completeness (enough valid
+  controls to cover the latent confounders).
 
 ### Mediation-specific estimators
 
-These estimators decompose the total effect into NDE and NIE
-($\text{NIE} = \hat{\alpha}_M \hat{\beta}_M$) and require either a
-mediator instrument ($G_m$) or path-specific negative controls
-($W_1$, $W_2$).
+These estimators decompose the total effect into the NDE (direct path) and
+NIE (indirect path through the mediator) and require either a mediator
+instrument or path-specific negative controls.
 
-- **IV2SLS2** (two-stage MR): three sequential 2SLS stages instrumenting
-  both $Z$ (with $G_1$) and $M$ (with $G_m$). Requires both $G_1$ and
-  $G_m$ valid with partial $F \geq 10$.
-- **PGC2** (two-stage proximal mediation): builds path-specific bridges
-  $\hat{W}_1$ (for $U_{XM}$) and $\hat{W}_2$ (for $U_{MY}$) from
-  path-specific negative controls. Requires completeness at both stages.
-- **PGC2Gm** (negative-control-augmented): combines the $W_1$ bridge with
-  a $G_m$-instrumented mediator. Requires both path-specific NCs and a
-  mediator instrument; residual bias from $G_m \not\perp U_{MY}$ is
-  smaller than IV2SLS2 but nonzero.
+- **IV2SLS2** (two-stage MR): three sequential two-stage least squares
+  stages instrumenting both the exposure (with the exposure instrument) and
+  the mediator (with the mediator instrument). Requires both instruments
+  valid with first-stage F-statistic at least 10.
+- **PGC2** (two-stage proximal mediation): builds path-specific bridge
+  proxies from path-specific negative controls — one for the
+  exposure-mediator confounder and one for the mediator-outcome
+  confounder. Requires completeness at both stages.
+- **PGC2Gm** (negative-control-augmented): combines the first bridge with
+  a mediator-instrumented mediator. Requires both path-specific negative
+  controls and a mediator instrument; residual bias from a
+  confounder-correlated mediator instrument is smaller than IV2SLS2 but
+  nonzero.
 
 ### Supported data types and functionalities
 
 | | UNADJ | DIRECT | COCA | IV2SLS | PGC | IV2SLS2 | PGC2 | PGC2Gm |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Continuous Y | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Survival Y | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Total effect (τ) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Mediation (NDE + NIE) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Requires $G_1$ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ | ✗ | ✗ |
-| Requires $G_m$ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ |
-| Requires NCs ($W$) | ✗ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | ✓ |
-| Requires completeness | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ | ✓ |
+| Continuous outcome | yes | yes | yes | yes | yes | yes | yes | yes |
+| Survival outcome | yes | yes | no | yes | yes | yes | yes | yes |
+| Total effect | yes | yes | yes | yes | yes | yes | yes | yes |
+| Mediation (NDE + NIE) | yes | yes | yes | yes | yes | yes | yes | yes |
+| Requires exposure instrument | no | no | no | yes | no | yes | no | no |
+| Requires mediator instrument | no | no | no | no | no | yes | no | yes |
+| Requires negative controls | no | yes | yes | no | yes | no | yes | yes |
+| Requires completeness | no | no | no | no | yes | no | yes | yes |
 
 ## Benchmark simulation mode
 
@@ -100,15 +105,14 @@ validation under controlled confounding scenarios.
 ![](man/figures/iconic_benchmark_simulation_mode.png)
 
 **Benchmark simulation mode: the structural synthetic-data generator
-(`generate_toy_data`).** Latent confounders $U_{XM}$ (opening the
-$Z \rightarrow M$ backdoor) and $U_{MY}$ (opening the $M \rightarrow Y$
-backdoor) are drawn independently. The exposure $Z$, mediator $M$, and
-outcome $Y$ are generated from the structural causal model with parametric
-Gaussian noise at every stage. Genetic instruments $G_1$ (for $Z$) and
-$G_2$ (for $M$) are drawn as $\mathcal{N}(0, 1)$, and the path-specific
-negative controls $W$ are generated as coverage-weighted functions of the
-confounders plus noise. All ground-truth quantities are fixed, tunable
-parameters.
+(`generate_toy_data`).** Two latent confounders are drawn independently —
+one opening the backdoor path from exposure to mediator, the other opening
+the backdoor path from mediator to outcome. The exposure, mediator, and
+outcome are generated from the structural causal model with parametric
+Gaussian noise at every stage. Genetic instruments for the exposure and
+mediator are drawn from a standard normal, and the path-specific negative
+controls are generated as coverage-weighted functions of the confounders
+plus noise. All ground-truth quantities are fixed, tunable parameters.
 
 ## Generative texture pipeline
 
@@ -128,8 +132,8 @@ texture pipeline.** (1) Texture learning: a sample-level GAN and a
 feature-level Gaussian copula are trained independently on the user's
 data. (2) Structural skeleton: the learned texture is injected into the
 structural causal model, drawn independently of the latent confounders.
-(3) Synthetic dataset: the result is a synthetic $(Z, M, Y, C, G, W)$
-dataset with realistic data texture and known ground truth.
+(3) Synthetic dataset: the result is a synthetic dataset with realistic
+data texture and known ground truth.
 
 ## Installation
 

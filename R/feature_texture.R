@@ -236,7 +236,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' M <- matrix(rnorm(30 * 200), 30, 200)  # 30 transcripts, 200 samples
 #' ft <- train_feature_texture(M)
 #' draws <- sample_feature_texture(ft, 100)  # 30 x 100 synthetic draws
@@ -350,7 +350,7 @@ train_feature_texture <- function(M_matrix, marginal_method = "auto") {
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' ft <- train_feature_texture(M)
 #' draws <- sample_feature_texture(ft, 500, n_features = 20)
 #' }
@@ -398,6 +398,11 @@ sample_feature_texture <- function(feature_texture, n_samples, n_features = NULL
 }
 
 
+#' Print method for iconic_feature_texture objects
+#'
+#' @param x An `iconic_feature_texture` object.
+#' @param ... Unused.
+#' @return Invisibly returns `x` (the `iconic_feature_texture` object); called for its side effect of printing a human-readable summary.
 #' @export
 print.iconic_feature_texture <- function(x, ...) {
   cat("<iconic_feature_texture>\n")

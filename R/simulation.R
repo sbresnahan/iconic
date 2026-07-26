@@ -20,6 +20,8 @@
 #' @param beta_M     Effect of mediator on Y. Default 0.30.
 #' @param conf_str   Confounding strength delta. Default 0.80.
 #' @param w_signal   Proxy quality omega. Default 0.70.
+#' @param feat_cor   Within-module correlation for block-diagonal co-expression
+#'   modules in Y and W (v0.9.0). 0 = independent features. Default 0.
 #' @param base_seed  Starting seed; replicate i uses base_seed + i. Default 100.
 #' @param n_cores    Number of parallel workers. Default 1.
 #'
@@ -27,7 +29,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' res <- run_simulation(n_iter = 50, beta_Z = 0.1, conf_str = 0.8)
 #' res$summary
 #' }
@@ -95,7 +97,7 @@ run_simulation <- function(n_iter  = 100,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' res <- sweep_param("conf_str", c(0.2, 0.5, 0.8, 1.0), n_iter = 50)
 #' }
 sweep_param <- function(param,
@@ -201,9 +203,9 @@ run_null_sim <- function(n_iter = 200,
   null_combined <- do.call(rbind, iter_results)
 
   methods <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC")
-  rates   <- sapply(methods, function(m) {
+  rates   <- vapply(methods, function(m) {
     mean(null_combined$pvalue[null_combined$method == m] < alpha, na.rm = TRUE)
-  })
+  }, numeric(1))
 
   list(
     rates = data.frame(
@@ -233,7 +235,7 @@ run_null_sim <- function(n_iter = 200,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' t1e <- sweep_null_by_conf(c(0.2, 0.4, 0.6, 0.8, 1.0), n_iter = 50)
 #' plot_type1_vs_conf(t1e)
 #' }
@@ -376,7 +378,7 @@ compute_iter_bias <- function(combined, true_total) {
     # Load the iconic namespace so internal functions resolve in workers
     parallel::clusterEvalQ(cl, {
       if (requireNamespace("iconic", quietly = TRUE))
-        library(iconic)
+        attachNamespace("iconic")
     })
     for (k in seq_len(n_chunks)) {
       idx <- bp[k]:(bp[k + 1L] - 1L)

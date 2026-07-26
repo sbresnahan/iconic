@@ -44,7 +44,7 @@ of W and is the estimator for which the completeness condition is
 binding.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, seed = 1)
 fit_pgc(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W)

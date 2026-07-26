@@ -20,6 +20,9 @@ plot_type1_boxplot(
 
 \item{alpha}{Nominal significance level. Default 0.05.}
 }
+\value{
+Invisibly returns \code{NULL}; called for the side effect of drawing a boxplot of Type I error rates.
+}
 \description{
 Type I error boxplot per method
 }

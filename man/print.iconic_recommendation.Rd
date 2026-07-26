@@ -11,6 +11,9 @@
 
 \item{...}{Unused.}
 }
+\value{
+Invisibly returns \code{x} (the \code{iconic_recommendation} object); called for its side effect of printing a human-readable summary.
+}
 \description{
 Print method for iconic_recommendation objects
 }

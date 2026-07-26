@@ -43,7 +43,7 @@ Adjusts for the instrument G and negative-control W in both the
 mediator (OLS) and outcome (Cox / RMST) stages.  Naive adjustment.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
                                   mo_confounding = 0.8, seed = 1)

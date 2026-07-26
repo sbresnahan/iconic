@@ -24,6 +24,9 @@ plot_sensitivity_heatmap(
 
 \item{title}{Optional plot title.}
 }
+\value{
+Invisibly returns \code{NULL}; called for the side effect of drawing a sensitivity heatmap.
+}
 \description{
 Draws a coverage x confounding-strength heatmap of a chosen metric for one
 estimator, at a fixed number of confounders. Useful for reading off where a

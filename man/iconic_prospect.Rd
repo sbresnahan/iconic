@@ -115,7 +115,7 @@ collecting such data: the sweep shows how much of the naive
 confounding bias is removed as instrument strength and NC coverage
 increase, letting you decide whether the marginal gain justifies the
 cost of genotyping / profiling the additional assays. It is a
-planning tool, not an estimator — it does not produce a causal
+planning tool, not an estimator -- it does not produce a causal
 estimate from your current data, but tells you what a future
 instrumented study would yield.
 }
@@ -131,7 +131,7 @@ When \code{trained_gan} is \code{NULL} and no GAN is attached to
 The \code{confounding} argument controls how the held-fixed
 confounding parameters are set.  In the prospective setting (no
 instruments or NCs), most parameters cannot be inferred and will
-fall back to defaults with warnings — this is an honest limitation,
+fall back to defaults with warnings -- this is an honest limitation,
 not a silent failure.
 }
 
@@ -155,7 +155,7 @@ not a silent failure.
 }
 
 \examples{
-\dontrun{
+\donttest{
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
                     M = rnorm(100))
 result <- iconic_prospect(data, n_iter = 10, n_cores = 4)

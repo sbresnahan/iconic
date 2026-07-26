@@ -138,7 +138,6 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # Basic total-effect data
 #' dat <- generate_toy_data(n = 200, n_features = 10, seed = 42)
 #'
@@ -149,7 +148,6 @@
 #' idata <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
 #'                      G = dat$G[, 1], Gm = dat$Gm,
 #'                      W1 = dat$W1, W2 = dat$W2)
-#' }
 generate_toy_data <- function(n              = 500,
                               n_features     = 20,
                               n_mediators    = 1,

@@ -29,7 +29,7 @@ whatever observables are available but does NOT correct for unmeasured
 confounding via a ratio or IV approach.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, seed = 1)
 fit_direct(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W[, 1])

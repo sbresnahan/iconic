@@ -277,7 +277,7 @@ plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' sweep <- sweep_mediation_param("feat_cor", c(0, 0.2, 0.5, 0.8),
 #'   n_iter = 50, n_features = 10, mo_confounding = 0.8, phi = 0.8,
 #'   separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7)
@@ -552,8 +552,8 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       s <- nc_validity_screen(dat)
       c(sum(s$significant[6:10]) / 5, sum(s$significant[1:5]) / 5)
     }, n_cores = n_cores, progress = "  Panel A replicates")
-    det_violated <- sapply(res_a, function(x) x[1])
-    det_confounding <- sapply(res_a, function(x) x[2])
+    det_violated <- vapply(res_a, function(x) x[1], numeric(1))
+    det_confounding <- vapply(res_a, function(x) x[2], numeric(1))
     data.frame(contamination = cs,
                violated_mean = mean(det_violated), violated_sd = sd(det_violated),
                confounding_mean = mean(det_confounding), confounding_sd = sd(det_confounding),
@@ -570,8 +570,8 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       s <- nc_independence_check(dat)
       c(sum(s$significant[1:5]) / 5, sum(s$significant[6:10]) / 5)
     }, n_cores = n_cores, progress = "  Panel B replicates")
-    det_violated <- sapply(res_b, function(x) x[1])
-    det_clean <- sapply(res_b, function(x) x[2])
+    det_violated <- vapply(res_b, function(x) x[1], numeric(1))
+    det_clean <- vapply(res_b, function(x) x[2], numeric(1))
     data.frame(meqtl = ms,
                violated_mean = mean(det_violated), violated_sd = sd(det_violated),
                clean_mean = mean(det_clean), clean_sd = sd(det_clean),
@@ -587,7 +587,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
                                   n_features = 10, n_confounders = kk, seed = i,
                                   nc_params = list(mode = "distinct"))
-      W_valid <- dat$W[, 1:nv, drop = FALSE]
+      W_valid <- dat$W[, seq_len(nv), drop = FALSE]
       res <- fit_pgc(dat$Y[, 1], dat$Z, dat$G[, 1], W_valid)
       res$beta - dat$true_total
     }, n_cores = n_cores, progress = "  Panel C replicates"))
@@ -614,8 +614,8 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       s <- nc_independence_check_gm(dat)
       c(sum(s$significant[1:5]) / 5, sum(s$significant[6:10]) / 5)
     }, n_cores = n_cores, progress = "  Panel D replicates")
-    det_violated <- sapply(res_d, function(x) x[1])
-    det_clean <- sapply(res_d, function(x) x[2])
+    det_violated <- vapply(res_d, function(x) x[1], numeric(1))
+    det_clean <- vapply(res_d, function(x) x[2], numeric(1))
     data.frame(eqtl = es,
                violated_mean = mean(det_violated), violated_sd = sd(det_violated),
                clean_mean = mean(det_clean), clean_sd = sd(det_clean),
@@ -1172,10 +1172,10 @@ plot_instrument_strength_sweep <- function(results, tau = 0.25,
 
   plot_df <- data.frame(
     pi_GZ  = lv,
-    mean_F = sapply(lv, function(v) mean(results$partial_F[results$pi_GZ == v], na.rm = TRUE)),
-    bias   = sapply(lv, function(v) mean(alt$beta[alt$pi_GZ == v], na.rm = TRUE) - tau),
-    bias_sd = sapply(lv, function(v) sd(alt$beta[alt$pi_GZ == v])),
-    t1e    = sapply(lv, function(v) mean(nul$rejected[nul$pi_GZ == v], na.rm = TRUE)))
+    mean_F = vapply(lv, function(v) mean(results$partial_F[results$pi_GZ == v], na.rm = TRUE), numeric(1)),
+    bias   = vapply(lv, function(v) mean(alt$beta[alt$pi_GZ == v], na.rm = TRUE) - tau, numeric(1)),
+    bias_sd = vapply(lv, function(v) sd(alt$beta[alt$pi_GZ == v]), numeric(1)),
+    t1e    = vapply(lv, function(v) mean(nul$rejected[nul$pi_GZ == v], na.rm = TRUE), numeric(1)))
 
   pts_bias <- results[results$arm == "alt" & !is.na(results$beta), ]
   pts_bias$bias <- pts_bias$beta - tau

@@ -55,6 +55,9 @@ run_null_mediation_sim(
 
 \item{omega_2}{Coverage of U_MY by W2 (v0.5.0). NULL = use w_signal.}
 
+\item{feat_cor}{Within-module correlation for block-diagonal co-expression
+modules in Y and W (v0.9.0). 0 = independent features. Default 0.}
+
 \item{base_seed}{Seed offset. Default 300.}
 
 \item{n_cores}{Parallel workers. Default 1.}

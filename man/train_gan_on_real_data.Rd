@@ -54,7 +54,7 @@ Requires the \pkg{torch} package; if torch is not available, an error is
 raised with installation instructions.
 }
 \details{
-Binary columns (values in {0, 1}, e.g. encoded sex or one-hot ethnicity
+Binary columns (values in \eqn{{0, 1}}, e.g. encoded sex or one-hot ethnicity
 dummies) are detected automatically and stored in the returned object.
 \code{\link[=sample_texture]{sample_texture()}} rounds them back to 0/1 and enforces one-hot mutual
 exclusivity, so synthetic draws respect the discrete structure.
@@ -72,7 +72,7 @@ feature vectors that preserve the marginal distributions and
 cross-feature correlation structure of the user's mediator panel.
 }
 \examples{
-\dontrun{
+\donttest{
 dat <- load_real_input_data(example = TRUE)
 gan <- train_gan_on_real_data(dat$gan_training_data,
                               feature_correlations = dat$feature_correlations,

@@ -45,7 +45,7 @@ whose bias from M-O confounding is the key finding the simulation
 demonstrates.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
 fit_iv2sls_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$W[, 1])

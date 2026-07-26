@@ -17,6 +17,9 @@ plot_estimate_distribution(
 
 \item{title}{Plot title.}
 }
+\value{
+A \code{ggplot} object showing the distribution of estimates by method.
+}
 \description{
 Boxplot of estimate distributions from run_simulation()
 }

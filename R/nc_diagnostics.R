@@ -93,10 +93,8 @@
 #' @importFrom stats lm as.formula p.adjust
 #'
 #' @examples
-#' \dontrun{
 #' dat <- run_single_iteration(n_features = 10, seed = 1)
 #' nc_validity_screen(dat)
-#' }
 nc_validity_screen <- function(dat, fdr_level = 0.10, alpha = 0.05,
                                n_cores = 1,
                                criterion = c("both", "fdr", "magnitude"),
@@ -201,10 +199,8 @@ nc_validity_screen <- function(dat, fdr_level = 0.10, alpha = 0.05,
 #' @importFrom stats cor lm residuals complete.cases pt p.adjust
 #'
 #' @examples
-#' \dontrun{
 #' dat <- run_single_iteration(n_features = 10, seed = 1)
 #' nc_independence_check(dat)
-#' }
 nc_independence_check <- function(dat, fdr_level = 0.10, n_cores = 1) {
   W <- dat$W
   G <- dat$G[, 1]
@@ -290,10 +286,8 @@ nc_independence_check <- function(dat, fdr_level = 0.10, n_cores = 1) {
 #' @importFrom stats cor lm residuals complete.cases pt p.adjust
 #'
 #' @examples
-#' \dontrun{
 #' dat <- run_single_iteration(n_features = 10, phi = 0.8, seed = 1)
 #' nc_independence_check_gm(dat)
-#' }
 nc_independence_check_gm <- function(dat, fdr_level = 0.10, n_cores = 1) {
   if (is.null(dat$Gm)) {
     message("nc_independence_check_gm: dat$Gm is not present (no mediator ",
@@ -408,10 +402,8 @@ nc_independence_check_gm <- function(dat, fdr_level = 0.10, n_cores = 1) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
 #' nc_completeness_check(dat)
-#' }
 nc_completeness_check <- function(dat, n_valid_controls = NULL,
                                   fdr_level = 0.10, n_cores = 1,
                                   outcome = "Y", n_perm = 1000,
@@ -523,10 +515,8 @@ nc_completeness_check <- function(dat, n_valid_controls = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
 #' nc_completeness_capture(dat)
-#' }
 nc_completeness_capture <- function(dat, outcome = "Y", n_perm = 1000,
                                     n_cores = 1,
                                     thresholds = list(strong = 0.3, weak = 0.1)) {

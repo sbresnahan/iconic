@@ -35,7 +35,7 @@ first stage), following Stock & Yogo (2005).  If the partial F is below
 \code{min_f}, the function returns \code{NA}.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, seed = 1)
 fit_iv2sls(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W[, 1])

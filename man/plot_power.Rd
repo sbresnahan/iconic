@@ -23,6 +23,9 @@ plot_power(
 
 \item{legend_pos}{Legend position. Default "bottomleft".}
 }
+\value{
+Invisibly returns \code{NULL}; called for the side effect of plotting detection rate vs a parameter.
+}
 \description{
 Plot detection rate (power) vs a swept parameter
 }

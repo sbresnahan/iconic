@@ -20,6 +20,9 @@ plot_type1_vs_conf(
 
 \item{title}{Plot title.}
 }
+\value{
+Invisibly returns \code{NULL}; called for the side effect of drawing Type I error vs confounding strength.
+}
 \description{
 Type I error rate vs confounding strength
 }

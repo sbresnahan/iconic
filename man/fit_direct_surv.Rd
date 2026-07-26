@@ -41,7 +41,7 @@ negative-control panel W, and covariates.  Naive adjustment; does not
 correct for unmeasured confounding via a ratio or IV approach.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_direct_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W[, 1])

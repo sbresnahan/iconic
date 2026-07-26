@@ -2,27 +2,11 @@
 % Please edit documentation in R/model_sensitivity.R
 \name{.safe_max_abs}
 \alias{.safe_max_abs}
-\title{Find tipping points from the degradation surface (internal)}
+\title{Safe max of absolute values, returning NA when all values are NA/NaN (internal)}
 \usage{
 .safe_max_abs(x)
 }
 \description{
-For each method, finds the first rho_G2 value (at rho_G1 = 0) where
-|NDE_bias| or |NIE_bias| exceeds the threshold.  This is the point
-at which the estimator's assumptions are violated enough to produce
-materially biased estimates.
+Safe max of absolute values, returning NA when all values are NA/NaN (internal)
 }
-\keyword{(internal)}
-\keyword{NA}
-\keyword{NA/NaN}
-\keyword{Safe}
-\keyword{absolute}
-\keyword{all}
-\keyword{are}
 \keyword{internal}
-\keyword{max}
-\keyword{of}
-\keyword{returning}
-\keyword{values}
-\keyword{values,}
-\keyword{when}

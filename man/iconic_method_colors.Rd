@@ -6,6 +6,9 @@
 \usage{
 iconic_method_colors
 }
+\value{
+A named character vector of colors for the eight ICONIC estimators.
+}
 \description{
 Colour palette for iconic methods
 }

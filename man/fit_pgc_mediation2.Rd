@@ -64,11 +64,11 @@ Strategy (three stages):
 \code{Z_hat = fitted(Z ~ G1 + W_hat_Z + C)}.
 Weak-IV check: partial F for G1 >= \code{min_f}.
 \item \strong{Bridge for M} (purge U_MY from M):
-\code{M_resid = residuals(M ~ Z_hat + C)} \link{\code{gm = NULL}}, or
-\code{M_resid = residuals(M ~ Gm + C)} \link{\code{gm} supplied};
+\code{M_resid = residuals(M ~ Z_hat + C)} (\code{gm = NULL}), or
+\code{M_resid = residuals(M ~ Gm + C)} (\code{gm} supplied);
 \code{W_hat_M = bridge(M_resid ~ W2)} (fitted values, proxy for U_MY);
-\code{M_hat = fitted(M ~ Z_hat + W_hat_M + C)} \link{\code{gm = NULL}}, or
-\code{M_hat = fitted(M ~ Z_hat + Gm + W_hat_M + C)} \link{\code{gm} supplied};
+\code{M_hat = fitted(M ~ Z_hat + W_hat_M + C)} (\code{gm = NULL}), or
+\code{M_hat = fitted(M ~ Z_hat + Gm + W_hat_M + C)} (\code{gm} supplied);
 \code{alpha_M = coefficient on Z_hat}.
 \item \strong{Outcome}:
 \code{Y ~ Z_hat + M_hat + W_hat_Z + W_hat_M + C};
@@ -84,7 +84,7 @@ PGC-2's bridge absorbs U_MY regardless of the instrument violation.  The
 tipping-point simulation maps where PGC-2 bias crosses below IV2SLS2 bias.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
                                   rho_G2 = 0.3, separate_U = TRUE,

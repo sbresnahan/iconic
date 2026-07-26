@@ -127,7 +127,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_unadj_surv(dat$surv_time, dat$surv_event, dat$Z)
@@ -178,7 +178,7 @@ fit_unadj_surv <- function(time, event, Z, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_direct_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W[, 1])
@@ -238,7 +238,7 @@ fit_direct_surv <- function(time, event, Z, g, w, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_iv2sls_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W[, 1])
@@ -307,7 +307,7 @@ fit_iv2sls_surv <- function(time, event, Z, g, w, covars = NULL, min_f = 10,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_pgc_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W)
@@ -383,7 +383,7 @@ fit_pgc_surv <- function(time, event, Z, g, W, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_coca_surv(dat$surv_time, dat$surv_event, dat$Z, dat$W[, 1])

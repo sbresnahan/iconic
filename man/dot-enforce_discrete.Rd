@@ -8,7 +8,7 @@
 }
 \description{
 After de-normalisation, columns flagged as binary are rounded to the nearest
-of {0, 1}. Within each one-hot group, the column with the highest
+of \eqn{{0, 1}}. Within each one-hot group, the column with the highest
 pre-rounding value wins (set to 1, others to 0), preserving the constraint
 that exactly one level is active per row.
 }

@@ -69,7 +69,7 @@ test cross-validates this estimator's NDE and beta_M against
 (\code{Y ~ Z + M + W | G + Gm + W}).
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
                                   phi = 0.8, seed = 1)

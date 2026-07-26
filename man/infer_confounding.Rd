@@ -41,7 +41,7 @@ use when \code{confounding = "inferred"}.
 \item \strong{conf_strength} (delta): the gap between the unadjusted
 OLS estimate and the IV2SLS estimate, averaged across features.
 Requires a valid exposure instrument G (F >= 10).  Assumes the
-exclusion restriction holds — using IV2SLS validity to calibrate
+exclusion restriction holds -- using IV2SLS validity to calibrate
 a benchmark that tests IV2SLS validity is circular, so the
 estimate should be interpreted as a best-case calibration.
 \item \strong{mo_confounding} (delta_mo): the gap between the
@@ -50,7 +50,7 @@ Requires valid G + Gm (both F >= 10).  Same circularity caveat.
 \item \strong{omega} (omega_1, omega_2): the square root of the
 R-squared from regressing each negative-control feature on the
 outcome residualized on Z + C, averaged across features.
-Conflates NC coverage with confounder strength — reported as a
+Conflates NC coverage with confounder strength -- reported as a
 composite, not pure coverage.
 \item \strong{k}: the number of latent confounders, estimated via
 parallel analysis (Horn, 1965) on the correlation matrix of
@@ -78,7 +78,7 @@ value was not inferred from their data.
 }
 
 \examples{
-\dontrun{
+\donttest{
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
                     M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
                     W = matrix(rnorm(100*10), 10, 100))

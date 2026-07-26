@@ -30,15 +30,13 @@ simply delegates to \code{\link[=iconic_data]{iconic_data()}}.
 }
 }
 \examples{
-\dontrun{
 # From a load_real_input_data() result
 input <- load_real_input_data(example = TRUE)
 data <- as_iconic_data(input)
 print(data)
 
 # From named components (delegates to iconic_data())
-data <- as_iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
+data <- as_iconic_data(rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
                        G = rnorm(100), Gm = rnorm(100),
                        W = matrix(rnorm(100*10), 10, 100))
-}
 }

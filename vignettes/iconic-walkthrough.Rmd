@@ -10,7 +10,7 @@ vignette: >
   %\VignetteIndexEntry{ICONIC Walkthrough}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-subtitle: Model selection, simulation, and sensitivity analysis for observational omics
+subtitle: Model selection, sensitivity analysis, and prospective design for observational omics
 ---
 
 ```{r setup, include=FALSE}
@@ -27,1556 +27,244 @@ library(iconic)
 
 `iconic` is a workbench for causal inference in observational omics studies
 where unmeasured confounding biases ordinary regression. The motivating
-application is estimating the causal effect of gestational diabetes mellitus
-(GDM) on placental transcription, but the framework generalizes to any study
-with genetic instruments and/or negative controls.
+application is estimating the causal effect of an exposure (e.g. gestational
+diabetes mellitus) on a panel of molecular outcomes (e.g. placental
+transcriptome), using genetic instruments and negative controls to identify
+the effect.
 
-The package provides:
+The package fits eight estimators of the natural direct and indirect effects
+(NDE / NIE), diagnoses which are valid for *your* data, stress-tests them
+against confounding and pleiotropy violations, and recommends the one most
+likely to be unbiased. A generative texture model (hybrid GAN + copula) lets
+the sensitivity analysis mirror the marginal and joint structure of your
+cohort instead of relying on generic simulation defaults.
 
-1. **Eight causal estimators** (including an unadjusted reference), each
-   leaning on a different identifying assumption — a genetic instrument, a panel
-   of negative-control outcomes, or both.
-2. A **generative pipeline** that trains a hybrid texture model — a
-   sample-level GAN for covariates/exposure/outcome plus a feature-level
-   Gaussian copula for the mediator panel — on *your real dataset* and
-   produces realistic in-silico data with a known ground-truth effect, so you
-   can benchmark estimators on data that looks like yours.
-3. A **sensitivity analysis** that sweeps confounding scenarios and reports
-   which estimator to trust and whether your negative controls remain valid.
-4. **Mediation estimators** for natural direct (NDE) and natural indirect
-   (NIE) effects, with benchmarking under mediator-outcome confounding.
-5. **Pleiotropy and instrument-strength diagnostics** for benchmarking under
-   exclusion-restriction violations and weak instruments, plus empirical
-   negative-control validity screens with FDR control.
+This vignette walks through the core workflow on simulated data. The
+statistical theory -- the eight estimators, the negative-control assumptions
+(A1, A2, A2'), the completeness condition, the sensitivity surface, and the
+model-selection criterion -- is developed in full in the accompanying
+manuscript and technical supplement.
 
-The statistical theory — structural causal model, identification conditions,
-estimator derivations — is documented in the accompanying manuscript. This
-vignette focuses on how to use the package.
+# Quick start
 
----
+The workflow is six steps:
 
-# Model selection on your own data
+1. **Standardize** your data with `iconic_data()`.
+2. **Diagnose** which estimators are eligible with `iconic_diagnose()`.
+3. **Estimate** the NDE/NIE with all eligible estimators via `iconic_estimate()`.
+4. **Stress-test** robustness with `iconic_sensitivity()`.
+5. **Recommend** a single estimator with `iconic_recommend()`.
+6. **Prospect** for future studies with `iconic_prospect()`.
 
-ICONIC provides a four-step workflow for choosing the right causal estimator
-for your data: diagnose, estimate, stress-test, and recommend.
+We illustrate on a simulated mediation panel with a genetic instrument (`G`),
+an exposure (`Z`), a mediator panel (`M`), an outcome panel (`Y`), and a panel
+of negative controls (`W`).
 
-1. **Diagnose** (`iconic_diagnose()`) — check instrument strength (partial
-   F-statistics), negative-control validity (A1/A2/A2' screens with BH-FDR
-   control), and path completeness. Returns an eligibility table for all
-   eight estimators.
-2. **Estimate** (`iconic_estimate()`) — fit all eligible estimators on your
-   real data. Returns per-feature (and per-mediator) NDE, NIE, SE, and
-   p-values.
-3. **Stress-test** (`iconic_sensitivity()`) — map the degradation surface:
-   how each estimator's bias changes as instrument-independence assumptions
-   are violated. The surface is calibrated to your sample size, covariate
-   texture (via an auto-trained hybrid GAN + copula model), and confounding
-   parameters (which can be inferred from the data via `infer_confounding()`).
-4. **Recommend** (`iconic_recommend()`) — rank eligible estimators by
-   identification strength (tier A: identified, B: negative-control, C:
-   instrument-based, D: bias reference) and robustness. Returns the
-   top-ranked estimator with justification.
+```{r workflow-data}
+set.seed(1)
+dat <- generate_toy_data(n = 200, n_features = 10, seed = 1)
 
-## Step 1: Standardize your data
-
-All matrices are stored as features x samples (rows = features, cols =
-samples). If you pass samples x features, ICONIC auto-transposes.
-
-```r
-library(iconic)
-
-# Example with all inputs (exposure, outcome, mediator, instruments, NCs)
-data <- iconic_data(
-  Z = my_exposure,           # numeric vector, one per sample
-  Y = my_outcomes,           # features x samples matrix (or vector)
-  M = my_mediator,           # features x samples matrix (or vector)
-  G = my_prs,      # genetic instrument (e.g. PRS)
-  Gm = my_eqtls,             # mediator instrument (e.g. cis-eQTLs)
-  W = my_negative_controls,  # features x samples matrix
-  covariates = my_covariates # data frame (n rows)
+# Assemble an iconic_data object. Y and M are features x samples matrices;
+# Z is a length-n vector; G is an n x n_snps matrix; W is an n x n_ncs matrix.
+idat <- iconic_data(
+  Z = dat$Z, Y = dat$Y, M = dat$M,
+  G = dat$G, W = dat$W,
+  covariates = dat$synthetic_data
 )
-print(data)
 ```
 
-When only `W` is supplied (single-panel NCs), ICONIC sets `W1 = W2 = W` for
-backward compatibility with the single-panel estimators (COCA, PGC). To use
-the path-specific estimators (PGC2, PGC2Gm), supply `W1` and `W2` separately.
+# Step 1: Diagnose
 
-You can optionally attach a pre-trained texture model via
-`trained_gan = my_gan`. This avoids retraining when the same data is used
-across multiple workflow steps (e.g. sensitivity + prospective analysis). If
-omitted, `iconic_sensitivity()` and `iconic_prospect()` will auto-train a
-generative model from your data on first use.
+`iconic_diagnose()` reports instrument strength (partial F for `G` and `Gm`),
+negative-control validity screens (A1, A2, A2'), completeness, and an
+eligibility table for all eight estimators.
 
-## Step 2: Diagnose — which estimators are valid?
-
-```r
-diag <- iconic_diagnose(data)
-print(diag)
-# Reports instrument strength (partial F for G and Gm),
-# NC validity screens (A1, A2, A2'), completeness, and
-# an eligibility table for all 8 estimators.
+```{r workflow-diagnose}
+diag <- iconic_diagnose(idat)
+diag$eligibility
 ```
 
-`iconic_diagnose()` computes the partial F-statistic for every instrument
-and every mediator in the panel (not just the first). The full distributions
-are stored at `diag$instrument_strength$F_G` and
-`diag$instrument_strength$F_Gm` (numeric vectors, one entry per
-instrument/mediator), so you can inspect the spread of instrument quality
-across the panel — e.g. a histogram of eQTL strengths, or the fraction
-clearing a given threshold.
+Each estimator is marked eligible only when its required assumptions are
+met. For example, `IV2SLS` requires a valid instrument (F >= 10), while
+`PGC` additionally requires negative-control completeness.
 
-### Panel-level instrument gating
+# Step 2: Estimate
 
-By default, eligibility uses the legacy scalar rule: an instrument-dependent
-method is eligible if the **median** partial F across the panel meets
-`min_f` (Stock-Yogo threshold, default 10). This preserves backward
-compatibility for single-instrument analyses.
+`iconic_estimate()` fits every eligible estimator and returns per-feature
+NDE, NIE, standard error, and p-value.
 
-For mediator panels with heterogeneous instrument quality (e.g. cis-eQTLs
-whose strength varies across transcripts), the scalar median can be
-misleading — a strong median may hide a large fraction of weak
-instruments. The `g_threshold` and `gm_threshold` arguments let you gate
-eligibility on the **distribution** instead:
-
-```r
-# Eligible if >= 50% of transcripts have F_Gm >= 10
-diag <- iconic_diagnose(data,
-  gm_threshold = list(E = 0.5, R = 10))
-print(diag)
-# Gm (mediator instrument): median F = 4.5, 16% of 9300 transcripts >= 10
-#   (BELOW E) (E threshold: 50%)
-# Eligible estimators: 3/8  (UNADJ, DIRECT, COCA)
-```
-
-- **R** = the per-transcript F cutoff (how strong is "strong enough" for one
-  instrument?).
-- **E** = the fraction of transcripts that must clear R for the method to be
-  eligible at all (how much of the panel needs to be well-instrumented?).
-
-The decision is `weak = (mean(F >= R) < E)`. When the threshold is not met,
-Gm-dependent methods (IV2SLS2, PGC2Gm) are marked ineligible. The same
-logic applies symmetrically to G via `g_threshold` (useful when G is a
-matrix of multiple instruments). When a threshold is `NULL` (the default),
-the legacy scalar rule (median F vs `min_f`) is used.
-
-### Inspecting the distribution
-
-```r
-fgm <- diag$instrument_strength$F_Gm   # length-9300 numeric vector
-summary(fgm)
-#    Min.  1st Qu.  Median    Mean  3rd Qu.    Max.
-#  0.000   0.800    4.500    9.200   12.400  1850.0
-
-# Pass fractions at common thresholds
-for (R in c(3, 5, 10, 20))
-  cat(sprintf("  F_Gm >= %2d: %5.1f%%\n", R,
-              100 * mean(fgm >= R, na.rm = TRUE)))
-```
-
-This lets you choose E and R informed by the actual distribution rather than
-guessing.
-
-The eligibility rules are:
-
-| Estimator | Requires |
-|-----------|----------|
-| UNADJ | always eligible |
-| DIRECT | G + W |
-| COCA | W, valid NCs (A2 screen) |
-| IV2SLS | G, $F_G$ meets threshold, W |
-| PGC | G, $F_G$ meets threshold, completeness satisfied |
-| IV2SLS2 | G + Gm + W, $F_G$ and $F_{Gm}$ meet thresholds |
-| PGC2 | G + W1/W2, $F_G$ meets threshold, path completeness |
-| PGC2Gm | G + Gm + W1/W2, $F_G$ meets threshold, path completeness |
-
-"Meets threshold" means either median F $\geq$ `min_f` (legacy scalar, default)
-or the E/R panel rule (when `g_threshold`/`gm_threshold` is supplied).
-
-## Step 3: Estimate — fit all eligible estimators
-
-```r
-est <- iconic_estimate(data, diagnosis = diag)
+```{r workflow-estimate}
+est <- iconic_estimate(idat)
 head(est)
-# Per-feature NDE, NIE, SE, p-value
-# for each eligible method.
 ```
 
-If `diagnosis` is supplied, only eligible estimators are run. You can
-override with `methods = c("IV2SLS", "PGC")` to run specific estimators
-regardless of eligibility.
-
-### Per-transcript weak-instrument gate (`min_f`)
-
-Even when a method is eligible, individual transcripts whose instrument is
-too weak receive `NA` rather than a biased estimate. The per-transcript
-cutoff is controlled by `min_f`, which is **inherited from the diagnosis**
-when not explicitly set:
-
-```r
-# Diagnose with min_f = 3; estimate inherits it automatically
-diag <- iconic_diagnose(data, min_f = 3)
-est  <- iconic_estimate(data, diagnosis = diag)   # uses min_f = 3
-
-# Override with an explicit value
-est  <- iconic_estimate(data, diagnosis = diag, min_f = 10)
-```
-
-When no diagnosis is supplied and `min_f` is not set, it defaults to 10
-(Stock-Yogo). Transcripts with F < `min_f` return `NA` for NDE/NIE; those
-that pass get an estimate. This is separate from the eligibility decision:
-eligibility gates whether the method runs at all; `min_f` gates which
-transcripts get non-NA results.
-
-### Forcing all methods (`run_all`)
-
-```r
-# Run every method whose required data exists, ignoring F thresholds
-est <- iconic_estimate(data, run_all = TRUE, min_f = 10)
-```
-
-`run_all = TRUE` overrides diagnosis-based eligibility, running every method
-for which the required inputs (G, Gm, W, etc.) are present. The per-transcript
-`min_f` gate still applies. This is useful for exploratory analysis where you
-want to see all estimates and judge instrument quality yourself.
-
-### Standard errors and p-values (`se_method`)
-
-ICONIC offers three methods for computing the standard error and p-value of
-the natural indirect effect (NIE = $\alpha_M \times \beta_M$):
-
-| `se_method` | NIE SE | NIE p-value | Speed | When to use |
-|---|---|---|---|---|
-| `"delta"` (default) | Delta-method (product formula) | Sobel / Wald z-test | Fast | General-purpose; conservative under sparse signals |
-| `"bootstrap"` | Nonparametric bootstrap SD (`n_boot` resamples) | Wald z-test with bootstrap SE | Slow | When delta-method normality is in doubt; CI construction |
-| `"composite"` | Delta-method (unchanged) | Huang (2019) JT-comp composite null test | Fast | When signals are sparse and Sobel is too conservative |
-
-```r
-# Default: delta-method SE + Sobel p-value
-est <- iconic_estimate(data, diagnosis = diag, se_method = "delta")
-
-# Bootstrap SE (slower; use for CI construction)
-est <- iconic_estimate(data, diagnosis = diag, se_method = "bootstrap",
-                       n_boot = 500)
-
-# Composite null p-value (JT-comp; higher power under sparse signals)
-est <- iconic_estimate(data, diagnosis = diag, se_method = "composite")
-```
-
-**Why three options?** The NIE is a *product* of two coefficients
-($\hat\alpha_M$ and $\hat\beta_M$). The null $H_0: \alpha_M \beta_M = 0$ is
-*composite* — it holds if either coefficient is zero. The Sobel (delta) test
-approximates the product as normal, which is only valid when one coefficient
-is nonzero and the other is zero (the "partial null" cases). When *both* are
-zero (the "point null" or sparse-signal case), the product follows a normal
-*product* distribution, not a normal, making the Sobel test conservative.
-
-The **JT-comp** test (Huang 2019) accounts for all three null cases via a
-closed-form p-value based on the normal product distribution CDF:
-
-$$\hat p_{\text{comp}} = F\!\left(\frac{ab}{\sqrt{\widehat{\text{Var}}(a)}}\right)
-+ F\!\left(\frac{ab}{\sqrt{\widehat{\text{Var}}(b)}}\right) - F(ab)$$
-
-where $a = \hat\alpha_M / \text{SE}(\hat\alpha_M)$ and
-$b = \hat\beta_M / \text{SE}(\hat\beta_M)$ are the standardized
-z-statistics, $\widehat{\text{Var}}(a)$ and $\widehat{\text{Var}}(b)$ are
-their variances across the collection of tests, and $F(z)$ is the CDF of the
-standard normal product distribution. The variances are estimated per
-estimator across all tests sharing that estimator — i.e., across mediators
-(and outcome features, when present) within each method. When fewer than 5
-tests are available, the point-null value $\text{Var} = 1$ is used.
-
-**When `se_method = "composite"`:**
-
-- `NIE_se` is unchanged (delta-method SE, used for CI construction).
-- `NDE_p` is unchanged (the NDE is a single coefficient, not a product).
-- Only `NIE_p` is replaced by the JT-comp composite p-value.
-- The output includes `var_a` and `var_b` columns for transparency.
-
-**Limitations of the composite test:**
-
-- The JT-comp test cannot distinguish the partial-null case
-  $H_0^{(2)}: \alpha \neq 0, \beta = 0$ from the alternative when
-  $\alpha_M$ is large, because the product $ab$ can be large even when
-  $b \sim N(0, 1)$. This inflates type I error under $H_0^{(2)}$ for
-  estimators with strong stage-1 instruments. The Sobel/delta test
-  handles $H_0^{(2)}$ correctly via the delta-method SE. When
-  $\alpha_M$ is expected to be nonzero and signals are not sparse,
-  `"delta"` may therefore be preferable; `"composite"` is most
-  beneficial when signals are sparse (the point-null $H_0^{(1)}$ is
-  the dominant case).
-- The JT-comp approximation is valid when $\text{Var}(a), \text{Var}(b) < 1.5$
-  (approximately $n < 2000$ with sparse signals). ICONIC clamps variances
-  to $[1, 1.5]$ to enforce this.
-- Type I error is slightly inflated at small p-values (e.g., $\sim$15× at
-  the genome-wide significance level $5 \times 10^{-7}$), as documented by
-  Huang (2019) and Du et al. (2023). At conventional thresholds
-  ($\alpha = 0.05$), the inflation is modest.
-
-## Step 4: Stress-test — how robust is each estimator?
-
-```r
-# n_iter = 10 for fast vignette rendering; use 50+ in practice.
-sens <- iconic_sensitivity(data, diagnosis = diag, n_iter = 10)
-print(sens)
-# Degradation surface: bias vs instrument exogeneity violations.
-# Tipping points: first rho_G2 (at rho_G1 = 0) where |bias| > 0.10.
-# Texture: auto-trained hybrid GAN + copula from data.
-```
-
-The surface sweeps a 2D grid of instrument-independence violations
-($rho_{G1}$ x $rho_{G2}$), calibrated to your sample size and confounding
-level. See the example walkthrough below for sample output.
-
-### Auto-trained texture model
-
-`iconic_sensitivity()` auto-trains a hybrid generative texture model from
-your `iconic_data` object. The model has two independently trained
-components: a sample-level torch GAN that learns the joint distribution of
-per-sample exposure, outcome, mediator level, and encoded covariates, and a
-feature-level Gaussian copula that learns the full joint distribution of the
-mediator (M) panel — marginal distributions (empirical CDF by default, with
-parametric fallback via KS test) and cross-feature dependence. The
-`texture_source` field in the return object reports how the texture model was
-obtained:
-
-- `"auto-trained from data"` — trained on first call (default)
-- `"data-attached GAN"` — reused from `iconic_data(trained_gan = ...)`
-- `"user-supplied GAN"` — passed via the `trained_gan` argument
-
-The `torch` package is required (it is a hard dependency of `iconic`).
-
-To reuse a pre-trained model across multiple calls, attach it at
-construction:
-
-```r
-gan <- train_gan_on_real_data(my_training_frame, epochs = 300)
-data <- iconic_data(Z = my_Z, Y = my_Y, ..., trained_gan = gan)
-# Now iconic_sensitivity(data) reuses the attached GAN without retraining.
-```
-
-### Data-calibrated confounding parameters
-
-The `confounding` argument controls how the held-fixed confounding parameters
-(`mo_confounding`, `omega_1`, `omega_2`) are set:
-
-- `confounding = "default"` (default): fixed defaults (0.8, 0.7, 0.7).
-- `confounding = "inferred"`: calls `infer_confounding()` to estimate
-  parameters from the data. Parameters that cannot be inferred fall back to
-  defaults with warnings.
-- `confounding = "manual"`: use the explicitly supplied `mo_confounding`,
-  `omega_1`, `omega_2` arguments.
-
-```r
-# Use data-inferred confounding parameters
-sens <- iconic_sensitivity(data, diagnosis = diag,
-                           confounding = "inferred", n_iter = 50)
-print(sens$inferred_confounding)  # shows inferred values and warnings
-```
-
-See [Data-calibrated confounding
-parameters](#data-calibrated-confounding-parameters) for details.
-
-## Step 5: Recommend — which model should you trust?
-
-```r
-rec <- iconic_recommend(data, diagnosis = diag,
-                        estimate = est, sensitivity = sens)
-print(rec)
-# Recommended estimator with tier, point estimates, and robustness score.
-```
-
-Estimators are ranked by tier (A > B > C > D) and, within tier, by robustness
-(lower max |bias| across the violation surface = higher rank).
-
----
-
-# Prospective analysis: what if you don't have instruments yet?
-
-If you have exposure, mediator, and outcome data but no instruments or
-negative controls, ICONIC can show you how your estimates would change if you
-added them.
-
-```r
-data <- iconic_data(Z = my_exposure, Y = my_outcomes, M = my_mediator)
-prospect <- iconic_prospect(data, n_iter = 50)
-print(prospect)
-# Phase 1: strength surface — how estimates converge as gamma_G increases.
-# Phase 2: prospective simulation at target strength
-#           if you collected an instrument of that quality.
-# Reports F-statistics and recommends
-# which estimator would be best.
-# Texture: auto-trained from data .
-```
-
-`iconic_prospect()` also auto-trains a hybrid texture model (GAN + copula)
-from your data and supports the `confounding` argument. In the prospective
-setting (no instruments or NCs), most confounding parameters cannot be
-inferred and will fall back to defaults with warnings — this is an honest
-limitation, not a silent failure.
-
-This is useful for study design: before spending resources on genotyping or
-collecting negative controls, you can see whether the investment would change
-your conclusions.
-
----
-
-# Data-calibrated confounding parameters
-
-`infer_confounding()` estimates the held-fixed confounding parameters that
-`iconic_sensitivity()` and `iconic_prospect()` use, so the degradation
-surface is calibrated to your data rather than using fixed defaults.
-
-## What it infers
-
-| Parameter | Method | Requires | Assumption |
-|-----------|--------|----------|------------|
-| `conf_strength` ($\delta$) | UNADJ–IV2SLS gap | valid G ($F \ge 10$) | exclusion |
-| `mo_confounding` ($\delta_{mo}$) | IV2SLS–IV2SLS2 NIE gap | valid G + Gm | exclusion |
-| `omega_1`, `omega_2` | $\sqrt{R^2}$ of W on resid. Y | W (neg. controls) | valid NCs |
-| `k` | parallel analysis (Horn, 1965) | $\ge 5$ features | factor model |
-
-$\rho_{G1}$ and $\rho_{G2}$ (instrument–confounder correlations) are
-unestimable because $U$ is unobserved. These always remain sweep variables in
-the degradation surface.
-
-The inference uses estimator validity to calibrate a benchmark whose purpose
-is to test estimator validity — this is circular. The inferred values should
-be interpreted as best-case calibrations under the stated assumptions, not as
-ground truth. The `confounding = "default"` mode avoids this circularity
-entirely and remains the recommended starting point.
-
-## Usage
-
-```r
-# Standalone: inspect inferred parameters before using them
-diag <- iconic_diagnose(data)
-est  <- iconic_estimate(data, diagnosis = diag)
-conf <- infer_confounding(data, diagnosis = diag, estimate = est)
-print(conf)
-# <iconic_confounding>
-#   conf_strength     0.041  (UNADJ-IV2SLS gap (NDE))
-#     warning: inferred delta is very low; ...
-#   mo_confounding    0.077  (IV2SLS-IV2SLS2 NIE gap)
-#   omega_1           0.073  (sqrt(R²) of W on Y residualized on Z+C)
-#     warning: composite: coverage × confounder strength, not pure coverage
-#   omega_2           0.749  (sqrt(R²) of W on Y residualized on Z+C)
-#     warning: composite: coverage × confounder strength, not pure coverage
-#   k                 1 [CI: 1, 2]  (parallel analysis (Horn, 1965))
-#   Unavailable: rho_G1, rho_G2
-
-# Integrated: pass confounding = "inferred" to iconic_sensitivity()
-sens <- iconic_sensitivity(data, diagnosis = diag,
-                           confounding = "inferred", n_iter = 50)
-# sens$inferred_confounding contains the same object
-# sens$omega_1, sens$omega_2 reflect the inferred values
-```
-
-Each parameter slot reports its `estimate`, `method`, `assumption`,
-`available` (logical), and `warning` (character or NULL). Parameters that
-cannot be inferred (missing instruments, NCs, or insufficient features) are
-marked `available = FALSE` and fall back to defaults.
-
----
-
-# Example walkthrough: the full workflow on simulated data
-
-This section demonstrates the complete workflow on a small simulated dataset,
-with real output so you can see what each step produces. The parameters are
-kept small for fast execution; in practice you would use `n_iter = 30–50`
-and larger grids.
-
-## Step 1: Create an iconic_data object
-
-We generate a mediation dataset with M-O confounding, two instruments (G, Gm),
-and path-specific negative controls (W1, W2):
-
-```{r walkthrough-step1}
-library(iconic)
-set.seed(42)
-
-dat <- generate_toy_data(n = 200, n_features = 10, mo_confounding = 0.8,
-                         phi = 0.8, separate_U = TRUE,
-                         omega_1 = 0.7, omega_2 = 0.7, seed = 42)
-idata <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
-                     G = dat$G[, 1], Gm = dat$Gm,
-                     W1 = dat$W1, W2 = dat$W2)
-print(idata)
-```
-
-The data object reports 200 samples, 10 outcome features, 1 mediator, and all
-identifying resources present (G, Gm, W, W1/W2).
-
-## Step 2: Diagnose — which estimators are eligible?
-
-```{r walkthrough-step2}
-diag <- iconic_diagnose(idata)
-print(diag)
-```
-
-Both instruments are strong (partial F = 174.1 for G, 1725.7 for Gm). The A2
-and A2' screens pass (all 10 controls valid), and completeness is satisfied
-(10 valid NCs vs k=1). All 8 estimators are eligible.
-
-The full instrument-strength distributions are available at
-`diag$instrument_strength$F_G` and `diag$instrument_strength$F_Gm` (numeric
-vectors). With a single mediator here, each is length 1; with a mediator
-panel (see below), they contain one entry per transcript.
-
-### Panel-level gating with heterogeneous instrument quality
-
-When the mediator panel has many transcripts, each with its own
-mediator-instrument (e.g. one cis-eQTL per isoform), instrument strength
-varies across the panel. The scalar median can hide a large fraction of
-weak instruments. The `gm_threshold = list(E, R)` argument gates eligibility
-on the distribution: a Gm-dependent method is eligible if at least fraction
-`E` of transcripts have partial F >= `R`.
-
-```{r walkthrough-step2b}
-# Build a multi-mediator panel where eQTL strength varies
-set.seed(7)
-n <- 200; nm <- 50
-G <- rnorm(n)
-Z <- 0.3 * G + rnorm(n, 0, 0.9)
-# Strong eQTLs for the first 25 mediators, weak for the rest
-Gm_mat <- matrix(NA, nm, n)
-M_mat  <- matrix(NA, nm, n)
-for (m in 1:nm) {
-  gm_m <- if (m <= 25) rnorm(n) else rnorm(n, 0, 0.3)
-  Gm_mat[m, ] <- gm_m
-  M_mat[m, ]  <- 0.5 * gm_m + 0.2 * Z + rnorm(n, 0, 0.7)
-}
-Y <- 0.1 * Z + 0.3 * M_mat[1, ] + rnorm(n, 0, 0.8)
-W  <- matrix(rnorm(10 * n), 10, n)
-
-idata2 <- iconic_data(Z = Z, Y = matrix(Y, 1), M = M_mat,
-                      G = G, Gm = Gm_mat, W = W)
-
-# Legacy scalar rule: median F_Gm vs min_f (default 10)
-diag_scalar <- iconic_diagnose(idata2)
-cat("Scalar rule:\n")
-print(diag_scalar)
-
-# Panel rule: eligible if >= 50% of transcripts have F_Gm >= 10
-diag_panel <- iconic_diagnose(idata2,
-  gm_threshold = list(E = 0.5, R = 10))
-cat("\nPanel rule (E=50%, R=10):\n")
-print(diag_panel)
-
-# Inspect the full distribution
-fgm <- diag_panel$instrument_strength$F_Gm
-cat("\nF_Gm distribution (", length(fgm), " mediators):\n", sep = "")
-print(summary(fgm))
-for (R in c(3, 5, 10))
-  cat(sprintf("  F_Gm >= %2d: %5.1f%%\n", R,
-              100 * mean(fgm >= R, na.rm = TRUE)))
-```
-
-Under the scalar rule, the median F_Gm is high (the strong half dominates the
-median), so IV2SLS2 is eligible — but the 25 weak-eQTL transcripts will
-produce `NA` estimates at the per-transcript gate. Under the panel rule with
-E=50%, R=10, only ~50% of transcripts clear R=10, so the method is on the
-eligibility boundary. Lowering R to 5 or E to 0.4 would make it clearly
-eligible; the choice depends on how much weak-instrument bias you're willing
-to tolerate. The distribution summary lets you pick E and R informed by the
-actual spread of eQTL strengths.
-
-## Step 3: Estimate — fit all eligible estimators
-
-```{r walkthrough-step3}
-est <- iconic_estimate(idata, diagnosis = diag)
-head(est, 8)
-cat("True NDE =", dat$true_NDE, "  True NIE =", dat$true_NIE, "\n")
-```
-
-The true NDE = 0.10 and NIE = 0.15. IV2SLS2 (NDE = 0.123) and PGC2Gm (NDE =
-0.107) are closest to the true NDE, while UNADJ (NDE = 0.067) and COCA (NDE =
--0.226) are substantially biased — as expected under M-O confounding.
-
-Two optional arguments control which transcripts get estimates:
-
-- `min_f` (default 10): the per-transcript weak-instrument gate. Transcripts
-  whose instrument F falls below this value receive `NA` for that method.
-  Lower it (e.g. `min_f = 3`) to keep weak-instrument transcripts at the cost
-  of potential weak-IV bias.
-- `run_all` (default FALSE): when TRUE, overrides diagnosis eligibility and
-  runs every method whose required data exists. The per-transcript `min_f`
-  gate still applies.
-
-```r
-# Exploratory: run all methods, keep transcripts with F >= 3
-est_all <- iconic_estimate(idata2, run_all = TRUE, min_f = 3)
-```
-
-## Step 4: Infer confounding parameters
-
-```{r walkthrough-step4}
-conf <- infer_confounding(idata, diagnosis = diag, estimate = est)
-print(conf)
-```
-
-The inferred `conf_strength` is low (0.041) because the strong instrument (F =
-174) already removes most of the confounding bias that UNADJ carries — the gap
-between UNADJ and IV2SLS is small. The `omega_2` estimate (0.749) is close to
-the true coverage (0.7), while `omega_1` is low (0.073) because W1's
-correlation with the residualized outcome is weak in this particular draw. The
-`k` estimate (1, CI: [1, 2]) correctly identifies a single latent confounder.
-The warnings flag the circularity and composite-measure caveats.
-
-## Step 5: Sensitivity analysis with auto-trained GAN
-
-```{r walkthrough-step5}
-sens <- iconic_sensitivity(idata, diagnosis = diag,
-                           rho_G1_grid = c(0, 0.3),
-                           rho_G2_grid = c(0, 0.3),
-                           n_iter = 5, n_features = 3,
-                           gan_epochs = 20)
-print(sens)
-```
-
-The texture model was auto-trained from the data (sample-level GAN +
-feature-level Gaussian copula). The degradation surface shows that IV2SLS2
-and PGC2Gm are robust across the grid, while UNADJ and COCA tip immediately.
-The specific bias values depend on the learned texture; with the full
-manuscript settings (25 replicates, 5×5 grid), IV2SLS2 has max |NDE bias| =
-0.090 and PGC2Gm has max |NDE bias| = 0.124, so IV2SLS2 is the more robust
-estimator under the learned texture — the reverse of the toy-simulation
-benchmark (Figure 3), where PGC2Gm is more robust.
-
-### With inferred confounding parameters
-
-```{r walkthrough-step5b}
-sens_inf <- iconic_sensitivity(idata, diagnosis = diag,
-                               rho_G1_grid = c(0, 0.3),
-                               rho_G2_grid = c(0, 0.3),
-                               n_iter = 5, n_features = 3,
-                               confounding = "inferred", gan_epochs = 20)
-print(sens_inf)
-print(sens_inf$inferred_confounding)
-```
-
-When confounding parameters are inferred, the surface uses the data-calibrated
-values (mo_confounding = 0.077, omega_1 = 0.073, omega_2 = 0.749) instead of
-defaults (0.8, 0.7, 0.7). The lower mo_confounding reduces the bias of
-single-instrument methods, while the asymmetric omega values shift the
-degradation pattern. The `inferred_confounding` object is attached to the
-return value for transparency.
-
-## Step 6: Recommend — which estimator should you trust?
-
-```{r walkthrough-step6}
-rec <- iconic_recommend(idata, diagnosis = diag, estimate = est,
-                        sensitivity = sens)
-print(rec)
-```
-
-The recommended estimator is the one with the lowest worst-case bias across
-the degradation surface among the highest-tier eligible estimators. With the
-full manuscript settings, IV2SLS2 is recommended (tier A, max |bias| = 0.090)
-over PGC2Gm (tier A, max |bias| = 0.124). Both are identified estimators
-using two instruments plus path-specific NCs. The ranking reflects IV2SLS2's
-superior robustness under the learned data texture. Note that this ordering
-is the reverse of the toy-simulation benchmark (Figure 3), where PGC2Gm is
-the more robust estimator — the learned texture shifts the relative
-robustness of the two identified estimators.
-
-## Step 7: Prospective analysis (for data without instruments)
-
-For users who have Z, M, Y but no instruments or NCs, `iconic_prospect()`
-simulates what estimates they could expect if they collected such data:
-
-```{r walkthrough-step7}
-bare <- iconic_data(Z = rnorm(200), Y = matrix(rnorm(200 * 5), 5, 200),
-                    M = rnorm(200))
-prospect <- iconic_prospect(bare, gamma_G_grid = c(0.3, 0.6),
-                            n_iter = 5, n_features = 3, gan_epochs = 20)
-print(prospect)
-```
-
-Phase 1 shows UNADJ bias decreasing as the instrument strengthens, while
-IV2SLS2 and PGC2Gm remain near zero. Phase 2 reports prospective estimates at
-the target strength: with the full manuscript settings (25 replicates,
-$\gamma_G = 0.6$), the first-stage partial $F$-statistics are 264 for the
-exposure instrument and 136 for the mediator instrument, both well above the
-$F \geq 10$ threshold. The recommended estimator if instruments are collected
-is IV2SLS2.
-
----
-
-# Simulation and benchmarking functions
-
-The simulation functions are exposed for methodologists who want full control
-over the data-generating process and benchmarking. Most users will interact
-with `iconic_diagnose()`, `iconic_estimate()`, `iconic_sensitivity()`, and
-`iconic_recommend()` directly (see the sections above).
-
-## Running the mediation simulation
-
-```{r mediation-sim}
-# Generate one dataset with M-O confounding
-dat <- generate_toy_data(n = 300, n_features = 5,
-                                  mo_confounding = 0.8, seed = 42)
-cat("True NDE =", dat$true_NDE, "  True NIE =", dat$true_NIE, "\n")
-
-# Run all eligible mediation estimators
-res <- analyze_mediation_robust(dat)
-aggregate(NDE ~ method, res, function(v) round(mean(v, na.rm = TRUE), 3))
-aggregate(NIE ~ method, res, function(v) round(mean(v, na.rm = TRUE), 3))
-```
-
-For a proper benchmark with many replicates:
-
-```{r mediation-bench, eval=FALSE}
-# 100 replicates, 20 features, M-O confounding = 0.8
-bench <- run_mediation_sim(n_iter = 100, n_features = 20,
-                           mo_confounding = 0.8, n_cores = 4)
-bench$summary[, c("method", "NDE_bias", "NIE_bias",
-                     "NDE_rmse", "NIE_rmse")]
-```
-
-## Sweeping mediation parameters
-
-```{r mediation-sweep, eval=FALSE}
-# Sweep confounding strength
-sweep_conf <- sweep_mediation_param("conf_str", c(0.2, 0.4, 0.6, 0.8, 1.0),
-                                    n_iter = 50, mo_confounding = 0.8)
-
-# Sweep proxy quality
-sweep_omega <- sweep_mediation_param("w_signal",
-                                     c(0.2, 0.4, 0.6, 0.7, 0.8, 0.9),
-                                     n_iter = 50, mo_confounding = 0.8)
-
-# Sweep sample size (bias should NOT shrink — it's structural)
-sweep_n <- sweep_mediation_param("n_samples", c(100, 200, 500, 1000),
-                                 n_iter = 50, mo_confounding = 0.8)
-
-# Null Type I error across confounding strength
-null_t1e <- sweep_mediation_null_by_conf(
-    c(0.2, 0.4, 0.6, 0.8, 1.0), n_iter = 50)
-```
-
-## Two-stage MR mediation
-
-When a mediator-specific instrument $G_m$ is available (`phi > 0`), the
-2-stage MR estimator (IV2SLS2) instruments both $Z$ and $M$:
-
-```{r iv2sls2-demo}
-# Generate one dataset with M-O confounding AND a mediator instrument
-dat <- generate_toy_data(n = 500, n_features = 5,
-                                  mo_confounding = 0.8,
-                                  phi = 0.8, seed = 42)
-cat("True NDE =", dat$true_NDE, "  True NIE =", dat$true_NIE, "\n")
-cat("Gm present:", !is.null(dat$Gm), "\n")
-
-# Run all eligible mediation estimators (IV2SLS2 included because Gm is present)
-res <- analyze_mediation_robust(dat)
-aggregate(NDE ~ method, res, function(v) round(mean(v, na.rm = TRUE), 4))
-aggregate(NIE ~ method, res, function(v) round(mean(v, na.rm = TRUE), 4))
-```
-
-IV2SLS2 can also be called directly:
-
-```{r iv2sls2-direct, eval=FALSE}
-# Direct usage: fit_iv2sls_mediation2() with both instruments
-# w can be a vector (single NC) or a matrix (full NC panel)
-fit <- fit_iv2sls_mediation2(
-  y = dat$Y[, 1], Z = dat$Z, M = dat$M,
-  g = dat$G[, 1], gm = dat$Gm, w = dat$W
+The `se_method` argument controls standard errors (`"delta"` by default;
+`"bootstrap"` for confidence intervals) and the `p_value_method` argument
+controls the null-distribution p-value (`"sobel"` or `"jt-comp"` for higher
+power under sparse signals).
+
+# Step 3: Train a texture model once
+
+The sensitivity and prospective analyses use a generative texture model to
+simulate data that mirrors your cohort's marginal and joint structure. Train
+it **once** and attach it to the `iconic_data` object so every downstream
+function reuses it without retraining.
+
+```{r workflow-gan}
+# Build the training frame from the same data.
+input <- load_real_input_data(
+  Z_matrix = matrix(dat$Z, nrow = 1),
+  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
+  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
 )
-fit$NDE   # natural direct effect
-fit$NIE   # natural indirect effect
-```
 
-```{r iv2sls2-bench, eval=FALSE}
-# 50 replicates with mediator instrument
-bench <- run_mediation_sim(n_iter = 50, n_features = 10, n_samples = 500,
-                           mo_confounding = 0.8, phi = 0.8, n_cores = 4)
-bench$summary[, c("method", "NDE_bias", "NIE_bias",
-                     "NDE_rmse", "NIE_rmse")]
-```
-
-## Sweeping mediator-instrument strength
-
-The `phi` parameter controls the strength of the mediator instrument
-$G_m \to M$. Sweeping $\varphi$ from 0 to 1.0 shows IV2SLS2 bias converging
-to zero as the instrument strengthens:
-
-```{r phi-sweep, eval=FALSE}
-# Sweep mediator-instrument strength
-sweep_phi <- sweep_mediation_param("phi",
-                                   c(0, 0.2, 0.4, 0.6, 0.8, 1.0),
-                                   n_iter = 30, n_features = 10,
-                                   n_samples = 500,
-                                   mo_confounding = 0.8, n_cores = 4)
-# IV2SLS2 bias vs phi
-iv2sls2 <- sweep_phi$summary[sweep_phi$summary$method == "IV2SLS2", ]
-iv2sls2[, c("param_value", "NDE_bias", "NIE_bias", "NDE_rmse", "NIE_rmse")]
-```
-
-## Mediator-instrument independence check
-
-`nc_independence_check_gm()` tests whether the mediator instrument $G_m$ is
-independent of the negative controls (A2' screen):
-
-```{r gm-independence}
-# Generate a dataset with a mediator instrument
-dat <- generate_toy_data(n = 500, n_features = 10,
-                                  mo_confounding = 0.8,
-                                  phi = 0.8, seed = 1)
-
-# A2': Are any controls associated with the mediator instrument?
-gm_check <- nc_independence_check_gm(dat)
-head(gm_check)
-table(gm_check$verdict)
-```
-
-On simulation data, $G_m \perp W$ holds by construction, so all controls
-return "valid". On real data, controls that survive FDR correction should be
-dropped before running IV2SLS2 — they may carry eQTL or allele-specific
-effects that violate the mediator-instrument-independence assumption.
-
-When `dat$Gm` is absent (i.e. `phi = 0`), the function returns `NULL`:
-
-```{r gm-independence-absent, eval=FALSE}
-dat_no_gm <- generate_toy_data(n = 500, n_features = 10, seed = 1)
-nc_independence_check_gm(dat_no_gm)  # NULL: no mediator instrument
-```
-
-## Imperfect instrument independence
-
-`generate_toy_data()` supports parameters that violate instrument
-independence, modelling realistic genomic structure:
-
-| Parameter | Meaning | Default |
-|-----------|---------|---------|
-| `rho_G1` | Correlation of $G_1$ (exposure instrument) with $U_{XM}$ | 0 |
-| `rho_G2` | Correlation of $G_2$ (mediator instrument) with $U_{MY}$ | 0 |
-| `rho_pop` | Shared population structure $P$ inducing $G_1$–$G_2$ correlation | 0 |
-| `separate_U` | Draw separate confounders $U_{XM}$ and $U_{MY}$ for each path | FALSE |
-| `omega_1` | Coverage of $U_{XM}$ by path-specific NCs $W_1$ | NULL (= `w_signal`) |
-| `omega_2` | Coverage of $U_{MY}$ by path-specific NCs $W_2$ | NULL (= `w_signal`) |
-
-When any parameter is non-default, the output additionally includes
-`G1`, `G2`, `W1`, `W2`, `U_XM`, `U_MY`, and (when `rho_pop > 0`) `P`.
-
-## Demonstrating PGC-2
-
-`fit_pgc_mediation2()` uses path-specific negative controls to purge
-confounding at both the exposure and mediator stages. Unlike IV2SLS2, it does
-not require instrument exogeneity — the bridge absorbs the confounder
-regardless of instrument violation.
-
-```{r pgc2-demo}
-# Generate a dataset with imperfect independence, separate confounders
-dat <- generate_toy_data(n = 500, n_features = 5,
-                                  mo_confounding = 0.8, phi = 0.8,
-                                  rho_G1 = 0.3, rho_G2 = 0.3,
-                                  separate_U = TRUE,
-                                  omega_1 = 0.7, omega_2 = 0.7, seed = 42)
-cat("True NDE =", dat$true_NDE, "  True NIE =", dat$true_NIE, "\n")
-cat("W1 present:", !is.null(dat$W1),
-    "  W2 present:", !is.null(dat$W2), "\n")
-
-# Run all eight estimators
-# (PGC2, PGC2Gm included because W1/W2 are present)
-res <- analyze_mediation_robust(dat)
-aggregate(NDE ~ method, res, function(v) round(mean(v, na.rm = TRUE), 4))
-aggregate(NIE ~ method, res, function(v) round(mean(v, na.rm = TRUE), 4))
-```
-
-PGC-2 can also be called directly:
-
-```{r pgc2-direct}
-# Without mediator instrument (pure NC identification)
-fit_nc <- fit_pgc_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G1,
-                             dat$W1, dat$W2)
-cat("PGC2  NDE =", round(fit_nc$NDE, 4),
-    " NIE =", round(fit_nc$NIE, 4), "\n")
-
-# With (possibly imperfect) mediator instrument
-fit_gm <- fit_pgc_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G1,
-                             dat$W1, dat$W2, gm = dat$Gm)
-cat("PGC2Gm NDE =", round(fit_gm$NDE, 4),
-    " NIE =", round(fit_gm$NIE, 4), "\n")
-```
-
-## Sweeping the degradation surface
-
-The degradation surface sweeps both instrument exogeneity violations
-simultaneously ($\rho_{G1}$ and $\rho_{G2}$):
-
-```{r degradation-surface, eval=FALSE}
-# 2D sweep: both instrument exogeneity violations
-results <- data.frame()
-for (rg1 in c(0, 0.1, 0.2, 0.3, 0.5)) {
-  for (rg2 in c(0, 0.1, 0.2, 0.3, 0.5)) {
-    sweep_res <- sweep_mediation_param(
-      "rho_G2", rg2,
-      n_iter = 50, n_samples = 500, n_features = 10,
-      mo_confounding = 0.8, phi = 0.8, rho_G1 = rg1,
-      separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7)
-    smry <- sweep_res$summary
-    for (m in c("IV2SLS2", "PGC2Gm")) {
-      row <- smry[smry$method == m, ]
-      results <- rbind(results, data.frame(
-        rho_G1 = rg1, rho_G2 = rg2, method = m,
-        NDE_bias = row$NDE_bias, NIE_bias = row$NIE_bias))
-    }
-  }
-}
-```
-
----
-
-# The generative pipeline
-
-## Training a texture model
-
-The texture model is a hybrid of two independently trained components,
-trained by `train_gan_on_real_data()`:
-
-```{r train}
-# 1. Load real data as features x samples matrices + a covariate frame.
-#    Here we use the built-in example; swap in your own:
-#    load_real_input_data(Z_matrix = my_gdm, Y_matrix = my_expr,
-#                         covariates_df = my_meta)
-input <- load_real_input_data(example = TRUE)
-str(input, max.level = 1)
-
-# 2. Train the generator (requires torch).
-#    epochs = 20 for fast vignette rendering; use 100-300 in practice.
-gan <- train_gan_on_real_data(input$gan_training_data,
-                                 epochs = 20, seed = 1)
-gan
-```
-
-The model has two components:
-
-- **Sample-level GAN** (`torch`): an MLP generator and discriminator trained
-  with a non-saturating BCE objective, Adam ($\beta_1 = 0.5$), one-sided
-  label smoothing, and per-column normalization. This GAN learns the joint
-  distribution of per-sample exposure, outcome, mediator level, and encoded
-  covariates (one row per sample).
-- **Feature-level Gaussian copula** (`train_feature_texture()`): learns the
-  full joint distribution of the mediator (M) panel. Each feature's marginal
-  is fitted as an empirical CDF by default, with a parametric fallback
-  (normal, log-normal, gamma, or beta, selected by AIC) used when the
-  parametric fit passes a Kolmogorov-Smirnov test at $p > 0.05$. The user may
-  override via the `marginal_method` parameter (`"auto"`, `"empirical"`, or
-  `"parametric"`). Cross-feature dependence is captured by the Gaussian
-  copula correlation matrix of the normal-transformed scores. During
-  simulation, copula draws replace the parametric Gaussian noise in the
-  mediator structural equations, preserving realistic marginal shapes and
-  correlations from the user's cohort while maintaining the closed-form
-  ground truth.
-
-The `torch` package is a hard dependency (listed in `Imports`).
-`train_gan_on_real_data()` errors if `torch` is unavailable.
-
-We can inspect fidelity — real vs. synthetic marginals — before trusting the
-data:
-
-```{r diag, fig.height=5}
-plot_gan_diagnostics(gan, input$gan_training_data)
-```
-
-### Auto-training in the model selection workflow
-
-`iconic_sensitivity()` and `iconic_prospect()` automatically train a hybrid
-texture model (sample-level GAN + feature-level copula) from the user's
-`iconic_data` object when no `trained_gan` is supplied. The auto-training
-converts the `iconic_data` object to the `load_real_input_data()` format and
-calls `train_gan_on_real_data()` with a lighter epoch budget (default 100,
-vs. 300 for standalone training). The feature-level copula is trained from
-the mediator matrix via `train_feature_texture()`.
-
-Priority resolution: explicit `trained_gan` argument > `data$trained_gan`
-(attached at `iconic_data()` construction) > auto-train from `data`.
-
----
-
-# Generalization 1: multiple confounders
-
-`run_single_iteration()` carries a latent matrix
-$U \in \mathbb{R}^{n\times k}$ (`n_confounders = k`), with per-pathway
-multipliers (`MMExp`, `MMOut`, `MMCon`, `MMCpG`) scaling how strongly the
-confounders load into the exposure, outcome, controls, and methylation
-respectively.
-
-```{r iterate}
-dat <- run_single_iteration(
-  gan,
-  n_synthetic_samples = 500,
-  n_features          = 12,
-  n_confounders       = 2,       # two latent confounders
-  beta_Z = 0.10, alpha_M = 0.50, beta_M = 0.30,
-  conf_strength       = 0.8,
-  seed                = 42
+# Train the hybrid GAN + copula (requires torch). epochs = 10 for speed;
+# use 100-300 in practice.
+gan <- train_gan_on_real_data(
+  input$gan_training_data,
+  feature_correlations = input$feature_correlations,
+  feature_texture      = input$feature_texture,
+  epochs = 10, seed = 1, verbose = FALSE
 )
-cat("True total effect tau =", dat$true_total, "\n")
-# 0.10 + 0.50*0.30 = 0.25
 
-# Output has the shape run_methods()/
-# analyze_methods_robust() expect.
-res <- analyze_methods_robust(dat)
-aggregate(beta ~ method, res, function(v) round(mean(v, na.rm = TRUE), 3))
+# Attach it: iconic_sensitivity() and iconic_prospect() will now reuse it.
+idat$trained_gan <- gan
 ```
 
-To add mediator-outcome confounding, set `mo_confounding`:
+If `torch` is not installed, the package falls back to a multivariate-normal
+texture model automatically.
 
-```{r iterate-mo}
-dat_mo <- run_single_iteration(
-  gan,
-  n_synthetic_samples = 500,
-  n_features          = 12,
-  n_confounders       = 1,
-  mo_confounding      = 0.8,     # U1 -> M (mediator-outcome confounding)
-  seed                = 42
+# Step 4: Sensitivity analysis
+
+`iconic_sensitivity()` sweeps the exogeneity of the instrument
+(`rho_G1`, `rho_G2`) and reports how each estimator's bias degrades. It
+reuses the attached GAN, so no retraining happens here.
+
+```{r workflow-sensitivity}
+sens <- iconic_sensitivity(idat, n_iter = 5)
+sens
+```
+
+The output reports the maximum absolute bias across the sensitivity surface
+for each estimator, the tipping points (first `rho_G2` at `rho_G1 = 0` where
+`|bias| > 0.10`), and the texture source. Use `confounding = "inferred"` to
+calibrate the held-fixed confounding parameters from the data:
+
+```{r workflow-confounding}
+conf <- infer_confounding(idat, diag, est)
+conf
+```
+
+`infer_confounding()` estimates the confounding strength, mediator-outcome
+confounding, negative-control coverage (`omega_1`, `omega_2`), and the number
+of latent confounders (`k`) from the gap between estimators and the
+negative-control residual variance. Pass `confounding = "inferred"` to
+`iconic_sensitivity()` to use these values instead of defaults.
+
+# Step 5: Recommend
+
+`iconic_recommend()` combines eligibility, point estimates, and the
+sensitivity surface into a single ranked recommendation.
+
+```{r workflow-recommend}
+rec <- iconic_recommend(idat, diag, est, sens)
+rec
+```
+
+The recommended estimator is the highest-tier eligible estimator with
+acceptable robustness across the sensitivity surface. The full ranking and
+the ineligible estimators (with reasons) are printed below the
+recommendation.
+
+# Step 6: Prospective analysis
+
+`iconic_prospect()` answers the design question: *if you don't yet have a
+strong instrument, how strong does it need to be?* It sweeps the instrument
+strength (`gamma_G`) and reports how estimates converge, then simulates a
+prospective study at a target strength.
+
+```{r workflow-prospect}
+pros <- iconic_prospect(idat, n_iter = 10)
+pros
+```
+
+The output reports the F-statistics at each strength level and recommends
+which estimator would be best if you collected an instrument of that quality.
+It also reuses the attached GAN.
+
+# Survival outcomes
+
+`iconic` supports time-to-event outcomes via Cox log-hazard-ratio and RMST
+(restricted mean survival time) effect scales. RMST is collapsible and
+admits an exact NDE/NIE decomposition; the log-HR scale is reported for
+familiarity.
+
+```{r workflow-survival}
+set.seed(1)
+sdat <- generate_toy_data(
+  n = 100, n_features = 3,
+  outcome_type = "survival", seed = 1
 )
-cat("True NDE =", dat_mo$true_NDE, "  True NIE =", dat_mo$true_NIE, "\n")
 
-# Run mediation estimators
-res_mo <- analyze_mediation_robust(dat_mo)
-aggregate(NDE ~ method, res_mo,
-           function(v) round(mean(v, na.rm = TRUE), 3))
-aggregate(NIE ~ method, res_mo,
-           function(v) round(mean(v, na.rm = TRUE), 3))
-```
-
-To add horizontal pleiotropy (a direct $G \to Y$ path), set `pleio`:
-
-```{r iterate-pleio}
-dat_pl <- run_single_iteration(
-  gan,
-  n_synthetic_samples = 500,
-  n_features          = 12,
-  n_confounders       = 1,
-  pleio = 0.10,  # direct G -> Y path
-                # (violates exclusion restriction)
-  seed                = 42
+# For survival, pass surv_time + surv_event instead of Y.
+sdata <- iconic_data(
+  Z = sdat$Z,
+  surv_time = sdat$surv_time, surv_event = sdat$surv_event,
+  G = sdat$G, W = sdat$W,
+  outcome_type = "survival",
+  covariates = sdat$synthetic_data
 )
-# IV2SLS is now biased because G affects Y directly, not only through Z
-res_pl <- analyze_methods_robust(dat_pl)
-aggregate(beta ~ method, res_pl,
-           function(v) round(mean(v, na.rm = TRUE), 3))
+
+sest <- iconic_estimate(sdata)
+head(sest)
 ```
 
----
+# Putting it together
 
-# Generalization 2: pluggable negative controls
-
-A negative-control model is any function with the signature
+The full pipeline, end to end:
 
 ```r
-function(U, covariates, params) -> W   # returns an n x n_features matrix
-```
+# 1. Standardize data (optionally attach a pre-trained GAN).
+dat  <- generate_toy_data(n = 200, n_features = 10, seed = 1)
+idat <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
+                    G = dat$G, W = dat$W, covariates = dat$synthetic_data)
 
-so you are never locked into one theory of where the controls come from.
-Built-ins:
-
-- **`nc_proxy`** — each control is a coverage-weighted mixture of the
-  captured confounders plus noise.
-- **`nc_cpg`** — simulates spatially correlated CpG methylation (an AR(1)
-  process along the genome) partly driven by the confounders, then forms
-  each control as a sparse linear prediction from the methylation
-  ("CpG-predicted expression").
-
-```{r nc}
-list_nc_models()
-
-# Use the CpG-predicted-expression controls instead of the direct proxy:
-dat_cpg <- run_single_iteration(gan, n_features = 12, n_confounders = 1,
-                                nc_model = "cpg", coverage = 0.7, seed = 7)
-dim(dat_cpg$W)
-
-# Or supply your own mechanism — anything honouring the contract:
-my_nc <- function(U, covariates, params) {
-  # controls = first confounder + independent noise
-  scale(matrix(U[, 1], nrow(U), params$n_features) +
-        matrix(rnorm(nrow(U) * params$n_features), nrow(U)))
-}
-dat_custom <- run_single_iteration(gan, n_features = 8,
-                                      nc_model = my_nc, seed = 8)
-dim(dat_custom$W)
-```
-
-The `coverage`/`captured` knobs control whether the negative controls span
-the same confounder subspace that drives the outcome. Setting `captured` to a
-strict subset models controls that miss part of $U$ — the failure mode a
-sensitivity analysis should probe.
-
----
-
-# The sensitivity analysis
-
-## Sweeping confounding scenarios
-
-`gan_sensitivity()` benchmarks every estimator across a grid of confounding
-strength, negative-control coverage, and number of latent confounders:
-
-```{r sens}
-# n_iter = 5 for fast vignette rendering; use 25+ in practice.
-sens <- gan_sensitivity(
-  gan,
-  conf_grid     = c(0.2, 0.5, 0.8),
-  coverage_grid = c(0.3, 0.6, 1.0),
-  k_grid        = c(1, 2),
-  nc_model      = "proxy",
-  n_iter        = 5,
-  n_samples     = 400,
-  n_features    = 12
+# 2. Train a texture model once and attach it.
+input <- load_real_input_data(
+  Z_matrix = matrix(dat$Z, nrow = 1), Y_matrix = t(dat$Y),
+  M_matrix = t(dat$M), W_matrix = t(dat$W),
+  covariates_df = dat$synthetic_data
 )
-head(sens$summary, 8)
-```
-
-A heatmap reads off where a method's error blows up:
-
-```{r heat}
-plot_sensitivity_heatmap(sens, metric = "rmse", method = "IV2SLS", k = 1)
-```
-
-## Which estimator is preferred?
-
-`recommend_estimator()` ranks methods by RMSE within each scenario and
-identifies an overall pick with the smallest worst-case RMSE across scenarios
-(a minimax choice; UNADJ is excluded as a reference).
-
-```{r rec}
-rec <- recommend_estimator(sens)
-rec$overall
-rec$worst_case
-```
-
-## Do the negative controls hold?
-
-`nc_validity_check()` focuses on the negative-control estimators (COCA, PGC)
-as coverage drops and confounders multiply. It enforces the identifiability
-condition: the bridge-function estimators are point identified only when
-there are at least as many valid negative controls as confounders.
-
-```{r validity}
-# n_iter = 5 for fast vignette rendering; use 20+ in practice.
-validity <- nc_validity_check(
-  gan,
-  coverage_grid    = c(0.2, 0.5, 1.0),
-  k_grid           = c(1, 2, 3),
-  conf_strength    = 0.8,
-  n_valid_controls = 1,  # your design provides
-                          # 1 distinct valid control
-  n_iter           = 5,
-  n_features       = 12
+idat$trained_gan <- train_gan_on_real_data(
+  input$gan_training_data,
+  feature_correlations = input$feature_correlations,
+  feature_texture      = input$feature_texture,
+  epochs = 100, seed = 1
 )
-validity$verdict
+
+# 3. Diagnose, estimate, stress-test, recommend.
+diag <- iconic_diagnose(idat)
+est  <- iconic_estimate(idat)
+sens <- iconic_sensitivity(idat, confounding = "inferred")
+rec  <- iconic_recommend(idat, diag, est, sens)
+
+# 4. Prospect for future studies (reuses the attached GAN).
+pros <- iconic_prospect(idat, confounding = "inferred")
 ```
 
-Rows with `k > n_valid_controls` are flagged under-identified: no estimator
-built on those controls can recover $\tau$ there, regardless of sample size.
+# Further reading
 
-## Empirical negative-control validity diagnostics
+- **Manuscript and technical supplement** -- the eight estimators, the
+  negative-control assumptions, the completeness condition, the sensitivity
+  surface, and the model-selection criterion.
+- **Function reference** -- `help(package = "iconic")` for the full API,
+  including `gan_sensitivity()`, `pleiotropy_sweep()`,
+  `mediation_sensitivity()`, and the negative-control diagnostics
+  (`nc_validity_screen()`, `nc_independence_check()`,
+  `nc_completeness_check()`).
 
-On real data, the two identifying assumptions that negative controls must
-satisfy can be tested directly:
+# Session information
 
-1. $W \perp Z \mid C$ — controls are not affected by the exposure (A1).
-2. $W \perp G \mid C$ — controls are independent of the instrument (A2).
-
-`iconic` provides three exported diagnostic functions:
-
-```{r nc-diagnostics}
-# Generate a dataset to illustrate (on real data, pass your fitted dataset)
-dat <- run_single_iteration(gan, n_features = 10,
-                               n_confounders = 1, seed = 1)
-
-# A1: Are any controls associated with the exposure after adjusting for C?
-screen_Z <- nc_validity_screen(dat)
-head(screen_Z)
-table(screen_Z$verdict)
-
-# A2: Are any controls associated with the
-# instrument after adjusting for C?
-screen_G <- nc_independence_check(dat)
-head(screen_G)
-table(screen_G$verdict)
-
-# Completeness: enough valid controls for the confounder dimensionality?
-comp <- nc_completeness_check(dat)
-comp$completeness
-comp$n_valid_controls
-comp$k
+```{r sessionInfo}
+sessionInfo()
 ```
-
-- `nc_validity_screen()` regresses each $W_f$ on $Z + C$ and applies
-  Benjamini-Hochberg FDR control at 0.10. Controls surviving FDR are flagged
-  "drop: associated with Z" — they violate A1.
-- `nc_independence_check()` computes the partial correlation of each $W_f$
-  with $G$ after residualising both on $C$, and applies BH-FDR. Controls
-  surviving FDR are flagged "drop: associated with G" — they violate A2.
-- `nc_completeness_check()` counts controls that pass both screens and
-  compares to $k$.
-
-> **Interpretation on simulation data.** In the simulation, $W$ shares the
-> confounder $U$ with $Z$, so $W$ is associated with $Z$ through $U$ — the A1
-> screen will flag controls as "associated with Z." This is expected: the
-> screen detects the confounder-driven association, which is precisely the
-> association the NC estimators exploit. The screen is designed for real
-> data, where a control being associated with $Z$ after adjusting for $C$
-> may indicate a direct $Z \to W$ path (a true violation) rather than a
-> shared confounder.
-
-## Pleiotropy sensitivity sweep
-
-`gan_pleiotropy_sensitivity()` benchmarks every estimator across a grid of
-horizontal-pleiotropy strengths and confounding strengths, running both an
-alternative arm (true effect $= \tau$) and a null arm (true effect $= 0$) so
-that bias and Type I error can be read off the same sweep.
-
-```{r pleio-sens}
-# n_iter = 5 for fast vignette rendering; use 25+ in practice.
-pleio_sens <- gan_pleiotropy_sensitivity(
-  gan,
-  pleio_grid  = c(0, 0.05, 0.10),   # direct G -> Y path strengths
-  conf_grid   = c(0.2, 0.5, 0.8),
-  tau = 0.25,  # true total effect
-                # for the alternative arm
-  n_iter      = 5,
-  n_features  = 10,
-  n_samples   = 500
-)
-head(pleio_sens$summary, 12)
-```
-
-The `pleio` parameter is available in both `run_single_iteration()` and
-`generate_toy_data()`, so custom sweeps can be built on either generator.
-
-## Instrument strength and the weak-IV guard
-
-The IV/2SLS estimator is consistent only when the instrument is strong — the
-first-stage partial $F$ for the excluded instrument should be $\ge 10$. The
-package uses the partial F (squared $t$-statistic for $G$ conditional on $W$
-and covariates) rather than the overall model $F$.
-
-`iconic_diagnose()` computes the partial F for every instrument and every
-mediator in the panel. The full distributions are stored at
-`diag$instrument_strength$F_G` and `diag$instrument_strength$F_Gm`. Two
-gating layers control whether an instrument-dependent method runs:
-
-1. **Method eligibility** (`iconic_diagnose()`): by default, a method is
-   eligible if the median partial F meets `min_f` (default 10). For
-   heterogeneous panels, supply `g_threshold`/`gm_threshold = list(E, R)` to
-   gate on the distribution: eligible if at least fraction `E` of
-   transcripts have F >= `R`.
-2. **Per-transcript execution** (`iconic_estimate()` via `min_f`):
-   transcripts whose instrument F falls below `min_f` receive `NA` for that
-   method, preventing weak-IV-biased estimates from individual transcripts.
-   `run_all = TRUE` overrides layer 1 (runs all data-present methods) but
-   layer 2 still applies.
-
-```{r iv-strength, eval=FALSE}
-# Demonstrate the weak-IV guard with an irrelevant instrument
-dat_weak <- run_single_iteration(NULL, n_synthetic_samples = 200,
-    n_features = 5, effect_size = 0.25, conf_strength = 0.8, seed = 1)
-dat_weak$G <- matrix(rnorm(1000), 200, 5)   # replace G with pure noise
-res <- analyze_methods_robust(dat_weak)
-# IV2SLS returns NA for all features (partial F < 10)
-res[res$method == "IV2SLS", ]
-```
-
-The guard is applied in both `fit_iv2sls()` and `fit_iv2sls_mediation()`.
-
-## Mediation sensitivity sweep
-
-`gan_mediation_sensitivity()` extends the grid sweep to the mediation
-setting, benchmarking NDE/NIE bias and Type I error across confounding
-scenarios with mediator-outcome confounding:
-
-```{r med-sens, eval=FALSE}
-med_sens <- gan_mediation_sensitivity(
-  gan,
-  conf_grid      = c(0.2, 0.5, 0.8),
-  coverage_grid  = c(0.3, 0.7, 1.0),
-  k_grid         = 1,
-  mo_confounding = 0.8,
-  n_iter         = 50,
-  n_features     = 12
-)
-head(med_sens$summary[, c("conf_strength", "coverage", "method",
-                          "NDE_bias", "NIE_bias", "NIE_type1")])
-```
-
----
-
-# Feature-level correlations
-
-Real omics data exhibit cross-feature correlations — e.g., placental
-transcript expression forms co-expression modules with high within-module
-and low between-module correlation. ICONIC supports this structure in two
-places: a `feat_cor` parameter in the toy simulation, and feature-level
-texture learning in the generative pipeline (Gaussian copula for the
-mediator panel, residual correlation matrices for Y and W).
-
-## Block-diagonal co-expression in the toy simulation
-
-`generate_toy_data()` and `sweep_mediation_param()` accept a `feat_cor`
-parameter that injects block-diagonal correlated noise into the outcome (Y)
-and negative-control (W) panels. Features are divided into
-`ceiling(sqrt(p))` equal-sized modules; within-module pairwise correlation
-equals `feat_cor`, between-module correlation is 0. For `p = 10`: 4 modules
-of sizes 3, 3, 2, 2. The mediator M is scalar by design, so `feat_cor` does
-not apply to M.
-
-```{r feat-cor-sweep, eval=FALSE}
-# Sweep feature correlation strength
-# rho_G1 = 0 ensures the NC bridge is live (A2 passes, all 8 estimators eligible)
-fc_sweep <- sweep_mediation_param("feat_cor", c(0, 0.2, 0.4, 0.6, 0.8),
-    n_iter = 50, mo_confounding = 0.8, phi = 0.8,
-    rho_G1 = 0, separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7)
-fc_sweep$summary
-
-# Plot the sweep (3 panels: bias, RMSE, Type I error)
-plot_feature_correlation_sweep(fc_sweep)
-```
-
-Empirically, estimator performance is invariant to `feat_cor`: NDE and NIE
-bias change by less than 0.008 across the full sweep for all estimators
-except PGC2 (which is inherently unstable due to bridge matrix inversion).
-NIE Type I error is perfectly controlled (IV2SLS2 and PGC2Gm both at 0.00
-at all `feat_cor` levels). The A2 screen passes at 89--96% of NC features,
-all 8 estimators are eligible, and the tier ranking (IV2SLS2 > PGC2Gm >
-PGC > COCA > PGC2 > IV2SLS > DIRECT > UNADJ) is identical at all
-`feat_cor` levels. This invariance holds because correlated noise is
-additive — it enters Y and W as multivariate normal noise on top of the
-structural signal, without perturbing the coefficients that define the
-ground truth (verified by an oracle regression test in the package test
-suite).
-
-## Feature-level texture learning in the generative pipeline
-
-When training a generative texture model on real data, two mechanisms capture
-feature-level structure:
-
-- **Mediator panel (M)**: the feature-level Gaussian copula
-  (`train_feature_texture()`) learns each feature's marginal distribution
-  (empirical CDF or parametric family) and their cross-feature dependence
-  (copula correlation matrix). During simulation, copula draws replace the
-  parametric Gaussian noise in the mediator structural equations, so
-  synthetic mediator data preserves the marginal shapes and correlation
-  structure of the user's cohort.
-
-- **Outcome (Y) and negative-control (W) panels**: feature-level residual
-  correlation matrices are learned after residualizing on the sample-level
-  exposure and covariates. During simulation, the noise terms in the outcome
-  and negative-control equations are drawn from a multivariate normal with
-  the learned correlation structure, so that conditional on the confounder
-  $U$ the simulated features retain realistic cross-feature correlations.
-  When feature correlation matrices are unavailable (e.g., panels not
-  supplied or feature count mismatch), the noise defaults to independent
-  draws.
-
-The negative-control (W) panel is not learned from data via the copula; it
-continues to use the pluggable `nc_model` with residual correlation matrices
-injected as correlated noise.
-
-The example data (`load_real_input_data(example = TRUE)`) includes
-block-diagonal co-expression modules (within-block $r = 0.5$) so that the
-learned correlations are non-trivial by default.
-
----
-
-# Survival / time-to-event outcomes
-
-ICONIC v0.9.4 extends the framework to support **Cox proportional hazards**
-and **restricted mean survival time (RMST)** outcomes, motivated by case
-studies where the outcome is overall survival (e.g., smoking $\to$ lung tumor
-expression $\to$ lung cancer survival). All five total-effect estimators and
-all eight mediation estimators have survival counterparts that share the same
-2SPS (two-stage predictor substitution) structure: first-stage regressions
-remain OLS because Z, M, and W are continuous; only the outcome stage switches
-to `survival::coxph` (log-HR scale) or OLS on RMST pseudo-observations (time
-scale).
-
-## Two effect scales
-
-| `effect_scale` | Outcome stage | NDE/NIE decomposition | Collapsible |
-|---|---|---|---|
-| `"loghr"` (default) | `coxph(Surv(time, event) ~ ...)` | Product $\alpha\beta$ on log-HR (approximate) | No |
-| `"rmst"` | OLS on RMST pseudo-observations | Product $\alpha\beta$ on time scale (exact) | Yes |
-
-The Cox log-HR is **non-collapsible**, so the product-of-coefficients
-NIE $= \alpha_M \cdot \beta_M$ on the log-HR scale is an approximation. The
-RMST scale (pseudo-observation OLS) provides the exact decomposition because
-RMST differences are collapsible. RMST pseudo-observations are computed via
-leave-one-out jackknife of Kaplan-Meier RMST (Graw et al. 2009), with the
-truncation time $\tau$ defaulting to the 90th percentile of follow-up.
-
-**COCA incompatibility:** COCA regresses W on Y (W ~ y + Z), placing the
-outcome on the right-hand side — impossible with a `Surv` object. Both
-`fit_coca_surv()` and `fit_coca_mediation_surv()` return `NA` with an
-informative `"reason"` attribute for survival outcomes.
-
-## Creating survival data
-
-Pass `outcome_type = "survival"` with `surv_time` and `surv_event` instead of
-`Y`:
-
-```{r surv-data}
-library(iconic)
-set.seed(42)
-dat <- generate_toy_data(n = 300, beta_Z = 0.25, alpha_M = 0.5,
-                         beta_M = 0.3, conf_str = 0.8, phi = 0.8,
-                         outcome_type = "survival", surv_event_frac = 0.6)
-sdat <- iconic_data(Z = dat$Z, outcome_type = "survival",
-                    surv_time = dat$surv_time, surv_event = dat$surv_event,
-                    M = dat$M, G = dat$G[, 1], Gm = dat$Gm, W = dat$W)
-sdat
-```
-
-## Estimating survival effects
-
-```{r surv-estimate}
-# Total effect on Cox log-HR scale
-est_loghr <- iconic_estimate(sdat, effect_scale = "loghr")
-est_loghr
-
-# Total effect on RMST scale (collapsible, exact NDE/NIE decomposition)
-est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
-est_rmst
-```
-
-The log-HR estimates are interpretable as hazard ratios (exp(beta) = HR),
-while RMST estimates are on a time scale (change in restricted mean survival
-time per unit exposure). The NDE and NIE columns appear when mediation data
-(M, Gm) is supplied.
-
-## Survival simulation benchmark
-
-The toy simulation supports `outcome_type = "survival"` in both
-`generate_toy_data()` and `run_single_iteration()`. The linear predictor is
-converted to time-to-event via an exponential proportional hazards model with
-configurable baseline hazard (`surv_h0`), event fraction
-(`surv_event_frac`), and censoring rate (`surv_censor_rate`). The true effects
-(total, NDE, NIE) are on the Cox log-HR scale.
-
-```{r surv-sim, eval=FALSE}
-# Survival simulation: sweep confounding strength
-# (analogous to sweep_param for continuous outcomes)
-conf_grid <- c(0.2, 0.4, 0.6, 0.8, 1.0)
-results <- data.frame()
-for (cs in conf_grid) {
-  for (i in 1:20) {
-    dat <- generate_toy_data(n = 500, beta_Z = 0.25, alpha_M = 0.5,
-                             beta_M = 0.3, conf_str = cs, phi = 0.8,
-                             outcome_type = "survival", surv_event_frac = 0.6,
-                             seed = 5000 + i)
-    sdat <- iconic_data(Z = dat$Z, outcome_type = "survival",
-                        surv_time = dat$surv_time, surv_event = dat$surv_event,
-                        M = dat$M, G = dat$G[, 1], Gm = dat$Gm, W = dat$W)
-    est <- iconic_estimate(sdat, effect_scale = "loghr")
-    est$conf_str <- cs
-    est$iter <- i
-    results <- rbind(results, est)
-  }
-}
-# Summarise bias vs confounding
-library(dplyr)
-summary <- results %>%
-  group_by(conf_str, method) %>%
-  summarise(NDE_bias = mean(NDE, na.rm = TRUE) - 0.25,
-            NIE_bias = mean(NIE, na.rm = TRUE) - 0.15,
-            .groups = "drop")
-print(summary)
-```
-
-Sensitivity analysis (`iconic_sensitivity()`, `iconic_prospect()`) also
-threads `outcome_type` and `effect_scale` through the simulation engine. The
-GAN texture model is skipped for survival outcomes (it requires continuous Y);
-the default texture is used instead.
-
----
-
-# The full pipeline, end to end
-
-```{r pipeline, eval=FALSE}
-library(iconic)
-
-# ── model selection workflow ──
-# 1. Standardize data (optionally attach a pre-trained GAN)
-data <- iconic_data(Z = my_exposure, Y = my_outcomes, M = my_mediator,
-                    G = my_prs, Gm = my_eqtls, W1 = my_w1, W2 = my_w2,
-                    covariates = my_covariates)
-
-# 2. Diagnose
-diag <- iconic_diagnose(data)
-
-# 3. Estimate
-est <- iconic_estimate(data, diagnosis = diag)
-
-# 4. Infer confounding parameters (optional)
-conf <- infer_confounding(data, diagnosis = diag, estimate = est)
-print(conf)
-
-# 5. Sensitivity (auto-trains hybrid GAN + copula from data;
-#    or use confounding = "inferred")
-sens <- iconic_sensitivity(data, diagnosis = diag,
-                           confounding = "inferred", n_iter = 50)
-print(sens)
-
-# 6. Recommend
-rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
-                        sensitivity = sens)
-print(rec)
-
-# ── Generative pipeline (standalone hybrid GAN + copula training) ──
-input <- load_real_input_data(Z_matrix = my_gdm,      # features x samples
-                              Y_matrix = my_expr,
-                              covariates_df = my_meta)
-gan   <- train_gan_on_real_data(input$gan_training_data, epochs = 300)
-
-## Total-effect sensitivity
-sens  <- gan_sensitivity(gan, conf_grid = c(0.2, 0.5, 0.8),
-                         coverage_grid = c(0.3, 0.6, 1.0),
-                         k_grid = c(1, 2, 3),
-                         nc_model = "cpg", n_iter = 100, n_cores = 4)
-
-recommend_estimator(sens)$overall
-nc_validity_check(gan, k_grid = c(1, 2, 3), n_valid_controls = 2)$verdict
-
-## Empirical NC validity screens (on your real fitted dataset)
-# screen_Z <- nc_validity_screen(my_real_dat)
-# screen_G <- nc_independence_check(my_real_dat)
-# screen_Gm <- nc_independence_check_gm(my_real_dat)  # when phi > 0
-# nc_completeness_check(my_real_dat, n_valid_controls = 2)
-
-## Pleiotropy sensitivity
-## (how robust to exclusion-restriction violations?)
-pleio_sens <- gan_pleiotropy_sensitivity(gan,
-    pleio_grid = c(0, 0.05, 0.10), conf_grid = c(0.2, 0.5, 0.8),
-    n_iter = 50, n_features = 10)
-
-## Mediation sensitivity (NDE/NIE under M-O confounding)
-## Set phi > 0 to include the 2-stage MR estimator (IV2SLS2)
-med_sens <- gan_mediation_sensitivity(gan,
-    conf_grid = c(0.2, 0.5, 0.8), coverage_grid = c(0.3, 0.7, 1.0),
-    mo_confounding = 0.8, phi = 0.8, n_iter = 100, n_cores = 4)
-head(med_sens$summary[, c("method", "NDE_bias", "NIE_bias", "NIE_type1")])
-
-plot_gan_diagnostics(gan, input$gan_training_data)
-plot_sensitivity_heatmap(sens, metric = "rmse", method = "IV2SLS")
-```
-
-A ready-to-run version is in `inst/scripts/run_iconic_pipeline.R`.
-
----
-
-# References
-
-- Horn, J. L. (1965). A rationale and test for the number of factors in
-  factor analysis. *Psychometrika*, 30(2), 179–185.
-- Lipsitch, M., Tchetgen Tchetgen, E., & Cohen, T. (2010). Negative
-  controls: a tool for detecting confounding and bias in observational
-  studies. *Epidemiology*, 21(3), 383–388.
-- Miao, W., Geng, Z., & Tchetgen Tchetgen, E. (2018). Identifying causal
-  effects with proxy variables of an unmeasured confounder. *Biometrika*,
-  105(4), 987–993.
-- Tchetgen Tchetgen, E. (2014). The control outcome calibration approach
-  for causal inference with unobserved confounding. *American Journal of
-  Epidemiology*, 179(5), 633–640.

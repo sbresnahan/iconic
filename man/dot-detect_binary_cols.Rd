@@ -7,7 +7,7 @@
 .detect_binary_cols(X)
 }
 \description{
-Returns the names of columns whose unique values are a subset of {0, 1}.
+Returns the names of columns whose unique values are a subset of \eqn{{0, 1}}.
 Used to flag columns that must be rounded back to 0/1 after sampling.
 }
 \keyword{internal}

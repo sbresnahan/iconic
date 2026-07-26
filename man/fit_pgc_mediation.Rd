@@ -42,7 +42,7 @@ The matrix bridge requires \code{ncol(W) >= k} (proximal completeness)
 for the bridge to span the confounder subspace.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
 fit_pgc_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$W)

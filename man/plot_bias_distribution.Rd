@@ -13,6 +13,9 @@ plot_bias_distribution(sim_result, methods = iconic_method_order, title = NULL)
 
 \item{title}{Plot title. If NULL a default is constructed.}
 }
+\value{
+A \code{ggplot} object showing the distribution of bias estimates by method.
+}
 \description{
 Baseline bias distribution (single-setting hero plot)
 }

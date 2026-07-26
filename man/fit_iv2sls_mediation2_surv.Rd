@@ -58,7 +58,7 @@ NDE (coef on Z_hat), beta_M (coef on M_hat).
 G and Gm) apply to the OLS first stages.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
                                   mo_confounding = 0.8, phi = 0.8, seed = 1)

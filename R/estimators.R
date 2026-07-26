@@ -91,7 +91,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
 #' fit_direct(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W[, 1])
@@ -148,7 +148,7 @@ fit_direct <- function(y, Z, g, w, covars = NULL) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
 #' fit_coca(dat$Y[, 1], dat$Z, rowMeans(dat$W))
@@ -209,7 +209,7 @@ fit_coca <- function(y, Z, w, covars = NULL, ratio_cap = 10, se_cap = 5) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
 #' fit_iv2sls(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W[, 1])
@@ -293,7 +293,7 @@ fit_iv2sls <- function(y, Z, g, w, covars = NULL, min_f = 10) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
 #' fit_pgc(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W)
@@ -377,7 +377,7 @@ fit_pgc <- function(y, Z, g, W, covars = NULL) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
 #' fit_pgc_scalar(dat$Y[, 1], dat$Z, dat$G[, 1], rowMeans(dat$W))

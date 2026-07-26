@@ -10,10 +10,10 @@
 \item{z}{Numeric scalar or vector.}
 }
 \value{
-Numeric scalar or vector of CDF values in \link{0, 1}.
+Numeric scalar or vector of CDF values in \eqn{[0, 1]}.
 }
 \description{
-Computes F(z) = 2 * integral_{|z|}^{Inf} K0(x)/pi dx, the two-sided
+Computes F(z) = 2 * \eqn{integral_{|z|}^{Inf}} K0(x)/pi dx, the two-sided
 tail probability of the standard normal product distribution.
 Under H0(1), if Z1, Z2 ~ N(0,1) independent, then P(|Z1*Z2| >= |z|)
 = F(z).  K0 is the modified Bessel function (besselK(x, nu=0)).

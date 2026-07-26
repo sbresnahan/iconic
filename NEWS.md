@@ -1,3 +1,48 @@
+# iconic 0.9.5
+
+## CRAN / Bioconductor readiness
+
+- **Documentation**: fixed non-ASCII characters in R source files
+  (em-dashes, superscripts, box-drawing characters) that triggered
+  `R CMD check` NOTEs. Fixed malformed Rd `\eqn{}` braces and
+  cross-references in `composite_p_value`, `fit_pgc_mediation2`,
+  `sample_texture`, and related help pages. Documented the previously
+  undocumented `feat_cor` argument in `run_simulation`,
+  `run_mediation_sim`, and `run_null_mediation_sim`. Removed an
+  internal roxygen block for the `%||%` operator that produced an
+  invalid `\name{}` entry.
+
+- **Global variables**: declared all ggplot2 non-standard-evaluation
+  variables (`.data`, `bias`, `estimate`, `method`, etc.) via
+  `utils::globalVariables()` and extended the `stats` import list, so
+  `R CMD check` no longer reports undeclared global variables.
+
+- **Removed unused code**: deleted the unused, exported
+  `cuda_available_safe()` helper. Removed the top-level
+  `generate_manuscript_figures.R` script (preserved in the manuscript
+  repository) that triggered a non-standard top-level file NOTE.
+
+- **Tests**: updated stale tests in `test-refactoring.R` and
+  `test-v0.9.2-revisions.R` to match function contracts that changed
+  in v0.8.4 / v0.9.3 / v0.9.4 (`.analyze_feature()` now passes the full
+  W matrix; `nc_completeness_capture()` returns `capture_R2` /
+  `capture_pvalue` / `capture_verdict`; Rd alias tests use
+  `system.file()` instead of relative paths). All 17 test files now
+  pass with 0 failures.
+
+- **Vignette**: rewrote `iconic-walkthrough.Rmd` (1582 -> 264 lines)
+  to build in ~1.5 minutes. The new vignette trains the GAN texture
+  model once and reuses it across `iconic_sensitivity()` and
+  `iconic_prospect()`, and drops the simulation benchmarking section
+  (retained in the manuscript). Keeps the model-selection workflow,
+  GAN training, sensitivity analysis, confounding inference,
+  recommendation, prospective analysis, and survival outcomes.
+
+- **README**: rewrote `README.md` (540 -> 100 lines) as a minimal
+  CRAN/Bioconductor-style README with package description,
+  installation, a tight getting-started code block, a key-functions
+  table, and pointers to the vignette and manuscript.
+
 # iconic 0.9.4.1
 
 ## Bug fixes

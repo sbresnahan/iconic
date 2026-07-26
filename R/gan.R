@@ -41,18 +41,10 @@ check_torch_setup <- function() {
   isTRUE(ok)
 }
 
-#' Safely test for CUDA availability
-#' @return `TRUE` if a CUDA device is usable, otherwise `FALSE`.
-#' @export
-cuda_available_safe <- function() {
-  if (!requireNamespace("torch", quietly = TRUE)) return(FALSE)
-  tryCatch(isTRUE(torch::cuda_is_available()), error = function(e) FALSE)
-}
-
 
 #' Detect binary (0/1) columns in a data frame (internal)
 #'
-#' Returns the names of columns whose unique values are a subset of {0, 1}.
+#' Returns the names of columns whose unique values are a subset of \eqn{{0, 1}}.
 #' Used to flag columns that must be rounded back to 0/1 after sampling.
 #' @keywords internal
 .detect_binary_cols <- function(X) {
@@ -87,7 +79,7 @@ cuda_available_safe <- function() {
 #' Round binary columns and enforce one-hot mutual exclusivity (internal)
 #'
 #' After de-normalisation, columns flagged as binary are rounded to the nearest
-#' of {0, 1}. Within each one-hot group, the column with the highest
+#' of \eqn{{0, 1}}. Within each one-hot group, the column with the highest
 #' pre-rounding value wins (set to 1, others to 0), preserving the constraint
 #' that exactly one level is active per row.
 #' @keywords internal
@@ -171,7 +163,7 @@ create_discriminator <- function(input_dim) {
 #' Requires the \pkg{torch} package; if torch is not available, an error is
 #' raised with installation instructions.
 #'
-#' Binary columns (values in {0, 1}, e.g. encoded sex or one-hot ethnicity
+#' Binary columns (values in \eqn{{0, 1}}, e.g. encoded sex or one-hot ethnicity
 #' dummies) are detected automatically and stored in the returned object.
 #' [sample_texture()] rounds them back to 0/1 and enforces one-hot mutual
 #' exclusivity, so synthetic draws respect the discrete structure.
@@ -214,7 +206,7 @@ create_discriminator <- function(input_dim) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' dat <- load_real_input_data(example = TRUE)
 #' gan <- train_gan_on_real_data(dat$gan_training_data,
 #'                               feature_correlations = dat$feature_correlations,
@@ -317,7 +309,7 @@ train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
 
 #' Draw synthetic base rows from a trained texture model
 #'
-#' Binary columns (detected at training time) are rounded to {0, 1} after
+#' Binary columns (detected at training time) are rounded to \eqn{{0, 1}} after
 #' de-normalisation, and one-hot dummy groups are made mutually exclusive
 #' (the column with the highest pre-rounding value wins per row).
 #'
@@ -347,12 +339,15 @@ sample_texture <- function(trained_gan, n) {
 }
 
 
-#' Null-coalescing helper (internal)
-#' Returns x if not NULL, otherwise default.
-#' @keywords internal
+# Null-coalescing helper (internal): returns x if not NULL, otherwise y.
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 
+#' Print method for iconic_gan objects
+#'
+#' @param x An `iconic_gan` object.
+#' @param ... Unused.
+#' @return Invisibly returns `x` (the `iconic_gan` object); called for its side effect of printing a human-readable summary.
 #' @export
 print.iconic_gan <- function(x, ...) {
   cat("<iconic_gan>\n")

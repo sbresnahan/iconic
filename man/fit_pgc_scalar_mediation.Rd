@@ -33,7 +33,7 @@ valid.  Use \code{\link{fit_pgc_mediation}} (matrix bridge) when the
 completeness condition is of interest.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
 fit_pgc_scalar_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], rowMeans(dat$W))

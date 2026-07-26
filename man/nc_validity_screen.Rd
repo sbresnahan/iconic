@@ -90,8 +90,6 @@ single gate.
 }
 
 \examples{
-\dontrun{
 dat <- run_single_iteration(n_features = 10, seed = 1)
 nc_validity_screen(dat)
-}
 }

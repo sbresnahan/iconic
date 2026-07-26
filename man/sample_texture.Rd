@@ -16,7 +16,7 @@ A data frame of \code{n} rows with the trained columns, on the original
 (de-normalised) scale. Binary columns contain only 0/1 values.
 }
 \description{
-Binary columns (detected at training time) are rounded to {0, 1} after
+Binary columns (detected at training time) are rounded to \eqn{{0, 1}} after
 de-normalisation, and one-hot dummy groups are made mutually exclusive
 (the column with the highest pre-rounding value wins per row).
 }

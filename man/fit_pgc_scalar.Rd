@@ -38,7 +38,7 @@ when \code{n} is small relative to the number of valid controls,
 or as an IV-equivalent benchmark.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, seed = 1)
 fit_pgc_scalar(dat$Y[, 1], dat$Z, dat$G[, 1], rowMeans(dat$W))

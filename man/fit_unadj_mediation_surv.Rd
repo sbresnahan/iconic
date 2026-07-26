@@ -41,7 +41,7 @@ survival outcome ~ Z + M -> NDE (coef on Z), beta_M (coef on M).
 reference.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
                                   mo_confounding = 0.8, seed = 1)

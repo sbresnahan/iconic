@@ -210,7 +210,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 #'                     M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 #'                     W = matrix(rnorm(100*10), 10, 100))
@@ -380,10 +380,17 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
       phi_grid = if (length(unique(phi)) > 1) phi else NULL
     )
   )
-  class(obj) <- c("iconic_sensitivity", "list")
+  class(obj) <- "iconic_sensitivity"
   obj
 }
 
+
+#' Safe max of absolute values, returning NA when all values are NA/NaN (internal)
+#' @keywords internal
+.safe_max_abs <- function(x) {
+  x <- abs(x[is.finite(x)])
+  if (length(x) == 0) NA_real_ else max(x)
+}
 
 #' Find tipping points from the degradation surface (internal)
 #'
@@ -392,13 +399,6 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 #' at which the estimator's assumptions are violated enough to produce
 #' materially biased estimates.
 #' @keywords internal
-#' Safe max of absolute values, returning NA when all values are NA/NaN (internal)
-#' @keywords internal
-.safe_max_abs <- function(x) {
-  x <- abs(x[is.finite(x)])
-  if (length(x) == 0) NA_real_ else max(x)
-}
-
 .find_tipping_points <- function(surface, rho_G1_grid, rho_G2_grid,
                                  threshold) {
   methods <- unique(surface$method)
@@ -488,6 +488,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 #'
 #' @param x An \code{iconic_sensitivity} object.
 #' @param ... Unused.
+#' @return Invisibly returns `x` (the `iconic_sensitivity` object); called for its side effect of printing a human-readable summary.
 #' @export
 print.iconic_sensitivity <- function(x, ...) {
   cat("<iconic_sensitivity>\n")

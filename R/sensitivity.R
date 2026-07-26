@@ -1,33 +1,33 @@
 # ============================================================
 # Sensitivity analysis on generator-realistic data.
 #
-# gan_sensitivity()   – benchmark all estimators across a grid of confounding
-#                       scenarios (confounding strength x negative-control
-#                       coverage x number of confounders).
+# gan_sensitivity() – benchmark all estimators across a grid of confounding
+# scenarios (confounding strength x negative-control
+# coverage x number of confounders).
 # recommend_estimator() – summarise which method is preferred, per scenario and
-#                       robustly across scenarios.
+# robustly across scenarios.
 # nc_validity_check() – probe specifically whether the negative controls hold as
-#                       coverage drops / confounders multiply, including the
-#                       proximal-identification check (#controls vs #confounders).
+# coverage drops / confounders multiply, including the
+# proximal-identification check (#controls vs #confounders).
 # gan_mediation_sensitivity() – mediation analogue: NDE/NIE bias and Type I
-#                       error across confounding scenarios with M-O confounding.
+# error across confounding scenarios with M-O confounding.
 #
-# v0.3.1: PGC now uses the matrix bridge. The scalar-bridge variant
+# PGC now uses the matrix bridge. The scalar-bridge variant
 # (fit_pgc_scalar) is a standalone exported function, not included in
 # the default sensitivity pipeline.
 #
-# v0.4.0: gan_mediation_sensitivity() gains a phi parameter for the
-# mediator instrument (Gm).  When phi > 0, the 2-stage MR estimator
+# gan_mediation_sensitivity() gains a phi parameter for the
+# mediator instrument (Gm). When phi > 0, the 2-stage MR estimator
 # (IV2SLS2) is included in the results.
 #
-# v0.9.4: survival / time-to-event outcomes.  When outcome_type = "survival",
+# survival / time-to-event outcomes. When outcome_type = "survival",
 # the simulation generates (surv_time, surv_event) via run_single_iteration()
 # and estimates via iconic_estimate() with the survival drivers, instead of
-# run_methods() / run_mediation_methods().  The summary functions are
+# run_methods() / run_mediation_methods(). The summary functions are
 # format-compatible because iconic_estimate() returns the same column names.
 # ============================================================
 
-# v0.9.4: Run survival estimators on a dat list from run_single_iteration().
+# Run survival estimators on a dat list from run_single_iteration().
 # Converts dat to an iconic_data object and calls iconic_estimate().
 # Returns a data frame with the same columns as run_methods() (total-effect)
 # or run_mediation_methods() (mediation), so summarise_results() /
@@ -63,48 +63,48 @@
 #' estimator, and summarises bias / RMSE / power. This is the multi-confounder,
 #' negative-control-aware generalisation of the package's parameter sweeps.
 #'
-#' @param trained_gan   An `iconic_gan` (or `NULL` to use default texture).
-#' @param conf_grid     Confounding-strength values to sweep. Default `c(0.2, 0.5, 0.8)`.
+#' @param trained_gan An `iconic_gan` (or `NULL` to use default texture).
+#' @param conf_grid Confounding-strength values to sweep. Default `c(0.2, 0.5, 0.8)`.
 #' @param coverage_grid Negative-control coverage values in `[0,1]`. Default `c(0.3, 0.7, 1)`.
-#' @param k_grid        Numbers of latent confounders to sweep. Default `1`.
-#' @param nc_model      Negative-control model (function or name). Default `"proxy"`.
-#' @param n_iter        Replicates per scenario. Default 50.
-#' @param n_samples     Samples per replicate. Default 500.
-#' @param n_features    Features per replicate. Default 20.
+#' @param k_grid Numbers of latent confounders to sweep. Default `1`.
+#' @param nc_model Negative-control model (function or name). Default `"proxy"`.
+#' @param n_iter Replicates per scenario. Default 50.
+#' @param n_samples Samples per replicate. Default 500.
+#' @param n_features Features per replicate. Default 20.
 #' @param beta_Z,alpha_M,beta_M Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.
-#' @param effect_size   Optional pure-direct total effect override (see
-#'   [run_single_iteration()]).
-#' @param base_seed     Base RNG seed. Default 700.
-#' @param n_cores       Parallel workers across replicates. Default 1.
-#' @param outcome_type  \code{"continuous"} (default) or \code{"survival"}
-#'   (v0.9.4).  When survival, the DGP generates time-to-event outcomes and
-#'   estimation uses the Cox / RMST survival drivers via
-#'   [iconic_estimate()].
-#' @param effect_scale  \code{"loghr"} (default) or \code{"rmst"}.  Only
-#'   used when \code{outcome_type = "survival"}.
-#' @param surv_h0       Baseline hazard for the survival DGP (v0.9.4). Default 0.1.
-#' @param surv_event_frac Target fraction of observed events (v0.9.4). Default 0.6.
-#' @param surv_censor_rate Explicit censoring rate (v0.9.4). Default NULL.
+#' @param effect_size Optional pure-direct total effect override (see
+#' [run_single_iteration()]).
+#' @param base_seed Base RNG seed. Default 700.
+#' @param n_cores Parallel workers across replicates. Default 1.
+#' @param outcome_type \code{"continuous"} (default) or \code{"survival"}
+#'   When survival, the DGP generates time-to-event outcomes and
+#' estimation uses the Cox / RMST survival drivers via
+#' [iconic_estimate()].
+#' @param effect_scale \code{"loghr"} (default) or \code{"rmst"}. Only
+#' used when \code{outcome_type = "survival"}.
+#' @param surv_h0 Baseline hazard for the survival DGP. Default 0.1.
+#' @param surv_event_frac Target fraction of observed events. Default 0.6.
+#' @param surv_censor_rate Explicit censoring rate. Default NULL.
 #'
 #' @return A list with `summary` (one row per scenario x method, with
-#'   `conf_strength`, `coverage`, `k`, `true_total` and the columns from
-#'   `summarise_results`) and `grid` (the scenario grid).
+#' `conf_strength`, `coverage`, `k`, `true_total` and the columns from
+#' `summarise_results`) and `grid` (the scenario grid).
 #' @export
-gan_sensitivity <- function(trained_gan  = NULL,
-                            conf_grid     = c(0.2, 0.5, 0.8),
+gan_sensitivity <- function(trained_gan = NULL,
+                            conf_grid = c(0.2, 0.5, 0.8),
                             coverage_grid = c(0.3, 0.7, 1),
-                            k_grid        = 1,
-                            nc_model      = "proxy",
-                            n_iter        = 50,
-                            n_samples     = 500,
-                            n_features    = 20,
+                            k_grid = 1,
+                            nc_model = "proxy",
+                            n_iter = 50,
+                            n_samples = 500,
+                            n_features = 20,
                             beta_Z = 0.10, alpha_M = 0.50, beta_M = 0.30,
-                            effect_size   = NULL,
-                            base_seed     = 700,
-                            n_cores       = 1,
-                            outcome_type  = c("continuous", "survival"),
-                            effect_scale  = c("loghr", "rmst"),
-                            surv_h0       = 0.1,
+                            effect_size = NULL,
+                            base_seed = 700,
+                            n_cores = 1,
+                            outcome_type = c("continuous", "survival"),
+                            effect_scale = c("loghr", "rmst"),
+                            surv_h0 = 0.1,
                             surv_event_frac = 0.6,
                             surv_censor_rate = NULL) {
   outcome_type <- match.arg(outcome_type)
@@ -143,7 +143,7 @@ gan_sensitivity <- function(trained_gan  = NULL,
   })
 
   summary <- do.call(rbind, smry)
-  front   <- c("conf_strength", "coverage", "k", "true_total", "method")
+  front <- c("conf_strength", "coverage", "k", "true_total", "method")
   summary <- summary[, c(front, setdiff(names(summary), front))]
   list(summary = summary, grid = grid)
 }
@@ -155,13 +155,13 @@ gan_sensitivity <- function(trained_gan  = NULL,
 #' that is robust across scenarios (smallest worst-case RMSE). UNADJ is excluded
 #' from recommendations (it is a bias reference).
 #'
-#' @param sens   Object returned by [gan_sensitivity()].
+#' @param sens Object returned by [gan_sensitivity()].
 #' @param exclude Methods to exclude from the recommendation. Default
-#'   `c("UNADJ")`.
+#' `c("UNADJ")`.
 #'
 #' @return A list with `per_scenario` (best method + RMSE per scenario),
-#'   `worst_case` (max RMSE per method across scenarios), and `overall` (the
-#'   method minimising worst-case RMSE).
+#' `worst_case` (max RMSE per method across scenarios), and `overall` (the
+#' method minimising worst-case RMSE).
 #' @export
 recommend_estimator <- function(sens, exclude = c("UNADJ")) {
   s <- sens$summary
@@ -183,9 +183,9 @@ recommend_estimator <- function(sens, exclude = c("UNADJ")) {
 
   list(
     per_scenario = per_scenario,
-    worst_case   = data.frame(method = names(worst), worst_rmse = as.numeric(worst),
+    worst_case = data.frame(method = names(worst), worst_rmse = as.numeric(worst),
                               row.names = NULL, stringsAsFactors = FALSE),
-    overall      = overall
+    overall = overall
   )
 }
 
@@ -203,29 +203,29 @@ recommend_estimator <- function(sens, exclude = c("UNADJ")) {
 #' is binding: when `k > n_valid_controls`, PGC is under-identified while
 #' IV2SLS remains unbiased (it does not depend on NC completeness).
 #'
-#' @param trained_gan   An `iconic_gan` (or `NULL`).
+#' @param trained_gan An `iconic_gan` (or `NULL`).
 #' @param coverage_grid Coverage values to sweep. Default `c(0.2, 0.5, 0.8, 1)`.
-#' @param k_grid        Numbers of confounders. Default `c(1, 2, 3)`.
+#' @param k_grid Numbers of confounders. Default `c(1, 2, 3)`.
 #' @param conf_strength Fixed confounding strength. Default 0.8.
 #' @param n_valid_controls Number of *distinct valid* controls the design
-#'   provides (for the identifiability flag). Default 1.
+#' provides (for the identifiability flag). Default 1.
 #' @param n_iter,n_samples,n_features,nc_model,base_seed,n_cores As in
-#'   [gan_sensitivity()].
+#' [gan_sensitivity()].
 #'
 #' @return A list with `summary` (COCA/PGC/IV2SLS bias & RMSE per scenario,
-#'   with an `identified` flag) and `verdict` (short per-scenario diagnosis).
+#' with an `identified` flag) and `verdict` (short per-scenario diagnosis).
 #' @export
-nc_validity_check <- function(trained_gan   = NULL,
-                              coverage_grid  = c(0.2, 0.5, 0.8, 1),
-                              k_grid         = c(1, 2, 3),
-                              conf_strength  = 0.8,
+nc_validity_check <- function(trained_gan = NULL,
+                              coverage_grid = c(0.2, 0.5, 0.8, 1),
+                              k_grid = c(1, 2, 3),
+                              conf_strength = 0.8,
                               n_valid_controls = 1,
-                              n_iter         = 50,
-                              n_samples      = 500,
-                              n_features     = 20,
-                              nc_model       = "proxy",
-                              base_seed      = 800,
-                              n_cores        = 1) {
+                              n_iter = 50,
+                              n_samples = 500,
+                              n_features = 20,
+                              nc_model = "proxy",
+                              base_seed = 800,
+                              n_cores = 1) {
 
   sens <- gan_sensitivity(trained_gan, conf_grid = conf_strength,
                           coverage_grid = coverage_grid, k_grid = k_grid,
@@ -252,8 +252,8 @@ nc_validity_check <- function(trained_gan   = NULL,
 
   verdict <- do.call(rbind, lapply(split(s, interaction(s$coverage, s$k, drop = TRUE)),
     function(d) {
-      kk       <- d$k[1]
-      here     <- nc_bias(d)
+      kk <- d$k[1]
+      here <- nc_bias(d)
       baseline <- base_by_k[[as.character(kk)]]
       degrading <- is.finite(here) && is.finite(baseline) && here > 1.5 * baseline + 1e-8
       data.frame(
@@ -289,77 +289,77 @@ nc_validity_check <- function(trained_gan   = NULL,
 #' mediation estimator, and summarises NDE/NIE bias / RMSE / Type I error.
 #' This is the mediation analogue of [gan_sensitivity()].
 #'
-#' When `phi > 0` (v0.4.0), a mediator-specific genetic instrument (Gm) is
+#' When `phi > 0`, a mediator-specific genetic instrument (Gm) is
 #' generated and the 2-stage MR estimator (IV2SLS2) is included in the
 #' results, enabling point identification of NDE/NIE under M-O confounding.
 #'
-#' @param trained_gan   An `iconic_gan` (or `NULL` to use default texture).
-#' @param conf_grid     Confounding-strength values to sweep. Default `c(0.2, 0.5, 0.8)`.
+#' @param trained_gan An `iconic_gan` (or `NULL` to use default texture).
+#' @param conf_grid Confounding-strength values to sweep. Default `c(0.2, 0.5, 0.8)`.
 #' @param coverage_grid Negative-control coverage values in `[0,1]`. Default `c(0.3, 0.7, 1)`.
-#' @param k_grid        Numbers of latent confounders to sweep. Default `1`.
+#' @param k_grid Numbers of latent confounders to sweep. Default `1`.
 #' @param mo_confounding Strength of U1 -> M (mediator-outcome confounding). Default 0.80.
-#' @param phi           Strength of the mediator instrument Gm -> M (v0.4.0).
-#'                      0 = no mediator instrument (five estimators). > 0 =
-#'                      generates Gm and includes the 2-stage MR estimator
-#'                      (IV2SLS2). Default 0.
-#' @param rho_G1        Correlation of G1 with U_XM (v0.5.0). Default 0.
-#' @param rho_G2        Correlation of G2 with U_MY (v0.5.0). Default 0.
-#' @param rho_pop       Shared population structure (v0.5.0). Default 0.
-#' @param separate_U    Draw separate confounders for Z->M and M->Y (v0.5.0). Default FALSE.
-#' @param omega_1       Coverage of U_XM by W1 (v0.5.0). NULL = use `coverage`.
-#' @param omega_2       Coverage of U_MY by W2 (v0.5.0). NULL = use `coverage`.
-#' @param nc_model      Negative-control model (function or name). Default `"proxy"`.
-#' @param n_iter        Replicates per scenario. Default 50.
-#' @param n_samples     Samples per replicate. Default 500.
-#' @param n_features    Features per replicate. Default 20.
+#' @param phi Strength of the mediator instrument Gm -> M.
+#' 0 = no mediator instrument (five estimators). > 0 =
+#' generates Gm and includes the 2-stage MR estimator
+#' (IV2SLS2). Default 0.
+#' @param rho_G1 Correlation of G1 with U_XM. Default 0.
+#' @param rho_G2 Correlation of G2 with U_MY. Default 0.
+#' @param rho_pop Shared population structure. Default 0.
+#' @param separate_U Draw separate confounders for Z->M and M->Y. Default FALSE.
+#' @param omega_1 Coverage of U_XM by W1. NULL = use `coverage`.
+#' @param omega_2 Coverage of U_MY by W2. NULL = use `coverage`.
+#' @param nc_model Negative-control model (function or name). Default `"proxy"`.
+#' @param n_iter Replicates per scenario. Default 50.
+#' @param n_samples Samples per replicate. Default 500.
+#' @param n_features Features per replicate. Default 20.
 #' @param beta_Z,alpha_M,beta_M Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.
-#' @param base_seed     Base RNG seed. Default 750.
-#' @param n_cores       Parallel workers across replicates. Default 1.
-#' @param outcome_type  \code{"continuous"} (default) or \code{"survival"}
-#'   (v0.9.4).  When survival, the DGP generates time-to-event outcomes and
-#'   estimation uses the Cox / RMST survival mediation drivers via
-#'   [iconic_estimate()].
-#' @param effect_scale  \code{"loghr"} (default) or \code{"rmst"}.  Only
-#'   used when \code{outcome_type = "survival"}.
-#' @param surv_h0       Baseline hazard for survival DGP (v0.9.4).  See
-#'   [run_single_iteration()].
-#' @param surv_event_frac Target event fraction for survival DGP (v0.9.4).
-#' @param surv_censor_rate Censoring rate for survival DGP (v0.9.4).
+#' @param base_seed Base RNG seed. Default 750.
+#' @param n_cores Parallel workers across replicates. Default 1.
+#' @param outcome_type \code{"continuous"} (default) or \code{"survival"}
+#'   When survival, the DGP generates time-to-event outcomes and
+#' estimation uses the Cox / RMST survival mediation drivers via
+#' [iconic_estimate()].
+#' @param effect_scale \code{"loghr"} (default) or \code{"rmst"}. Only
+#' used when \code{outcome_type = "survival"}.
+#' @param surv_h0 Baseline hazard for survival DGP. See
+#' [run_single_iteration()].
+#' @param surv_event_frac Target event fraction for survival DGP.
+#' @param surv_censor_rate Censoring rate for survival DGP.
 #'
 #' @return A list with `summary` (one row per scenario x method, with
-#'   `conf_strength`, `coverage`, `k`, `mo_confounding`, `phi`, `true_NDE`,
-#'   `true_NIE` and NDE/NIE bias/RMSE/Type I columns) and `grid`.
+#' `conf_strength`, `coverage`, `k`, `mo_confounding`, `phi`, `true_NDE`,
+#' `true_NIE` and NDE/NIE bias/RMSE/Type I columns) and `grid`.
 #' @export
 #'
 #' @examples
 #' \donttest{
 #' sens <- gan_mediation_sensitivity(NULL, conf_grid = c(0.3, 0.8),
-#'         mo_confounding = 0.8, n_iter = 20)
+#' mo_confounding = 0.8, n_iter = 20)
 #' head(sens$summary)
 #' }
-gan_mediation_sensitivity <- function(trained_gan    = NULL,
-                                      conf_grid      = c(0.2, 0.5, 0.8),
-                                      coverage_grid  = c(0.3, 0.7, 1),
-                                      k_grid         = 1,
+gan_mediation_sensitivity <- function(trained_gan = NULL,
+                                      conf_grid = c(0.2, 0.5, 0.8),
+                                      coverage_grid = c(0.3, 0.7, 1),
+                                      k_grid = 1,
                                       mo_confounding = 0.80,
-                                      phi            = 0,
-                                      rho_G1         = 0,
-                                      rho_G2         = 0,
-                                      rho_pop        = 0,
-                                      separate_U     = FALSE,
-                                      omega_1        = NULL,
-                                      omega_2        = NULL,
-                                      nc_model       = "proxy",
-                                      n_iter         = 50,
-                                      n_samples      = 500,
-                                      n_features     = 20,
+                                      phi = 0,
+                                      rho_G1 = 0,
+                                      rho_G2 = 0,
+                                      rho_pop = 0,
+                                      separate_U = FALSE,
+                                      omega_1 = NULL,
+                                      omega_2 = NULL,
+                                      nc_model = "proxy",
+                                      n_iter = 50,
+                                      n_samples = 500,
+                                      n_features = 20,
                                       beta_Z = 0.10, alpha_M = 0.50, beta_M = 0.30,
-                                      base_seed      = 750,
-                                      n_cores        = 1,
-                                      outcome_type   = c("continuous", "survival"),
-                                      effect_scale   = c("loghr", "rmst"),
-                                      surv_h0        = 0.1,
-                                      surv_event_frac  = 0.6,
+                                      base_seed = 750,
+                                      n_cores = 1,
+                                      outcome_type = c("continuous", "survival"),
+                                      effect_scale = c("loghr", "rmst"),
+                                      surv_h0 = 0.1,
+                                      surv_event_frac = 0.6,
                                       surv_censor_rate = NULL) {
   outcome_type <- match.arg(outcome_type)
   effect_scale <- match.arg(effect_scale)
@@ -396,27 +396,27 @@ gan_mediation_sensitivity <- function(trained_gan    = NULL,
 
     combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker, n_cores))
     s <- summarise_mediation_results(combined, true_NDE, true_NIE)
-    s$conf_strength  <- cs
-    s$coverage       <- cov
-    s$k              <- kk
+    s$conf_strength <- cs
+    s$coverage <- cov
+    s$k <- kk
     s$mo_confounding <- mo_confounding
-    s$phi            <- phi
-    s$rho_G1         <- rho_G1
-    s$rho_G2         <- rho_G2
-    s$rho_pop        <- rho_pop
-    s$separate_U     <- separate_U
-    s$true_NDE       <- true_NDE
-    s$true_NIE       <- true_NIE
+    s$phi <- phi
+    s$rho_G1 <- rho_G1
+    s$rho_G2 <- rho_G2
+    s$rho_pop <- rho_pop
+    s$separate_U <- separate_U
+    s$true_NDE <- true_NDE
+    s$true_NIE <- true_NIE
     s
   })
 
   summary <- do.call(rbind, smry)
-  front   <- c("conf_strength", "coverage", "k", "mo_confounding", "phi",
+  front <- c("conf_strength", "coverage", "k", "mo_confounding", "phi",
                "rho_G1", "rho_G2", "rho_pop", "separate_U",
                "true_NDE", "true_NIE", "method")
   summary <- summary[, c(front, setdiff(names(summary), front))]
 
-  # v0.9.2 (JYH #543, #582): attach a scenario manifest so the manuscript
+  # attach a scenario manifest so the manuscript
   # can render the truth + parameter ranges as an orientation table.
   manifest <- scenario_manifest(
     list(beta_Z = beta_Z, alpha_M = alpha_M, beta_M = beta_M,

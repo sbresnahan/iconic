@@ -40,14 +40,14 @@ Named list (same fields as \code{\link{fit_unadj_mediation_surv}}).
 }
 \description{
 Adjusts for the instrument G and negative-control W in both the
-mediator (OLS) and outcome (Cox / RMST) stages.  Naive adjustment.
+mediator (OLS) and outcome (Cox / RMST) stages. Naive adjustment.
 }
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
-                                  mo_confounding = 0.8, seed = 1)
+mo_confounding = 0.8, seed = 1)
 fit_direct_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-                          dat$G[, 1], dat$W[, 1])
+dat$G[, 1], dat$W[, 1])
 }
 }

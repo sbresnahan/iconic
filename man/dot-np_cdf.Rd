@@ -2,7 +2,7 @@
 % Please edit documentation in R/mediation.R
 \name{.np_cdf}
 \alias{.np_cdf}
-\title{Normal product distribution CDF (internal, v0.9.3)}
+\title{Normal product distribution CDF}
 \usage{
 .np_cdf(z)
 }
@@ -16,6 +16,6 @@ Numeric scalar or vector of CDF values in \eqn{[0, 1]}.
 Computes F(z) = 2 * \eqn{integral_{|z|}^{Inf}} K0(x)/pi dx, the two-sided
 tail probability of the standard normal product distribution.
 Under H0(1), if Z1, Z2 ~ N(0,1) independent, then P(|Z1*Z2| >= |z|)
-= F(z).  K0 is the modified Bessel function (besselK(x, nu=0)).
+= F(z). K0 is the modified Bessel function (besselK(x, nu=0)).
 }
 \keyword{internal}

@@ -123,7 +123,7 @@ input <- load_real_input_data(
 gan <- train_gan_on_real_data(
   input$gan_training_data,
   feature_correlations = input$feature_correlations,
-  feature_texture      = input$feature_texture,
+  feature_texture = input$feature_texture,
   epochs = 10, seed = 1, verbose = FALSE
 )
 
@@ -131,8 +131,8 @@ gan <- train_gan_on_real_data(
 idat$trained_gan <- gan
 ```
 
-If `torch` is not installed, the package falls back to a multivariate-normal
-texture model automatically.
+The texture model requires `torch`; install it with
+`install.packages("torch")` before training.
 
 # Step 4: Sensitivity analysis
 
@@ -225,7 +225,7 @@ The full pipeline, end to end:
 
 ```r
 # 1. Standardize data (optionally attach a pre-trained GAN).
-dat  <- generate_toy_data(n = 200, n_features = 10, seed = 1)
+dat <- generate_toy_data(n = 200, n_features = 10, seed = 1)
 idat <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
                     G = dat$G, W = dat$W, covariates = dat$synthetic_data)
 
@@ -238,15 +238,15 @@ input <- load_real_input_data(
 idat$trained_gan <- train_gan_on_real_data(
   input$gan_training_data,
   feature_correlations = input$feature_correlations,
-  feature_texture      = input$feature_texture,
+  feature_texture = input$feature_texture,
   epochs = 100, seed = 1
 )
 
 # 3. Diagnose, estimate, stress-test, recommend.
 diag <- iconic_diagnose(idat)
-est  <- iconic_estimate(idat)
+est <- iconic_estimate(idat)
 sens <- iconic_sensitivity(idat, confounding = "inferred")
-rec  <- iconic_recommend(idat, diag, est, sens)
+rec <- iconic_recommend(idat, diag, est, sens)
 
 # 4. Prospect for future studies (reuses the attached GAN).
 pros <- iconic_prospect(idat, confounding = "inferred")

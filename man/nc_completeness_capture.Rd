@@ -2,7 +2,7 @@
 % Please edit documentation in R/nc_diagnostics.R
 \name{nc_completeness_capture}
 \alias{nc_completeness_capture}
-\title{Covariance-capture completeness test (v0.9.2)}
+\title{Covariance-capture completeness test}
 \usage{
 nc_completeness_capture(
   dat,
@@ -47,7 +47,7 @@ W-outcome association (holding the C-outcome association fixed) over
 \code{n_perm} permutations, yielding a permutation p-value for "W captures
 U-signal beyond chance."
 
-This addresses the concern (JYH) that the count-based completeness check
+This addresses the concern that the count-based completeness check
 (\code{dim(W_valid) >= k}) is necessary but not sufficient: completeness is
 about the covariance the controls capture, not the number of proxies. A
 panel can have many controls that each weakly capture U, or few controls

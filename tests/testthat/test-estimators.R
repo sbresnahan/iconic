@@ -54,7 +54,7 @@ test_that("fit_pgc_scalar is approximately equal to IV2SLS", {
   # The scalar bridge is algebraically equivalent to IV/2SLS
   dat <- iconic:::generate_toy_data(n = 500, seed = 99)
   pgc_s <- fit_pgc_scalar(dat$Y[, 1], dat$Z, dat$G[, 1], rowMeans(dat$W))
-  iv    <- fit_iv2sls(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W[, 1])
+  iv <- fit_iv2sls(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W[, 1])
   if (!is.na(pgc_s$beta) && !is.na(iv$beta)) {
     expect_lt(abs(pgc_s$beta - iv$beta), 0.02)
   }

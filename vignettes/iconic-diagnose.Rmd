@@ -1,0 +1,125 @@
+---
+title: "Diagnosing Estimator Eligibility"
+author: "Sean T. Bresnahan and Charis Xiong"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Diagnosing Estimator Eligibility}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 7, fig.height = 4.5, comment = "#>"
+)
+set.seed(1)
+library(iconic)
+```
+
+# What diagnosis checks
+
+Before fitting any estimator, `iconic_diagnose()` examines your data and
+reports which of the eight ICONIC estimators are *eligible* — that is, which
+satisfy the assumptions they require to be valid. Diagnosis checks four
+things:
+
+1. **Instrument strength.** The partial $F$-statistic for each genetic
+   instrument ($G_1$ for the exposure, $G_m$ for the mediator) against the
+   conventional weak-instrument threshold ($F \geq 10$).
+2. **Negative-control validity.** Three screens — A1 (NCs associate with
+   the exposure), A2 (NCs are independent of the instrument given
+   covariates), and A2' (NCs associate with the outcome given the exposure)
+   — assessed via partial correlations with BH-FDR control.
+3. **Completeness.** Whether the number of valid negative controls is
+   sufficient for the proximal estimators (PGC, PGC2, PGC2Gm), which
+   require $\dim(W_\text{valid}) \geq k$ (the number of latent confounders).
+4. **Eligibility table.** A per-estimator verdict: eligible, ineligible
+   (with reason), or not applicable.
+
+# A minimal example
+
+We simulate a small mediation panel with a genetic instrument and negative
+controls, then run the diagnosis.
+
+```{r diagnose-data}
+dat <- generate_toy_data(
+  n = 100, n_features = 5, seed = 1,
+  phi = 0.8, separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7
+)
+
+idat <- iconic_data(
+  Z = dat$Z, Y = dat$Y, M = dat$M,
+  G = dat$G, Gm = dat$Gm,
+  W1 = dat$W1, W2 = dat$W2,
+  covariates = dat$synthetic_data
+)
+```
+
+```{r diagnose-run}
+diag <- iconic_diagnose(idat)
+diag$eligibility
+```
+
+Each row reports whether the estimator is eligible and, if not, why. For
+example, `IV2SLS` requires a valid exposure instrument ($F \geq 10$), while
+`PGC` additionally requires negative-control completeness.
+
+# Instrument strength
+
+```{r diagnose-instrument}
+diag$instrument_strength
+```
+
+The report gives the partial $F$-statistic for $G_1$ (exposure instrument)
+and $G_m$ (mediator instrument). Estimators that rely on an instrument
+(`IV2SLS`, `IV2SLS2`, `PGC2Gm`) are eligible only when the relevant
+$F$-statistic meets the threshold.
+
+# Negative-control validity
+
+```{r diagnose-nc}
+diag$nc_validity
+```
+
+The NC validity screen tests three assumptions for each negative-control
+feature:
+
+- **A1**: $W$ associates with $Z$ given covariates (the NC must be
+  confounded in the same way as the outcome).
+- **A2**: $W$ is independent of $G_1$ given covariates (the NC must not be
+  an instrument itself).
+- **A2'**: $W$ associates with $Y$ given $Z$ and covariates (the NC must
+  share the confounding pathway to the outcome).
+
+Features that fail a screen are flagged, and the completeness count is
+reduced accordingly. The `COCA` estimator is exempt from the A2 screen
+because it calibrates through the $W \sim Y + Z$ ratio and does not require
+$W \perp G_1$.
+
+# Proceeding without instruments or controls
+
+If you supply neither genetic instruments nor negative controls, only the
+`UNADJ` estimator (the confounded OLS reference) is eligible. By default,
+`iconic_diagnose()` proceeds with a message:
+
+```{r diagnose-no-proxy, eval=FALSE}
+dat0 <- generate_toy_data(n = 100, n_features = 5, seed = 1)
+idat0 <- iconic_data(Z = dat0$Z, Y = dat0$Y, covariates = dat0$synthetic_data)
+diag0 <- iconic_diagnose(idat0)
+```
+
+Set `allow_no_proxy = FALSE` to make this an error instead, which is useful
+in pipelines where you want to enforce that identification assumptions are
+met before proceeding.
+
+# Further reading
+
+- **Walkthrough vignette**: `vignette("iconic-walkthrough")` — the full
+  model-selection workflow.
+- **Function reference**: `?iconic_diagnose` for all arguments, including
+  `min_f`, `fdr_level`, and the per-estimator NC screens.

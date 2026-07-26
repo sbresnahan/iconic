@@ -33,7 +33,7 @@ screens. Default 1 (sequential).}
 \item{outcome}{Outcome block for the capture test: \code{"Y"} (default)
 or \code{"M"} (mediator). When \code{NULL}, the capture
 component is skipped and only the dimensional
-verdict is returned (v0.9.1 behavior).}
+verdict is returned.}
 
 \item{n_perm}{Number of permutations for the capture-test null.
 Default 1000.}
@@ -63,7 +63,7 @@ valid controls as confounders (Miao, Geng & Tchetgen Tchetgen,
 2018). When \code{dim(W_valid) < k}, no estimator built on those
 controls can recover the causal effect, regardless of sample size.
 
-(2) \strong{Covariance-capture} (v0.9.2): whether the controls actually
+(2) \strong{Covariance-capture}: whether the controls actually
 \emph{capture the confounder covariance} — i.e., whether adding W
 reduces U's contribution to the outcome toward zero, operationalized
 as the incremental R^2 of W for the outcome above covariates alone,

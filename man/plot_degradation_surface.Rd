@@ -16,7 +16,7 @@ plot_degradation_surface(
 \arguments{
 \item{results}{Data frame with columns \code{rho_G1}, \code{rho_G2},
 \code{method}, \code{NDE_bias}, \code{NIE_bias}, and derived
-\code{NDE_abs}, \code{NIE_abs}.  Typically built by sweeping
+\code{NDE_abs}, \code{NIE_abs}. Typically built by sweeping
 \code{sweep_mediation_param()} across a rho_G1 x rho_G2 grid.}
 
 \item{rho_G1_grid}{Numeric vector of exposure-instrument violation
@@ -36,7 +36,7 @@ A \code{patchwork} ggplot object.
 }
 \description{
 Produces a 3-panel figure showing estimator bias under simultaneous
-instrument exogeneity violations.  Panels: (A) IV2SLS2 NDE bias
+instrument exogeneity violations. Panels: (A) IV2SLS2 NDE bias
 surface, (B) PGC2Gm NDE bias surface, (C) crossover map showing
 which estimator has lower |NDE bias| at each grid cell.
 }

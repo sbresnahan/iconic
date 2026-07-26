@@ -14,17 +14,17 @@ Must contain columns: \code{method}, \code{NIE}, \code{NIE_p},
 }
 \value{
 The same data frame with \code{NIE_p} replaced by composite
-p-values.  Also adds columns \code{var_a}, \code{var_b} for
+p-values. Also adds columns \code{var_a}, \code{var_b} for
 transparency.
 }
 \description{
-Two-pass post-processing for \code{se_method = "composite"} (v0.9.3).
+Two-pass post-processing for \code{se_method = "composite"}.
 }
 \details{
 The JT-comp test (Huang 2019) requires Var(a) and Var(b), the variances
 of the standardized z-statistics \code{a = alpha_M / alpha_se} and
 \code{b = beta_M / beta_M_se} across the collection of tests sharing
-the same estimator.  This function:
+the same estimator. This function:
 \enumerate{
 \item Groups rows by \code{method} (and \code{mediator} when present).
 \item For each group, computes the z-statistics from the delta-method
@@ -36,7 +36,7 @@ Var = 1 (the point-null value, conservative).
 }
 
 NDE_p is left unchanged (the NDE is a single coefficient, not a product,
-so the composite null does not apply).  NIE_se is left as the delta-method
+so the composite null does not apply). NIE_se is left as the delta-method
 SE (used for CI construction); only the p-value is replaced.
 }
 \keyword{internal}

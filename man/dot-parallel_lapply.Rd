@@ -11,7 +11,7 @@
 
 \item{FUN}{Function applied to each element of X.}
 
-\item{n_cores}{Number of parallel workers.  Default 1 (sequential).}
+\item{n_cores}{Number of parallel workers. Default 1 (sequential).}
 
 \item{progress}{Optional character label for progress messages.
 When non-NULL, prints a start message and then a
@@ -19,12 +19,12 @@ percentage-complete update at ~10\% increments (plus
 a final completion line with total elapsed time).
 In parallel mode, tasks are split into ~10 chunks and
 a progress message is printed after each chunk
-completes.  Default NULL (silent).}
+completes. Default NULL (silent).}
 }
 \description{
-Cross-platform parallel lapply.  Uses \code{parallel::mclapply}
+Cross-platform parallel lapply. Uses \code{parallel::mclapply}
 (fork-based) on Unix-like systems and a PSOCK cluster
-(\code{makeCluster}/\code{parLapply}) on Windows.  Falls back to
+(\code{makeCluster}/\code{parLapply}) on Windows. Falls back to
 sequential \code{lapply} when \code{n_cores <= 1} or the task list
 has fewer than 2 elements.
 }

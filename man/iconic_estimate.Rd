@@ -22,32 +22,32 @@ iconic_estimate(
 \item{data}{An \code{iconic_data} object from \code{\link{iconic_data}()}.}
 
 \item{methods}{Optional character vector of estimator names to run
-(e.g. \code{c("IV2SLS", "PGC")}).  Default \code{NULL}: run all
+(e.g. \code{c("IV2SLS", "PGC")}). Default \code{NULL}: run all
 eligible.}
 
 \item{diagnosis}{Optional \code{iconic_diagnosis} object from
-\code{\link{iconic_diagnose}()}.  When supplied, only eligible
+\code{\link{iconic_diagnose}()}. When supplied, only eligible
 estimators are run (unless \code{methods} or \code{run_all} overrides).}
 
 \item{alpha}{Significance threshold for significance flags. Default 0.05.}
 
 \item{n_cores}{Number of parallel workers for per-feature (and
-per-mediator) estimation.  Default 1 (sequential).  Uses
+per-mediator) estimation. Default 1 (sequential). Uses
 \code{parallel::mclapply} on Unix and a PSOCK cluster on Windows.}
 
 \item{min_f}{Minimum partial F for the per-transcript weak-instrument
-gate inside IV2SLS, IV2SLS2, and PGC2Gm.  Default \code{NULL}: inherits
+gate inside IV2SLS, IV2SLS2, and PGC2Gm. Default \code{NULL}: inherits
 from \code{diagnosis$min_f} when a diagnosis is supplied, otherwise 10.
 Pass an explicit value to override.}
 
-\item{run_all}{Logical.  Default \code{FALSE}.  When \code{TRUE},
+\item{run_all}{Logical. Default \code{FALSE}. When \code{TRUE},
 overrides diagnosis-based eligibility and runs every method whose
-required data exists (via \code{.auto_eligible_methods()}).  The
-per-transcript \code{min_f} gate still applies.  This is the "force
+required data exists (via \code{.auto_eligible_methods()}). The
+per-transcript \code{min_f} gate still applies. This is the "force
 run" escape hatch for exploratory analysis.}
 
-\item{se_method}{Character (v0.9.2, JYH #867): \code{"delta"} (default),
-\code{"bootstrap"}, or \code{"composite"} (v0.9.3). When
+\item{se_method}{Character: \code{"delta"} (default),
+\code{"bootstrap"}, or \code{"composite"}. When
 \code{"bootstrap"}, mediation NDE_se/NIE_se are replaced by the SD of
 \code{n_boot} nonparametric bootstrap resamples. When \code{"composite"},
 mediation NIE_p is replaced by the Huang (2019) JT-comp composite null
@@ -55,28 +55,28 @@ p-value, which accounts for the three-case structure of H0: alpha*beta=0
 and provides higher power than the Sobel/Wald test when signals are
 sparse. Only applies in mediation mode. NDE_p and NIE_se are unchanged.}
 
-\item{n_boot}{Integer (v0.9.2): number of bootstrap resamples when
+\item{n_boot}{Integer: number of bootstrap resamples when
 \code{se_method = "bootstrap"}. Default 500.}
 
-\item{effect_scale}{Character (v0.9.4): \code{"loghr"} (default) or
-\code{"rmst"}.  Only used when \code{data$outcome_type = "survival"}.
+\item{effect_scale}{Character: \code{"loghr"} (default) or
+\code{"rmst"}. Only used when \code{data$outcome_type = "survival"}.
 \code{"loghr"} fits Cox proportional-hazards models and reports
-log-hazard ratios.  \code{"rmst"} regresses leave-one-out RMST
+log-hazard ratios. \code{"rmst"} regresses leave-one-out RMST
 pseudo-observations (Graw et al. 2009) via OLS, reporting effects on
 the restricted-mean-survival-time (time) scale — a collapsible
-alternative where the NDE/NIE product decomposition is exact.  Ignored
+alternative where the NDE/NIE product decomposition is exact. Ignored
 (with a message) when \code{outcome_type = "continuous"}.}
 
-\item{tau}{Numeric (v0.9.4): RMST restriction time horizon.  Default
-\code{NULL} (90th percentile of follow-up).  Used only when
+\item{tau}{Numeric: RMST restriction time horizon. Default
+\code{NULL} (90th percentile of follow-up). Used only when
 \code{effect_scale = "rmst"}.}
 }
 \value{
-A data frame.  For total-effect mode: \code{feature}, \code{method},
-\code{beta}, \code{se}, \code{pvalue}, \code{significant}.  For mediation
+A data frame. For total-effect mode: \code{feature}, \code{method},
+\code{beta}, \code{se}, \code{pvalue}, \code{significant}. For mediation
 mode: \code{feature}, \code{mediator}, \code{method}, \code{NDE},
 \code{NDE_se}, \code{NDE_p}, \code{NIE}, \code{NIE_se}, \code{NIE_p},
-\code{NDE_significant}, \code{NIE_significant}.  When
+\code{NDE_significant}, \code{NIE_significant}. When
 \code{outcome_type = "survival"}, estimates are on the log-HR scale
 (\code{effect_scale = "loghr"}) or the RMST/time scale
 (\code{effect_scale = "rmst"}).
@@ -89,22 +89,22 @@ p-values.
 }
 \details{
 If a \code{diagnosis} from \code{\link{iconic_diagnose}()} is supplied,
-only eligible estimators are run by default.  If \code{methods} is
-supplied, only those methods are run (user override).  If neither is
+only eligible estimators are run by default. If \code{methods} is
+supplied, only those methods are run (user override). If neither is
 supplied, all estimators whose required inputs are present are run.
 }
 \examples{
 set.seed(1)
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-                    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 diag <- iconic_diagnose(data)
 est <- iconic_estimate(data, diagnosis = diag)
 head(est)
 
-# Survival outcome (v0.9.4)
+# Survival outcome
 sdat <- iconic_data(Z = rnorm(100), outcome_type = "survival",
-                    surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
-                    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 est <- iconic_estimate(sdat, effect_scale = "loghr")
 est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
 }

@@ -1,8 +1,7 @@
 # ============================================================
-# TODO(v1.0): supplement — move technical sensitivity detail to appendix
-# (JYH #478). The degradation-surface construction and tipping-point
+#. The degradation-surface construction and tipping-point
 # algorithm move to a technical appendix when the draft is condensed.
-# No code change in v0.9.2.
+# No code change.
 # ============================================================
 # iconic_sensitivity: Degradation surface calibrated to user data.
 #
@@ -15,7 +14,7 @@
 # (mediator instrument strength), and mo_confounding are inferred
 # from the iconic_data object and diagnosis when available.
 #
-# v0.7.0: Auto-trains a GAN (or MVN fallback) from the user's
+# Auto-trains a GAN (or MVN fallback) from the user's
 # iconic_data object when no trained_gan is supplied, so the
 # synthetic texture matches the user's cohort. Also supports
 # confounding = "inferred" to calibrate confounding parameters
@@ -26,12 +25,12 @@
 #'
 #' Converts the user's iconic_data to the load_real_input_data() format
 #' and trains a GAN (or multivariate-normal fallback) on the resulting
-#' tidy frame.  The trained model supplies realistic covariate and
+#' tidy frame. The trained model supplies realistic covariate and
 #' outcome texture to run_single_iteration(), and carries feature-level
 #' residual correlation matrices for the Y, M, and W panels so the
 #' simulation can inject correlated noise.
 #'
-#' @param data   An \code{iconic_data} object.
+#' @param data An \code{iconic_data} object.
 #' @param epochs GAN training epochs. Default 100.
 #' @return An \code{iconic_gan} object.
 #' @keywords internal
@@ -43,13 +42,13 @@
   # Z is a length-n vector; load_real_input_data expects a features x
   # samples matrix, so wrap it as 1 x n.
   Z_mat <- matrix(data$Z, nrow = 1L, ncol = data$n)
-  Y_mat <- data$Y  # already features x samples in iconic_data
+  Y_mat <- data$Y # already features x samples in iconic_data
 
   # Mediator panel: iconic_data stores M as features x samples (or NULL)
   M_mat <- data$M
 
   # Negative-control panel: use W (the combined panel) for correlation
-  # learning.  When path-specific W1/W2 are present, W is the combined
+  # learning. When path-specific W1/W2 are present, W is the combined
   # panel; either way, the correlation structure is what we need.
   W_mat <- data$W
 
@@ -57,10 +56,10 @@
     data$covariates else NULL
 
   input <- load_real_input_data(
-    Z_matrix     = Z_mat,
-    Y_matrix     = Y_mat,
-    M_matrix     = M_mat,
-    W_matrix     = W_mat,
+    Z_matrix = Z_mat,
+    Y_matrix = Y_mat,
+    M_matrix = M_mat,
+    W_matrix = W_mat,
     covariates_df = cov_df)
 
   train_gan_on_real_data(input$gan_training_data,
@@ -76,11 +75,11 @@
 #' (attached at iconic_data() construction) > auto-train from \code{data}.
 #'
 #' @param trained_gan Explicit argument (may be NULL).
-#' @param data        An \code{iconic_data} object.
-#' @param epochs      Epochs for auto-training. Default 100.
+#' @param data An \code{iconic_data} object.
+#' @param epochs Epochs for auto-training. Default 100.
 #' @return A list with \code{gan} (the resolved iconic_gan) and
-#'   \code{source} (a string: "user-supplied GAN", "data-attached GAN",
-#'   or "auto-trained from data").
+#' \code{source} (a string: "user-supplied GAN", "data-attached GAN",
+#' or "auto-trained from data").
 #' @keywords internal
 .resolve_gan <- function(trained_gan, data, epochs = 100) {
   if (!is.null(trained_gan)) {
@@ -89,8 +88,8 @@
   if (!is.null(data$trained_gan)) {
     return(list(gan = data$trained_gan, source = "data-attached GAN"))
   }
-  # v0.9.4: survival outcomes have no continuous Y matrix, so the GAN
-  # texture model cannot be trained.  Use default (NULL) texture instead.
+  # survival outcomes have no continuous Y matrix, so the GAN
+  # texture model cannot be trained. Use default (NULL) texture instead.
   if (!is.null(data$outcome_type) && data$outcome_type == "survival") {
     return(list(gan = NULL, source = "default texture (survival outcome)"))
   }
@@ -123,97 +122,97 @@
 #' and is most informative when comparing estimators that make
 #' different independence assumptions (e.g. IV2SLS2 vs PGC2Gm).
 #'
-#' @section Texture model (v0.7.0):
+#' @section Texture model:
 #' When \code{trained_gan} is \code{NULL} and no GAN is attached to
 #' \code{data}, a texture model is auto-trained from the user's data
 #' (GAN via \code{torch} if available, otherwise a multivariate-normal
-#' fallback).  This ensures the synthetic covariate and outcome texture
-#' matches the user's cohort.  Supply \code{trained_gan} explicitly or
+#' fallback). This ensures the synthetic covariate and outcome texture
+#' matches the user's cohort. Supply \code{trained_gan} explicitly or
 #' attach one via \code{\link{iconic_data}(trained_gan = ...)} to reuse
 #' a pre-trained model and avoid retraining.
 #'
-#' @section Confounding calibration (v0.7.0):
+#' @section Confounding calibration:
 #' The \code{confounding} argument controls how the held-fixed
 #' confounding parameters (\code{mo_confounding}, \code{omega_1},
 #' \code{omega_2}) are set:
 #' \itemize{
-#'   \item \code{"default"}: fixed defaults (0.8, 0.7, 0.7).
-#'   \item \code{"inferred"}: calls \code{\link{infer_confounding}()} to
-#'     estimate parameters from the data.  Parameters that cannot be
-#'     inferred fall back to defaults with warnings.
-#'   \item \code{"manual"}: use the explicitly supplied arguments.
+#' \item \code{"default"}: fixed defaults (0.8, 0.7, 0.7).
+#' \item \code{"inferred"}: calls \code{\link{infer_confounding}()} to
+#' estimate parameters from the data. Parameters that cannot be
+#' inferred fall back to defaults with warnings.
+#' \item \code{"manual"}: use the explicitly supplied arguments.
 #' }
 #'
-#' @param data      An \code{iconic_data} object.
+#' @param data An \code{iconic_data} object.
 #' @param diagnosis Optional \code{iconic_diagnosis} from
-#'   \code{\link{iconic_diagnose}()}.  Used to infer \code{phi} and
-#'   \code{mo_confounding} when not explicitly supplied.
+#' \code{\link{iconic_diagnose}()}. Used to infer \code{phi} and
+#' \code{mo_confounding} when not explicitly supplied.
 #' @param trained_gan Optional \code{iconic_gan} from
-#'   \code{\link{train_gan_on_real_data}()}.  If \code{NULL}, a texture
-#'   model is auto-trained from \code{data} (v0.7.0).
+#' \code{\link{train_gan_on_real_data}()}. If \code{NULL}, a texture
+#' model is auto-trained from \code{data}.
 #' @param confounding Confounding parameter source: \code{"default"}
-#'   (fixed defaults), \code{"inferred"} (data-calibrated via
-#'   \code{\link{infer_confounding}()}), or \code{"manual"} (use
-#'   explicitly supplied arguments).  Default \code{"default"}.
+#' (fixed defaults), \code{"inferred"} (data-calibrated via
+#' \code{\link{infer_confounding}()}), or \code{"manual"} (use
+#' explicitly supplied arguments). Default \code{"default"}.
 #' @param gan_epochs Epochs for auto-trained GAN. Default 100.
 #' @param rho_G1_grid Values of rho_G1 (G correlation with U_XM).
-#'   Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.
+#' Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.
 #' @param rho_G2_grid Values of rho_G2 (Gm correlation with U_MY).
-#'   Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.
-#' @param n_iter     Replicates per grid cell. Default 30.
-#' @param n_samples  Samples per replicate. If NULL, uses \code{data$n}.
+#' Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.
+#' @param n_iter Replicates per grid cell. Default 30.
+#' @param n_samples Samples per replicate. If NULL, uses \code{data$n}.
 #' @param n_features Features per replicate. Default 10.
-#' @param phi        Mediator instrument strength. If NULL, inferred
-#'   from diagnosis (F_Gm) or defaults to 0.8.
+#' @param phi Mediator instrument strength. If NULL, inferred
+#' from diagnosis (F_Gm) or defaults to 0.8.
 #' @param mo_confounding M-O confounding strength. Default 0.8.
-#'   Used when \code{confounding = "default"} or \code{"manual"}.
+#' Used when \code{confounding = "default"} or \code{"manual"}.
 #' @param separate_U Use separate confounders for Z->M and M->Y paths.
-#'   Default TRUE (matches v0.5.0 DGP).
+#' Default TRUE (matches).
 #' @param omega_1,omega_2 NC coverage of U_XM / U_MY. Default 0.7.
-#'   Used when \code{confounding = "default"} or \code{"manual"}.
+#' Used when \code{confounding = "default"} or \code{"manual"}.
 #' @param bias_threshold Absolute bias threshold for tipping-point
-#'   annotation. Default 0.10.
-#' @param base_seed  Base RNG seed. Default 700.
-#' @param n_cores    Number of parallel workers for simulation replicates.
-#'   Default 1 (sequential).  Uses \code{parallel::mclapply} on Unix
-#'   and a PSOCK cluster on Windows.
-#' @param outcome_type  \code{NULL} (inherit from \code{data}, default) or
-#'   \code{"continuous"} / \code{"survival"} (v0.9.4).  When survival, the
-#'   sensitivity sweep uses the Cox / RMST survival mediation drivers.
-#' @param effect_scale  \code{"loghr"} (default) or \code{"rmst"}.  Only
-#'   used when \code{outcome_type = "survival"}.
-#' @param surv_h0       Baseline hazard for survival DGP (v0.9.4). Default 0.1.
-#' @param surv_event_frac Target fraction of observed events (v0.9.4). Default 0.6.
-#' @param surv_censor_rate Explicit censoring rate (v0.9.4). Default NULL.
+#' annotation. Default 0.10.
+#' @param base_seed Base RNG seed. Default 700.
+#' @param n_cores Number of parallel workers for simulation replicates.
+#' Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
+#' and a PSOCK cluster on Windows.
+#' @param outcome_type \code{NULL} (inherit from \code{data}, default) or
+#' \code{"continuous"} / \code{"survival"}. When survival, the
+#' sensitivity sweep uses the Cox / RMST survival mediation drivers.
+#' @param effect_scale \code{"loghr"} (default) or \code{"rmst"}. Only
+#' used when \code{outcome_type = "survival"}.
+#' @param surv_h0 Baseline hazard for survival DGP. Default 0.1.
+#' @param surv_event_frac Target fraction of observed events. Default 0.6.
+#' @param surv_censor_rate Explicit censoring rate. Default NULL.
 #'
 #' @section Defaults:
 #' \tabular{lll}{
-#'   \strong{Parameter} \tab \strong{Default} \tab \strong{Source} \cr
-#'   \code{confounding} \tab "default" \tab Use DGP defaults below \cr
-#'   \code{gan_epochs} \tab 100 \tab Texture-model training budget \cr
-#'   \code{rho_G1_grid} \tab c(0,0.1,0.2,0.3,0.5) \tab Independence-violation sweep \cr
-#'   \code{rho_G2_grid} \tab c(0,0.1,0.2,0.3,0.5) \tab Independence-violation sweep \cr
-#'   \code{n_iter} \tab 30 \tab Replicates per grid cell \cr
-#'   \code{n_features} \tab 10 \tab Features per replicate \cr
-#'   \code{mo_confounding} \tab 0.8 \tab Simulation calibration (delta_mo) \cr
-#'   \code{separate_U} \tab TRUE \tab Path-specific confounders \cr
-#'   \code{omega_1, omega_2} \tab 0.7 \tab NC coverage (simulation calibration) \cr
-#'   \code{bias_threshold} \tab 0.10 \tab Tipping-point threshold \cr
+#' \strong{Parameter} \tab \strong{Default} \tab \strong{Source} \cr
+#' \code{confounding} \tab "default" \tab Use DGP defaults below \cr
+#' \code{gan_epochs} \tab 100 \tab Texture-model training budget \cr
+#' \code{rho_G1_grid} \tab c(0,0.1,0.2,0.3,0.5) \tab Independence-violation sweep \cr
+#' \code{rho_G2_grid} \tab c(0,0.1,0.2,0.3,0.5) \tab Independence-violation sweep \cr
+#' \code{n_iter} \tab 30 \tab Replicates per grid cell \cr
+#' \code{n_features} \tab 10 \tab Features per replicate \cr
+#' \code{mo_confounding} \tab 0.8 \tab Simulation calibration (delta_mo) \cr
+#' \code{separate_U} \tab TRUE \tab Path-specific confounders \cr
+#' \code{omega_1, omega_2} \tab 0.7 \tab NC coverage (simulation calibration) \cr
+#' \code{bias_threshold} \tab 0.10 \tab Tipping-point threshold \cr
 #' }
 #'
 #' @return An \code{iconic_sensitivity} S3 object: a named list with
-#'   \code{$surface} (data frame: rho_G1, rho_G2, method, NDE_bias,
-#'   NIE_bias, NDE_rmse, NIE_rmse, NDE_type1, NIE_type1, tipped),
-#'   \code{$grid}, \code{$tipping_points}, \code{$summary},
-#'   \code{$texture_source} (how the GAN was obtained), and
-#'   \code{$inferred_confounding} (when \code{confounding = "inferred"}).
+#' \code{$surface} (data frame: rho_G1, rho_G2, method, NDE_bias,
+#' NIE_bias, NDE_rmse, NIE_rmse, NDE_type1, NIE_type1, tipped),
+#' \code{$grid}, \code{$tipping_points}, \code{$summary},
+#' \code{$texture_source} (how the GAN was obtained), and
+#' \code{$inferred_confounding} (when \code{confounding = "inferred"}).
 #' @export
 #'
 #' @examples
 #' \donttest{
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-#'                     M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-#'                     W = matrix(rnorm(100*10), 10, 100))
+#' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+#' W = matrix(rnorm(100*10), 10, 100))
 #' sens <- iconic_sensitivity(data, n_iter = 10)
 #' print(sens)
 #' }
@@ -247,18 +246,18 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
   confounding <- match.arg(confounding)
   effect_scale <- match.arg(effect_scale)
 
-  # v0.9.4: resolve outcome_type — inherit from data if not explicitly set.
+  # resolve outcome_type — inherit from data if not explicitly set.
   if (is.null(outcome_type)) {
     outcome_type <- if (!is.null(data$outcome_type)) data$outcome_type else "continuous"
   }
   outcome_type <- match.arg(outcome_type, c("continuous", "survival"))
 
-  # ── Resolve the texture model (v0.7.0) ──
+  # ── Resolve the texture model ──
   gan_res <- .resolve_gan(trained_gan, data, epochs = gan_epochs)
   gan <- gan_res$gan
   texture_source <- gan_res$source
 
-  # ── Resolve confounding parameters (v0.7.0) ──
+  # ── Resolve confounding parameters ──
   inferred_conf <- NULL
   if (confounding == "inferred") {
     # Need estimates for the gap-based inference
@@ -294,8 +293,8 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
   grid <- expand.grid(rho_G1 = rho_G1_grid, rho_G2 = rho_G2_grid,
                       KEEP.OUT.ATTRS = FALSE)
 
-  true_NDE <- 0.10  # beta_Z default
-  true_NIE <- 0.15  # alpha_M * beta_M default
+  true_NDE <- 0.10 # beta_Z default
+  true_NIE <- 0.15 # alpha_M * beta_M default
 
   n_grid <- nrow(grid)
   smry <- lapply(seq_len(n_grid), function(gi) {
@@ -327,7 +326,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 
     combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker,
                                                 n_cores = n_cores,
-                                                progress = "  Replicates"))
+                                                progress = " Replicates"))
     s <- summarise_mediation_results(combined, true_NDE, true_NIE)
     s$rho_G1 <- r1
     s$rho_G2 <- r2
@@ -355,21 +354,21 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
                                             n_iter)
 
   obj <- list(
-    surface             = surface,
-    grid                = grid,
-    tipping_points      = tipping,
-    bias_threshold      = bias_threshold,
-    n_iter              = n_iter,
-    n_samples           = n_samples,
-    phi                 = phi,
-    mo_confounding      = mo_confounding,
-    omega_1             = omega_1,
-    omega_2             = omega_2,
-    texture_source      = texture_source,
+    surface = surface,
+    grid = grid,
+    tipping_points = tipping,
+    bias_threshold = bias_threshold,
+    n_iter = n_iter,
+    n_samples = n_samples,
+    phi = phi,
+    mo_confounding = mo_confounding,
+    omega_1 = omega_1,
+    omega_2 = omega_2,
+    texture_source = texture_source,
     inferred_confounding = inferred_conf,
-    summary             = summary_txt,
-    # v0.9.2 (JYH #543, #582): scenario manifest for reader orientation.
-    manifest            = scenario_manifest(
+    summary = summary_txt,
+    # scenario manifest for reader orientation.
+    manifest = scenario_manifest(
       list(beta_Z = true_NDE, alpha_M = 0.50, beta_M = 0.30,
            n_mediators = 1, n = n_samples, n_features = n_features,
            separate_U = separate_U, feat_cor = 0,
@@ -395,7 +394,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 #' Find tipping points from the degradation surface (internal)
 #'
 #' For each method, finds the first rho_G2 value (at rho_G1 = 0) where
-#' |NDE_bias| or |NIE_bias| exceeds the threshold.  This is the point
+#' |NDE_bias| or |NIE_bias| exceeds the threshold. This is the point
 #' at which the estimator's assumptions are violated enough to produce
 #' materially biased estimates.
 #' @keywords internal
@@ -411,7 +410,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     tip_NDE <- NA_real_
     tip_NIE <- NA_real_
     for (i in seq_len(nrow(edge))) {
-      # v0.9.4: guard against NaN/NA bias (e.g. COCA for survival outcomes).
+      # guard against NaN/NA bias (e.g. COCA for survival outcomes).
       if (is.na(tip_NDE) && is.finite(edge$NDE_bias[i]) &&
           abs(edge$NDE_bias[i]) > threshold)
         tip_NDE <- edge$rho_G2[i]
@@ -450,11 +449,11 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 .build_sensitivity_summary <- function(surface, tipping, threshold, n_iter) {
   lines <- character(0)
   lines <- c(lines,
-    sprintf("  Grid: %d x %d (rho_G1 x rho_G2), %d reps per cell",
+    sprintf(" Grid: %d x %d (rho_G1 x rho_G2), %d reps per cell",
             length(unique(surface$rho_G1)),
             length(unique(surface$rho_G2)),
             n_iter),
-    sprintf("  Bias threshold for tipping: %.2f", threshold))
+    sprintf(" Bias threshold for tipping: %.2f", threshold))
 
   # Per-method summary
   methods <- unique(surface$method)
@@ -473,7 +472,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     if (nchar(tip_str) == 0)
       tip_str <- " no tipping within grid"
 
-    lines <- c(lines, sprintf("  %s: max|NDE bias|=%.3f, max|NIE bias|=%.3f,%s",
+    lines <- c(lines, sprintf(" %s: max|NDE bias|=%.3f, max|NIE bias|=%.3f,%s",
                               m, max_nde, max_nie, tip_str))
   }
 
@@ -494,8 +493,8 @@ print.iconic_sensitivity <- function(x, ...) {
   cat("<iconic_sensitivity>\n")
   cat(x$summary, "\n")
   if (!is.null(x$texture_source))
-    cat("  Texture:", x$texture_source, "\n")
+    cat(" Texture:", x$texture_source, "\n")
   if (!is.null(x$inferred_confounding))
-    cat("  Confounding: inferred from data\n")
+    cat(" Confounding: inferred from data\n")
   invisible(x)
 }

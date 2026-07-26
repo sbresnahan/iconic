@@ -8,18 +8,18 @@
 }
 \description{
 Applies the eligibility rules:
-UNADJ:   always eligible
-DIRECT:  requires G + W
-COCA:    requires W, A1 passed (at least some valid NCs); A2 NOT required (v0.9.2)
-IV2SLS:  requires G, F_G >= min_f, W
-PGC:     requires G, F_G >= min_f, completeness satisfied
+UNADJ: always eligible
+DIRECT: requires G + W
+COCA: requires W, A1 passed (at least some valid NCs); A2 NOT required
+IV2SLS: requires G, F_G >= min_f, W
+PGC: requires G, F_G >= min_f, completeness satisfied
 IV2SLS2: requires G + Gm + W, F_G >= min_f, F_Gm >= min_f
-PGC2:    requires G + W1 + W2, F_G >= min_f, path completeness
-PGC2Gm:  requires G + Gm + W1 + W2, F_G >= min_f, path completeness
+PGC2: requires G + W1 + W2, F_G >= min_f, path completeness
+PGC2Gm: requires G + Gm + W1 + W2, F_G >= min_f, path completeness
 }
 \details{
-v0.9.2: COCA no longer requires the A2 (instrument-independence) screen,
-only A1 + completeness (JYH #509). The eligibility table gains an
+COCA no longer requires the A2 (instrument-independence) screen,
+only A1 + completeness. The eligibility table gains an
 \code{a2_required} column documenting which estimators need A2.
 }
 \keyword{internal}

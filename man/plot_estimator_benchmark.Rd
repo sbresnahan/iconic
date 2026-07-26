@@ -45,7 +45,7 @@ A \code{patchwork} ggplot object.
 \description{
 Produces a 4-panel publication figure benchmarking the eight ICONIC
 estimators under unmeasured confounding and mediator-outcome
-confounding.  Panels: (A) total-effect bias vs confounding strength,
+confounding. Panels: (A) total-effect bias vs confounding strength,
 (B) NDE/NIE bias vs confounding strength, (C) NDE/NIE bias vs sample
 size, (D) NIE Type I error vs confounding strength.
 }

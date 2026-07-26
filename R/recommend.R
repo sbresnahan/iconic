@@ -1,34 +1,34 @@
 # ============================================================
-# iconic_recommend: Model recommendation layer for the v0.6.0
+# iconic_recommend: Model recommendation layer for the
 # model selection workflow.
 #
 # Ranks eligible estimators by identification strength (tier) and
-# optionally by robustness from a sensitivity analysis.  Returns a
+# optionally by robustness from a sensitivity analysis. Returns a
 # transparent recommendation with rationale.
 #
 # Tier system:
-#   A (identified):     IV2SLS2, PGC2Gm  -- two instruments + path NCs
-#   B (negative-control): PGC, PGC2, COCA -- NC-based confounding correction
-#   C (instrument-based): IV2SLS          -- single instrument, no NC
-#   D (bias reference):   UNADJ, DIRECT   -- naive, no causal identification
+# A (identified): IV2SLS2, PGC2Gm -- two instruments + path NCs
+# B (negative-control): PGC, PGC2, COCA -- NC-based confounding correction
+# C (instrument-based): IV2SLS -- single instrument, no NC
+# D (bias reference): UNADJ, DIRECT -- naive, no causal identification
 # ============================================================
 
 # Tier assignments (internal)
 .estimator_tiers <- c(
-  UNADJ   = "D",
-  DIRECT  = "D",
-  COCA    = "B",
-  IV2SLS  = "C",
-  PGC     = "B",
+  UNADJ = "D",
+  DIRECT = "D",
+  COCA = "B",
+  IV2SLS = "C",
+  PGC = "B",
   IV2SLS2 = "A",
-  PGC2    = "B",
-  PGC2Gm  = "A"
+  PGC2 = "B",
+  PGC2Gm = "A"
 )
 
 # Human-readable tier descriptions
-# v0.9.2: Tier A label changed to "identified under stated assumptions" to
+# Tier A label changed to "identified under stated assumptions" to
 # acknowledge that no tier is guaranteed identified without its assumptions
-# holding (JYH #414).
+# holding.
 .tier_labels <- c(
   A = "identified under stated assumptions (two instruments + path NCs)",
   B = "negative-control based",
@@ -37,16 +37,16 @@
 )
 
 # What each estimator requires (for rationale)
-# v0.9.2: COCA requirement updated to reflect A2 exemption (JYH #509).
+# COCA requirement updated to reflect A2 exemption.
 .estimator_requirements <- c(
-  UNADJ   = "no assumptions (naive OLS)",
-  DIRECT  = "G + W as covariates (no causal identification)",
-  COCA    = "valid NCs (A1), completeness (A2 not required)",
-  IV2SLS  = "valid G (F>=10), exclusion restriction",
-  PGC     = "valid G (F>=10), valid NCs (A2), completeness",
+  UNADJ = "no assumptions (naive OLS)",
+  DIRECT = "G + W as covariates (no causal identification)",
+  COCA = "valid NCs (A1), completeness (A2 not required)",
+  IV2SLS = "valid G (F>=10), exclusion restriction",
+  PGC = "valid G (F>=10), valid NCs (A2), completeness",
   IV2SLS2 = "valid G + Gm (F>=10), exclusion for both, valid NCs",
-  PGC2    = "valid G (F>=10), path-specific NCs (W1/W2), completeness",
-  PGC2Gm  = "valid G + Gm (F>=10), path-specific NCs (W1/W2), completeness"
+  PGC2 = "valid G (F>=10), path-specific NCs (W1/W2), completeness",
+  PGC2Gm = "valid G + Gm (F>=10), path-specific NCs (W1/W2), completeness"
 )
 
 
@@ -54,20 +54,20 @@
 #'
 #' Ranks all eligible estimators by identification strength (tier) and,
 #' when a sensitivity analysis is supplied, by robustness to assumption
-#' violations.  Returns the top-ranked estimator with a transparent
+#' violations. Returns the top-ranked estimator with a transparent
 #' rationale.
 #'
 #' The tier system reflects the strength of identification:
 #' \itemize{
-#'   \item \strong{Tier A (identified)}: IV2SLS2, PGC2Gm -- use two
-#'     instruments and path-specific negative controls, providing point
-#'     identification under mediator-outcome confounding.
-#'   \item \strong{Tier B (negative-control)}: PGC, PGC2, COCA -- use
-#'     negative controls to proxy unmeasured confounding.
-#'   \item \strong{Tier C (instrument-based)}: IV2SLS -- single
-#'     instrument without NC correction.
-#'   \item \strong{Tier D (bias reference)}: UNADJ, DIRECT -- naive
-#'     adjustment with no causal identification.
+#' \item \strong{Tier A (identified)}: IV2SLS2, PGC2Gm -- use two
+#' instruments and path-specific negative controls, providing point
+#' identification under mediator-outcome confounding.
+#' \item \strong{Tier B (negative-control)}: PGC, PGC2, COCA -- use
+#' negative controls to proxy unmeasured confounding.
+#' \item \strong{Tier C (instrument-based)}: IV2SLS -- single
+#' instrument without NC correction.
+#' \item \strong{Tier D (bias reference)}: UNADJ, DIRECT -- naive
+#' adjustment with no causal identification.
 #' }
 #'
 #' When \code{sensitivity} is supplied (from
@@ -75,38 +75,38 @@
 #' are further ranked by robustness: the estimator whose estimates
 #' degrade least across the assumption-violation surface ranks higher.
 #'
-#' @param data       An \code{iconic_data} object.
-#' @param diagnosis  Optional \code{iconic_diagnosis} from
-#'   \code{\link{iconic_diagnose}()}.  If \code{NULL}, auto-eligibility
-#'   is computed from the data.
-#' @param estimate   Optional estimate data frame from
-#'   \code{\link{iconic_estimate}()}.  Used to report point estimates
-#'   alongside the recommendation.
+#' @param data An \code{iconic_data} object.
+#' @param diagnosis Optional \code{iconic_diagnosis} from
+#' \code{\link{iconic_diagnose}()}. If \code{NULL}, auto-eligibility
+#' is computed from the data.
+#' @param estimate Optional estimate data frame from
+#' \code{\link{iconic_estimate}()}. Used to report point estimates
+#' alongside the recommendation.
 #' @param sensitivity Optional \code{iconic_sensitivity} from
-#'   \code{\link{iconic_sensitivity}()}.  Used for robustness ranking
-#'   within tiers.
-#' @param criterion Character (v0.9.2, JYH #544): \code{"combined"} (default),
-#'   \code{"minimax_bias"}, or \code{"ci_coverage"}. Controls how robustness
-#'   is ranked within tiers. \code{"combined"} blends bias and CI coverage;
-#'   \code{"minimax_bias"} ranks by worst-case bias across the violation grid;
-#'   \code{"ci_coverage"} ranks by CI coverage of the true effect. When
-#'   \code{sensitivity} is supplied, also populates \code{$per_scenario}
-#'   (best estimator at the origin vs at violation cells).
+#' \code{\link{iconic_sensitivity}()}. Used for robustness ranking
+#' within tiers.
+#' @param criterion Character: \code{"combined"} (default),
+#' \code{"minimax_bias"}, or \code{"ci_coverage"}. Controls how robustness
+#' is ranked within tiers. \code{"combined"} blends bias and CI coverage;
+#' \code{"minimax_bias"} ranks by worst-case bias across the violation grid;
+#' \code{"ci_coverage"} ranks by CI coverage of the true effect. When
+#' \code{sensitivity} is supplied, also populates \code{$per_scenario}
+#' (best estimator at the origin vs at violation cells).
 #'
 #' @return An \code{iconic_recommendation} S3 object: a named list with
-#'   \code{$ranking} (data frame: estimator, tier, eligible, rank,
-#'   rationale), \code{$recommended} (name of top estimator),
-#'   \code{$recommended_tier}, \code{$per_scenario} (v0.9.2, when
-#'   \code{sensitivity} is supplied), and \code{$summary}.
+#' \code{$ranking} (data frame: estimator, tier, eligible, rank,
+#' rationale), \code{$recommended} (name of top estimator),
+#' \code{$recommended_tier}, \code{$per_scenario}
+#' (when \code{sensitivity} is supplied), and \code{$summary}.
 #' @export
 #'
 #' @examples
 #' \donttest{
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-#'                     G = rnorm(100), W = matrix(rnorm(100*10), 10, 100))
+#' G = rnorm(100), W = matrix(rnorm(100*10), 10, 100))
 #' diag <- iconic_diagnose(data)
-#' est  <- iconic_estimate(data, diagnosis = diag)
-#' rec  <- iconic_recommend(data, diagnosis = diag, estimate = est)
+#' est <- iconic_estimate(data, diagnosis = diag)
+#' rec <- iconic_recommend(data, diagnosis = diag, estimate = est)
 #' print(rec)
 #' }
 iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
@@ -132,8 +132,8 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 
   ranking <- data.frame(
     estimator = all_methods,
-    tier      = tiers,
-    eligible  = eligible,
+    tier = tiers,
+    eligible = eligible,
     stringsAsFactors = FALSE
   )
 
@@ -162,7 +162,7 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
   }
 
   # Rank: eligible first, then by tier (A > B > C > D), then by robustness
-  # (if available).  robustness_score may be absent when no sensitivity
+  # (if available). robustness_score may be absent when no sensitivity
   # analysis is supplied.
   if ("robustness_score" %in% names(ranking)) {
     ranking$robustness_score[is.na(ranking$robustness_score)] <- -Inf
@@ -193,7 +193,7 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
   recommended <- if (nrow(elig_ranking) > 0) elig_ranking$estimator[1] else NA
   recommended_tier <- if (!is.na(recommended)) as.character(.estimator_tiers[recommended]) else NA
 
-  # v0.9.2: per-scenario top estimator (JYH #544).
+  # per-scenario top estimator.
   per_scenario <- if (!is.null(sensitivity))
     .extract_per_scenario(sensitivity, criterion = criterion) else NULL
 
@@ -202,12 +202,12 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
                                                recommended_tier, data)
 
   obj <- list(
-    ranking          = ranking,
-    recommended      = recommended,
+    ranking = ranking,
+    recommended = recommended,
     recommended_tier = recommended_tier,
-    per_scenario     = per_scenario,
-    criterion        = criterion,
-    summary          = summary_txt
+    per_scenario = per_scenario,
+    criterion = criterion,
+    summary = summary_txt
   )
   class(obj) <- c("iconic_recommendation", "list")
   obj
@@ -217,14 +217,14 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 #' Extract robustness scores from sensitivity analysis (internal)
 #'
 #' Computes a robustness score for each estimator from the sensitivity
-#' surface. v0.9.2 adds a `criterion` argument:
-#'   - "minimax_bias" (legacy): lower maximum absolute bias across the
-#'     violation grid means higher robustness.
-#'   - "ci_coverage": distance to nominal 95% CI coverage (|coverage - 0.95|),
-#'     lower is better. Requires NDE_coverage/NIE_coverage columns.
-#'   - "combined" (default): normalized max|bias| + normalized |coverage-0.95|,
-#'     lower is better. Implements the "second-best bias with nominal coverage"
-#'     tradeoff (JYH #480).
+#' surface. adds a `criterion` argument:
+#' - "minimax_bias" (legacy): lower maximum absolute bias across the
+#' violation grid means higher robustness.
+#' - "ci_coverage": distance to nominal 95% CI coverage (|coverage - 0.95|),
+#' lower is better. Requires NDE_coverage/NIE_coverage columns.
+#' - "combined" (default): normalized max|bias| + normalized |coverage-0.95|,
+#' lower is better. Implements the "second-best bias with nominal coverage"
+#' tradeoff.
 #' @keywords internal
 .extract_robustness <- function(sensitivity, criterion = c("combined","minimax_bias","ci_coverage")) {
   criterion <- match.arg(criterion)
@@ -244,8 +244,8 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
                       coverage_dist = numeric(0), score = numeric(0)))
   }
 
-  # Coverage columns (v0.9.2). May be absent if the surface was generated
-  # by a pre-v0.9.2 sensitivity run.
+  # Coverage columns. May be absent if the surface was generated
+  # by a a prior sensitivity run.
   has_cov <- "NDE_coverage" %in% names(surface) && "NIE_coverage" %in% names(surface)
   cov_cols <- if (has_cov) c("NDE_coverage", "NIE_coverage") else NULL
 
@@ -268,7 +268,7 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
   # Score by criterion.
   score <- switch(criterion,
     minimax_bias = 1 / (1 + max_bias),
-    ci_coverage  = {
+    ci_coverage = {
       if (!has_cov) return(data.frame(method = methods, max_bias = max_bias,
                                        coverage_dist = coverage_dist,
                                        score = rep(NA_real_, length(methods))))
@@ -298,9 +298,9 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 
 #' Extract per-scenario top estimator from sensitivity surface (internal)
 #'
-#' v0.9.2: For each cell of the sensitivity surface, identifies the
+#' For each cell of the sensitivity surface, identifies the
 #' top-ranked estimator by the chosen criterion. Returns a data frame
-#' with one row per cell (JYH #544: a single global recommendation is
+#' with one row per cell (
 #' insufficient; some scenarios favor IV, others PGC).
 #' @keywords internal
 .extract_per_scenario <- function(sensitivity, criterion = c("combined","minimax_bias","ci_coverage")) {
@@ -341,8 +341,8 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
     # Pick top by criterion (lower distance = better).
     dist <- switch(criterion,
       minimax_bias = mb,
-      ci_coverage  = if (has_cov) cd else mb,
-      combined     = {
+      ci_coverage = if (has_cov) cd else mb,
+      combined = {
         nmb <- (mb - min(mb)) / (max(mb) - min(mb) + 1e-8)
         if (has_cov) {
           ncd <- (cd - min(cd)) / (max(cd) - min(cd) + 1e-8)
@@ -366,33 +366,33 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
   lines <- character(0)
 
   if (is.na(recommended)) {
-    lines <- c(lines, "  No eligible estimators beyond UNADJ.",
-               "  Consider supplying instruments (G) or negative controls (W).")
+    lines <- c(lines, " No eligible estimators beyond UNADJ.",
+               " Consider supplying instruments (G) or negative controls (W).")
   } else {
     lines <- c(lines,
-      sprintf("  Recommended: %s (tier %s -- %s)",
+      sprintf(" Recommended: %s (tier %s -- %s)",
               recommended, recommended_tier, .tier_labels[recommended_tier]))
 
     # Report point estimate if available
     if ("mean_beta" %in% names(ranking)) {
       val <- ranking$mean_beta[ranking$estimator == recommended]
       if (!is.na(val))
-        lines <- c(lines, sprintf("  Estimated total effect (mean): %.4f", val))
+        lines <- c(lines, sprintf(" Estimated total effect (mean): %.4f", val))
     }
     if ("mean_NDE" %in% names(ranking)) {
       nde <- ranking$mean_NDE[ranking$estimator == recommended]
       nie <- ranking$mean_NIE[ranking$estimator == recommended]
       if (!is.na(nde))
-        lines <- c(lines, sprintf("  Estimated NDE (mean): %.4f", nde))
+        lines <- c(lines, sprintf(" Estimated NDE (mean): %.4f", nde))
       if (!is.na(nie))
-        lines <- c(lines, sprintf("  Estimated NIE (mean): %.4f", nie))
+        lines <- c(lines, sprintf(" Estimated NIE (mean): %.4f", nie))
     }
 
     # Robustness info
     if ("max_bias" %in% names(ranking)) {
       mb <- ranking$max_bias[ranking$estimator == recommended]
       if (!is.na(mb))
-        lines <- c(lines, sprintf("  Max |bias| across sensitivity surface: %.4f", mb))
+        lines <- c(lines, sprintf(" Max |bias| across sensitivity surface: %.4f", mb))
     }
 
     # List eligible alternatives
@@ -400,7 +400,7 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
     if (nrow(elig) > 1) {
       alts <- elig$estimator[-1]
       lines <- c(lines, "",
-                 sprintf("  Eligible alternatives: %s",
+                 sprintf(" Eligible alternatives: %s",
                          paste(alts, collapse = ", ")))
     }
   }
@@ -418,19 +418,19 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 print.iconic_recommendation <- function(x, ...) {
   cat("<iconic_recommendation>\n")
   cat(x$summary, "\n")
-  cat("\n  Full ranking:\n")
+  cat("\n Full ranking:\n")
   e <- x$ranking[x$ranking$eligible, ]
   if (nrow(e) > 0) {
     for (i in seq_len(nrow(e))) {
-      cat(sprintf("    %d. %s [tier %s] -- %s\n",
+      cat(sprintf(" %d. %s [tier %s] -- %s\n",
                   e$rank[i], e$estimator[i], e$tier[i], e$rationale[i]))
     }
   }
   inelig <- x$ranking[!x$ranking$eligible, ]
   if (nrow(inelig) > 0) {
-    cat("\n  Ineligible:\n")
+    cat("\n Ineligible:\n")
     for (i in seq_len(nrow(inelig))) {
-      cat(sprintf("    %s -- %s\n", inelig$estimator[i], inelig$rationale[i]))
+      cat(sprintf(" %s -- %s\n", inelig$estimator[i], inelig$rationale[i]))
     }
   }
   invisible(x)

@@ -45,7 +45,7 @@ Returns all-NA if the first-stage partial F for G is below \code{min_f}.
 \description{
 Bridge-function-adjusted natural direct and indirect effects with a
 survival outcome stage, using a single negative-control panel W for
-both the Z->M and M->Y confounding paths.  This is the survival
+both the Z->M and M->Y confounding paths. This is the survival
 analogue of \code{\link{fit_pgc_mediation}} (continuous outcome):
 \enumerate{
 \item OLS: residualise Z on G -> Z_resid.
@@ -54,7 +54,7 @@ analogue of \code{\link{fit_pgc_mediation}} (continuous outcome):
 \item Cox / RMST: \code{Surv(t,e) ~ Z + M + W_hat + covars} ->
 NDE (coef on Z), beta_M (coef on M).
 }
-\code{NIE = alpha_M * beta_M}.  Unlike
+\code{NIE = alpha_M * beta_M}. Unlike
 \code{\link{fit_pgc_mediation2_surv}}, which uses path-specific W1/W2
 bridges, this estimator uses a single combined W panel and is
 appropriate when separate U_XM / U_MY confounders are not assumed.
@@ -64,6 +64,6 @@ appropriate when separate U_XM / U_MY confounders are not assumed.
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-                       dat$G[, 1], dat$W)
+dat$G[, 1], dat$W)
 }
 }

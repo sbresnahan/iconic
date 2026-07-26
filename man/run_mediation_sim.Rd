@@ -34,7 +34,7 @@ run_mediation_sim(
 
 \item{n_features}{Number of outcome and negative-control features. Default 20.}
 
-\item{n_mediators}{Number of independent mediators (v0.8.4). When > 1,
+\item{n_mediators}{Number of independent mediators. When > 1,
 each mediator has its own genetic instrument Gm and
 contributes additively to Y. Default 1 (single mediator,
 backward compatible).}
@@ -51,25 +51,25 @@ backward compatible).}
 
 \item{mo_confounding}{Strength of U1 -> M (mediator-outcome confounding). Default 0.80.}
 
-\item{phi}{Strength of the mediator instrument Gm -> M (v0.4.0).
+\item{phi}{Strength of the mediator instrument Gm -> M.
 0 = no mediator instrument (five estimators, backward
-compatible).  > 0 = generates Gm and includes the
+compatible). > 0 = generates Gm and includes the
 2-stage MR estimator (IV2SLS2). Default 0.}
 
-\item{rho_G1}{Correlation of G1 with U_XM (v0.5.0). Default 0.}
+\item{rho_G1}{Correlation of G1 with U_XM. Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY (v0.5.0). Default 0.}
+\item{rho_G2}{Correlation of G2 with U_MY. Default 0.}
 
-\item{rho_pop}{Shared population structure (v0.5.0). Default 0.}
+\item{rho_pop}{Shared population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders for Z->M and M->Y paths (v0.5.0). Default FALSE.}
+\item{separate_U}{Draw separate confounders for Z->M and M->Y paths. Default FALSE.}
 
-\item{omega_1}{Coverage of U_XM by W1 (v0.5.0). NULL = use w_signal.}
+\item{omega_1}{Coverage of U_XM by W1. NULL = use w_signal.}
 
-\item{omega_2}{Coverage of U_MY by W2 (v0.5.0). NULL = use w_signal.}
+\item{omega_2}{Coverage of U_MY by W2. NULL = use w_signal.}
 
 \item{feat_cor}{Within-module correlation for block-diagonal co-expression
-modules in Y and W (v0.9.0). 0 = independent features. Default 0.}
+modules in Y and W. 0 = independent features. Default 0.}
 
 \item{base_seed}{Starting seed; replicate i uses base_seed + i. Default 100.}
 
@@ -87,7 +87,7 @@ confounding (via \code{mo_confounding}), runs all five (or six, when
 error for both NDE and NIE.
 }
 \details{
-When v0.5.0 parameters are non-default (rho_G1, rho_G2, rho_pop,
+When are non-default (rho_G1, rho_G2, rho_pop,
 separate_U, omega_1, omega_2), the two-stage proximal estimators (PGC2,
 PGC2Gm) are also included.
 }

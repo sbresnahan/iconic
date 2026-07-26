@@ -32,28 +32,28 @@
 .figure_theme <- function(base_size = 11) {
   ggplot2::theme_bw(base_size = base_size) +
     ggplot2::theme(
-      plot.background   = ggplot2::element_rect(fill = "white", colour = NA),
-      panel.background  = ggplot2::element_rect(fill = "white", colour = NA),
-      panel.border      = ggplot2::element_rect(colour = "grey35", fill = NA,
+      plot.background = ggplot2::element_rect(fill = "white", colour = NA),
+      panel.background = ggplot2::element_rect(fill = "white", colour = NA),
+      panel.border = ggplot2::element_rect(colour = "grey35", fill = NA,
                                                 linewidth = 0.4),
-      panel.grid.minor  = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
       panel.grid.major.x = ggplot2::element_blank(),
       panel.grid.major.y = ggplot2::element_line(colour = "grey90", linewidth = 0.3),
-      axis.text         = ggplot2::element_text(colour = "grey25", size = 8),
-      axis.title        = ggplot2::element_text(colour = "grey15", size = 9.5),
-      axis.ticks        = ggplot2::element_line(colour = "grey35", linewidth = 0.3),
+      axis.text = ggplot2::element_text(colour = "grey25", size = 8),
+      axis.title = ggplot2::element_text(colour = "grey15", size = 9.5),
+      axis.ticks = ggplot2::element_line(colour = "grey35", linewidth = 0.3),
       axis.ticks.length = ggplot2::unit(2, "pt"),
-      plot.title        = ggplot2::element_text(colour = "grey5", face = "bold",
+      plot.title = ggplot2::element_text(colour = "grey5", face = "bold",
                                                 size = 11),
-      plot.tag          = ggplot2::element_text(colour = "grey10", face = "bold",
+      plot.tag = ggplot2::element_text(colour = "grey10", face = "bold",
                                                 size = 13),
       plot.tag.position = c(0.02, 0.97),
-      legend.title      = ggplot2::element_blank(),
+      legend.title = ggplot2::element_blank(),
       legend.background = ggplot2::element_blank(),
-      legend.key        = ggplot2::element_blank(),
-      legend.key.size   = ggplot2::unit(9, "pt"),
-      legend.text       = ggplot2::element_text(colour = "grey25", size = 7.5),
-      legend.margin     = ggplot2::margin(1, 1, 1, 1)
+      legend.key = ggplot2::element_blank(),
+      legend.key.size = ggplot2::unit(9, "pt"),
+      legend.text = ggplot2::element_text(colour = "grey25", size = 7.5),
+      legend.margin = ggplot2::margin(1, 1, 1, 1)
     )
 }
 
@@ -63,10 +63,10 @@
   methods <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
                "IV2SLS2", "PGC2", "PGC2Gm")
   ggplot2::scale_colour_manual(
-    values  = iconic_method_colors,
-    limits  = methods,
-    name    = NULL,
-    guide   = if (show_legend)
+    values = iconic_method_colors,
+    limits = methods,
+    name = NULL,
+    guide = if (show_legend)
       ggplot2::guide_legend(override.aes = list(shape = 19, size = 2.4, alpha = 1))
     else "none"
   )
@@ -91,7 +91,7 @@
   te_methods <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC")
   df <- iter_df[iter_df$method %in% te_methods & iter_df$pval %in% conf_grid, ]
   df$method <- factor(df$method, levels = te_methods)
-  df$xg     <- factor(df$pval,  levels = conf_grid)
+  df$xg <- factor(df$pval, levels = conf_grid)
 
   fill_vals <- setNames(adjustcolor(iconic_method_colors[te_methods], alpha.f = 0.25),
                         te_methods)
@@ -119,7 +119,7 @@
   methods <- intersect(med_methods, unique(iter_df$method))
   df <- iter_df[iter_df$method %in% methods & iter_df$pval %in% xvals, ]
   df$method <- factor(df$method, levels = methods)
-  df$xg     <- factor(df$pval,  levels = xvals)
+  df$xg <- factor(df$pval, levels = xvals)
   df <- df[!is.na(df$xg), ]
   df$xg <- droplevels(df$xg)
 
@@ -177,7 +177,7 @@
     .method_colour_scale(show_legend = TRUE) +
     ggplot2::coord_cartesian(xlim = range(conf_grid) + c(-0.03, 0.03)) +
     ggplot2::labs(x = "Confounding strength (delta)",
-                  y = "NIE Type I error  (prop. p < 0.05)",
+                  y = "NIE Type I error (prop. p < 0.05)",
                   title = "Red dashed line = alpha = 0.05", tag = "D") +
     .figure_theme() +
     ggplot2::theme(plot.title = ggplot2::element_text(colour = "#c0392b",
@@ -188,18 +188,18 @@
 #'
 #' Produces a 4-panel publication figure benchmarking the eight ICONIC
 #' estimators under unmeasured confounding and mediator-outcome
-#' confounding.  Panels: (A) total-effect bias vs confounding strength,
+#' confounding. Panels: (A) total-effect bias vs confounding strength,
 #' (B) NDE/NIE bias vs confounding strength, (C) NDE/NIE bias vs sample
 #' size, (D) NIE Type I error vs confounding strength.
 #'
 #' @param panel_a Result of \code{sweep_param("conf_str", ...)} for the
-#'   total-effect panel.
+#' total-effect panel.
 #' @param panel_b Result of \code{sweep_mediation_param("conf_str", ...)}
-#'   for the mediation confounding-strength panel.
+#' for the mediation confounding-strength panel.
 #' @param panel_c Result of \code{sweep_mediation_param("n_samples", ...)}
-#'   for the mediation sample-size panel.
+#' for the mediation sample-size panel.
 #' @param panel_d Result of \code{sweep_mediation_null_by_conf(...)} for
-#'   the Type I error panel.
+#' the Type I error panel.
 #' @param conf_grid Numeric vector of confounding-strength values.
 #' @param n_grid Numeric vector of sample sizes.
 #' @param file Optional file path to save the figure (PDF or PNG).
@@ -213,7 +213,7 @@ plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
                                       file = NULL, width = 8, height = 6) {
   .figures_check_deps()
 
-  pA    <- .plot_benchmark_panel_a(panel_a$iter_bias, conf_grid)
+  pA <- .plot_benchmark_panel_a(panel_a$iter_bias, conf_grid)
   pBnde <- .plot_benchmark_mediation_facet(panel_b$iter_bias, conf_grid,
                                             "NDE_bias", "", "NDE", "B")
   pBnie <- .plot_benchmark_mediation_facet(panel_b$iter_bias, conf_grid,
@@ -222,7 +222,7 @@ plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
                                             "NDE_bias", "", "NDE", "C")
   pCnie <- .plot_benchmark_mediation_facet(panel_c$iter_bias, n_grid,
                                             "NIE_bias", "Sample size (n)", "NIE")
-  pD    <- .plot_benchmark_panel_d(panel_d, conf_grid)
+  pD <- .plot_benchmark_panel_d(panel_d, conf_grid)
 
   design <- "
     AB
@@ -246,7 +246,7 @@ plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
 
 
 # ============================================================
-# Feature correlation sweep figure (v0.8.1)
+# Feature correlation sweep figure
 # ============================================================
 
 #' Feature correlation sweep figure
@@ -256,20 +256,20 @@ plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
 #' modules in placental transcript expression.
 #'
 #' Panel A: NDE and NIE bias vs feature correlation strength, faceted by
-#'   estimand. Panel B: NDE and NIE RMSE vs feature correlation strength,
-#'   faceted by estimand. Panel C: NIE Type I error vs feature correlation
-#'   strength.
+#' estimand. Panel B: NDE and NIE RMSE vs feature correlation strength,
+#' faceted by estimand. Panel C: NIE Type I error vs feature correlation
+#' strength.
 #'
 #' @param sweep_results Results from
-#'   \code{sweep_mediation_param("feat_cor", ...)}: a list with
-#'   \code{$summary} (data frame with columns \code{param_value},
-#'   \code{method}, \code{NDE_bias}, \code{NIE_bias}, \code{NDE_rmse},
-#'   \code{NIE_rmse}).
+#' \code{sweep_mediation_param("feat_cor", ...)}: a list with
+#' \code{$summary} (data frame with columns \code{param_value},
+#' \code{method}, \code{NDE_bias}, \code{NIE_bias}, \code{NDE_rmse},
+#' \code{NIE_rmse}).
 #' @param null_results Optional results from
-#'   \code{sweep_mediation_null_by_conf(..., feat_cor = ...)} run with
-#'   \code{feat_cor} swept: a data frame with columns \code{feat_cor},
-#'   \code{method}, \code{NIE_type1}. If \code{NULL}, Panel C is omitted
-#'   and the figure has 2 panels.
+#' \code{sweep_mediation_null_by_conf(..., feat_cor = ...)} run with
+#' \code{feat_cor} swept: a data frame with columns \code{feat_cor},
+#' \code{method}, \code{NIE_type1}. If \code{NULL}, Panel C is omitted
+#' and the figure has 2 panels.
 #' @param file Optional file path to save the figure.
 #' @param width Figure width in inches. Default 10.
 #' @param height Figure height in inches. Default 12.
@@ -279,11 +279,11 @@ plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
 #' @examples
 #' \donttest{
 #' sweep <- sweep_mediation_param("feat_cor", c(0, 0.2, 0.5, 0.8),
-#'   n_iter = 50, n_features = 10, mo_confounding = 0.8, phi = 0.8,
-#'   separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7)
+#' n_iter = 50, n_features = 10, mo_confounding = 0.8, phi = 0.8,
+#' separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7)
 #' null <- sweep_mediation_null_by_conf(c(0.8), n_iter = 50,
-#'   n_features = 10, mo_confounding = 0.8, phi = 0.8,
-#'   separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7, feat_cor = 0.5)
+#' n_features = 10, mo_confounding = 0.8, phi = 0.8,
+#' separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7, feat_cor = 0.5)
 #' plot_feature_correlation_sweep(sweep, null)
 #' }
 plot_feature_correlation_sweep <- function(sweep_results,
@@ -407,18 +407,18 @@ plot_feature_correlation_sweep <- function(sweep_results,
 #' Degradation surface figure
 #'
 #' Produces a 3-panel figure showing estimator bias under simultaneous
-#' instrument exogeneity violations.  Panels: (A) IV2SLS2 NDE bias
+#' instrument exogeneity violations. Panels: (A) IV2SLS2 NDE bias
 #' surface, (B) PGC2Gm NDE bias surface, (C) crossover map showing
 #' which estimator has lower |NDE bias| at each grid cell.
 #'
 #' @param results Data frame with columns \code{rho_G1}, \code{rho_G2},
-#'   \code{method}, \code{NDE_bias}, \code{NIE_bias}, and derived
-#'   \code{NDE_abs}, \code{NIE_abs}.  Typically built by sweeping
-#'   \code{sweep_mediation_param()} across a rho_G1 x rho_G2 grid.
+#' \code{method}, \code{NDE_bias}, \code{NIE_bias}, and derived
+#' \code{NDE_abs}, \code{NIE_abs}. Typically built by sweeping
+#' \code{sweep_mediation_param()} across a rho_G1 x rho_G2 grid.
 #' @param rho_G1_grid Numeric vector of exposure-instrument violation
-#'   values.
+#' values.
 #' @param rho_G2_grid Numeric vector of mediator-instrument violation
-#'   values.
+#' values.
 #' @param file Optional file path to save the figure.
 #' @param width Figure width in inches.
 #' @param height Figure height in inches.
@@ -524,10 +524,10 @@ plot_degradation_surface <- function(results,
 #' @param k_grid Number of confounders grid (A3).
 #' @param n_valid_grid Number of valid controls grid (A3).
 #' @param n_cores Number of parallel workers for the replicate loops.
-#'   Default 1 (sequential).  Uses \code{parallel::mclapply} on Unix
-#'   and a PSOCK cluster on Windows.
+#' Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
+#' and a PSOCK cluster on Windows.
 #' @return A list with elements \code{panel_a}, \code{panel_b},
-#'   \code{panel_c}, \code{panel_d} (data frames).
+#' \code{panel_c}, \code{panel_d} (data frames).
 #' @export
 sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
                                contam_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
@@ -541,7 +541,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
   t0 <- Sys.time()
 
   ## Panel A: A1 (W perp Z | C) — Z->W contamination
-  message("  Panel A: nc_validity_screen (A1)")
+  message(" Panel A: nc_validity_screen (A1)")
   panel_a <- do.call(rbind, lapply(contam_grid, function(cs) {
     res_a <- .parallel_lapply(seq_len(n_iter), function(i) {
       dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
@@ -551,7 +551,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       dat$W[, 6:10] <- dat$W[, 6:10] + cs * dat$Z
       s <- nc_validity_screen(dat)
       c(sum(s$significant[6:10]) / 5, sum(s$significant[1:5]) / 5)
-    }, n_cores = n_cores, progress = "  Panel A replicates")
+    }, n_cores = n_cores, progress = " Panel A replicates")
     det_violated <- vapply(res_a, function(x) x[1], numeric(1))
     det_confounding <- vapply(res_a, function(x) x[2], numeric(1))
     data.frame(contamination = cs,
@@ -561,7 +561,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
   }))
 
   ## Panel B: A2 (W perp G | C) — G->W (meQTL)
-  message("  Panel B: nc_independence_check (A2)")
+  message(" Panel B: nc_independence_check (A2)")
   panel_b <- do.call(rbind, lapply(meqtl_grid, function(ms) {
     res_b <- .parallel_lapply(seq_len(n_iter), function(i) {
       dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
@@ -569,7 +569,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       dat$W[, 1:5] <- dat$W[, 1:5] + ms * dat$G[, 1]
       s <- nc_independence_check(dat)
       c(sum(s$significant[1:5]) / 5, sum(s$significant[6:10]) / 5)
-    }, n_cores = n_cores, progress = "  Panel B replicates")
+    }, n_cores = n_cores, progress = " Panel B replicates")
     det_violated <- vapply(res_b, function(x) x[1], numeric(1))
     det_clean <- vapply(res_b, function(x) x[2], numeric(1))
     data.frame(meqtl = ms,
@@ -579,7 +579,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
   }))
 
   ## Panel C: A3 (dim(W_valid) >= k) — completeness grid with PGC bias
-  message("  Panel C: nc_completeness_check (A3)")
+  message(" Panel C: nc_completeness_check (A3)")
   grid <- expand.grid(n_valid = n_valid_grid, k = k_grid, KEEP.OUT.ATTRS = FALSE)
   panel_c <- do.call(rbind, lapply(seq_len(nrow(grid)), function(gi) {
     nv <- grid$n_valid[gi]; kk <- grid$k[gi]
@@ -590,7 +590,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       W_valid <- dat$W[, seq_len(nv), drop = FALSE]
       res <- fit_pgc(dat$Y[, 1], dat$Z, dat$G[, 1], W_valid)
       res$beta - dat$true_total
-    }, n_cores = n_cores, progress = "  Panel C replicates"))
+    }, n_cores = n_cores, progress = " Panel C replicates"))
     # Generate a fresh dataset for the completeness check (the 'dat'
     # inside the parallel worker is not available in this scope when
     # n_cores > 1).
@@ -604,7 +604,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
   }))
 
   ## Panel D: A2' (W perp Gm | C) — Gm->W (eQTL)
-  message("  Panel D: nc_independence_check_gm (A2')")
+  message(" Panel D: nc_independence_check_gm (A2')")
   panel_d <- do.call(rbind, lapply(eqtl_grid, function(es) {
     res_d <- .parallel_lapply(seq_len(n_iter), function(i) {
       dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
@@ -613,7 +613,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       dat$W[, 1:5] <- dat$W[, 1:5] + es * dat$Gm
       s <- nc_independence_check_gm(dat)
       c(sum(s$significant[1:5]) / 5, sum(s$significant[6:10]) / 5)
-    }, n_cores = n_cores, progress = "  Panel D replicates")
+    }, n_cores = n_cores, progress = " Panel D replicates")
     det_violated <- vapply(res_d, function(x) x[1], numeric(1))
     det_clean <- vapply(res_d, function(x) x[2], numeric(1))
     data.frame(eqtl = es,
@@ -622,14 +622,14 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
                stringsAsFactors = FALSE)
   }))
 
-  message(sprintf("  Done in %.1f s", as.numeric(difftime(Sys.time(), t0, units = "secs"))))
+  message(sprintf(" Done in %.1f s", as.numeric(difftime(Sys.time(), t0, units = "secs"))))
   list(panel_a = panel_a, panel_b = panel_b, panel_c = panel_c, panel_d = panel_d)
 }
 
 #' NC validity diagnostics figure
 #'
 #' Produces a 4-panel figure sweeping the four empirical NC validity
-#' diagnostics.  Panels: (A) A1 W perp Z|C, (B) A2 W perp G|C,
+#' diagnostics. Panels: (A) A1 W perp Z|C, (B) A2 W perp G|C,
 #' (C) A3 dim(W_valid) >= k completeness grid, (D) A2' W perp Gm|C.
 #'
 #' @param panels List returned by \code{sweep_nc_validity()}.
@@ -774,7 +774,7 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
 #' Model selection workflow figure
 #'
 #' Produces a 3-panel figure showing the ICONIC model selection
-#' workflow on example data.  Panels: (A) eligibility table from
+#' workflow on example data. Panels: (A) eligibility table from
 #' \code{iconic_diagnose()}, (B) NDE/NIE forest plot from
 #' \code{iconic_estimate()}, (C) degradation surface heatmap from
 #' \code{iconic_sensitivity()}.
@@ -899,7 +899,7 @@ plot_model_selection <- function(diagnosis, estimate, sensitivity, recommendatio
 #' Prospective analysis figure
 #'
 #' Produces a 2-panel figure showing expected gains from adding
-#' genetic instruments.  Panel A: NDE bias vs instrument strength.
+#' genetic instruments. Panel A: NDE bias vs instrument strength.
 #' Panel B: prospective NDE/NIE estimates at target instrument
 #' strength.
 #'
@@ -1024,11 +1024,11 @@ plot_pleiotropy_sweep <- function(sensitivity, file = NULL,
 
   bias_df <- s[s$arm == "alt", c("pleio", "conf_strength", "method", "bias")]
   bias_df$metric <- "Bias"
-  bias_df$value  <- bias_df$bias
+  bias_df$value <- bias_df$bias
 
   t1e_df <- s[s$arm == "null", c("pleio", "conf_strength", "method", "power")]
   t1e_df$metric <- "Type I Error"
-  t1e_df$value  <- t1e_df$power
+  t1e_df$value <- t1e_df$power
 
   plot_df <- rbind(
     bias_df[, c("pleio", "conf_strength", "method", "metric", "value")],
@@ -1092,11 +1092,11 @@ plot_pleiotropy_sweep <- function(sensitivity, file = NULL,
 #' @param tau True total effect.
 #' @param coverage Negative-control coverage.
 #' @param n_cores Number of parallel workers for the replicate loops.
-#'   Default 1 (sequential).  Uses \code{parallel::mclapply} on Unix
-#'   and a PSOCK cluster on Windows.
+#' Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
+#' and a PSOCK cluster on Windows.
 #' @return A data frame with columns \code{pi_GZ}, \code{arm},
-#'   \code{iter}, \code{partial_F}, \code{beta}, \code{se},
-#'   \code{pvalue}, \code{rejected}.
+#' \code{iter}, \code{partial_F}, \code{beta}, \code{se},
+#' \code{pvalue}, \code{rejected}.
 #' @export
 sweep_instrument_strength <- function(pi_GZ_grid = c(0.02, 0.05, 0.10, 0.15,
                                         0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80),
@@ -1128,7 +1128,7 @@ sweep_instrument_strength <- function(pi_GZ_grid = c(0.02, 0.05, 0.10, 0.15,
     task_grid <- expand.grid(arm = arms, iter = seq_len(n_iter),
                              KEEP.OUT.ATTRS = FALSE)
     rows <- .parallel_lapply(seq_len(nrow(task_grid)), function(ti) {
-      arm  <- task_grid$arm[ti]
+      arm <- task_grid$arm[ti]
       iter <- task_grid$iter[ti]
       seed <- as.integer(10000 * pi_GZ + 100 * (arm == "null") + iter)
       d <- run_one(pi_GZ, arm, seed)
@@ -1141,9 +1141,9 @@ sweep_instrument_strength <- function(pi_GZ_grid = c(0.02, 0.05, 0.10, 0.15,
         partial_F = partial_F, beta = iv$beta, se = iv$se,
         pvalue = iv$pvalue,
         rejected = !is.na(iv$pvalue) & iv$pvalue < 0.05)
-    }, n_cores = n_cores, progress = paste0("  pi_GZ=", pi_GZ))
+    }, n_cores = n_cores, progress = paste0(" pi_GZ=", pi_GZ))
     results <- rbind(results, do.call(rbind, rows))
-    cat(sprintf("  pi_GZ = %.2f done (mean F = %.1f)\n", pi_GZ,
+    cat(sprintf(" pi_GZ = %.2f done (mean F = %.1f)\n", pi_GZ,
                 mean(results$partial_F[results$pi_GZ == pi_GZ])))
   }
   results
@@ -1171,11 +1171,11 @@ plot_instrument_strength_sweep <- function(results, tau = 0.25,
   lv <- sort(unique(results$pi_GZ))
 
   plot_df <- data.frame(
-    pi_GZ  = lv,
+    pi_GZ = lv,
     mean_F = vapply(lv, function(v) mean(results$partial_F[results$pi_GZ == v], na.rm = TRUE), numeric(1)),
-    bias   = vapply(lv, function(v) mean(alt$beta[alt$pi_GZ == v], na.rm = TRUE) - tau, numeric(1)),
+    bias = vapply(lv, function(v) mean(alt$beta[alt$pi_GZ == v], na.rm = TRUE) - tau, numeric(1)),
     bias_sd = vapply(lv, function(v) sd(alt$beta[alt$pi_GZ == v]), numeric(1)),
-    t1e    = vapply(lv, function(v) mean(nul$rejected[nul$pi_GZ == v], na.rm = TRUE), numeric(1)))
+    t1e = vapply(lv, function(v) mean(nul$rejected[nul$pi_GZ == v], na.rm = TRUE), numeric(1)))
 
   pts_bias <- results[results$arm == "alt" & !is.na(results$beta), ]
   pts_bias$bias <- pts_bias$beta - tau
@@ -1242,13 +1242,13 @@ plot_instrument_strength_sweep <- function(results, tau = 0.25,
 #' (D) NIE Type I error vs confounding strength.
 #'
 #' @param delta_true Summary from \code{sweep_mediation_param("conf_str", ...)}
-#'   with \code{separate_U = TRUE}.
+#' with \code{separate_U = TRUE}.
 #' @param delta_false Same with \code{separate_U = FALSE}.
 #' @param n_true Summary from \code{sweep_mediation_param("n_samples", ...)}
-#'   with \code{separate_U = TRUE}.
+#' with \code{separate_U = TRUE}.
 #' @param n_false Same with \code{separate_U = FALSE}.
 #' @param t1e_true Result of \code{sweep_mediation_null_by_conf(...)}
-#'   with \code{separate_U = TRUE}.
+#' with \code{separate_U = TRUE}.
 #' @param t1e_false Same with \code{separate_U = FALSE}.
 #' @param file Optional file path to save the figure.
 #' @param width Figure width in inches.
@@ -1265,7 +1265,7 @@ plot_nc_configuration_comparison <- function(delta_true, delta_false,
   method_colors <- c(IV2SLS2 = "#27A062", PGC2 = "#75A025", PGC2Gm = "#FD9BED")
 
   su_labels <- c(
-    "TRUE"  = "separate_U = TRUE\n(path-specific W1, W2)",
+    "TRUE" = "separate_U = TRUE\n(path-specific W1, W2)",
     "FALSE" = "separate_U = FALSE\n(single W, W1 = W2)")
 
   base_theme <- .figure_theme() +
@@ -1295,7 +1295,7 @@ plot_nc_configuration_comparison <- function(delta_true, delta_false,
 
   # Panel A: NDE bias vs delta
   nde_delta <- rbind(
-    cbind(delta_true$summary,  separate_U = "TRUE"),
+    cbind(delta_true$summary, separate_U = "TRUE"),
     cbind(delta_false$summary, separate_U = "FALSE"))
   nde_delta <- nde_delta[nde_delta$method %in% focus_methods, ]
   pA <- make_panel(
@@ -1312,7 +1312,7 @@ plot_nc_configuration_comparison <- function(delta_true, delta_false,
 
   # Panel C: NDE & NIE bias vs n
   bias_n <- rbind(
-    cbind(n_true$summary,  separate_U = "TRUE"),
+    cbind(n_true$summary, separate_U = "TRUE"),
     cbind(n_false$summary, separate_U = "FALSE"))
   bias_n <- bias_n[bias_n$method %in% focus_methods, ]
 
@@ -1339,7 +1339,7 @@ plot_nc_configuration_comparison <- function(delta_true, delta_false,
 
   # Panel D: NIE Type I error vs delta
   t1e_df <- rbind(
-    cbind(t1e_true,  separate_U = "TRUE"),
+    cbind(t1e_true, separate_U = "TRUE"),
     cbind(t1e_false, separate_U = "FALSE"))
   t1e_df <- t1e_df[t1e_df$method %in% focus_methods, ]
   pD <- make_panel(

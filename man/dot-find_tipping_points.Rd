@@ -8,7 +8,7 @@
 }
 \description{
 For each method, finds the first rho_G2 value (at rho_G1 = 0) where
-|NDE_bias| or |NIE_bias| exceeds the threshold.  This is the point
+|NDE_bias| or |NIE_bias| exceeds the threshold. This is the point
 at which the estimator's assumptions are violated enough to produce
 materially biased estimates.
 }

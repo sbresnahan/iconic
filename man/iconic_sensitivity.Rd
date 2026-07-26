@@ -35,17 +35,17 @@ iconic_sensitivity(
 \item{data}{An \code{iconic_data} object.}
 
 \item{diagnosis}{Optional \code{iconic_diagnosis} from
-\code{\link{iconic_diagnose}()}.  Used to infer \code{phi} and
+\code{\link{iconic_diagnose}()}. Used to infer \code{phi} and
 \code{mo_confounding} when not explicitly supplied.}
 
 \item{trained_gan}{Optional \code{iconic_gan} from
-\code{\link{train_gan_on_real_data}()}.  If \code{NULL}, a texture
-model is auto-trained from \code{data} (v0.7.0).}
+\code{\link{train_gan_on_real_data}()}. If \code{NULL}, a texture
+model is auto-trained from \code{data}.}
 
 \item{confounding}{Confounding parameter source: \code{"default"}
 (fixed defaults), \code{"inferred"} (data-calibrated via
 \code{\link{infer_confounding}()}), or \code{"manual"} (use
-explicitly supplied arguments).  Default \code{"default"}.}
+explicitly supplied arguments). Default \code{"default"}.}
 
 \item{gan_epochs}{Epochs for auto-trained GAN. Default 100.}
 
@@ -68,7 +68,7 @@ from diagnosis (F_Gm) or defaults to 0.8.}
 Used when \code{confounding = "default"} or \code{"manual"}.}
 
 \item{separate_U}{Use separate confounders for Z->M and M->Y paths.
-Default TRUE (matches v0.5.0 DGP).}
+Default TRUE (matches).}
 
 \item{omega_1, omega_2}{NC coverage of U_XM / U_MY. Default 0.7.
 Used when \code{confounding = "default"} or \code{"manual"}.}
@@ -79,21 +79,21 @@ annotation. Default 0.10.}
 \item{base_seed}{Base RNG seed. Default 700.}
 
 \item{n_cores}{Number of parallel workers for simulation replicates.
-Default 1 (sequential).  Uses \code{parallel::mclapply} on Unix
+Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
 and a PSOCK cluster on Windows.}
 
 \item{outcome_type}{\code{NULL} (inherit from \code{data}, default) or
-\code{"continuous"} / \code{"survival"} (v0.9.4).  When survival, the
+\code{"continuous"} / \code{"survival"}. When survival, the
 sensitivity sweep uses the Cox / RMST survival mediation drivers.}
 
-\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}.  Only
+\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}. Only
 used when \code{outcome_type = "survival"}.}
 
-\item{surv_h0}{Baseline hazard for survival DGP (v0.9.4). Default 0.1.}
+\item{surv_h0}{Baseline hazard for survival DGP. Default 0.1.}
 
-\item{surv_event_frac}{Target fraction of observed events (v0.9.4). Default 0.6.}
+\item{surv_event_frac}{Target fraction of observed events. Default 0.6.}
 
-\item{surv_censor_rate}{Explicit censoring rate (v0.9.4). Default NULL.}
+\item{surv_censor_rate}{Explicit censoring rate. Default NULL.}
 }
 \value{
 An \code{iconic_sensitivity} S3 object: a named list with
@@ -128,18 +128,18 @@ and is most informative when comparing estimators that make
 different independence assumptions (e.g. IV2SLS2 vs PGC2Gm).
 }
 
-\section{Texture model (v0.7.0)}{
+\section{Texture model}{
 
 When \code{trained_gan} is \code{NULL} and no GAN is attached to
 \code{data}, a texture model is auto-trained from the user's data
 (GAN via \code{torch} if available, otherwise a multivariate-normal
-fallback).  This ensures the synthetic covariate and outcome texture
-matches the user's cohort.  Supply \code{trained_gan} explicitly or
+fallback). This ensures the synthetic covariate and outcome texture
+matches the user's cohort. Supply \code{trained_gan} explicitly or
 attach one via \code{\link{iconic_data}(trained_gan = ...)} to reuse
 a pre-trained model and avoid retraining.
 }
 
-\section{Confounding calibration (v0.7.0)}{
+\section{Confounding calibration}{
 
 The \code{confounding} argument controls how the held-fixed
 confounding parameters (\code{mo_confounding}, \code{omega_1},
@@ -147,7 +147,7 @@ confounding parameters (\code{mo_confounding}, \code{omega_1},
 \itemize{
 \item \code{"default"}: fixed defaults (0.8, 0.7, 0.7).
 \item \code{"inferred"}: calls \code{\link{infer_confounding}()} to
-estimate parameters from the data.  Parameters that cannot be
+estimate parameters from the data. Parameters that cannot be
 inferred fall back to defaults with warnings.
 \item \code{"manual"}: use the explicitly supplied arguments.
 }
@@ -173,8 +173,8 @@ inferred fall back to defaults with warnings.
 \examples{
 \donttest{
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-                    M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-                    W = matrix(rnorm(100*10), 10, 100))
+M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+W = matrix(rnorm(100*10), 10, 100))
 sens <- iconic_sensitivity(data, n_iter = 10)
 print(sens)
 }

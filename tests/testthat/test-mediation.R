@@ -1,25 +1,25 @@
 # ============================================================
-# Tests for the mediation extension (v0.2.0, updated v0.3.1, v0.4.0).
+# Tests for the mediation extension.
 #
 # Covers:
-#   - generate_toy_data with mo_confounding > 0
-#   - Each mediation estimator returns correct structure
-#   - fit_pgc_mediation (matrix bridge) and fit_pgc_scalar_mediation
-#   - run_mediation_sim returns correct structure with five methods
-#   - run_null_mediation_sim returns Type I rates for NDE and NIE
-#   - sweep_mediation_param sweeps correctly
-#   - gan_mediation_sensitivity returns scenario x method summary
+# - generate_toy_data with mo_confounding > 0
+# - Each mediation estimator returns correct structure
+# - fit_pgc_mediation (matrix bridge) and fit_pgc_scalar_mediation
+# - run_mediation_sim returns correct structure with five methods
+# - run_null_mediation_sim returns Type I rates for NDE and NIE
+# - sweep_mediation_param sweeps correctly
+# - gan_mediation_sensitivity returns scenario x method summary
 #
-# v0.4.0 additions:
-#   - generate_toy_data / run_single_iteration with phi > 0 returns Gm
-#   - fit_iv2sls_mediation2 returns correct structure
-#   - fit_iv2sls_mediation2 point-identifies NDE/NIE with strong instruments
-#   - fit_iv2sls_mediation2 returns NA when Gm is weak
-#   - fit_iv2sls_mediation2 cross-validates against AER::ivreg
-#   - analyze_mediation_robust includes IV2SLS2 when Gm present
-#   - run_mediation_sim with phi > 0 includes IV2SLS2
-#   - nc_independence_check_gm returns correct structure
-#   - Backward compatibility: phi = 0 produces identical results
+#:
+# - generate_toy_data / run_single_iteration with phi > 0 returns Gm
+# - fit_iv2sls_mediation2 returns correct structure
+# - fit_iv2sls_mediation2 point-identifies NDE/NIE with strong instruments
+# - fit_iv2sls_mediation2 returns NA when Gm is weak
+# - fit_iv2sls_mediation2 cross-validates against AER::ivreg
+# - analyze_mediation_robust includes IV2SLS2 when Gm present
+# - run_mediation_sim with phi > 0 includes IV2SLS2
+# - nc_independence_check_gm returns correct structure
+# - Backward compatibility: phi = 0 produces identical results
 # ============================================================
 
 test_that("generate_toy_data with mo_confounding returns correct structure", {
@@ -167,7 +167,7 @@ test_that("run_single_iteration with mo_confounding returns true_NDE and true_NI
 
 
 # ============================================================
-# v0.4.0 tests: mediator instrument (Gm) and 2-stage MR
+#: mediator instrument (Gm) and 2-stage MR
 # ============================================================
 
 test_that("generate_toy_data with phi > 0 returns Gm", {
@@ -229,13 +229,13 @@ test_that("fit_iv2sls_mediation2 point-identifies NDE/NIE with strong instrument
                                dat$G[, 1], dat$W[, 1])
     r2 <- fit_iv2sls_mediation2(dat$Y[, 1], dat$Z, dat$M,
                                 dat$G[, 1], dat$Gm, dat$W[, 1])
-    nde_iv2[i]   <- r1$NDE;   nie_iv2[i]   <- r1$NIE
-    nde_iv2_2[i] <- r2$NDE;   nie_iv2_2[i] <- r2$NIE
+    nde_iv2[i] <- r1$NDE; nie_iv2[i] <- r1$NIE
+    nde_iv2_2[i] <- r2$NDE; nie_iv2_2[i] <- r2$NIE
   }
   true_NDE <- 0.10; true_NIE <- 0.15
   # IV2SLS2 should have much smaller bias than IV2SLS
   iv2sls2_nde_bias <- abs(mean(nde_iv2_2, na.rm = TRUE) - true_NDE)
-  iv2sls_nde_bias  <- abs(mean(nde_iv2,   na.rm = TRUE) - true_NDE)
+  iv2sls_nde_bias <- abs(mean(nde_iv2, na.rm = TRUE) - true_NDE)
   expect_true(iv2sls2_nde_bias < iv2sls_nde_bias,
               info = paste("IV2SLS2 NDE bias =", round(iv2sls2_nde_bias, 4),
                            "vs IV2SLS NDE bias =", round(iv2sls_nde_bias, 4)))
@@ -399,22 +399,22 @@ test_that("backward compat: run_mediation_sim default args produce 5 methods onl
 
 
 # ============================================================
-# v0.5.0 tests: imperfect instrument independence, PGC-2,
+#: imperfect instrument independence, PGC-2,
 # path-specific negative controls, tipping-point behaviour
 # ============================================================
 
-# --- DGP: v0.5.0 extras ---
+# --- DGP: ---
 
-test_that("generate_toy_data with v0.5.0 params returns G1, G2, W1, W2, U_XM, U_MY", {
+test_that("generate_toy_data with returns G1, G2, W1, W2, U_XM, U_MY", {
   dat <- iconic:::generate_toy_data(n = 200, n_features = 5,
                                     mo_confounding = 0.8, phi = 0.8,
                                     rho_G1 = 0.3, rho_G2 = 0.3,
                                     separate_U = TRUE,
                                     omega_1 = 0.7, omega_2 = 0.7, seed = 1)
-  expect_true("G1"   %in% names(dat))
-  expect_true("G2"   %in% names(dat))
-  expect_true("W1"   %in% names(dat))
-  expect_true("W2"   %in% names(dat))
+  expect_true("G1" %in% names(dat))
+  expect_true("G2" %in% names(dat))
+  expect_true("W1" %in% names(dat))
+  expect_true("W2" %in% names(dat))
   expect_true("U_XM" %in% names(dat))
   expect_true("U_MY" %in% names(dat))
   expect_length(dat$G1, 200)
@@ -423,13 +423,13 @@ test_that("generate_toy_data with v0.5.0 params returns G1, G2, W1, W2, U_XM, U_
   expect_equal(dim(dat$W2), c(200, 5))
 })
 
-test_that("generate_toy_data without v0.5.0 params does NOT return v0.5.0 extras", {
+test_that("generate_toy_data without does NOT return", {
   dat <- iconic:::generate_toy_data(n = 200, n_features = 5,
                                     mo_confounding = 0.8, phi = 0.8, seed = 1)
-  expect_false("G1"   %in% names(dat))
-  expect_false("G2"   %in% names(dat))
-  expect_false("W1"   %in% names(dat))
-  expect_false("W2"   %in% names(dat))
+  expect_false("G1" %in% names(dat))
+  expect_false("G2" %in% names(dat))
+  expect_false("W1" %in% names(dat))
+  expect_false("W2" %in% names(dat))
   expect_false("U_XM" %in% names(dat))
   expect_false("U_MY" %in% names(dat))
 })
@@ -443,7 +443,7 @@ test_that("generate_toy_data with rho_pop > 0 returns P", {
   expect_length(dat$P, 200)
 })
 
-test_that("generate_toy_data v0.5.0: G1 correlated with U_XM, G2 with U_MY", {
+test_that("generate_toy_data G1 correlated with U_XM, G2 with U_MY", {
   dat <- iconic:::generate_toy_data(n = 2000, n_features = 3,
                                     mo_confounding = 0.8, phi = 0.8,
                                     rho_G1 = 0.3, rho_G2 = 0.3,
@@ -454,7 +454,7 @@ test_that("generate_toy_data v0.5.0: G1 correlated with U_XM, G2 with U_MY", {
   expect_true(abs(cor(dat$U_XM, dat$U_MY)) < 0.05)
 })
 
-test_that("generate_toy_data v0.5.0: W1 captures U_XM, W2 captures U_MY", {
+test_that("generate_toy_data W1 captures U_XM, W2 captures U_MY", {
   dat <- iconic:::generate_toy_data(n = 2000, n_features = 50,
                                     mo_confounding = 0.8, phi = 0.8,
                                     rho_G1 = 0.3, rho_G2 = 0.3,
@@ -470,7 +470,7 @@ test_that("generate_toy_data v0.5.0: W1 captures U_XM, W2 captures U_MY", {
   expect_true(cor_w2_umy > cor_w2_uxm)
 })
 
-test_that("generate_toy_data v0.5.0: separate_U=FALSE collapses U_XM=U_MY=U1", {
+test_that("generate_toy_data separate_U=FALSE collapses U_XM=U_MY=U1", {
   dat <- iconic:::generate_toy_data(n = 500, n_features = 3,
                                     mo_confounding = 0.8, phi = 0.8,
                                     rho_G1 = 0.3, rho_G2 = 0.3,
@@ -479,18 +479,18 @@ test_that("generate_toy_data v0.5.0: separate_U=FALSE collapses U_XM=U_MY=U1", {
   expect_true(abs(cor(dat$U_XM, dat$U1) - 1) < 1e-8)
 })
 
-# --- run_single_iteration: v0.5.0 params ---
+# --- run_single_iteration: ---
 
-test_that("run_single_iteration with v0.5.0 params returns v0.5.0 extras", {
+test_that("run_single_iteration with returns", {
   dat <- run_single_iteration(NULL, n_synthetic_samples = 200, n_features = 5,
                               mo_confounding = 0.8, phi = 0.8,
                               rho_G1 = 0.3, rho_G2 = 0.3,
                               separate_U = TRUE,
                               omega_1 = 0.7, omega_2 = 0.7, seed = 1)
-  expect_true("G1"   %in% names(dat))
-  expect_true("G2"   %in% names(dat))
-  expect_true("W1"   %in% names(dat))
-  expect_true("W2"   %in% names(dat))
+  expect_true("G1" %in% names(dat))
+  expect_true("G2" %in% names(dat))
+  expect_true("W1" %in% names(dat))
+  expect_true("W2" %in% names(dat))
   expect_true("U_XM" %in% names(dat))
   expect_true("U_MY" %in% names(dat))
   expect_equal(dat$params$rho_G1, 0.3)
@@ -498,11 +498,11 @@ test_that("run_single_iteration with v0.5.0 params returns v0.5.0 extras", {
   expect_equal(dat$params$separate_U, TRUE)
 })
 
-test_that("run_single_iteration without v0.5.0 params does NOT return v0.5.0 extras", {
+test_that("run_single_iteration without does NOT return", {
   dat <- run_single_iteration(NULL, n_synthetic_samples = 200, n_features = 5,
                               mo_confounding = 0.8, phi = 0.8, seed = 1)
-  expect_false("G1"   %in% names(dat))
-  expect_false("W1"   %in% names(dat))
+  expect_false("G1" %in% names(dat))
+  expect_false("W1" %in% names(dat))
   expect_false("U_XM" %in% names(dat))
 })
 
@@ -572,15 +572,15 @@ test_that("fit_pgc_mediation2 with gm has lower bias than IV2SLS2 under rho_G2 >
                                       separate_U = TRUE,
                                       omega_1 = 0.7, omega_2 = 0.7,
                                       seed = 5000 + i)
-    r_pgc  <- fit_pgc_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G1,
+    r_pgc <- fit_pgc_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G1,
                                  dat$W1, dat$W2, gm = dat$Gm)
-    r_iv   <- fit_iv2sls_mediation2(dat$Y[, 1], dat$Z, dat$M,
+    r_iv <- fit_iv2sls_mediation2(dat$Y[, 1], dat$Z, dat$M,
                                     dat$G[, 1], dat$Gm, dat$W[, 1])
-    nde_pgc2gm[i]  <- r_pgc$NDE
+    nde_pgc2gm[i] <- r_pgc$NDE
     nde_iv2sls2[i] <- r_iv$NDE
   }
   true_NDE <- 0.10
-  pgc2gm_bias  <- abs(mean(nde_pgc2gm,  na.rm = TRUE) - true_NDE)
+  pgc2gm_bias <- abs(mean(nde_pgc2gm, na.rm = TRUE) - true_NDE)
   iv2sls2_bias <- abs(mean(nde_iv2sls2, na.rm = TRUE) - true_NDE)
   expect_true(pgc2gm_bias < iv2sls2_bias,
               info = paste("PGC2Gm NDE bias =", round(pgc2gm_bias, 4),
@@ -619,7 +619,7 @@ test_that("analyze_mediation_robust includes PGC2 and PGC2Gm when W1/W2/Gm prese
                                     separate_U = TRUE,
                                     omega_1 = 0.7, omega_2 = 0.7, seed = 42)
   res <- analyze_mediation_robust(dat)
-  expect_true("PGC2"   %in% res$method)
+  expect_true("PGC2" %in% res$method)
   expect_true("PGC2Gm" %in% res$method)
   expect_true(all(c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
                     "IV2SLS2", "PGC2", "PGC2Gm") %in% res$method))
@@ -632,7 +632,7 @@ test_that("analyze_mediation_robust includes PGC2 but NOT PGC2Gm when W1/W2 pres
                                     separate_U = TRUE,
                                     omega_1 = 0.7, omega_2 = 0.7, seed = 42)
   res <- analyze_mediation_robust(dat)
-  expect_true("PGC2"   %in% res$method)
+  expect_true("PGC2" %in% res$method)
   expect_false("PGC2Gm" %in% res$method)
   expect_false("IV2SLS2" %in% res$method)
 })
@@ -641,29 +641,29 @@ test_that("analyze_mediation_robust does NOT include PGC2/PGC2Gm when W1/W2 abse
   dat <- iconic:::generate_toy_data(n = 300, n_features = 3,
                                     mo_confounding = 0.8, phi = 0.8, seed = 42)
   res <- analyze_mediation_robust(dat)
-  expect_false("PGC2"   %in% res$method)
+  expect_false("PGC2" %in% res$method)
   expect_false("PGC2Gm" %in% res$method)
 })
 
-# --- Simulation functions with v0.5.0 params ---
+# --- Simulation functions with ---
 
-test_that("run_mediation_sim with v0.5.0 params includes PGC2 and PGC2Gm", {
+test_that("run_mediation_sim with includes PGC2 and PGC2Gm", {
   res <- run_mediation_sim(n_iter = 5, n_samples = 300, n_features = 3,
                            mo_confounding = 0.8, phi = 0.8,
                            rho_G1 = 0.3, rho_G2 = 0.3,
                            separate_U = TRUE,
                            omega_1 = 0.7, omega_2 = 0.7)
-  expect_true("PGC2"   %in% res$summary$method)
+  expect_true("PGC2" %in% res$summary$method)
   expect_true("PGC2Gm" %in% res$summary$method)
   expect_equal(res$params$rho_G1, 0.3)
   expect_equal(res$params$rho_G2, 0.3)
   expect_equal(res$params$separate_U, TRUE)
 })
 
-test_that("run_mediation_sim without v0.5.0 params does NOT include PGC2/PGC2Gm", {
+test_that("run_mediation_sim without does NOT include PGC2/PGC2Gm", {
   res <- run_mediation_sim(n_iter = 5, n_samples = 100, n_features = 3,
                            mo_confounding = 0.8, phi = 0.8)
-  expect_false("PGC2"   %in% res$summary$method)
+  expect_false("PGC2" %in% res$summary$method)
   expect_false("PGC2Gm" %in% res$summary$method)
 })
 
@@ -678,28 +678,28 @@ test_that("sweep_mediation_param sweeps rho_G2 correctly", {
   expect_true("PGC2Gm" %in% unique(res$summary$method))
 })
 
-test_that("run_null_mediation_sim with v0.5.0 params includes PGC2 and PGC2Gm", {
+test_that("run_null_mediation_sim with includes PGC2 and PGC2Gm", {
   res <- run_null_mediation_sim(n_iter = 5, n_samples = 300, n_features = 3,
                                 mo_confounding = 0.8, phi = 0.8,
                                 rho_G1 = 0.3, rho_G2 = 0.3,
                                 separate_U = TRUE,
                                 omega_1 = 0.7, omega_2 = 0.7)
-  expect_true("PGC2"   %in% res$rates$method)
+  expect_true("PGC2" %in% res$rates$method)
   expect_true("PGC2Gm" %in% res$rates$method)
 })
 
-test_that("sweep_mediation_null_by_conf with v0.5.0 params includes PGC2 and PGC2Gm", {
+test_that("sweep_mediation_null_by_conf with includes PGC2 and PGC2Gm", {
   res <- sweep_mediation_null_by_conf(c(0.4, 0.8), n_iter = 5,
                                       n_samples = 300, n_features = 3,
                                       mo_confounding = 0.8, phi = 0.8,
                                       rho_G1 = 0.3, rho_G2 = 0.3,
                                       separate_U = TRUE,
                                       omega_1 = 0.7, omega_2 = 0.7)
-  expect_true("PGC2"   %in% res$method)
+  expect_true("PGC2" %in% res$method)
   expect_true("PGC2Gm" %in% res$method)
 })
 
-test_that("gan_mediation_sensitivity with v0.5.0 params includes PGC2 and PGC2Gm", {
+test_that("gan_mediation_sensitivity with includes PGC2 and PGC2Gm", {
   sens <- gan_mediation_sensitivity(NULL, conf_grid = c(0.3, 0.8),
                                     coverage_grid = c(0.5, 1), k_grid = 1,
                                     mo_confounding = 0.8, phi = 0.8,
@@ -708,7 +708,7 @@ test_that("gan_mediation_sensitivity with v0.5.0 params includes PGC2 and PGC2Gm
                                     omega_1 = 0.7, omega_2 = 0.7,
                                     n_iter = 3, n_samples = 200, n_features = 3,
                                     base_seed = 11)
-  expect_true("PGC2"   %in% sens$summary$method)
+  expect_true("PGC2" %in% sens$summary$method)
   expect_true("PGC2Gm" %in% sens$summary$method)
   expect_true("rho_G1" %in% names(sens$summary))
   expect_true("rho_G2" %in% names(sens$summary))
@@ -716,10 +716,10 @@ test_that("gan_mediation_sensitivity with v0.5.0 params includes PGC2 and PGC2Gm
 
 # --- Backward compatibility ---
 
-test_that("backward compat: default generate_toy_data output unchanged (no v0.5.0 extras)", {
+test_that("backward compat: default generate_toy_data output unchanged (no)", {
   dat <- iconic:::generate_toy_data(n = 100, n_features = 5,
                                     mo_confounding = 0.8, seed = 1)
-  # Should have exactly the v0.4.0 names, no v0.5.0 extras
+  # Should have exactly the names, no
   expected <- c("Z", "G", "Y", "W", "U1", "M", "synthetic_data",
                 "true_total", "true_NDE", "true_NIE")
   expect_true(all(expected %in% names(dat)))

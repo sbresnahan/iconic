@@ -31,7 +31,7 @@ sweep_instrument_strength(
 \item{coverage}{Negative-control coverage.}
 
 \item{n_cores}{Number of parallel workers for the replicate loops.
-Default 1 (sequential).  Uses \code{parallel::mclapply} on Unix
+Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
 and a PSOCK cluster on Windows.}
 }
 \value{

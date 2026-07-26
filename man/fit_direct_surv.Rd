@@ -37,7 +37,7 @@ Named list: \code{beta}, \code{se}, \code{pvalue}.
 }
 \description{
 Regresses the survival outcome on Z plus the genetic instrument G, the
-negative-control panel W, and covariates.  Naive adjustment; does not
+negative-control panel W, and covariates. Naive adjustment; does not
 correct for unmeasured confounding via a ratio or IV approach.
 }
 \examples{

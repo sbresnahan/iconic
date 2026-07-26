@@ -1,20 +1,20 @@
 # ============================================================
 # End-to-end iconic pipeline.
 #
-# v0.8.3: Cross-platform parallelization via n_cores argument on all
-#         computationally intensive functions (mclapply on Unix,
-#         PSOCK on Windows). Progress milestones via message().
-# v0.6.0: Model selection workflow (diagnose -> estimate ->
-#         stress-test -> recommend) + prospective analysis.
-# v0.3.1: GAN sensitivity-analysis pipeline (train generator ->
-#         sweep confounding -> recommend -> NC validity ->
-#         mediation benchmark -> plot).
+# Cross-platform parallelization via n_cores argument on all
+# computationally intensive functions (mclapply on Unix,
+# PSOCK on Windows). Progress milestones via message().
+# Model selection workflow (diagnose -> estimate ->
+# stress-test -> recommend) + prospective analysis.
+# GAN sensitivity-analysis pipeline (train generator ->
+# sweep confounding -> recommend -> NC validity ->
+# mediation benchmark -> plot).
 #
 # Uses the built-in example dataset when no real data is supplied;
 # swap in your own matrices via load_real_input_data(
 # Z_matrix, Y_matrix, covariates_df) and (optionally) a real W_matrix.
 #
-#   Rscript inst/scripts/run_iconic_pipeline.R
+# Rscript inst/scripts/run_iconic_pipeline.R
 #
 # To use multiple cores, set N_CORES below or pass --args N.
 # ============================================================
@@ -32,7 +32,7 @@ if (length(args) >= 1) {
 }
 message(sprintf("ICONIC pipeline: using %d core(s)", n_cores))
 
-## 0. Model selection workflow (v0.6.0) -----------------------------------
+## 0. Model selection workflow -----------------------------------
 # Standardize data, diagnose, estimate, stress-test, recommend.
 # This is the primary user-facing workflow for choosing the right
 # causal inference model for your data.
@@ -83,7 +83,7 @@ if (data$is_mediation) {
 ## 0b. Prospective analysis (if no instruments/NCs) ----------------------
 # If you have Z, M, Y but no instruments or negative controls:
 # prospect <- iconic_prospect(iconic_data(Z = my_Z, Y = my_Y, M = my_M),
-#                             n_cores = n_cores)
+# n_cores = n_cores)
 # print(prospect)
 
 ## 1. GAN pipeline: train the generator ------------------------------------
@@ -98,14 +98,14 @@ print(gan)
 # Use mode = "distinct" in nc_proxy params for the completeness cliff.
 sens <- gan_sensitivity(
   gan,
-  conf_grid     = c(0.2, 0.5, 0.8),
+  conf_grid = c(0.2, 0.5, 0.8),
   coverage_grid = c(0.3, 0.6, 1.0),
-  k_grid        = c(1, 2),
-  nc_model      = "proxy",
-  n_iter        = 50,
-  n_samples     = 500,
-  n_features    = 20,
-  n_cores       = n_cores
+  k_grid = c(1, 2),
+  nc_model = "proxy",
+  n_iter = 50,
+  n_samples = 500,
+  n_features = 20,
+  n_cores = n_cores
 )
 print(head(sens$summary))
 
@@ -123,11 +123,11 @@ print(rec$per_scenario)
 # IV2SLS remains valid (it does not depend on NC completeness).
 validity <- nc_validity_check(
   gan,
-  coverage_grid    = c(0.2, 0.5, 0.8, 1.0),
-  k_grid           = c(1, 2, 3),
-  conf_strength    = 0.8,
+  coverage_grid = c(0.2, 0.5, 0.8, 1.0),
+  k_grid = c(1, 2, 3),
+  conf_strength = 0.8,
   n_valid_controls = 1,
-  n_iter           = 50
+  n_iter = 50
 )
 print(validity$verdict)
 
@@ -136,15 +136,15 @@ print(validity$verdict)
 # the setting where natural effects are not point-identified by a single
 # instrument (Rudolph et al. 2024). This benchmark quantifies the bias.
 med_bench <- run_mediation_sim(
-  n_iter         = 50,
-  n_samples      = 500,
-  n_features     = 10,
+  n_iter = 50,
+  n_samples = 500,
+  n_features = 10,
   mo_confounding = 0.8,
-  n_cores        = n_cores
+  n_cores = n_cores
 )
 message("\nMediation benchmark (mo_confounding = 0.8):")
 message("True NDE = ", med_bench$true_NDE,
-        "  True NIE = ", med_bench$true_NIE)
+        " True NIE = ", med_bench$true_NIE)
 print(med_bench$summary[, c("method", "NDE_bias", "NIE_bias",
                             "NDE_rmse", "NIE_rmse", "NIE_type1")])
 
@@ -152,29 +152,29 @@ print(med_bench$summary[, c("method", "NDE_bias", "NIE_bias",
 # Sweep mediation estimators across confounding scenarios with M-O confounding.
 med_sens <- gan_mediation_sensitivity(
   gan,
-  conf_grid      = c(0.2, 0.5, 0.8),
-  coverage_grid  = c(0.3, 0.7, 1.0),
-  k_grid         = 1,
+  conf_grid = c(0.2, 0.5, 0.8),
+  coverage_grid = c(0.3, 0.7, 1.0),
+  k_grid = 1,
   mo_confounding = 0.8,
-  n_iter         = 50,
-  n_features     = 12,
-  n_cores        = n_cores
+  n_iter = 50,
+  n_features = 12,
+  n_cores = n_cores
 )
 print(head(med_sens$summary[, c("conf_strength", "coverage", "method",
                                 "NDE_bias", "NIE_bias", "NIE_type1")]))
 
 ## 7. Null mediation Type I error ------------------------------------------
 null_med <- run_null_mediation_sim(
-  n_iter         = 50,
-  n_features     = 10,
+  n_iter = 50,
+  n_features = 10,
   mo_confounding = 0.8,
-  n_cores        = n_cores
+  n_cores = n_cores
 )
 message("\nNull NIE/NDE Type I error (mo_confounding = 0.8):")
 print(null_med$rates)
 
 ## 8. Plots -----------------------------------------------------------------
-plot_gan_diagnostics(gan, input$gan_training_data)          # fidelity check
+plot_gan_diagnostics(gan, input$gan_training_data) # fidelity check
 plot_sensitivity_heatmap(sens, metric = "rmse", method = "IV2SLS", k = 1)
 
 ## 9. Persist --------------------------------------------------------------

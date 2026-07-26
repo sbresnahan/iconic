@@ -1,18 +1,18 @@
-# Tests for ICONIC v0.9.2 revisions (JYH comment incorporation)
-# These tests verify the package-level changes made in v0.9.2.
+# Tests for ICONIC revisions (coauthor comment incorporation)
+# These tests verify the package-level changes made.
 # They use the testthat framework and run against the installed package.
 #
 # NOTE: Some tests require torch-dependent functions (iconic_sensitivity,
 # gan_mediation_sensitivity with $manifest). Those are skipped when torch
 # is not available. The core revisions (§1-§7, §9) are torch-free.
 #
-# NOTE (v0.9.5): Updated for contract changes since v0.9.2.
-#   - nc_completeness_capture() now returns capture_R2/capture_pvalue/
-#     capture_verdict (not dimensional/capture/completeness).
-#   - u_strength scaling is applied before scale(), so the residualized
-#     Y-U correlation is not monotonic; the raw Z-U correlation is.
-#   - Rd alias tests use system.file() only (relative paths break under
-#     test_file()).
+# NOTE: Updated for contract changes.
+# - nc_completeness_capture() now returns capture_R2/capture_pvalue/
+# capture_verdict (not dimensional/capture/completeness).
+# - u_strength scaling is applied before scale(), so the residualized
+# Y-U correlation is not monotonic; the raw Z-U correlation is.
+# - Rd alias tests use system.file() only (relative paths break under
+# test_file()).
 
 skip_if_not_installed("AER")
 
@@ -48,7 +48,7 @@ test_that("nc_validity_screen supports criterion = magnitude", {
 
 test_that(".count_valid_ncs supports for_estimator = COCA", {
   # COCA should be eligible via A1-only (A2 exempt)
-  expect_true(TRUE)  # structural test; full behavior tested in standalone
+  expect_true(TRUE) # structural test; full behavior tested in standalone
 })
 
 # ── §3: Per-scenario recommendation + CI-coverage criterion ──
@@ -200,14 +200,4 @@ test_that("iconic_diagnose errors with allow_no_proxy=FALSE and no IV/NC", {
                              M = rnorm(30), W = NULL, G = NULL, Gm = NULL)
   expect_error(iconic::iconic_diagnose(dat, allow_no_proxy = FALSE),
                "allow_no_proxy")
-})
-
-# ── §10: TODO markers (source-level, not runtime) ──
-
-test_that("TODO(v1.0) markers present in source files", {
-  # These are source-level markers; verify they exist in the package source
-  # when running from dev. Not a runtime test.
-  skip_if_not(file.exists("R/gan.R"))
-  gan <- readLines("R/gan.R")
-  expect_true(any(grepl("TODO.v1.0", gan)))
 })

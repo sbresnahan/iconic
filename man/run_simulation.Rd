@@ -36,7 +36,7 @@ run_simulation(
 \item{w_signal}{Proxy quality omega. Default 0.70.}
 
 \item{feat_cor}{Within-module correlation for block-diagonal co-expression
-modules in Y and W (v0.9.0). 0 = independent features. Default 0.}
+modules in Y and W. 0 = independent features. Default 0.}
 
 \item{base_seed}{Starting seed; replicate i uses base_seed + i. Default 100.}
 

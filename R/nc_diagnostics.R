@@ -2,21 +2,20 @@
 # Empirical negative-control (NC) validity diagnostics.
 #
 # These functions implement the data-driven screens specified in
-# critique #3 of the QED review. They operate on a fitted dataset
+# They operate on a fitted dataset
 # (from run_single_iteration() or generate_toy_data()) and test the
 # two identifying assumptions that negative controls must satisfy:
 #
-#   (A1) W _|_ Z | C      -- controls are not affected by the exposure
-#   (A2) W _|_ G | C      -- controls are independent of the instrument
+# (A1) W _|_ Z | C -- controls are not affected by the exposure
+# (A2) W _|_ G | C -- controls are independent of the instrument
 #
 # plus the proximal-inference completeness condition:
 #
-#   (B)  dim(W_valid) >= k  -- enough valid controls to span the
-#                              confounder subspace
+# (B) dim(W_valid) >= k -- enough valid controls to span the
+# confounder subspace
 #
-# v0.4.0 adds:
-#   (A2') W _|_ Gm | C    -- controls are independent of the mediator
-#                            instrument (tested by nc_independence_check_gm)
+# (A2') W _|_ Gm | C -- controls are independent of the mediator
+# instrument (tested by nc_independence_check_gm)
 #
 # In the simulation, A1, A2, and A2' hold by construction (W = f(U), and
 # U is independent of both Z's causal path, G, and Gm). These screens are
@@ -37,14 +36,14 @@
 # downstream of the exposure or shares a cause of Z that is not in C.
 #' Such controls should be dropped before running COCA / PGC.
 #'
-#' @section Assumption (v0.9.2 wording):
+#' @section Assumption:
 #' A1 states that negative-control outcomes are independent of the exposure
 #' **conditional on observed covariates C and the unmeasured confounder U**
 #' (U is unobserved). NC outcome proxies may cause or be caused by the
 #' outcome or instruments; the screen tests the observable marginal
 #' association with Z given C.
 #'
-#' @section Criterion (v0.9.2):
+#' @section Criterion:
 #' `criterion = "fdr"` (the legacy behavior) flags controls whose
 #' association with Z survives BH-FDR. `criterion = "magnitude"` flags
 #' controls by partial-correlation *size* (|partial_r(W,Z|C)| >
@@ -64,31 +63,31 @@
 #' `partial_r` and `relative_effect` together rather than relying on a
 #' single gate.
 #'
-#' @param dat       Dataset list from [run_single_iteration()] or
-#'                  [generate_toy_data()], containing `W`, `Z`, and
-#'                  `synthetic_data` (covariates).
+#' @param dat Dataset list from [run_single_iteration()] or
+#' [generate_toy_data()], containing `W`, `Z`, and
+#' `synthetic_data` (covariates).
 #' @param fdr_level Target false-discovery rate for BH correction.
-#'                  Default 0.10.
-#' @param alpha     Per-test significance level used before FDR
-#'                  adjustment (informational only). Default 0.05.
-#' @param n_cores   Number of parallel workers. Default 1 (sequential).
-#'   Uses \code{parallel::mclapply} on Unix and a PSOCK cluster on
-#'   Windows.
-#' @param criterion v0.9.2. Which criterion to use: `"fdr"` (legacy),
-#'                  `"magnitude"`, or `"both"` (default).
-#' @param magnitude_threshold v0.9.2. |partial_r(W,Z|C)| cutoff for the
-#'                  magnitude branch. Default 0.10.
-#' @param u_proxy   v0.9.2. Optional outcome-derived proxy for U (e.g. the
-#'                  leading residualized-outcome principal component) used
-#'                  to compute `relative_effect` = |partial_r(W,Z|C)| /
-#'                  |partial_r(W,U_proxy|C)|. When `NULL` (default),
-#'                  `relative_effect` is `NA` and only the FDR/magnitude
-#'                  branches are used.
+#' Default 0.10.
+#' @param alpha Per-test significance level used before FDR
+#' adjustment (informational only). Default 0.05.
+#' @param n_cores Number of parallel workers. Default 1 (sequential).
+#' Uses \code{parallel::mclapply} on Unix and a PSOCK cluster on
+#' Windows.
+#' @param criterion Which criterion to use: `"fdr"` (legacy),
+#' `"magnitude"`, or `"both"` (default).
+#' @param magnitude_threshold |partial_r(W,Z|C)| cutoff for the
+#' magnitude branch. Default 0.10.
+#' @param u_proxy Optional outcome-derived proxy for U (e.g. the
+#' leading residualized-outcome principal component) used
+#' to compute `relative_effect` = |partial_r(W,Z|C)| /
+#' |partial_r(W,U_proxy|C)|. When `NULL` (default),
+#' `relative_effect` is `NA` and only the FDR/magnitude
+#' branches are used.
 #'
 #' @return A data frame with one row per control feature:
-#'   `feature`, `p_value`, `fdr`, `partial_r`, `relative_effect`,
-#'   `significant` (composite, per `criterion`),
-#'   `verdict` (composite), `verdict_fdr`, `verdict_magnitude`.
+#' `feature`, `p_value`, `fdr`, `partial_r`, `relative_effect`,
+#' `significant` (composite, per `criterion`),
+#' `verdict` (composite), `verdict_fdr`, `verdict_magnitude`.
 #' @export
 #' @importFrom stats lm as.formula p.adjust
 #'
@@ -104,8 +103,8 @@ nc_validity_screen <- function(dat, fdr_level = 0.10, alpha = 0.05,
   W <- dat$W
   Z <- dat$Z
   cv <- dat$synthetic_data
-  p  <- ncol(W)
-  n  <- nrow(W)
+  p <- ncol(W)
+  n <- nrow(W)
   cnames <- if (!is.null(cv)) names(cv) else character(0)
   cs <- if (length(cnames)) paste0(" + ", paste(cnames, collapse = " + ")) else ""
 
@@ -150,28 +149,28 @@ nc_validity_screen <- function(dat, fdr_level = 0.10, alpha = 0.05,
   }, n_cores = n_cores, progress = "NC validity screen")
   res <- do.call(cbind, res_list)
 
-  pvals     <- res[1, ]
+  pvals <- res[1, ]
   partial_r <- res[2, ]
-  rel_eff   <- res[3, ]
+  rel_eff <- res[3, ]
   fdr <- p.adjust(pvals, method = "BH")
   sig_fdr <- !is.na(fdr) & fdr < fdr_level
   sig_mag <- !is.na(partial_r) & abs(partial_r) > magnitude_threshold
 
   # Composite per criterion.
   sig <- switch(criterion,
-    fdr       = sig_fdr,
+    fdr = sig_fdr,
     magnitude = sig_mag,
-    both      = sig_fdr & sig_mag)
+    both = sig_fdr & sig_mag)
 
   data.frame(
-    feature          = seq_len(p),
-    p_value          = pvals,
-    fdr              = fdr,
-    partial_r        = partial_r,
-    relative_effect  = rel_eff,
-    significant      = sig,
-    verdict          = ifelse(sig, "drop: associated with Z", "valid"),
-    verdict_fdr      = ifelse(sig_fdr, "drop: associated with Z (FDR)", "valid (FDR)"),
+    feature = seq_len(p),
+    p_value = pvals,
+    fdr = fdr,
+    partial_r = partial_r,
+    relative_effect = rel_eff,
+    significant = sig,
+    verdict = ifelse(sig, "drop: associated with Z", "valid"),
+    verdict_fdr = ifelse(sig_fdr, "drop: associated with Z (FDR)", "valid (FDR)"),
     verdict_magnitude= ifelse(sig_mag, "drop: associated with Z (magnitude)", "valid (magnitude)"),
     stringsAsFactors = FALSE
   )
@@ -186,15 +185,15 @@ nc_validity_screen <- function(dat, fdr_level = 0.10, alpha = 0.05,
 #' after FDR correction may carry meQTL / allele-specific effects that
 #' violate the instrument-independence assumption (A2).
 #'
-#' @param dat       Dataset list from [run_single_iteration()] or
-#'                  [generate_toy_data()].
+#' @param dat Dataset list from [run_single_iteration()] or
+#' [generate_toy_data()].
 #' @param fdr_level Target FDR for BH correction. Default 0.10.
-#' @param n_cores   Number of parallel workers. Default 1 (sequential).
-#'   Uses \code{parallel::mclapply} on Unix and a PSOCK cluster on
-#'   Windows.
+#' @param n_cores Number of parallel workers. Default 1 (sequential).
+#' Uses \code{parallel::mclapply} on Unix and a PSOCK cluster on
+#' Windows.
 #'
 #' @return A data frame with one row per control feature:
-#'   `feature`, `partial_r`, `p_value`, `fdr`, `significant`, `verdict`.
+#' `feature`, `partial_r`, `p_value`, `fdr`, `significant`, `verdict`.
 #' @export
 #' @importFrom stats cor lm residuals complete.cases pt p.adjust
 #'
@@ -205,8 +204,8 @@ nc_independence_check <- function(dat, fdr_level = 0.10, n_cores = 1) {
   W <- dat$W
   G <- dat$G[, 1]
   cv <- dat$synthetic_data
-  p  <- ncol(W)
-  n  <- nrow(W)
+  p <- ncol(W)
+  n <- nrow(W)
 
   # Residualise G on covariates once
   if (!is.null(cv) && ncol(cv) > 0) {
@@ -237,17 +236,17 @@ nc_independence_check <- function(dat, fdr_level = 0.10, n_cores = 1) {
   res <- do.call(cbind, res_list)
 
   partial_r <- res[1, ]
-  pvals     <- res[2, ]
-  fdr       <- p.adjust(pvals, method = "BH")
-  sig       <- !is.na(fdr) & fdr < fdr_level
+  pvals <- res[2, ]
+  fdr <- p.adjust(pvals, method = "BH")
+  sig <- !is.na(fdr) & fdr < fdr_level
 
   data.frame(
-    feature     = seq_len(p),
-    partial_r   = partial_r,
-    p_value     = pvals,
-    fdr         = fdr,
+    feature = seq_len(p),
+    partial_r = partial_r,
+    p_value = pvals,
+    fdr = fdr,
     significant = sig,
-    verdict     = ifelse(sig, "drop: associated with G", "valid"),
+    verdict = ifelse(sig, "drop: associated with G", "valid"),
     stringsAsFactors = FALSE
   )
 }
@@ -257,10 +256,10 @@ nc_independence_check <- function(dat, fdr_level = 0.10, n_cores = 1) {
 #'
 #' For each control feature, computes the partial correlation with the
 #' mediator-specific genetic instrument Gm after residualising both on
-#' observed covariates C, and reports the p-value.  Controls significantly
+#' observed covariates C, and reports the p-value. Controls significantly
 #' associated with Gm after FDR correction may carry eQTL / allele-specific
 #' effects that violate the mediator-instrument-independence assumption
-#' (A2').  This is the mediator-instrument analogue of
+#' (A2'). This is the mediator-instrument analogue of
 #' [nc_independence_check()]: just as the exposure instrument G must be
 #' independent of the negative controls, so must the mediator instrument Gm.
 #'
@@ -269,19 +268,19 @@ nc_independence_check <- function(dat, fdr_level = 0.10, n_cores = 1) {
 #' negative controls -- a violation would indicate shared genomic structure
 #' between the eQTL SNPs and the control CpG sites.
 #'
-#' @param dat       Dataset list from [run_single_iteration()] or
-#'                  [generate_toy_data()], containing `Gm`, `W`, and
-#'                  `synthetic_data`.  If `Gm` is absent (i.e. no mediator
-#'                  instrument was generated), the function returns `NULL`
-#'                  with a message.
+#' @param dat Dataset list from [run_single_iteration()] or
+#' [generate_toy_data()], containing `Gm`, `W`, and
+#' `synthetic_data`. If `Gm` is absent (i.e. no mediator
+#' instrument was generated), the function returns `NULL`
+#' with a message.
 #' @param fdr_level Target FDR for BH correction. Default 0.10.
-#' @param n_cores   Number of parallel workers. Default 1 (sequential).
-#'   Uses \code{parallel::mclapply} on Unix and a PSOCK cluster on
-#'   Windows.
+#' @param n_cores Number of parallel workers. Default 1 (sequential).
+#' Uses \code{parallel::mclapply} on Unix and a PSOCK cluster on
+#' Windows.
 #'
 #' @return A data frame with one row per control feature:
-#'   `feature`, `partial_r`, `p_value`, `fdr`, `significant`, `verdict`.
-#'   Returns `NULL` if `dat$Gm` is not present.
+#' `feature`, `partial_r`, `p_value`, `fdr`, `significant`, `verdict`.
+#' Returns `NULL` if `dat$Gm` is not present.
 #' @export
 #' @importFrom stats cor lm residuals complete.cases pt p.adjust
 #'
@@ -291,16 +290,16 @@ nc_independence_check <- function(dat, fdr_level = 0.10, n_cores = 1) {
 nc_independence_check_gm <- function(dat, fdr_level = 0.10, n_cores = 1) {
   if (is.null(dat$Gm)) {
     message("nc_independence_check_gm: dat$Gm is not present (no mediator ",
-            "instrument was generated).  Set phi > 0 in generate_toy_data() ",
+            "instrument was generated). Set phi > 0 in generate_toy_data() ",
             "or run_single_iteration() to generate Gm.")
     return(NULL)
   }
 
-  W  <- dat$W
+  W <- dat$W
   Gm <- dat$Gm
   cv <- dat$synthetic_data
-  p  <- ncol(W)
-  n  <- nrow(W)
+  p <- ncol(W)
+  n <- nrow(W)
 
   # Residualise Gm on covariates once
   if (!is.null(cv) && ncol(cv) > 0) {
@@ -331,17 +330,17 @@ nc_independence_check_gm <- function(dat, fdr_level = 0.10, n_cores = 1) {
   res <- do.call(cbind, res_list)
 
   partial_r <- res[1, ]
-  pvals     <- res[2, ]
-  fdr       <- p.adjust(pvals, method = "BH")
-  sig       <- !is.na(fdr) & fdr < fdr_level
+  pvals <- res[2, ]
+  fdr <- p.adjust(pvals, method = "BH")
+  sig <- !is.na(fdr) & fdr < fdr_level
 
   data.frame(
-    feature     = seq_len(p),
-    partial_r   = partial_r,
-    p_value     = pvals,
-    fdr         = fdr,
+    feature = seq_len(p),
+    partial_r = partial_r,
+    p_value = pvals,
+    fdr = fdr,
     significant = sig,
-    verdict     = ifelse(sig, "drop: associated with Gm", "valid"),
+    verdict = ifelse(sig, "drop: associated with Gm", "valid"),
     stringsAsFactors = FALSE
   )
 }
@@ -351,54 +350,54 @@ nc_independence_check_gm <- function(dat, fdr_level = 0.10, n_cores = 1) {
 #'
 #' Reports two components of the proximal-inference completeness condition:
 #'
-#'   (1) **Dimensional** (the legacy count-based check): the number of valid
-#'       negative-control features vs the number of latent confounders k.
-#'       Bridge-function estimators (COCA, PGC) require at least as many
-#'       valid controls as confounders (Miao, Geng & Tchetgen Tchetgen,
-#'       2018). When `dim(W_valid) < k`, no estimator built on those
-#'       controls can recover the causal effect, regardless of sample size.
+#' (1) **Dimensional** (the legacy count-based check): the number of valid
+#' negative-control features vs the number of latent confounders k.
+#' Bridge-function estimators (COCA, PGC) require at least as many
+#' valid controls as confounders (Miao, Geng & Tchetgen Tchetgen,
+#' 2018). When `dim(W_valid) < k`, no estimator built on those
+#' controls can recover the causal effect, regardless of sample size.
 #'
-#'   (2) **Covariance-capture** (v0.9.2): whether the controls actually
-#'       *capture the confounder covariance* — i.e., whether adding W
-#'       reduces U's contribution to the outcome toward zero, operationalized
-#'       as the incremental R^2 of W for the outcome above covariates alone,
-#'       with a permutation null. This addresses the concern that
-#'       completeness is about covariance captured, not proxy number.
+#' (2) **Covariance-capture**: whether the controls actually
+#' *capture the confounder covariance* — i.e., whether adding W
+#' reduces U's contribution to the outcome toward zero, operationalized
+#' as the incremental R^2 of W for the outcome above covariates alone,
+#' with a permutation null. This addresses the concern that
+#' completeness is about covariance captured, not proxy number.
 #'
 #' The composite `completeness` verdict requires the dimensional component
 #' to pass (satisfied/borderline) AND the capture component to be non-
 #' negligible (strong/weak). When the dimensional component passes but
 #' capture is negligible, the verdict is "weak-capture".
 #'
-#' @param dat             Dataset list from [run_single_iteration()] or
-#'                        [generate_toy_data()].
+#' @param dat Dataset list from [run_single_iteration()] or
+#' [generate_toy_data()].
 #' @param n_valid_controls Optional override: the number of valid
-#'                        controls known from the study design. If
-#'                        `NULL` (default), the function runs both
-#'                        empirical screens and counts controls that
-#'                        pass both.
-#' @param fdr_level       FDR level for the empirical screens (used
-#'                        only when `n_valid_controls` is `NULL`).
-#' @param n_cores         Number of parallel workers for the empirical
-#'                        screens. Default 1 (sequential).
-#' @param outcome         Outcome block for the capture test: `"Y"` (default)
-#'                        or `"M"` (mediator). When `NULL`, the capture
-#'                        component is skipped and only the dimensional
-#'                        verdict is returned (v0.9.1 behavior).
-#' @param n_perm          Number of permutations for the capture-test null.
-#'                        Default 1000.
+#' controls known from the study design. If
+#' `NULL` (default), the function runs both
+#' empirical screens and counts controls that
+#' pass both.
+#' @param fdr_level FDR level for the empirical screens (used
+#' only when `n_valid_controls` is `NULL`).
+#' @param n_cores Number of parallel workers for the empirical
+#' screens. Default 1 (sequential).
+#' @param outcome Outcome block for the capture test: `"Y"` (default)
+#' or `"M"` (mediator). When `NULL`, the capture
+#' component is skipped and only the dimensional
+#' verdict is returned.
+#' @param n_perm Number of permutations for the capture-test null.
+#' Default 1000.
 #' @param capture_thresholds Named list with `strong` and `weak` R^2 cutoffs
-#'                        for the capture verdict. Default
-#'                        `list(strong = 0.3, weak = 0.1)`.
+#' for the capture verdict. Default
+#' `list(strong = 0.3, weak = 0.1)`.
 #'
 #' @return A list with:
-#'   `n_valid_controls` (count), `k` (number of confounders), `dim_W`,
-#'   `dimensional` ("satisfied", "borderline", "under-identified"),
-#'   `capture` (output of [nc_completeness_capture()], or NULL),
-#'   `completeness` (composite: "satisfied", "borderline",
-#'   "under-identified", or "weak-capture"),
-#'   `screen_Z` (A1 screen results, if run), `screen_G` (A2 screen
-#'   results, if run).
+#' `n_valid_controls` (count), `k` (number of confounders), `dim_W`,
+#' `dimensional` ("satisfied", "borderline", "under-identified"),
+#' `capture` (output of [nc_completeness_capture()], or NULL),
+#' `completeness` (composite: "satisfied", "borderline",
+#' "under-identified", or "weak-capture"),
+#' `screen_Z` (A1 screen results, if run), `screen_G` (A2 screen
+#' results, if run).
 #' @export
 #'
 #' @examples
@@ -441,8 +440,8 @@ nc_completeness_check <- function(dat, n_valid_controls = NULL,
     "under-identified"
   }
 
-  # Covariance-capture component (v0.9.2). Skipped when outcome is NULL
-  # (preserves v0.9.1 behavior for callers that only want the count check).
+  # Covariance-capture component. Skipped when outcome is NULL
+  # (preserves default behavior for callers that only want the count check).
   capture <- NULL
   if (!is.null(outcome)) {
     capture <- tryCatch(
@@ -467,18 +466,18 @@ nc_completeness_check <- function(dat, n_valid_controls = NULL,
 
   list(
     n_valid_controls = n_valid,
-    k                = k,
-    dim_W            = ncol(dat$W),
-    dimensional      = dimensional,
-    capture          = capture,
-    completeness     = completeness,
-    screen_Z         = screen_Z,
-    screen_G         = screen_G
+    k = k,
+    dim_W = ncol(dat$W),
+    dimensional = dimensional,
+    capture = capture,
+    completeness = completeness,
+    screen_Z = screen_Z,
+    screen_G = screen_G
   )
 }
 
 
-#' Covariance-capture completeness test (v0.9.2)
+#' Covariance-capture completeness test
 #'
 #' Operationalizes the proximal completeness condition as whether the
 #' negative-control panel W *captures the confounder covariance* — i.e.,
@@ -491,27 +490,27 @@ nc_completeness_check <- function(dat, n_valid_controls = NULL,
 #' `n_perm` permutations, yielding a permutation p-value for "W captures
 #' U-signal beyond chance."
 #'
-#' This addresses the concern (JYH) that the count-based completeness check
+#' This addresses the concern that the count-based completeness check
 #' (`dim(W_valid) >= k`) is necessary but not sufficient: completeness is
 #' about the covariance the controls capture, not the number of proxies. A
 #' panel can have many controls that each weakly capture U, or few controls
 #' that together capture it well.
 #'
-#' @param dat       Dataset list from [run_single_iteration()] or
-#'                  [generate_toy_data()], containing `W`, an outcome block
-#'                  (`Y` or `M`), and `synthetic_data` (covariates).
-#' @param outcome   Outcome block to test against: `"Y"` (default) or `"M"`.
-#' @param n_perm    Number of permutations for the null. Default 1000.
-#' @param n_cores   Number of parallel workers. Default 1.
+#' @param dat Dataset list from [run_single_iteration()] or
+#' [generate_toy_data()], containing `W`, an outcome block
+#' (`Y` or `M`), and `synthetic_data` (covariates).
+#' @param outcome Outcome block to test against: `"Y"` (default) or `"M"`.
+#' @param n_perm Number of permutations for the null. Default 1000.
+#' @param n_cores Number of parallel workers. Default 1.
 #' @param thresholds Named list with `strong` and `weak` R^2 cutoffs for the
-#'                  verdict. Default `list(strong = 0.3, weak = 0.1)`.
+#' verdict. Default `list(strong = 0.3, weak = 0.1)`.
 #'
 #' @return A list with:
-#'   `capture_R2` (point estimate, averaged across outcome features),
-#'   `capture_pvalue` (permutation p-value),
-#'   `capture_verdict` ("strong", "weak", or "negligible"),
-#'   `null_distribution` (numeric vector of permuted R^2 values),
-#'   `n_features` (number of outcome features tested).
+#' `capture_R2` (point estimate, averaged across outcome features),
+#' `capture_pvalue` (permutation p-value),
+#' `capture_verdict` ("strong", "weak", or "negligible"),
+#' `null_distribution` (numeric vector of permuted R^2 values),
+#' `n_features` (number of outcome features tested).
 #' @export
 #'
 #' @examples
@@ -523,7 +522,7 @@ nc_completeness_capture <- function(dat, outcome = "Y", n_perm = 1000,
   W <- dat$W
   if (is.null(W)) stop("dat$W is not present.")
   cv <- dat$synthetic_data
-  n  <- nrow(W)
+  n <- nrow(W)
   pW <- ncol(W)
 
   Y_block <- switch(outcome,
@@ -605,7 +604,7 @@ nc_completeness_capture <- function(dat, outcome = "Y", n_perm = 1000,
   pval <- mean(null_dist >= obs_r2_mean, na.rm = TRUE)
 
   strong_cut <- if (!is.null(thresholds$strong)) thresholds$strong else 0.3
-  weak_cut   <- if (!is.null(thresholds$weak))   thresholds$weak   else 0.1
+  weak_cut <- if (!is.null(thresholds$weak)) thresholds$weak else 0.1
   verdict <- if (obs_r2_mean > strong_cut && pval < 0.05) {
     "strong"
   } else if (obs_r2_mean >= weak_cut) {
@@ -615,10 +614,10 @@ nc_completeness_capture <- function(dat, outcome = "Y", n_perm = 1000,
   }
 
   list(
-    capture_R2      = obs_r2_mean,
-    capture_pvalue  = pval,
+    capture_R2 = obs_r2_mean,
+    capture_pvalue = pval,
     capture_verdict = verdict,
     null_distribution = null_dist,
-    n_features      = pY
+    n_features = pY
   )
 }

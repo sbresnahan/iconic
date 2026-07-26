@@ -15,18 +15,18 @@ test_that("load_real_input_data returns the expected structure on example data",
 
 test_that("covariate encoding produces numeric columns and one-hot ethnicity", {
   inp <- load_real_input_data(example = TRUE)
-  cv  <- inp$covariates
+  cv <- inp$covariates
   expect_true(all(vapply(cv, is.numeric, logical(1))))
   expect_true("sex" %in% names(cv))
-  expect_true(any(grepl("^mother_ethnicity", names(cv))))   # one-hot dummies
+  expect_true(any(grepl("^mother_ethnicity", names(cv)))) # one-hot dummies
   expect_false("sample_id" %in% names(cv))
 })
 
 test_that("covariate names colliding with reserved tokens are renamed", {
-  n  <- 40
+  n <- 40
   Zm <- matrix(rnorm(5 * n), 5, n)
   Ym <- matrix(rnorm(5 * n), 5, n)
-  cov <- data.frame(Z = rnorm(n), g = rnorm(n), ok = rnorm(n))   # Z, g are reserved
+  cov <- data.frame(Z = rnorm(n), g = rnorm(n), ok = rnorm(n)) # Z, g are reserved
   enc <- load_real_input_data(Z_matrix = Zm, Y_matrix = Ym, covariates_df = cov)$covariates
   expect_false(any(names(enc) %in% c("Z", "g")))
   expect_true(all(c("cov_Z", "cov_g", "ok") %in% names(enc)))

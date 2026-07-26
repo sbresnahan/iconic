@@ -11,7 +11,7 @@
 }
 \description{
 Computes a robustness score for each estimator from the sensitivity
-surface. v0.9.2 adds a \code{criterion} argument:
+surface. adds a \code{criterion} argument:
 \itemize{
 \item "minimax_bias" (legacy): lower maximum absolute bias across the
 violation grid means higher robustness.
@@ -19,7 +19,7 @@ violation grid means higher robustness.
 lower is better. Requires NDE_coverage/NIE_coverage columns.
 \item "combined" (default): normalized max|bias| + normalized |coverage-0.95|,
 lower is better. Implements the "second-best bias with nominal coverage"
-tradeoff (JYH #480).
+tradeoff.
 }
 }
 \keyword{internal}

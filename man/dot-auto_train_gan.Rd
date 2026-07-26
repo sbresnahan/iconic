@@ -17,7 +17,7 @@ An \code{iconic_gan} object.
 \description{
 Converts the user's iconic_data to the load_real_input_data() format
 and trains a GAN (or multivariate-normal fallback) on the resulting
-tidy frame.  The trained model supplies realistic covariate and
+tidy frame. The trained model supplies realistic covariate and
 outcome texture to run_single_iteration(), and carries feature-level
 residual correlation matrices for the Y, M, and W panels so the
 simulation can inject correlated noise.

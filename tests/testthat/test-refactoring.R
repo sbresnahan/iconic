@@ -1,4 +1,4 @@
-# Tests for the v0.6.0 refactoring: format-agnostic estimation functions.
+# Tests for the refactoring: format-agnostic estimation functions.
 #
 # iconic:::.estimate_total_feature() and iconic:::.estimate_mediation_feature() were
 # extracted from iconic:::.analyze_feature() and iconic:::.analyze_mediation_feature()
@@ -8,7 +8,7 @@
 # These tests verify that the extracted functions produce identical
 # results to the wrapper functions when given the same inputs.
 #
-# NOTE (v0.9.5): Updated for the v0.8.4 contract change. .analyze_feature()
+# NOTE: Updated for the contract change. .analyze_feature()
 # and .analyze_mediation_feature() now pass w = W_mat (the full W matrix,
 # n x q) to .estimate_total_feature() / .estimate_mediation_feature(),
 # not a single column. The tests below were updated to pass w = dat$W

@@ -1,10 +1,10 @@
 # ============================================================
-# Exported plotting helpers.  All functions accept the data
+# Exported plotting helpers. All functions accept the data
 # frames returned by sweep_param() or run_simulation().
 #
-# v0.3.1: iconic_method_colors and iconic_method_order updated
-# v0.4.0: IV2SLS2 (2-stage MR mediation) added to palette/order
-# v0.5.0: PGC2 and PGC2Gm (two-stage proximal mediation) added to palette/order
+# iconic_method_colors and iconic_method_order updated
+# IV2SLS2 (2-stage MR mediation) added to palette/order
+# PGC2 and PGC2Gm (two-stage proximal mediation) added to palette/order
 # ============================================================
 
 
@@ -12,14 +12,14 @@
 #' @return A named character vector of colors for the eight ICONIC estimators.
 #' @export
 iconic_method_colors <- c(
-  UNADJ       = "#888888",
-  DIRECT      = "#E07B00",
-  COCA        = "#3A9EC2",
-  IV2SLS      = "#27A062",
-  PGC         = "#C455A8",
-  IV2SLS2     = "#0279EE",
-  PGC2        = "#75A025",
-  PGC2Gm      = "#FD9BED"
+  UNADJ = "#888888",
+  DIRECT = "#E07B00",
+  COCA = "#3A9EC2",
+  IV2SLS = "#27A062",
+  PGC = "#C455A8",
+  IV2SLS2 = "#0279EE",
+  PGC2 = "#75A025",
+  PGC2Gm = "#FD9BED"
 )
 
 #' Default method display order
@@ -64,21 +64,21 @@ iconic_method_order <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
 
 
 #' Grouped boxplots of per-seed bias across a parameter sweep
-#' @param iter_bias   Data frame with columns iter, method, bias, pval.
-#' @param param_grid  Sorted numeric vector of parameter values.
-#' @param xlab        X-axis label.
-#' @param ylab        Y-axis label. Default "Bias  (mean estimate - true)".
-#' @param main        Plot title.
-#' @param xfmt        Format string for x-axis labels. Default "%.2f".
-#' @param legend_pos  Legend position. Default "topleft".
-#' @param methods     Methods to include. Default: all five.
+#' @param iter_bias Data frame with columns iter, method, bias, pval.
+#' @param param_grid Sorted numeric vector of parameter values.
+#' @param xlab X-axis label.
+#' @param ylab Y-axis label. Default "Bias (mean estimate - true)".
+#' @param main Plot title.
+#' @param xfmt Format string for x-axis labels. Default "%.2f".
+#' @param legend_pos Legend position. Default "topleft".
+#' @param methods Methods to include. Default: all five.
 #'
 #' @return Invisibly returns `NULL`; called for the side effect of drawing a boxplot of bias across parameter values.
 #' @export
 
-plot_bias_boxplot <- function(iter_bias, param_grid, xlab, ylab = "Bias  (mean estimate - true)", main = "", xfmt = "%.2f", legend_pos  = "topleft", methods = iconic_method_order) {
+plot_bias_boxplot <- function(iter_bias, param_grid, xlab, ylab = "Bias (mean estimate - true)", main = "", xfmt = "%.2f", legend_pos = "topleft", methods = iconic_method_order) {
 
-  pvals  <- sort(unique(param_grid))
+  pvals <- sort(unique(param_grid))
   n_m <- length(methods)
   n_p <- length(pvals)
   gap <- 1.4; bw <- 0.62
@@ -121,28 +121,28 @@ plot_bias_boxplot <- function(iter_bias, param_grid, xlab, ylab = "Bias  (mean e
 
 #' Baseline bias distribution (single-setting hero plot)
 #'
-#' @param sim_result  Object returned by run_simulation().
-#' @param methods     Methods to include. Default: all five.
-#' @param title       Plot title. If NULL a default is constructed.
+#' @param sim_result Object returned by run_simulation().
+#' @param methods Methods to include. Default: all five.
+#' @param title Plot title. If NULL a default is constructed.
 #'
 #' @return A `ggplot` object showing the distribution of bias estimates by method.
 #' @export
 plot_bias_distribution <- function(sim_result, methods = iconic_method_order, title = NULL) {
-  ibias  <- sim_result$iter_bias
+  ibias <- sim_result$iter_bias
   true_total <- sim_result$true_total
-  p  <- sim_result$params
+  p <- sim_result$params
 
   if (is.null(title))
     title <- sprintf(
       "Bias Distribution across %d Seeds - Baseline\ndelta = %.1f | omega = %.1f | n = %d | tau = %.2f",
       p$n_iter, p$conf_str, p$w_signal, p$n_samples, true_total)
 
-  n_m   <- length(methods)
+  n_m <- length(methods)
   ylim1 <- range(ibias$bias, na.rm = TRUE) + c(-0.05, 0.06)
 
   .set_theme(mar = c(7, 5.5, 4.5, 2) + 0.1)
   plot(NA, xlim = c(0.3, n_m + 0.7), ylim = ylim1,
-       xaxt = "n", xlab = "", ylab = "Bias  (mean estimate - true total)",
+       xaxt = "n", xlab = "", ylab = "Bias (mean estimate - true total)",
        main = title)
   .add_grid()
   abline(h = 0, lty = 2, lwd = 2.0, col = "grey35")
@@ -151,11 +151,11 @@ plot_bias_distribution <- function(sim_result, methods = iconic_method_order, ti
        cex.axis = 1.05, font = 2, col.axis = "grey15")
 
   for (i in seq_along(methods)) {
-    m    <- methods[i]
+    m <- methods[i]
     vals <- ibias$bias[ibias$method == m]
     .draw_box(vals, i, iconic_method_colors[m], bw = 0.70,
               pt_cex = 0.55, pt_alpha = 0.60)
-    mn  <- mean(vals, na.rm = TRUE)
+    mn <- mean(vals, na.rm = TRUE)
     sd_ <- sd(vals, na.rm = TRUE)
     mtext(sprintf("mean %+.3f\nSD %.4f", mn, sd_),
           side = 1, at = i, line = 2.9, cex = 0.58,
@@ -167,14 +167,14 @@ plot_bias_distribution <- function(sim_result, methods = iconic_method_order, ti
 #' Type I error boxplot per method
 #'
 #' @param null_result Object returned by run_null_sim().
-#' @param methods     Methods to include. Default: all five.
-#' @param conf_str    Confounding strength used (for the title). Default 0.80.
-#' @param alpha       Nominal significance level. Default 0.05.
+#' @param methods Methods to include. Default: all five.
+#' @param conf_str Confounding strength used (for the title). Default 0.80.
+#' @param alpha Nominal significance level. Default 0.05.
 #'
 #' @return Invisibly returns `NULL`; called for the side effect of drawing a boxplot of Type I error rates.
 #' @export
 
-plot_type1_boxplot <- function(null_result, methods  = iconic_method_order, conf_str = 0.80, alpha = 0.05) {
+plot_type1_boxplot <- function(null_result, methods = iconic_method_order, conf_str = 0.80, alpha = 0.05) {
 
   null_combined <- null_result$raw
   n_m <- length(methods)
@@ -193,7 +193,7 @@ plot_type1_boxplot <- function(null_result, methods  = iconic_method_order, conf
   .set_theme(mar = c(7, 5.5, 4.5, 2) + 0.1)
   plot(NA, xlim = c(0.3, n_m + 0.7), ylim = ylim2,
        xaxt = "n", xlab = "",
-       ylab = "Type I Error Rate  (prop. p < 0.05 per seed)",
+       ylab = "Type I Error Rate (prop. p < 0.05 per seed)",
        main = sprintf("Type I Error Rate by Method\ntrue total = 0 | delta = %.1f | each point = one seed", conf_str))
   .add_grid()
   abline(h = alpha, lty = 2, lwd = 2.2, col = "#c0392b")
@@ -201,7 +201,7 @@ plot_type1_boxplot <- function(null_result, methods  = iconic_method_order, conf
        cex.axis = 1.05, font = 2, col.axis = "grey15")
 
   for (i in seq_along(methods)) {
-    m    <- methods[i]
+    m <- methods[i]
     vals <- null_iter_rates$rate[null_iter_rates$method == m]
     .draw_box(vals, i, iconic_method_colors[m], bw = 0.70,
               pt_cex = 0.55, pt_alpha = 0.60)
@@ -216,15 +216,15 @@ plot_type1_boxplot <- function(null_result, methods  = iconic_method_order, conf
 
 #' Type I error rate vs confounding strength
 #'
-#' @param t1e_df   Data frame returned by sweep_null_by_conf().
-#' @param methods  Methods to plot. Default: all five.
-#' @param alpha    Nominal significance level. Default 0.05.
-#' @param title    Plot title.
+#' @param t1e_df Data frame returned by sweep_null_by_conf().
+#' @param methods Methods to plot. Default: all five.
+#' @param alpha Nominal significance level. Default 0.05.
+#' @param title Plot title.
 #'
 #' @return Invisibly returns `NULL`; called for the side effect of drawing Type I error vs confounding strength.
 #' @export
 
-plot_type1_vs_conf <- function(t1e_df, methods = iconic_method_order, alpha = 0.05, title  = "Type I Error Rate vs Confounding Strength") {
+plot_type1_vs_conf <- function(t1e_df, methods = iconic_method_order, alpha = 0.05, title = "Type I Error Rate vs Confounding Strength") {
 
   .set_theme(mar = c(5, 5.5, 4.5, 2) + 0.1)
   ylim <- c(0, min(1, max(t1e_df$type1_error, na.rm = TRUE) * 1.15))
@@ -233,7 +233,7 @@ plot_type1_vs_conf <- function(t1e_df, methods = iconic_method_order, alpha = 0.
        xlim = range(t1e_df$conf_str) + c(-0.05, 0.05),
        ylim = ylim,
        xlab = "Confounding Strength (delta)",
-       ylab = "Type I Error Rate  (prop. p < 0.05)",
+       ylab = "Type I Error Rate (prop. p < 0.05)",
        main = title)
   .add_grid()
   abline(h = alpha, lty = 2, lwd = 2.2, col = "#c0392b")
@@ -256,15 +256,15 @@ plot_type1_vs_conf <- function(t1e_df, methods = iconic_method_order, alpha = 0.
 
 #' Plot estimated effect vs true effect
 #'
-#' @param sweep_df   Data frame from sweep_param()$summary.
-#' @param methods    Methods to plot. Default: all five.
-#' @param title      Plot title.
+#' @param sweep_df Data frame from sweep_param()$summary.
+#' @param methods Methods to plot. Default: all five.
+#' @param title Plot title.
 #'
 #' @return Invisibly returns `NULL`; called for the side effect of plotting estimated vs true effects.
 #' @export
 
 plot_estimated_vs_true <- function(sweep_df, methods = iconic_method_order, title = "Estimated vs True Effect") {
-  tt  <- sort(unique(sweep_df$true_total))
+  tt <- sort(unique(sweep_df$true_total))
   ylim <- range(sweep_df$mean[sweep_df$method %in% methods], na.rm = TRUE) + c(-0.05, 0.05)
 
   .set_theme()
@@ -286,17 +286,17 @@ plot_estimated_vs_true <- function(sweep_df, methods = iconic_method_order, titl
 
 #' Plot absolute bias vs a swept parameter
 #'
-#' @param sweep_df    Data frame from sweep_param()$summary.
+#' @param sweep_df Data frame from sweep_param()$summary.
 #' @param param_label X-axis label. Default "Parameter Value".
-#' @param methods     Methods to include. Default: all five.
-#' @param title       Plot title.
+#' @param methods Methods to include. Default: all five.
+#' @param title Plot title.
 #'
 #' @return Invisibly returns `NULL`; called for the side effect of plotting absolute bias vs a parameter.
 #' @export
 
 plot_bias <- function(sweep_df, param_label = "Parameter Value", methods= iconic_method_order, title= "Absolute Bias vs Parameter") {
   xvals <- sort(unique(sweep_df$param_value))
-  ylim  <- c(0, max(sweep_df$abs_bias[sweep_df$method %in% methods], na.rm = TRUE) * 1.1)
+  ylim <- c(0, max(sweep_df$abs_bias[sweep_df$method %in% methods], na.rm = TRUE) * 1.1)
 
   .set_theme()
   plot(NA, xlim = range(xvals) + c(-0.02, 0.02), ylim = ylim,
@@ -315,16 +315,16 @@ plot_bias <- function(sweep_df, param_label = "Parameter Value", methods= iconic
 
 #' Plot detection rate (power) vs a swept parameter
 #'
-#' @param sweep_df    Data frame from sweep_param()$summary.
+#' @param sweep_df Data frame from sweep_param()$summary.
 #' @param param_label X-axis label.
-#' @param methods     Methods to include.
-#' @param title       Plot title.
-#' @param legend_pos  Legend position. Default "bottomleft".
+#' @param methods Methods to include.
+#' @param title Plot title.
+#' @param legend_pos Legend position. Default "bottomleft".
 #'
 #' @return Invisibly returns `NULL`; called for the side effect of plotting detection rate vs a parameter.
 #' @export
 
-plot_power <- function(sweep_df, param_label = "Parameter Value",methods = iconic_method_order, title = "Detection Rate vs Parameter",legend_pos  = "bottomleft") {
+plot_power <- function(sweep_df, param_label = "Parameter Value",methods = iconic_method_order, title = "Detection Rate vs Parameter",legend_pos = "bottomleft") {
   xvals <- sort(unique(sweep_df$param_value))
 
   .set_theme()
@@ -346,9 +346,9 @@ plot_power <- function(sweep_df, param_label = "Parameter Value",methods = iconi
 
 #' Bar chart of Type I error rates
 #'
-#' @param null_df   Data frame: either run_null_sim()$rates or a data frame
-#'                  with columns method and type1_error.
-#' @param title     Plot title.
+#' @param null_df Data frame: either run_null_sim()$rates or a data frame
+#' with columns method and type1_error.
+#' @param title Plot title.
 #'
 #' @return Invisibly returns `NULL`; called for the side effect of plotting Type I error rates by method.
 #' @export
@@ -372,18 +372,18 @@ plot_type1_error <- function(null_df, title = "Type I Error Rate by Method") {
 
 #' Boxplot of estimate distributions from run_simulation()
 #'
-#' @param sim_result  Object returned by run_simulation().
-#' @param methods     Methods to include. Default: all five.
-#' @param title       Plot title.
+#' @param sim_result Object returned by run_simulation().
+#' @param methods Methods to include. Default: all five.
+#' @param title Plot title.
 #'
 #' @return A `ggplot` object showing the distribution of estimates by method.
 #' @export
 plot_estimate_distribution <- function(sim_result, methods = iconic_method_order, title = NULL) {
-  combined   <- sim_result$raw
+  combined <- sim_result$raw
   true_total <- sim_result$true_total
 
   if (is.null(title)) {
-    p     <- sim_result$params
+    p <- sim_result$params
     title <- sprintf("Distribution of Estimates\n(true=%.2f, conf=%.1f, w_sig=%.1f)",
                      true_total, p$conf_str, p$w_signal)
   }
@@ -400,7 +400,7 @@ plot_estimate_distribution <- function(sim_result, methods = iconic_method_order
   mtext(sprintf("Dashed = true total (%.2f)", true_total), side = 1, line = 4, cex = 0.8)
 
   for (i in seq_along(methods)) {
-    m    <- methods[i]
+    m <- methods[i]
     bias <- mean(combined$beta[combined$method == m], na.rm = TRUE) - true_total
     mtext(sprintf("bias\n%+.3f", bias), side = 1, at = i, line = 1.5, cex = 0.65,
           col = if (abs(bias) < 0.05) "darkgreen" else "firebrick")
@@ -417,19 +417,18 @@ plot_estimate_distribution <- function(sim_result, methods = iconic_method_order
 #' appropriate visualisation for discrete data. One panel per variable.
 #'
 #' @param trained_gan An `iconic_gan` from [train_gan_on_real_data()].
-#' @param real_data   The data frame the generator was trained on.
-#' @param n_draw      Synthetic rows to draw for the overlay. Default: number of
-#'   real rows.
-#' @param M_matrix    Optional mediator panel (features x samples) for
-#'   feature-level marginal comparison. When supplied and the GAN carries a
-#'   feature_texture, an additional panel of density overlays compares real vs
-#'   copula-sampled mediator marginals.
+#' @param real_data The data frame the generator was trained on.
+#' @param n_draw Synthetic rows to draw for the overlay. Default: number of
+#' real rows.
+#' @param M_matrix Optional mediator panel (features x samples) for
+#' feature-level marginal comparison. When supplied and the GAN carries a
+#' feature_texture, an additional panel of density overlays compares real vs
+#' copula-sampled mediator marginals.
 #'
 #' @export
-# TODO(v1.0): promote S3 to main figure if kept (JYH #860). This
 # diagnostic figure is Supplementary Figure S3 in the comprehensive
 # draft; the journal submission may promote it or shorten it. No code
-# change in v0.9.2.
+# change.
 plot_gan_diagnostics <- function(trained_gan, real_data, n_draw = NULL,
                                  M_matrix = NULL) {
   stopifnot(inherits(trained_gan, "iconic_gan"))
@@ -454,7 +453,7 @@ plot_gan_diagnostics <- function(trained_gan, real_data, n_draw = NULL,
   np_sample <- length(cols)
   if (has_ft) {
     p_ft <- ft$n_features
-    np_show <- min(p_ft, 6)  # show at most 6 feature marginals
+    np_show <- min(p_ft, 6) # show at most 6 feature marginals
     np_total <- np_sample + np_show
   } else {
     np_total <- np_sample
@@ -468,7 +467,7 @@ plot_gan_diagnostics <- function(trained_gan, real_data, n_draw = NULL,
   for (cl in cols) {
     if (cl %in% bin_cols) {
       # --- Side-by-side bar chart for binary columns ---
-      p_real  <- mean(real_data[[cl]], na.rm = TRUE)
+      p_real <- mean(real_data[[cl]], na.rm = TRUE)
       p_synth <- mean(synth[[cl]], na.rm = TRUE)
       bp <- barplot(c(real = p_real, synthetic = p_synth),
                     beside = TRUE, col = c(adjustcolor("grey30", 0.5),
@@ -536,12 +535,12 @@ plot_gan_diagnostics <- function(trained_gan, real_data, n_draw = NULL,
 #' estimator, at a fixed number of confounders. Useful for reading off where a
 #' method's bias/RMSE blows up.
 #'
-#' @param sens   Object returned by [gan_sensitivity()].
+#' @param sens Object returned by [gan_sensitivity()].
 #' @param metric Column of `sens$summary` to map (e.g. "rmse", "abs_bias",
-#'   "power"). Default "rmse".
+#' "power"). Default "rmse".
 #' @param method Estimator to display. Default "IV2SLS".
-#' @param k      Number of confounders to slice on. Default: first in the grid.
-#' @param title  Optional plot title.
+#' @param k Number of confounders to slice on. Default: first in the grid.
+#' @param title Optional plot title.
 #'
 #' @return Invisibly returns `NULL`; called for the side effect of drawing a sensitivity heatmap.
 #' @export
@@ -555,14 +554,14 @@ plot_sensitivity_heatmap <- function(sens, metric = "rmse", method = "IV2SLS",
 
   xs <- sort(unique(s$coverage))
   ys <- sort(unique(s$conf_strength))
-  Z  <- matrix(NA_real_, length(xs), length(ys))
+  Z <- matrix(NA_real_, length(xs), length(ys))
   for (i in seq_along(xs)) for (j in seq_along(ys)) {
     v <- s[[metric]][s$coverage == xs[i] & s$conf_strength == ys[j]]
     if (length(v)) Z[i, j] <- v[1]
   }
 
   if (is.null(title))
-    title <- sprintf("%s %s  (k = %d)", method, metric, as.integer(k))
+    title <- sprintf("%s %s (k = %d)", method, metric, as.integer(k))
 
   pal <- grDevices::colorRampPalette(c("#2c7fb8", "#ffffbf", "#d7191c"))(64)
   .set_theme(mar = c(5, 5.5, 4, 5) + 0.1)

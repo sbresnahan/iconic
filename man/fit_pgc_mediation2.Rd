@@ -16,16 +16,16 @@ fit_pgc_mediation2(y, Z, M, g, W1, W2, gm = NULL, covars = NULL, min_f = 10)
 \item{g}{Numeric instrument for Z (length n).}
 
 \item{W1}{Numeric negative-control matrix (n x q) or vector for the
-Z->M path (captures U_XM).  If a matrix, the bridge uses
+Z->M path (captures U_XM). If a matrix, the bridge uses
 all q columns.}
 
 \item{W2}{Numeric negative-control matrix (n x q) or vector for the
-M->Y path (captures U_MY).  If a matrix, the bridge uses
+M->Y path (captures U_MY). If a matrix, the bridge uses
 all q columns.}
 
 \item{gm}{Optional numeric mediator instrument vector (length n).
 When \code{NULL} (default), Stage 2 uses pure NC
-identification.  When supplied, Gm helps isolate U_MY
+identification. When supplied, Gm helps isolate U_MY
 before bridging — robust to Gm-U correlation.}
 
 \item{covars}{Optional data frame of additional covariates (n rows).}
@@ -35,24 +35,24 @@ instrument G1. Default 10.}
 }
 \value{
 Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
-\code{NIE}, \code{NIE_se}, \code{NIE_p}.  Returns all-\code{NA} if
+\code{NIE}, \code{NIE_se}, \code{NIE_p}. Returns all-\code{NA} if
 the first-stage partial F for G1 is below \code{min_f}.
 }
 \description{
 Extends the proximal-inference approach to the two-linked-DAG mediation
-setting (v0.5.0).  Uses \strong{path-specific} negative controls — W1
+setting. Uses \strong{path-specific} negative controls — W1
 capturing the Z->M confounder U_XM and W2 capturing the M->Y confounder
 U_MY — to purge confounding at both stages via bridge functions.
 }
 \details{
 When \code{gm} is \code{NULL} (no mediator instrument), Stage 2 residualises
 M on the cleaned exposure Z_hat to isolate the U_MY-driven component, then
-bridges on W2.  This is pure negative-control identification at both stages
+bridges on W2. This is pure negative-control identification at both stages
 — no mediator instrument is required.
 
 When \code{gm} is supplied (mediator instrument present but its exogeneity
 may be in doubt), Stage 2 uses Gm to help isolate U_MY's effect on M before
-bridging on W2.  The bridge W_hat_M does the confounding removal, so the
+bridging on W2. The bridge W_hat_M does the confounding removal, so the
 estimator is robust to Gm being correlated with U_MY — the residual bias
 from Gm-U correlation is smaller than IV2SLS2's.
 
@@ -78,22 +78,22 @@ Weak-IV check: partial F for G1 >= \code{min_f}.
 NIE = alpha_M * beta_M (delta-method SE).
 
 The key advantage over \code{\link{fit_iv2sls_mediation2}}: PGC-2 does not
-require instrument exogeneity.  When the mediator instrument Gm is
+require instrument exogeneity. When the mediator instrument Gm is
 correlated with the confounder U_MY (rho_G2 > 0), IV2SLS2 is biased but
-PGC-2's bridge absorbs U_MY regardless of the instrument violation.  The
+PGC-2's bridge absorbs U_MY regardless of the instrument violation. The
 tipping-point simulation maps where PGC-2 bias crosses below IV2SLS2 bias.
 }
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
-                                  rho_G2 = 0.3, separate_U = TRUE,
-                                  omega_1 = 0.7, omega_2 = 0.7, seed = 1)
+rho_G2 = 0.3, separate_U = TRUE,
+omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 # Without mediator instrument (pure NC identification)
 fit_pgc_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G1, dat$W1, dat$W2)
 # With (possibly imperfect) mediator instrument
 fit_pgc_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G1, dat$W1, dat$W2,
-                   gm = dat$Gm)
+gm = dat$Gm)
 }
 }
 \references{

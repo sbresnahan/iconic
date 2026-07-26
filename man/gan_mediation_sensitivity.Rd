@@ -44,22 +44,22 @@ gan_mediation_sensitivity(
 
 \item{mo_confounding}{Strength of U1 -> M (mediator-outcome confounding). Default 0.80.}
 
-\item{phi}{Strength of the mediator instrument Gm -> M (v0.4.0).
+\item{phi}{Strength of the mediator instrument Gm -> M.
 0 = no mediator instrument (five estimators). > 0 =
 generates Gm and includes the 2-stage MR estimator
 (IV2SLS2). Default 0.}
 
-\item{rho_G1}{Correlation of G1 with U_XM (v0.5.0). Default 0.}
+\item{rho_G1}{Correlation of G1 with U_XM. Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY (v0.5.0). Default 0.}
+\item{rho_G2}{Correlation of G2 with U_MY. Default 0.}
 
-\item{rho_pop}{Shared population structure (v0.5.0). Default 0.}
+\item{rho_pop}{Shared population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders for Z->M and M->Y (v0.5.0). Default FALSE.}
+\item{separate_U}{Draw separate confounders for Z->M and M->Y. Default FALSE.}
 
-\item{omega_1}{Coverage of U_XM by W1 (v0.5.0). NULL = use \code{coverage}.}
+\item{omega_1}{Coverage of U_XM by W1. NULL = use \code{coverage}.}
 
-\item{omega_2}{Coverage of U_MY by W2 (v0.5.0). NULL = use \code{coverage}.}
+\item{omega_2}{Coverage of U_MY by W2. NULL = use \code{coverage}.}
 
 \item{nc_model}{Negative-control model (function or name). Default \code{"proxy"}.}
 
@@ -76,19 +76,19 @@ generates Gm and includes the 2-stage MR estimator
 \item{n_cores}{Parallel workers across replicates. Default 1.}
 
 \item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
-(v0.9.4).  When survival, the DGP generates time-to-event outcomes and
+When survival, the DGP generates time-to-event outcomes and
 estimation uses the Cox / RMST survival mediation drivers via
 \code{\link[=iconic_estimate]{iconic_estimate()}}.}
 
-\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}.  Only
+\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}. Only
 used when \code{outcome_type = "survival"}.}
 
-\item{surv_h0}{Baseline hazard for survival DGP (v0.9.4).  See
+\item{surv_h0}{Baseline hazard for survival DGP. See
 \code{\link[=run_single_iteration]{run_single_iteration()}}.}
 
-\item{surv_event_frac}{Target event fraction for survival DGP (v0.9.4).}
+\item{surv_event_frac}{Target event fraction for survival DGP.}
 
-\item{surv_censor_rate}{Censoring rate for survival DGP (v0.9.4).}
+\item{surv_censor_rate}{Censoring rate for survival DGP.}
 }
 \value{
 A list with \code{summary} (one row per scenario x method, with
@@ -102,14 +102,14 @@ mediation estimator, and summarises NDE/NIE bias / RMSE / Type I error.
 This is the mediation analogue of \code{\link[=gan_sensitivity]{gan_sensitivity()}}.
 }
 \details{
-When \code{phi > 0} (v0.4.0), a mediator-specific genetic instrument (Gm) is
+When \code{phi > 0}, a mediator-specific genetic instrument (Gm) is
 generated and the 2-stage MR estimator (IV2SLS2) is included in the
 results, enabling point identification of NDE/NIE under M-O confounding.
 }
 \examples{
 \donttest{
 sens <- gan_mediation_sensitivity(NULL, conf_grid = c(0.3, 0.8),
-        mo_confounding = 0.8, n_iter = 20)
+mo_confounding = 0.8, n_iter = 20)
 head(sens$summary)
 }
 }

@@ -10,9 +10,9 @@
 )
 }
 \description{
-v0.9.2: For each cell of the sensitivity surface, identifies the
+For each cell of the sensitivity surface, identifies the
 top-ranked estimator by the chosen criterion. Returns a data frame
-with one row per cell (JYH #544: a single global recommendation is
+with one row per cell (
 insufficient; some scenarios favor IV, others PGC).
 }
 \keyword{internal}

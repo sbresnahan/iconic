@@ -25,7 +25,7 @@ Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
 }
 \description{
 Adjusts for the genetic instrument G and negative-control W in both
-the mediator and outcome regressions.  Like \code{\link{fit_direct}},
+the mediator and outcome regressions. Like \code{\link{fit_direct}},
 this is a naive adjustment that does not correct for unmeasured
 confounding via a ratio or IV approach.
 }

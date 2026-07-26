@@ -32,9 +32,9 @@ Data frame: \code{feature}, \code{method}, \code{beta}, \code{se}, \code{pvalue}
 \description{
 Reference-named entry point: applies UNADJ, DIRECT, COCA, IV2SLS, and PGC
 (matrix bridge) to each tested outcome feature and returns tidy per-feature
-results with a significance flag.  Negative controls are summarised over
+results with a significance flag. Negative controls are summarised over
 the full W panel for COCA, so restricting \code{test_features} does not change
-its control summary.  The matrix-bridge PGC uses the full W panel
+its control summary. The matrix-bridge PGC uses the full W panel
 (or a validity-screened subset if provided).
 }
 \details{

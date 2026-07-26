@@ -50,9 +50,9 @@ Returns all-NA if the first-stage partial F for G1 is below \code{min_f}.
 }
 \description{
 Two-stage proximal mediation with path-specific negative controls and
-a survival outcome stage.  Stages 1-2 (Z bridge on W1, M bridge on W2,
+a survival outcome stage. Stages 1-2 (Z bridge on W1, M bridge on W2,
 Z_hat / M_hat construction) are identical to \code{\link{fit_pgc_mediation2}}
-and remain OLS.  Only stage 3 switches to Cox (log-HR) or RMST
+and remain OLS. Only stage 3 switches to Cox (log-HR) or RMST
 pseudo-observation OLS:
 \code{Surv(t,e) ~ Z_hat + M_hat + W_hat_Z + W_hat_M + covars}.
 }
@@ -65,9 +65,9 @@ isolate U_MY before bridging W2.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
-                                  mo_confounding = 0.8, rho_G2 = 0.3,
-                                  separate_U = TRUE, seed = 1)
+mo_confounding = 0.8, rho_G2 = 0.3,
+separate_U = TRUE, seed = 1)
 fit_pgc_mediation2_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-                        dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
+dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
 }
 }

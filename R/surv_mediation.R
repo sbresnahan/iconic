@@ -1,5 +1,5 @@
 # ============================================================
-# Survival (time-to-event) mediation estimators — v0.9.4
+# Survival (time-to-event) mediation estimators
 #
 # Mirrors the continuous mediation estimators in R/mediation.R using
 # two-stage predictor substitution (2SPS): the mediator first stages
@@ -10,9 +10,9 @@
 # observations (collapsible time scale).
 #
 # NIE = alpha_M * beta_M (product of the stage-2 alpha and the stage-3
-# coefficient on M_hat).  On the log-HR scale this product is an
+# coefficient on M_hat). On the log-HR scale this product is an
 # approximation because the hazard ratio is non-collapsible; on the RMST
-# scale the decomposition is exact.  See the man-pages and the v0.9.4
+# scale the decomposition is exact. See the man-pages and the
 # methods notes for the non-collapsibility caveat.
 #
 # COCA mediation is structurally unsupported for survival (it regresses
@@ -30,10 +30,10 @@
 
 # Fit the outcome stage (stage 3) on the survival response and extract
 # NDE (coef on Z_hat) and beta_M (coef on M_hat).
-# @param resp     Surv object (loghr) or numeric pseudo-observations (rmst).
-# @param d_os     data frame with columns y, Z_hat, M_hat, [W_hat_*], [covars].
-# @param fml_os   outcome-stage formula (character).
-# @param scale    "loghr" or "rmst".
+# @param resp Surv object (loghr) or numeric pseudo-observations (rmst).
+# @param d_os data frame with columns y, Z_hat, M_hat, [W_hat_*], [covars].
+# @param fml_os outcome-stage formula (character).
+# @param scale "loghr" or "rmst".
 # @return list(NDE, NDE_se, NDE_p, beta_M, beta_M_se) or NULL on failure.
 .fit_surv_outcome_stage <- function(resp, d_os, fml_os, scale,
                                      nde_name = "Z_hat", med_name = "M_hat") {
@@ -48,10 +48,10 @@
   pcol <- if ("Pr(>|z|)" %in% colnames(sm)) "Pr(>|z|)" else "Pr(>|t|)"
   if (!nde_name %in% rownames(sm) || !med_name %in% rownames(sm)) return(NULL)
   list(
-    NDE       = as.numeric(coef(fit)[nde_name]),
-    NDE_se    = as.numeric(sm[nde_name, 2]),
-    NDE_p     = as.numeric(sm[nde_name, pcol]),
-    beta_M    = as.numeric(coef(fit)[med_name]),
+    NDE = as.numeric(coef(fit)[nde_name]),
+    NDE_se = as.numeric(sm[nde_name, 2]),
+    NDE_p = as.numeric(sm[nde_name, pcol]),
+    beta_M = as.numeric(coef(fit)[med_name]),
     beta_M_se = as.numeric(sm[med_name, 2])
   )
 }
@@ -61,29 +61,29 @@
 
 #' UNADJ survival mediation estimator: naive Baron-Kenny with Cox / RMST
 #'
-#' Stage 1 (OLS): \code{M ~ Z} -> alpha_M.  Stage 2 (Cox / RMST):
+#' Stage 1 (OLS): \code{M ~ Z} -> alpha_M. Stage 2 (Cox / RMST):
 #' survival outcome ~ Z + M -> NDE (coef on Z), beta_M (coef on M).
-#' \code{NIE = alpha_M * beta_M}.  No confounding adjustment; bias
+#' \code{NIE = alpha_M * beta_M}. No confounding adjustment; bias
 #' reference.
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param M            Numeric mediator vector (length n).
-#' @param covars       Optional data frame of covariates (n rows).
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param M Numeric mediator vector (length n).
+#' @param covars Optional data frame of covariates (n rows).
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
-#' @param tau          RMST horizon (rmst only).
+#' @param tau RMST horizon (rmst only).
 #'
 #' @return Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
-#'   \code{NIE}, \code{NIE_se}, \code{NIE_p}, \code{alpha_M},
-#'   \code{alpha_se}, \code{beta_M}, \code{beta_M_se}.
+#' \code{NIE}, \code{NIE_se}, \code{NIE_p}, \code{alpha_M},
+#' \code{alpha_se}, \code{beta_M}, \code{beta_M_se}.
 #' @export
 #'
 #' @examples
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
-#'                                   mo_confounding = 0.8, seed = 1)
+#' mo_confounding = 0.8, seed = 1)
 #' fit_unadj_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M)
 #' }
 fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
@@ -139,17 +139,17 @@ fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
 #' DIRECT survival mediation estimator: Cox / RMST with G and W covariates
 #'
 #' Adjusts for the instrument G and negative-control W in both the
-#' mediator (OLS) and outcome (Cox / RMST) stages.  Naive adjustment.
+#' mediator (OLS) and outcome (Cox / RMST) stages. Naive adjustment.
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param M            Numeric mediator vector (length n).
-#' @param g            Numeric instrument vector (length n).
-#' @param w            Numeric NC vector (length n) or matrix (n x q).
-#' @param covars       Optional data frame of covariates (n rows).
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param M Numeric mediator vector (length n).
+#' @param g Numeric instrument vector (length n).
+#' @param w Numeric NC vector (length n) or matrix (n x q).
+#' @param covars Optional data frame of covariates (n rows).
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
-#' @param tau          RMST horizon (rmst only).
+#' @param tau RMST horizon (rmst only).
 #'
 #' @return Named list (same fields as \code{\link{fit_unadj_mediation_surv}}).
 #' @export
@@ -158,9 +158,9 @@ fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
-#'                                   mo_confounding = 0.8, seed = 1)
+#' mo_confounding = 0.8, seed = 1)
 #' fit_direct_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-#'                           dat$G[, 1], dat$W[, 1])
+#' dat$G[, 1], dat$W[, 1])
 #' }
 fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
                                       effect_scale = c("loghr", "rmst"),
@@ -222,28 +222,28 @@ fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
 #' Two-stage predictor substitution with a single instrument (G for Z, no
 #' mediator instrument):
 #' \enumerate{
-#'   \item OLS: \code{Z ~ g + W + covars} -> Z_hat (purge U1 from Z).
-#'   \item OLS: \code{M ~ Z_hat + covars} -> alpha_M.
-#'   \item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M + W + covars} ->
-#'         NDE (coef on Z_hat), beta_M (coef on M).
+#' \item OLS: \code{Z ~ g + W + covars} -> Z_hat (purge U1 from Z).
+#' \item OLS: \code{M ~ Z_hat + covars} -> alpha_M.
+#' \item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M + W + covars} ->
+#' NDE (coef on Z_hat), beta_M (coef on M).
 #' }
-#' \code{NIE = alpha_M * beta_M}.  Weak-instrument gate (partial F for G)
-#' applies to the OLS first stage.  Unlike
+#' \code{NIE = alpha_M * beta_M}. Weak-instrument gate (partial F for G)
+#' applies to the OLS first stage. Unlike
 #' \code{\link{fit_iv2sls_mediation2_surv}}, this estimator does not
 #' instrument the mediator and is NOT point-identified under M-O
 #' confounding — it is included for parity with the continuous
 #' \code{\link{fit_iv2sls_mediation}}.
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param M            Numeric mediator vector (length n).
-#' @param g            Numeric instrument for Z (length n).
-#' @param w            Numeric NC vector (length n) or matrix (n x q).
-#' @param covars       Optional data frame of covariates (n rows).
-#' @param min_f        Minimum partial F for the excluded instrument. Default 10.
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param M Numeric mediator vector (length n).
+#' @param g Numeric instrument for Z (length n).
+#' @param w Numeric NC vector (length n) or matrix (n x q).
+#' @param covars Optional data frame of covariates (n rows).
+#' @param min_f Minimum partial F for the excluded instrument. Default 10.
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
-#' @param tau          RMST horizon (rmst only).
+#' @param tau RMST horizon (rmst only).
 #'
 #' @return Named list (same fields as \code{\link{fit_unadj_mediation_surv}}).
 #' @export
@@ -253,7 +253,7 @@ fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-#'                           dat$G[, 1], dat$W[, 1])
+#' dat$G[, 1], dat$W[, 1])
 #' }
 fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
                                       covars = NULL, min_f = 10,
@@ -325,28 +325,28 @@ fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
 #' Two-stage Mendelian-randomization mediation with a survival outcome
 #' stage (2SPS):
 #' \enumerate{
-#'   \item OLS: \code{Z ~ g + W + covars} -> Z_hat (purge U1 from Z).
-#'   \item OLS: \code{M ~ Z_hat + gm + W + covars} -> M_hat, alpha_M.
-#'   \item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M_hat + W + covars} ->
-#'         NDE (coef on Z_hat), beta_M (coef on M_hat).
+#' \item OLS: \code{Z ~ g + W + covars} -> Z_hat (purge U1 from Z).
+#' \item OLS: \code{M ~ Z_hat + gm + W + covars} -> M_hat, alpha_M.
+#' \item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M_hat + W + covars} ->
+#' NDE (coef on Z_hat), beta_M (coef on M_hat).
 #' }
-#' \code{NIE = alpha_M * beta_M}.  Weak-instrument gates (partial F for
+#' \code{NIE = alpha_M * beta_M}. Weak-instrument gates (partial F for
 #' G and Gm) apply to the OLS first stages.
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param M            Numeric mediator vector (length n).
-#' @param g            Numeric instrument for Z (length n).
-#' @param gm           Numeric instrument for M (length n).
-#' @param w            Numeric NC vector (length n) or matrix (n x q).
-#' @param covars       Optional data frame of covariates (n rows).
-#' @param min_f        Minimum partial F for each excluded instrument. Default 10.
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param M Numeric mediator vector (length n).
+#' @param g Numeric instrument for Z (length n).
+#' @param gm Numeric instrument for M (length n).
+#' @param w Numeric NC vector (length n) or matrix (n x q).
+#' @param covars Optional data frame of covariates (n rows).
+#' @param min_f Minimum partial F for each excluded instrument. Default 10.
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
-#' @param tau          RMST horizon (rmst only).
+#' @param tau RMST horizon (rmst only).
 #'
 #' @return Named list (same fields as \code{\link{fit_unadj_mediation_surv}}).
-#'   Returns all-NA if either first-stage partial F is below \code{min_f}.
+#' Returns all-NA if either first-stage partial F is below \code{min_f}.
 #' @export
 #'
 #' @references
@@ -357,9 +357,9 @@ fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
-#'                                   mo_confounding = 0.8, phi = 0.8, seed = 1)
+#' mo_confounding = 0.8, phi = 0.8, seed = 1)
 #' fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-#'                            dat$G[, 1], dat$Gm, dat$W[, 1])
+#' dat$G[, 1], dat$Gm, dat$W[, 1])
 #' }
 fit_iv2sls_mediation2_surv <- function(time, event, Z, M, g, gm, w,
                                        covars = NULL, min_f = 10,
@@ -424,33 +424,33 @@ fit_iv2sls_mediation2_surv <- function(time, event, Z, M, g, gm, w,
 #'
 #' Bridge-function-adjusted natural direct and indirect effects with a
 #' survival outcome stage, using a single negative-control panel W for
-#' both the Z->M and M->Y confounding paths.  This is the survival
+#' both the Z->M and M->Y confounding paths. This is the survival
 #' analogue of \code{\link{fit_pgc_mediation}} (continuous outcome):
 #' \enumerate{
-#'   \item OLS: residualise Z on G -> Z_resid.
-#'   \item OLS: bridge Z_resid on the FULL W matrix -> W_hat (proxy for U).
-#'   \item OLS: \code{M ~ Z + W_hat + covars} -> alpha_M.
-#'   \item Cox / RMST: \code{Surv(t,e) ~ Z + M + W_hat + covars} ->
-#'         NDE (coef on Z), beta_M (coef on M).
+#' \item OLS: residualise Z on G -> Z_resid.
+#' \item OLS: bridge Z_resid on the FULL W matrix -> W_hat (proxy for U).
+#' \item OLS: \code{M ~ Z + W_hat + covars} -> alpha_M.
+#' \item Cox / RMST: \code{Surv(t,e) ~ Z + M + W_hat + covars} ->
+#' NDE (coef on Z), beta_M (coef on M).
 #' }
-#' \code{NIE = alpha_M * beta_M}.  Unlike
+#' \code{NIE = alpha_M * beta_M}. Unlike
 #' \code{\link{fit_pgc_mediation2_surv}}, which uses path-specific W1/W2
 #' bridges, this estimator uses a single combined W panel and is
 #' appropriate when separate U_XM / U_MY confounders are not assumed.
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param M            Numeric mediator vector (length n).
-#' @param g            Numeric instrument for Z (length n).
-#' @param W            Numeric NC matrix (n x q) or vector (length n).
-#' @param covars       Optional data frame of covariates (n rows).
-#' @param min_f        Minimum partial F for G. Default 10.
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param M Numeric mediator vector (length n).
+#' @param g Numeric instrument for Z (length n).
+#' @param W Numeric NC matrix (n x q) or vector (length n).
+#' @param covars Optional data frame of covariates (n rows).
+#' @param min_f Minimum partial F for G. Default 10.
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
-#' @param tau          RMST horizon (rmst only).
+#' @param tau RMST horizon (rmst only).
 #'
 #' @return Named list (same fields as \code{\link{fit_unadj_mediation_surv}}).
-#'   Returns all-NA if the first-stage partial F for G is below \code{min_f}.
+#' Returns all-NA if the first-stage partial F for G is below \code{min_f}.
 #' @export
 #'
 #' @examples
@@ -458,7 +458,7 @@ fit_iv2sls_mediation2_surv <- function(time, event, Z, M, g, gm, w,
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-#'                        dat$G[, 1], dat$W)
+#' dat$G[, 1], dat$W)
 #' }
 fit_pgc_mediation_surv <- function(time, event, Z, M, g, W, covars = NULL,
                                    min_f = 10,
@@ -541,9 +541,9 @@ fit_pgc_mediation_surv <- function(time, event, Z, M, g, W, covars = NULL,
 #' PGC2 / PGC2Gm survival mediation estimator: path-specific bridges with Cox / RMST
 #'
 #' Two-stage proximal mediation with path-specific negative controls and
-#' a survival outcome stage.  Stages 1-2 (Z bridge on W1, M bridge on W2,
+#' a survival outcome stage. Stages 1-2 (Z bridge on W1, M bridge on W2,
 #' Z_hat / M_hat construction) are identical to \code{\link{fit_pgc_mediation2}}
-#' and remain OLS.  Only stage 3 switches to Cox (log-HR) or RMST
+#' and remain OLS. Only stage 3 switches to Cox (log-HR) or RMST
 #' pseudo-observation OLS:
 #' \code{Surv(t,e) ~ Z_hat + M_hat + W_hat_Z + W_hat_M + covars}.
 #'
@@ -551,31 +551,31 @@ fit_pgc_mediation_surv <- function(time, event, Z, M, g, W, covars = NULL,
 #' When \code{gm} is supplied (PGC2Gm), the mediator instrument helps
 #' isolate U_MY before bridging W2.
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param M            Numeric mediator vector (length n).
-#' @param g            Numeric instrument for Z (length n).
-#' @param W1           Numeric NC matrix (n x q) or vector for the Z->M path.
-#' @param W2           Numeric NC matrix (n x q) or vector for the M->Y path.
-#' @param gm           Optional numeric mediator instrument (length n).
-#' @param covars       Optional data frame of covariates (n rows).
-#' @param min_f        Minimum partial F for G1. Default 10.
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param M Numeric mediator vector (length n).
+#' @param g Numeric instrument for Z (length n).
+#' @param W1 Numeric NC matrix (n x q) or vector for the Z->M path.
+#' @param W2 Numeric NC matrix (n x q) or vector for the M->Y path.
+#' @param gm Optional numeric mediator instrument (length n).
+#' @param covars Optional data frame of covariates (n rows).
+#' @param min_f Minimum partial F for G1. Default 10.
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
-#' @param tau          RMST horizon (rmst only).
+#' @param tau RMST horizon (rmst only).
 #'
 #' @return Named list (same fields as \code{\link{fit_unadj_mediation_surv}}).
-#'   Returns all-NA if the first-stage partial F for G1 is below \code{min_f}.
+#' Returns all-NA if the first-stage partial F for G1 is below \code{min_f}.
 #' @export
 #'
 #' @examples
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
-#'                                   mo_confounding = 0.8, rho_G2 = 0.3,
-#'                                   separate_U = TRUE, seed = 1)
+#' mo_confounding = 0.8, rho_G2 = 0.3,
+#' separate_U = TRUE, seed = 1)
 #' fit_pgc_mediation2_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-#'                         dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
+#' dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
 #' }
 fit_pgc_mediation2_surv <- function(time, event, Z, M, g, W1, W2, gm = NULL,
                                     covars = NULL, min_f = 10,
@@ -703,17 +703,17 @@ fit_pgc_mediation2_surv <- function(time, event, Z, M, g, W1, W2, gm = NULL,
 #'
 #' COCA mediation regresses the negative control W on the outcome Y in
 #' both stages (\code{W ~ M + Z}, \code{W ~ y + Z + M}), placing the
-#' outcome on the right-hand side.  This is structurally impossible when
-#' the outcome is a \code{survival::Surv} object.  COCA mediation is
+#' outcome on the right-hand side. This is structurally impossible when
+#' the outcome is a \code{survival::Surv} object. COCA mediation is
 #' therefore unsupported for survival outcomes and always returns NA.
 #'
-#' @param time   Numeric follow-up time vector (length n).
-#' @param event  Numeric 0/1 event indicator (length n).
-#' @param Z      Numeric exposure vector (length n).
-#' @param M      Numeric mediator vector (length n).
-#' @param w      Numeric NC vector (length n).
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param M Numeric mediator vector (length n).
+#' @param w Numeric NC vector (length n).
 #' @param covars Optional data frame of covariates (n rows).
-#' @param ...    Ignored (signature compatibility).
+#' @param ... Ignored (signature compatibility).
 #'
 #' @return All-NA list with an informative \code{"reason"} attribute.
 #' @export

@@ -72,8 +72,8 @@ shrink with sample size.
 \examples{
 \donttest{
 sens <- gan_pleiotropy_sensitivity(NULL,
-        pleio_grid = c(0, 0.05, 0.10), conf_grid = c(0.5, 0.8),
-        n_iter = 20, n_features = 10)
+pleio_grid = c(0, 0.05, 0.10), conf_grid = c(0.5, 0.8),
+n_iter = 20, n_features = 10)
 head(sens$summary)
 }
 }

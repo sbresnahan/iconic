@@ -1,4 +1,4 @@
-# Ground truth regression test (v0.8.2)
+# Ground truth regression test
 #
 # BLOCKING TEST: verifies that the imposed true_NDE and true_NIE are
 # recoverable by an oracle estimator (OLS with the known confounder U)
@@ -8,10 +8,10 @@
 # package is against a moving target and the feature must be reverted.
 #
 # Oracle estimator:
-#   NDE = coef(lm(Y_f ~ Z + M + U1))[["Z"]]         (= beta_Z)
-#   alpha_M = coef(lm(M ~ Z + U1))[["Z"]]            (= alpha_M)
-#   beta_M = coef(lm(Y_f ~ Z + M + U1))[["M"]]      (= beta_M)
-#   NIE = alpha_M * beta_M                            (= alpha_M * beta_M)
+# NDE = coef(lm(Y_f ~ Z + M + U1))[["Z"]] (= beta_Z)
+# alpha_M = coef(lm(M ~ Z + U1))[["Z"]] (= alpha_M)
+# beta_M = coef(lm(Y_f ~ Z + M + U1))[["M"]] (= beta_M)
+# NIE = alpha_M * beta_M (= alpha_M * beta_M)
 #
 # The oracle is correct by construction under the linear DGP because
 # conditioning on U (the true confounder) removes all confounding.
@@ -24,7 +24,7 @@
   nde_bias <- numeric(n_features)
   nie_bias <- numeric(n_features)
   U1 <- dat$U1
-  if (is.null(U1)) U1 <- dat$U[, 1]  # run_single_iteration stores U as matrix
+  if (is.null(U1)) U1 <- dat$U[, 1] # run_single_iteration stores U as matrix
   for (f in seq_len(n_features)) {
     df_y <- data.frame(y = dat$Y[, f], Z = dat$Z, M = dat$M, U1 = U1)
     fit_y <- lm(y ~ Z + M + U1, data = df_y)

@@ -56,7 +56,7 @@ Returns a reader-orienting summary of a simulation scenario: the
 ground-truth estimands (NDE, NIE, total effect), the modifiable
 parameters with their swept ranges, and the fixed parameters with
 their values. Intended to be rendered as a table preceding simulation
-results in the manuscript (JYH #543, #582: "state the truth and the
+results in the manuscript (, #582: "state the truth and the
 parameter ranges up front to orient the reader").
 }
 \details{
@@ -81,7 +81,7 @@ only (no range).
 }
 \examples{
 dat <- generate_toy_data(n = 200, phi = 0.8, separate_U = TRUE,
-                         omega_1 = 0.7, omega_2 = 0.7, seed = 42)
+omega_1 = 0.7, omega_2 = 0.7, seed = 42)
 scenario_manifest(dat, conf_grid = c(0.3, 0.8),
-                  coverage_grid = c(0.3, 0.7, 1))
+coverage_grid = c(0.3, 0.7, 1))
 }

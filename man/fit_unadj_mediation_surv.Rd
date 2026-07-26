@@ -35,16 +35,16 @@ Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
 \code{alpha_se}, \code{beta_M}, \code{beta_M_se}.
 }
 \description{
-Stage 1 (OLS): \code{M ~ Z} -> alpha_M.  Stage 2 (Cox / RMST):
+Stage 1 (OLS): \code{M ~ Z} -> alpha_M. Stage 2 (Cox / RMST):
 survival outcome ~ Z + M -> NDE (coef on Z), beta_M (coef on M).
-\code{NIE = alpha_M * beta_M}.  No confounding adjustment; bias
+\code{NIE = alpha_M * beta_M}. No confounding adjustment; bias
 reference.
 }
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
-                                  mo_confounding = 0.8, seed = 1)
+mo_confounding = 0.8, seed = 1)
 fit_unadj_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M)
 }
 }

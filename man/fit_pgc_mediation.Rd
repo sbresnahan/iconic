@@ -16,7 +16,7 @@ fit_pgc_mediation(y, Z, M, g, W, covars = NULL)
 \item{g}{Numeric instrument vector (length n).}
 
 \item{W}{Numeric negative-control matrix (n x q) or vector
-(length n).  If a matrix, the bridge uses all q columns.}
+(length n). If a matrix, the bridge uses all q columns.}
 
 \item{covars}{Optional data frame of additional covariates (n rows).}
 }

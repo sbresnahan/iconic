@@ -48,11 +48,11 @@ strength.
 \examples{
 \donttest{
 sweep <- sweep_mediation_param("feat_cor", c(0, 0.2, 0.5, 0.8),
-  n_iter = 50, n_features = 10, mo_confounding = 0.8, phi = 0.8,
-  separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7)
+n_iter = 50, n_features = 10, mo_confounding = 0.8, phi = 0.8,
+separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7)
 null <- sweep_mediation_null_by_conf(c(0.8), n_iter = 50,
-  n_features = 10, mo_confounding = 0.8, phi = 0.8,
-  separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7, feat_cor = 0.5)
+n_features = 10, mo_confounding = 0.8, phi = 0.8,
+separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7, feat_cor = 0.5)
 plot_feature_correlation_sweep(sweep, null)
 }
 }

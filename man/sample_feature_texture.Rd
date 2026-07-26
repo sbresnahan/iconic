@@ -24,7 +24,7 @@ values, centered and scaled per feature.
 \description{
 Samples from the Gaussian copula: draws n_samples from
 MVN(0, copula_cor), then transforms each feature through its inverse
-marginal CDF.  The result is centered and scaled to zero mean and unit
+marginal CDF. The result is centered and scaled to zero mean and unit
 variance per feature, so the texture acts as noise that the structural
 signal in \code{\link[=run_single_iteration]{run_single_iteration()}} provides the mean for.
 }

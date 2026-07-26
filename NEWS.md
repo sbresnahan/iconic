@@ -1,3 +1,32 @@
+# iconic 0.9.6
+
+## Documentation cleanup
+
+- **biocViews**: removed `Bayesian` from the `biocViews` field.
+
+- **Description**: tightened the `DESCRIPTION` Description from ~1,300
+  words to ~180 words, removing version-history prose and internal
+  implementation details. The new Description describes the package's
+  purpose, the eight estimators, the diagnose/estimate/sensitivity/
+  recommend/prospect workflow, survival outcome support, and the torch
+  dependency.
+
+- **Coauthor and version-control markers**: removed all coauthor comment
+  markers (`JYH #NNN`), review-process markers (`critique #N of the QED
+  review`), `TODO(v1.0)` markers, and inline version-history annotations
+  (`v0.x.y`) from all documentation, man pages, roxygen blocks, the
+  vignette, README, inst scripts, and test files. Substantive
+  documentation content was preserved; only changelog-style commentary
+  and internal review references were removed.
+
+- **Vignette**: corrected an inaccurate statement that the package falls
+  back to a multivariate-normal texture model when `torch` is not
+  installed. `torch` is a hard dependency; the vignette now states this
+  explicitly.
+
+- **Tests**: removed the source-level test asserting the presence of
+  `TODO(v1.0)` markers (the markers were removed in this release).
+
 # iconic 0.9.5
 
 ## CRAN / Bioconductor readiness

@@ -8,6 +8,6 @@
 }
 \description{
 The gap between the IV2SLS NIE and the IV2SLS2 NIE reflects
-mediator-outcome confounding.  Averaged across features.
+mediator-outcome confounding. Averaged across features.
 }
 \keyword{internal}

@@ -24,10 +24,10 @@ features used each method).
 }
 \description{
 Learns the joint distribution of a features x samples mediator matrix
-using a Gaussian copula with flexible marginal distributions.  For each
+using a Gaussian copula with flexible marginal distributions. For each
 feature, the marginal is fitted as either an empirical CDF (default) or
 the best parametric family (normal, log-normal, gamma, beta) selected by
-AIC with a Kolmogorov-Smirnov goodness-of-fit check.  Cross-feature
+AIC with a Kolmogorov-Smirnov goodness-of-fit check. Cross-feature
 dependence is captured by the Gaussian copula correlation matrix.
 }
 \details{
@@ -37,8 +37,8 @@ shapes and correlation structure of the user's mediator panel.
 }
 \examples{
 \donttest{
-M <- matrix(rnorm(30 * 200), 30, 200)  # 30 transcripts, 200 samples
+M <- matrix(rnorm(30 * 200), 30, 200) # 30 transcripts, 200 samples
 ft <- train_feature_texture(M)
-draws <- sample_feature_texture(ft, 100)  # 30 x 100 synthetic draws
+draws <- sample_feature_texture(ft, 100) # 30 x 100 synthetic draws
 }
 }

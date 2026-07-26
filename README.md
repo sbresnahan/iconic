@@ -4,7 +4,7 @@
 
 [![Project Status: Active](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![R-CMD-check](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/sbresnahan/iconic/branch/main/graph/badge.svg)](https://codecov.io/gh/sbresnahan/iconic)
+[![Codecov test coverage](https://codecov.io/gh/sbresnahan/iconic/graph/badge.svg)](https://app.codecov.io/gh/sbresnahan/iconic)
 
 ## About the Package
 

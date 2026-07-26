@@ -78,11 +78,11 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' set.seed(1)
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
 #'                     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' diag <- iconic_diagnose(data)
-#' est <- iconic_estimate(data, diagnosis = diag, n_cores = 4)
+#' est <- iconic_estimate(data, diagnosis = diag)
 #' head(est)
 #'
 #' # Survival outcome (v0.9.4)
@@ -91,7 +91,6 @@
 #'                     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' est <- iconic_estimate(sdat, effect_scale = "loghr")
 #' est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
-#' }
 iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
                             alpha = 0.05, n_cores = 1, min_f = NULL,
                             run_all = FALSE,

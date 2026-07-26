@@ -80,7 +80,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
 #'                                   mo_confounding = 0.8, seed = 1)
@@ -155,7 +155,7 @@ fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
 #'                                   mo_confounding = 0.8, seed = 1)
@@ -249,7 +249,7 @@ fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
@@ -354,7 +354,7 @@ fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
 #' with an instrumental variable. *Biometrics*.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
 #'                                   mo_confounding = 0.8, phi = 0.8, seed = 1)
@@ -454,7 +454,7 @@ fit_iv2sls_mediation2_surv <- function(time, event, Z, M, g, gm, w,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
@@ -569,7 +569,7 @@ fit_pgc_mediation_surv <- function(time, event, Z, M, g, W, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
 #'                                   mo_confounding = 0.8, rho_G2 = 0.3,
@@ -719,7 +719,7 @@ fit_pgc_mediation2_surv <- function(time, event, Z, M, g, W1, W2, gm = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_coca_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M, dat$W[, 1])

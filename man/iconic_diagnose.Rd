@@ -95,10 +95,9 @@ has enough features to span the confounder subspace
 }
 
 \examples{
-\dontrun{
+set.seed(1)
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
                     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
-diag <- iconic_diagnose(data, n_cores = 4)
+diag <- iconic_diagnose(data)
 print(diag)
-}
 }

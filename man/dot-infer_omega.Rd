@@ -2,7 +2,7 @@
 % Please edit documentation in R/infer_confounding.R
 \name{.infer_omega}
 \alias{.infer_omega}
-\title{Infer omega (NC coverage) from W–Y residual R² (internal)}
+\title{Infer omega (NC coverage) from W--Y residual R^2 (internal)}
 \usage{
 .infer_omega(data, path = 1, warnings, n_cores = 1)
 }
@@ -15,7 +15,7 @@
 }
 \description{
 Regresses each NC feature on the outcome residualized on Z + C and
-takes sqrt(R²), averaged across features.  This is a composite of
+takes sqrt(R^2), averaged across features.  This is a composite of
 coverage and confounder strength, not pure coverage.
 }
 \keyword{internal}

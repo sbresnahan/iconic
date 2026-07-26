@@ -62,7 +62,7 @@ When \code{gm} is supplied (PGC2Gm), the mediator instrument helps
 isolate U_MY before bridging W2.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
                                   mo_confounding = 0.8, rho_G2 = 0.3,

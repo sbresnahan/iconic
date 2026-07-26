@@ -41,8 +41,6 @@ negative controls -- a violation would indicate shared genomic structure
 between the eQTL SNPs and the control CpG sites.
 }
 \examples{
-\dontrun{
 dat <- run_single_iteration(n_features = 10, phi = 0.8, seed = 1)
 nc_independence_check_gm(dat)
-}
 }

@@ -9,11 +9,11 @@
 #   "If I were to collect an instrument / NC, how much would my
 #    estimate change, and how strong would the instrument need to be?"
 #
-# Phase 1 — Sensitivity surface: sweeps instrument strength (gamma_G)
+# Phase 1 -- Sensitivity surface: sweeps instrument strength (gamma_G)
 #   and confounding level, showing how estimates converge to the true
 #   effect as the instrument strengthens.
 #
-# Phase 2 — Prospective simulation: for a target instrument strength,
+# Phase 2 -- Prospective simulation: for a target instrument strength,
 #   simulates the full DGP with synthetic instruments and NCs to show
 #   what the user could expect if they collected such data.
 #
@@ -50,7 +50,7 @@
 #' confounding bias is removed as instrument strength and NC coverage
 #' increase, letting you decide whether the marginal gain justifies the
 #' cost of genotyping / profiling the additional assays. It is a
-#' planning tool, not an estimator — it does not produce a causal
+#' planning tool, not an estimator -- it does not produce a causal
 #' estimate from your current data, but tells you what a future
 #' instrumented study would yield.
 #'
@@ -62,7 +62,7 @@
 #' The \code{confounding} argument controls how the held-fixed
 #' confounding parameters are set.  In the prospective setting (no
 #' instruments or NCs), most parameters cannot be inferred and will
-#' fall back to defaults with warnings — this is an honest limitation,
+#' fall back to defaults with warnings -- this is an honest limitation,
 #' not a silent failure.
 #'
 #' @param data          An \code{iconic_data} object (must have Z and Y;
@@ -126,7 +126,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 #'                     M = rnorm(100))
 #' result <- iconic_prospect(data, n_iter = 10, n_cores = 4)
@@ -187,12 +187,12 @@ iconic_prospect <- function(data,
 
   confounding <- match.arg(confounding)
 
-  # ── Resolve the texture model (v0.7.0) ──
+  # -- Resolve the texture model (v0.7.0) --
   gan_res <- .resolve_gan(trained_gan, data, epochs = gan_epochs)
   gan <- gan_res$gan
   texture_source <- gan_res$source
 
-  # ── Resolve confounding parameters (v0.7.0) ──
+  # -- Resolve confounding parameters (v0.7.0) --
   inferred_conf <- NULL
   if (confounding == "inferred") {
     inferred_conf <- infer_confounding(data, diagnosis = NULL,
@@ -207,7 +207,7 @@ iconic_prospect <- function(data,
 
   n <- data$n
 
-  # ═══ Phase 1: Instrument-strength surface ═══
+  # === Phase 1: Instrument-strength surface ===
   # Sweep gamma_G to show how estimates change as the instrument strengthens.
   # At each gamma_G, generate full DGP with synthetic G, Gm, W and run all
   # estimators.  The key comparison: UNADJ (no instrument) vs IV2SLS2/PGC2Gm
@@ -249,7 +249,7 @@ iconic_prospect <- function(data,
 
   strength_surface <- do.call(rbind, strength_rows)
 
-  # ═══ Phase 2: Prospective simulation at target strength ═══
+  # === Phase 2: Prospective simulation at target strength ===
   # Full simulation at the target instrument strength, showing what the
   # user could expect if they collected an instrument of that strength.
 
@@ -302,7 +302,7 @@ iconic_prospect <- function(data,
   }
   rep_diag <- iconic_diagnose(rep_idata)
 
-  # ═══ Summary ═══
+  # === Summary ===
   summary_txt <- .build_prospect_summary(strength_surface, prospective,
                                          target_gamma_G, rep_diag, n,
                                          mo_confounding, phi)
@@ -354,7 +354,7 @@ iconic_prospect <- function(data,
     lines <- c(lines, sprintf("  First-stage F (Gm) at target: %.1f", F_Gm_val))
 
   # Phase 1: how UNADJ vs best estimator change with instrument strength
-  lines <- c(lines, "", "  Phase 1 — Instrument-strength surface (NDE bias):")
+  lines <- c(lines, "", "  Phase 1 -- Instrument-strength surface (NDE bias):")
   gammas <- sort(unique(strength_surface$gamma_G))
   for (gg in gammas) {
     sub <- strength_surface[strength_surface$gamma_G == gg, ]
@@ -368,7 +368,7 @@ iconic_prospect <- function(data,
   }
 
   # Phase 2: prospective estimates at target
-  lines <- c(lines, "", "  Phase 2 — Prospective estimates at target strength:")
+  lines <- c(lines, "", "  Phase 2 -- Prospective estimates at target strength:")
   for (m in c("UNADJ", "IV2SLS", "IV2SLS2", "PGC2Gm")) {
     if (m %in% prospective$method) {
       r <- prospective[prospective$method == m, ]
@@ -385,6 +385,7 @@ iconic_prospect <- function(data,
 #'
 #' @param x An \code{iconic_prospect} object.
 #' @param ... Unused.
+#' @return Invisibly returns `x` (the `iconic_prospect` object); called for its side effect of printing a human-readable summary.
 #' @export
 print.iconic_prospect <- function(x, ...) {
   cat("<iconic_prospect>\n")

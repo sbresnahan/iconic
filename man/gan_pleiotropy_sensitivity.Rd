@@ -70,7 +70,7 @@ only when \code{pleio = 0}; any \code{pleio > 0} introduces bias that does not
 shrink with sample size.
 }
 \examples{
-\dontrun{
+\donttest{
 sens <- gan_pleiotropy_sensitivity(NULL,
         pleio_grid = c(0, 0.05, 0.10), conf_grid = c(0.5, 0.8),
         n_iter = 20, n_features = 10)

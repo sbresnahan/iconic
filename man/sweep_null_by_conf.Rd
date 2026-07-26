@@ -42,7 +42,7 @@ A data frame with columns: conf_str, method, type1_error.
 Sweep Type I error rate across confounding strength levels
 }
 \examples{
-\dontrun{
+\donttest{
 t1e <- sweep_null_by_conf(c(0.2, 0.4, 0.6, 0.8, 1.0), n_iter = 50)
 plot_type1_vs_conf(t1e)
 }

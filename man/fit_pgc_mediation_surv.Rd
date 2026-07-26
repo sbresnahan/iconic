@@ -60,7 +60,7 @@ bridges, this estimator uses a single combined W panel and is
 appropriate when separate U_XM / U_MY confounders are not assumed.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,

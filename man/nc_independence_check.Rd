@@ -28,8 +28,6 @@ after FDR correction may carry meQTL / allele-specific effects that
 violate the instrument-independence assumption (A2).
 }
 \examples{
-\dontrun{
 dat <- run_single_iteration(n_features = 10, seed = 1)
 nc_independence_check(dat)
-}
 }

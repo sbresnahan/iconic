@@ -5,18 +5,26 @@
 # NOTE: Some tests require torch-dependent functions (iconic_sensitivity,
 # gan_mediation_sensitivity with $manifest). Those are skipped when torch
 # is not available. The core revisions (§1-§7, §9) are torch-free.
+#
+# NOTE (v0.9.5): Updated for contract changes since v0.9.2.
+#   - nc_completeness_capture() now returns capture_R2/capture_pvalue/
+#     capture_verdict (not dimensional/capture/completeness).
+#   - u_strength scaling is applied before scale(), so the residualized
+#     Y-U correlation is not monotonic; the raw Z-U correlation is.
+#   - Rd alias tests use system.file() only (relative paths break under
+#     test_file()).
 
 skip_if_not_installed("AER")
 
 # ── §1: Completeness covariance-capture test ──
 
-test_that("nc_completeness_capture returns dimensional + capture + composite", {
+test_that("nc_completeness_capture returns capture_R2 + capture_pvalue + capture_verdict", {
   set.seed(1)
   dat <- iconic::generate_toy_data(n = 200, n_features = 5, w_signal = 0.7, seed = 1)
   res <- iconic:::nc_completeness_capture(dat, outcome = "Y", n_perm = 100)
-  expect_true(!is.null(res$dimensional))
-  expect_true(!is.null(res$capture))
-  expect_true(!is.null(res$completeness))
+  expect_true(!is.null(res$capture_R2))
+  expect_true(!is.null(res$capture_pvalue))
+  expect_true(!is.null(res$capture_verdict))
 })
 
 test_that("nc_completeness_check returns composite completeness field", {
@@ -126,11 +134,11 @@ test_that("u_strength scales confounder effect", {
   set.seed(1)
   dat1 <- iconic::generate_toy_data(n = 300, n_features = 5, u_strength = 1, seed = 1)
   dat2 <- iconic::generate_toy_data(n = 300, n_features = 5, u_strength = 2, seed = 1)
-  # Stronger U -> stronger Z-U correlation (before scaling)
-  # The effect is on the raw Z; after scale() it's harder to test directly,
-  # but the Y-U relationship should be stronger.
-  r1 <- cor(resid(lm(dat1$Y[, 1] ~ dat1$Z)), dat1$U1)
-  r2 <- cor(resid(lm(dat2$Y[, 1] ~ dat2$Z)), dat2$U1)
+  # Stronger U -> stronger raw Z-U correlation. The scaling is applied to
+  # the raw Z before scale(), so the raw correlation is the right thing to
+  # test (the residualized Y-U correlation is not monotonic after scale()).
+  r1 <- cor(dat1$Z, dat1$U1)
+  r2 <- cor(dat2$Z, dat2$U1)
   expect_true(abs(r2) > abs(r1))
 })
 
@@ -164,15 +172,16 @@ test_that("load_real_input_data accepts residualize_on", {
 # ─- §8: Aliases ──
 
 test_that("iconic_sensitivity has effect_decomposition_bias_sweep alias", {
-  rd <- readLines(system.file("man", "iconic_sensitivity.Rd", package = "iconic"))
-  # When installed; in dev, check the source Rd
-  if (!length(rd)) rd <- readLines("man/iconic_sensitivity.Rd")
+  rd_path <- system.file("man", "iconic_sensitivity.Rd", package = "iconic")
+  skip_if_not(file.exists(rd_path), "iconic_sensitivity.Rd not found in installed package")
+  rd <- readLines(rd_path)
   expect_true(any(grepl("effect_decomposition_bias_sweep", rd)))
 })
 
 test_that("iconic_prospect has bias_reduction_prospective alias", {
-  rd <- readLines(system.file("man", "iconic_prospect.Rd", package = "iconic"))
-  if (!length(rd)) rd <- readLines("man/iconic_prospect.Rd")
+  rd_path <- system.file("man", "iconic_prospect.Rd", package = "iconic")
+  skip_if_not(file.exists(rd_path), "iconic_prospect.Rd not found in installed package")
+  rd <- readLines(rd_path)
   expect_true(any(grepl("bias_reduction_prospective", rd)))
 })
 

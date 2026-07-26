@@ -58,7 +58,7 @@ confounding — it is included for parity with the continuous
 \code{\link{fit_iv2sls_mediation}}.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,

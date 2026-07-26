@@ -6,13 +6,13 @@
 # iconic_prospect() can run on data-calibrated rather than default values.
 #
 # Inference methods:
-#   conf_strength  (delta)    — UNADJ–IV2SLS gap (requires valid G)
-#   mo_confounding (delta_mo) — IV2SLS–IV2SLS2 NIE gap (requires G + Gm)
-#   omega          (omega)    — sqrt(R²) of W on residualized Y (requires W)
-#   k              (k)        — parallel analysis on residualized Y (requires >=5 features)
+#   conf_strength  (delta)    -- UNADJ--IV2SLS gap (requires valid G)
+#   mo_confounding (delta_mo) -- IV2SLS--IV2SLS2 NIE gap (requires G + Gm)
+#   omega          (omega)    -- sqrt(R^2) of W on residualized Y (requires W)
+#   k              (k)        -- parallel analysis on residualized Y (requires >=5 features)
 #
 # Parameters NOT inferred:
-#   rho_G1, rho_G2 — unestimable (U unobserved); always remain sweep variables.
+#   rho_G1, rho_G2 -- unestimable (U unobserved); always remain sweep variables.
 #
 # Each inferred value carries its method, the assumption required, and
 # any warnings about reliability.  Parameters that cannot be inferred
@@ -36,7 +36,7 @@
 #'   \item \strong{conf_strength} (delta): the gap between the unadjusted
 #'     OLS estimate and the IV2SLS estimate, averaged across features.
 #'     Requires a valid exposure instrument G (F >= 10).  Assumes the
-#'     exclusion restriction holds — using IV2SLS validity to calibrate
+#'     exclusion restriction holds -- using IV2SLS validity to calibrate
 #'     a benchmark that tests IV2SLS validity is circular, so the
 #'     estimate should be interpreted as a best-case calibration.
 #'   \item \strong{mo_confounding} (delta_mo): the gap between the
@@ -45,7 +45,7 @@
 #'   \item \strong{omega} (omega_1, omega_2): the square root of the
 #'     R-squared from regressing each negative-control feature on the
 #'     outcome residualized on Z + C, averaged across features.
-#'     Conflates NC coverage with confounder strength — reported as a
+#'     Conflates NC coverage with confounder strength -- reported as a
 #'     composite, not pure coverage.
 #'   \item \strong{k}: the number of latent confounders, estimated via
 #'     parallel analysis (Horn, 1965) on the correlation matrix of
@@ -90,7 +90,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 #'                     M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 #'                     W = matrix(rnorm(100*10), 10, 100))
@@ -107,7 +107,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
   warnings <- character(0)
   unavailable <- c("rho_G1", "rho_G2")  # always unestimable
 
-  # ── Compute estimates if not supplied ──
+  # -- Compute estimates if not supplied --
   if (is.null(estimate)) {
     estimate <- tryCatch(
       iconic_estimate(data, diagnosis = diagnosis),
@@ -119,7 +119,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
     }
   }
 
-  # ── Instrument strength from diagnosis ──
+  # -- Instrument strength from diagnosis --
   # F_G and F_Gm can be vectors (one F-stat per mediator) when the
   # instrument is a panel.  Use the median as a scalar summary for the
   # gap-based inference checks below.
@@ -134,21 +134,21 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
       F_Gm <- diagnosis$instrument_strength$F_Gm_median
   }
 
-  # ═══ conf_strength (delta): UNADJ–IV2SLS gap ═══
+  # === conf_strength (delta): UNADJ--IV2SLS gap ===
   conf_strength <- .infer_conf_strength(estimate, data, F_G, warnings)
   warnings <- conf_strength$warnings
 
-  # ═══ mo_confounding (delta_mo): IV2SLS–IV2SLS2 NIE gap ═══
+  # === mo_confounding (delta_mo): IV2SLS--IV2SLS2 NIE gap ===
   mo_confounding <- .infer_mo_confounding(estimate, data, F_G, F_Gm, warnings)
   warnings <- mo_confounding$warnings
 
-  # ═══ omega_1, omega_2: W–Y residual R² ═══
+  # === omega_1, omega_2: W--Y residual R^2 ===
   omega_1 <- .infer_omega(data, path = 1, warnings, n_cores = n_cores)
   warnings <- omega_1$warnings
   omega_2 <- .infer_omega(data, path = 2, warnings, n_cores = n_cores)
   warnings <- omega_2$warnings
 
-  # ═══ k: parallel analysis on residualized outcomes ═══
+  # === k: parallel analysis on residualized outcomes ===
   k_inf <- .infer_k(data, warnings, n_cores = n_cores)
   warnings <- k_inf$warnings
 
@@ -173,7 +173,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 }
 
 
-#' Infer conf_strength (delta) from UNADJ–IV2SLS gap (internal)
+#' Infer conf_strength (delta) from UNADJ--IV2SLS gap (internal)
 #'
 #' The gap between the unadjusted OLS estimate and the IV2SLS estimate
 #' reflects the total confounding bias.  Averaged across features and
@@ -256,7 +256,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 }
 
 
-#' Infer mo_confounding (delta_mo) from IV2SLS–IV2SLS2 NIE gap (internal)
+#' Infer mo_confounding (delta_mo) from IV2SLS--IV2SLS2 NIE gap (internal)
 #'
 #' The gap between the IV2SLS NIE and the IV2SLS2 NIE reflects
 #' mediator-outcome confounding.  Averaged across features.
@@ -322,10 +322,10 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 }
 
 
-#' Infer omega (NC coverage) from W–Y residual R² (internal)
+#' Infer omega (NC coverage) from W--Y residual R^2 (internal)
 #'
 #' Regresses each NC feature on the outcome residualized on Z + C and
-#' takes sqrt(R²), averaged across features.  This is a composite of
+#' takes sqrt(R^2), averaged across features.  This is a composite of
 #' coverage and confounder strength, not pure coverage.
 #'
 #' @param data      An iconic_data object.
@@ -364,7 +364,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
     Y_resid[f, ] <- if (!is.null(fit)) residuals(fit) else y
   }
 
-  # For each NC feature, regress W on Y_resid and compute R²
+  # For each NC feature, regress W on Y_resid and compute R^2
   # W_panel is q x n (features x samples); transpose to n x q
   W_mat <- t(W_panel)
   q <- ncol(W_mat)
@@ -391,10 +391,10 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 
   list(
     estimate = as.numeric(omega_est),
-    method = "sqrt(R²) of W on Y residualized on Z+C",
+    method = "sqrt(R^2) of W on Y residualized on Z+C",
     assumption = "valid W (negative controls)",
     available = TRUE,
-    warning = "composite: coverage × confounder strength, not pure coverage",
+    warning = "composite: coverage x confounder strength, not pure coverage",
     warnings = warnings
   )
 }
@@ -465,7 +465,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
   k_est <- sum(eigen_vals > perm_mean)
   k_est <- max(1L, k_est)  # at least 1 confounder
 
-  # Simple CI: ±1
+  # Simple CI: +/-1
   k_lo <- max(1L, k_est - 1L)
   k_hi <- k_est + 1L
 
@@ -485,6 +485,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 #'
 #' @param x An \code{iconic_confounding} object.
 #' @param ... Unused.
+#' @return Invisibly returns `x` (the `iconic_confounding` object); called for its side effect of printing a human-readable summary.
 #' @export
 print.iconic_confounding <- function(x, ...) {
   cat("<iconic_confounding>\n")
@@ -501,7 +502,7 @@ print.iconic_confounding <- function(x, ...) {
       if (!is.null(p$warning))
         cat(sprintf("    warning: %s\n", p$warning))
     } else {
-      cat(sprintf("  %-16s  default (%.1f)  — %s\n", label, p$estimate,
+      cat(sprintf("  %-16s  default (%.1f)  -- %s\n", label, p$estimate,
                   ifelse(is.null(p$warning), "unavailable", p$warning)))
     }
   }

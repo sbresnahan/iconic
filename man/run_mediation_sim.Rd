@@ -68,6 +68,9 @@ compatible).  > 0 = generates Gm and includes the
 
 \item{omega_2}{Coverage of U_MY by W2 (v0.5.0). NULL = use w_signal.}
 
+\item{feat_cor}{Within-module correlation for block-diagonal co-expression
+modules in Y and W (v0.9.0). 0 = independent features. Default 0.}
+
 \item{base_seed}{Starting seed; replicate i uses base_seed + i. Default 100.}
 
 \item{n_cores}{Number of parallel workers. Default 1.}
@@ -89,7 +92,7 @@ separate_U, omega_1, omega_2), the two-stage proximal estimators (PGC2,
 PGC2Gm) are also included.
 }
 \examples{
-\dontrun{
+\donttest{
 res <- run_mediation_sim(n_iter = 50, mo_confounding = 0.8)
 res$summary
 }

@@ -12,6 +12,9 @@ with columns method and type1_error.}
 
 \item{title}{Plot title.}
 }
+\value{
+Invisibly returns \code{NULL}; called for the side effect of plotting Type I error rates by method.
+}
 \description{
 Bar chart of Type I error rates
 }

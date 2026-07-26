@@ -45,7 +45,7 @@ effect on the restricted-mean-survival-time (time) scale — a
 collapsible, linear alternative to the non-collapsible hazard ratio.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_unadj_surv(dat$surv_time, dat$surv_event, dat$Z)

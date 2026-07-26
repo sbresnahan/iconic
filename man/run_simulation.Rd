@@ -35,6 +35,9 @@ run_simulation(
 
 \item{w_signal}{Proxy quality omega. Default 0.70.}
 
+\item{feat_cor}{Within-module correlation for block-diagonal co-expression
+modules in Y and W (v0.9.0). 0 = independent features. Default 0.}
+
 \item{base_seed}{Starting seed; replicate i uses base_seed + i. Default 100.}
 
 \item{n_cores}{Number of parallel workers. Default 1.}
@@ -46,7 +49,7 @@ A list with raw, summary, iter_bias, true_total, params.
 Run repeated simulations for a single parameter configuration
 }
 \examples{
-\dontrun{
+\donttest{
 res <- run_simulation(n_iter = 50, beta_Z = 0.1, conf_str = 0.8)
 res$summary
 }

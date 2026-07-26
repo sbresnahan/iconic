@@ -171,7 +171,6 @@ and (when \code{rho_pop > 0}) \code{P}.
 }
 
 \examples{
-\dontrun{
 # Basic total-effect data
 dat <- generate_toy_data(n = 200, n_features = 10, seed = 42)
 
@@ -182,5 +181,4 @@ dat <- generate_toy_data(n = 200, n_features = 10, phi = 0.8,
 idata <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
                      G = dat$G[, 1], Gm = dat$Gm,
                      W1 = dat$W1, W2 = dat$W2)
-}
 }

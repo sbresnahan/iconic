@@ -17,6 +17,9 @@ plot_estimated_vs_true(
 
 \item{title}{Plot title.}
 }
+\value{
+Invisibly returns \code{NULL}; called for the side effect of plotting estimated vs true effects.
+}
 \description{
 Plot estimated effect vs true effect
 }

@@ -81,12 +81,11 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' set.seed(1)
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
 #'                     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
-#' diag <- iconic_diagnose(data, n_cores = 4)
+#' diag <- iconic_diagnose(data)
 #' print(diag)
-#' }
 iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
                             g_threshold = NULL, gm_threshold = NULL,
                             n_cores = 1, allow_no_proxy = TRUE) {
@@ -603,6 +602,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
 #'
 #' @param x An \code{iconic_diagnosis} object.
 #' @param ... Unused.
+#' @return Invisibly returns `x` (the `iconic_diagnosis` object); called for its side effect of printing a human-readable summary.
 #' @export
 print.iconic_diagnosis <- function(x, ...) {
   cat("<iconic_diagnosis>\n")

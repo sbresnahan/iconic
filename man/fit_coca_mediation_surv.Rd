@@ -32,7 +32,7 @@ the outcome is a \code{survival::Surv} object.  COCA mediation is
 therefore unsupported for survival outcomes and always returns NA.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_coca_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M, dat$W[, 1])

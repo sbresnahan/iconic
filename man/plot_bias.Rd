@@ -20,6 +20,9 @@ plot_bias(
 
 \item{title}{Plot title.}
 }
+\value{
+Invisibly returns \code{NULL}; called for the side effect of plotting absolute bias vs a parameter.
+}
 \description{
 Plot absolute bias vs a swept parameter
 }

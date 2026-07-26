@@ -96,7 +96,6 @@ standardizing vectors and matrices into a consistent format that
 all downstream model selection functions consume.
 }
 \examples{
-\dontrun{
 # Total-effect only (no mediation)
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))
 
@@ -116,5 +115,4 @@ data <- iconic_data(
   W = matrix(rnorm(100 * 10), 10, 100)
 )
 print(data)
-}
 }

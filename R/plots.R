@@ -9,6 +9,7 @@
 
 
 #' Colour palette for iconic methods
+#' @return A named character vector of colors for the eight ICONIC estimators.
 #' @export
 iconic_method_colors <- c(
   UNADJ       = "#888888",
@@ -22,6 +23,7 @@ iconic_method_colors <- c(
 )
 
 #' Default method display order
+#' @return A character vector giving the canonical display order of the eight ICONIC estimators.
 #' @export
 iconic_method_order <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
                          "IV2SLS2", "PGC2", "PGC2Gm")
@@ -71,6 +73,7 @@ iconic_method_order <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
 #' @param legend_pos  Legend position. Default "topleft".
 #' @param methods     Methods to include. Default: all five.
 #'
+#' @return Invisibly returns `NULL`; called for the side effect of drawing a boxplot of bias across parameter values.
 #' @export
 
 plot_bias_boxplot <- function(iter_bias, param_grid, xlab, ylab = "Bias  (mean estimate - true)", main = "", xfmt = "%.2f", legend_pos  = "topleft", methods = iconic_method_order) {
@@ -122,6 +125,7 @@ plot_bias_boxplot <- function(iter_bias, param_grid, xlab, ylab = "Bias  (mean e
 #' @param methods     Methods to include. Default: all five.
 #' @param title       Plot title. If NULL a default is constructed.
 #'
+#' @return A `ggplot` object showing the distribution of bias estimates by method.
 #' @export
 plot_bias_distribution <- function(sim_result, methods = iconic_method_order, title = NULL) {
   ibias  <- sim_result$iter_bias
@@ -167,6 +171,7 @@ plot_bias_distribution <- function(sim_result, methods = iconic_method_order, ti
 #' @param conf_str    Confounding strength used (for the title). Default 0.80.
 #' @param alpha       Nominal significance level. Default 0.05.
 #'
+#' @return Invisibly returns `NULL`; called for the side effect of drawing a boxplot of Type I error rates.
 #' @export
 
 plot_type1_boxplot <- function(null_result, methods  = iconic_method_order, conf_str = 0.80, alpha = 0.05) {
@@ -216,6 +221,7 @@ plot_type1_boxplot <- function(null_result, methods  = iconic_method_order, conf
 #' @param alpha    Nominal significance level. Default 0.05.
 #' @param title    Plot title.
 #'
+#' @return Invisibly returns `NULL`; called for the side effect of drawing Type I error vs confounding strength.
 #' @export
 
 plot_type1_vs_conf <- function(t1e_df, methods = iconic_method_order, alpha = 0.05, title  = "Type I Error Rate vs Confounding Strength") {
@@ -254,6 +260,7 @@ plot_type1_vs_conf <- function(t1e_df, methods = iconic_method_order, alpha = 0.
 #' @param methods    Methods to plot. Default: all five.
 #' @param title      Plot title.
 #'
+#' @return Invisibly returns `NULL`; called for the side effect of plotting estimated vs true effects.
 #' @export
 
 plot_estimated_vs_true <- function(sweep_df, methods = iconic_method_order, title = "Estimated vs True Effect") {
@@ -284,6 +291,7 @@ plot_estimated_vs_true <- function(sweep_df, methods = iconic_method_order, titl
 #' @param methods     Methods to include. Default: all five.
 #' @param title       Plot title.
 #'
+#' @return Invisibly returns `NULL`; called for the side effect of plotting absolute bias vs a parameter.
 #' @export
 
 plot_bias <- function(sweep_df, param_label = "Parameter Value", methods= iconic_method_order, title= "Absolute Bias vs Parameter") {
@@ -313,6 +321,7 @@ plot_bias <- function(sweep_df, param_label = "Parameter Value", methods= iconic
 #' @param title       Plot title.
 #' @param legend_pos  Legend position. Default "bottomleft".
 #'
+#' @return Invisibly returns `NULL`; called for the side effect of plotting detection rate vs a parameter.
 #' @export
 
 plot_power <- function(sweep_df, param_label = "Parameter Value",methods = iconic_method_order, title = "Detection Rate vs Parameter",legend_pos  = "bottomleft") {
@@ -341,6 +350,7 @@ plot_power <- function(sweep_df, param_label = "Parameter Value",methods = iconi
 #'                  with columns method and type1_error.
 #' @param title     Plot title.
 #'
+#' @return Invisibly returns `NULL`; called for the side effect of plotting Type I error rates by method.
 #' @export
 
 plot_type1_error <- function(null_df, title = "Type I Error Rate by Method") {
@@ -366,6 +376,7 @@ plot_type1_error <- function(null_df, title = "Type I Error Rate by Method") {
 #' @param methods     Methods to include. Default: all five.
 #' @param title       Plot title.
 #'
+#' @return A `ggplot` object showing the distribution of estimates by method.
 #' @export
 plot_estimate_distribution <- function(sim_result, methods = iconic_method_order, title = NULL) {
   combined   <- sim_result$raw
@@ -482,7 +493,7 @@ plot_gan_diagnostics <- function(trained_gan, real_data, n_draw = NULL,
       if (!legend_drawn) {
         legend("topright", c("real", "synthetic"), col = c("grey30", "#3A9EC2"),
                lwd = 2, bty = "n", cex = 0.8)
-        legend_drawn = TRUE
+        legend_drawn <- TRUE
       }
     }
   }
@@ -509,7 +520,7 @@ plot_gan_diagnostics <- function(trained_gan, real_data, n_draw = NULL,
       if (!legend_drawn) {
         legend("topright", c("real", "copula"), col = c("grey30", "#3A9EC2"),
                lwd = 2, bty = "n", cex = 0.8)
-        legend_drawn = TRUE
+        legend_drawn <- TRUE
       }
     }
   }
@@ -532,6 +543,7 @@ plot_gan_diagnostics <- function(trained_gan, real_data, n_draw = NULL,
 #' @param k      Number of confounders to slice on. Default: first in the grid.
 #' @param title  Optional plot title.
 #'
+#' @return Invisibly returns `NULL`; called for the side effect of drawing a sensitivity heatmap.
 #' @export
 plot_sensitivity_heatmap <- function(sens, metric = "rmse", method = "IV2SLS",
                                      k = NULL, title = NULL) {
@@ -546,7 +558,7 @@ plot_sensitivity_heatmap <- function(sens, metric = "rmse", method = "IV2SLS",
   Z  <- matrix(NA_real_, length(xs), length(ys))
   for (i in seq_along(xs)) for (j in seq_along(ys)) {
     v <- s[[metric]][s$coverage == xs[i] & s$conf_strength == ys[j]]
-    if (length(v)) Z[i, j] = v[1]
+    if (length(v)) Z[i, j] <- v[1]
   }
 
   if (is.null(title))

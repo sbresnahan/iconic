@@ -7,6 +7,12 @@
 #
 # These tests verify that the extracted functions produce identical
 # results to the wrapper functions when given the same inputs.
+#
+# NOTE (v0.9.5): Updated for the v0.8.4 contract change. .analyze_feature()
+# and .analyze_mediation_feature() now pass w = W_mat (the full W matrix,
+# n x q) to .estimate_total_feature() / .estimate_mediation_feature(),
+# not a single column. The tests below were updated to pass w = dat$W
+# (full matrix) to match.
 
 # ── Helper: create a dataset from run_single_iteration ──
 .make_refac_dat <- function(n = 100, n_features = 5, seed = 42) {
@@ -30,7 +36,7 @@ test_that(".estimate_total_feature matches .analyze_feature for feature 1", {
 
   # Extracted (explicit vectors)
   res_ext <- iconic:::.estimate_total_feature(
-    Z = dat$Z, y = dat$Y[, 1], g = dat$G[, 1], w = dat$W[, 1],
+    Z = dat$Z, y = dat$Y[, 1], g = dat$G[, 1], w = dat$W,
     W_mat = dat$W, W_avg = W_avg, covars = dat$synthetic_data,
     methods = iconic:::.methods_all, feature_idx = 1L)
 
@@ -43,7 +49,7 @@ test_that(".estimate_total_feature matches .analyze_feature for feature 3", {
 
   res_wrap <- iconic:::.analyze_feature(dat, f = 3, W_avg = W_avg)
   res_ext <- iconic:::.estimate_total_feature(
-    Z = dat$Z, y = dat$Y[, 3], g = dat$G[, 3], w = dat$W[, 3],
+    Z = dat$Z, y = dat$Y[, 3], g = dat$G[, 3], w = dat$W,
     W_mat = dat$W, W_avg = W_avg, covars = dat$synthetic_data,
     methods = iconic:::.methods_all, feature_idx = 3L)
 
@@ -61,7 +67,7 @@ test_that(".estimate_total_feature with multiple features (loop correctness)", {
   # Run via extracted function for all features
   ext_res <- do.call(rbind, lapply(1:5, function(f)
     iconic:::.estimate_total_feature(
-      Z = dat$Z, y = dat$Y[, f], g = dat$G[, f], w = dat$W[, f],
+      Z = dat$Z, y = dat$Y[, f], g = dat$G[, f], w = dat$W,
       W_mat = dat$W, W_avg = W_avg, covars = dat$synthetic_data,
       methods = iconic:::.methods_all, feature_idx = f)))
 
@@ -80,7 +86,7 @@ test_that(".estimate_mediation_feature matches .analyze_mediation_feature for fe
   res_ext <- iconic:::.estimate_mediation_feature(
     Z = dat$Z, y = dat$Y[, 1], M_vec = dat$M,
     g = dat$G[, 1], gm = dat$Gm,
-    w = dat$W[, 1], W_mat = dat$W,
+    w = dat$W, W_mat = dat$W,
     W1_mat = dat$W1, W2_mat = dat$W2,
     W_avg = W_avg, covars = dat$synthetic_data,
     methods = NULL, feature_idx = 1L)
@@ -96,7 +102,7 @@ test_that(".estimate_mediation_feature matches .analyze_mediation_feature for fe
   res_ext <- iconic:::.estimate_mediation_feature(
     Z = dat$Z, y = dat$Y[, 4], M_vec = dat$M,
     g = dat$G[, 4], gm = dat$Gm,
-    w = dat$W[, 4], W_mat = dat$W,
+    w = dat$W, W_mat = dat$W,
     W1_mat = dat$W1, W2_mat = dat$W2,
     W_avg = W_avg, covars = dat$synthetic_data,
     methods = NULL, feature_idx = 4L)
@@ -115,7 +121,7 @@ test_that(".estimate_mediation_feature with multiple features (loop correctness)
     iconic:::.estimate_mediation_feature(
       Z = dat$Z, y = dat$Y[, f], M_vec = dat$M,
       g = dat$G[, f], gm = dat$Gm,
-      w = dat$W[, f], W_mat = dat$W,
+      w = dat$W, W_mat = dat$W,
       W1_mat = dat$W1, W2_mat = dat$W2,
       W_avg = W_avg, covars = dat$synthetic_data,
       methods = NULL, feature_idx = f)))
@@ -132,7 +138,7 @@ test_that(".estimate_total_feature without G: instrument methods not present", {
   W_avg <- rowMeans(dat$W)
 
   res <- iconic:::.estimate_total_feature(
-    Z = dat$Z, y = dat$Y[, 1], g = NULL, w = dat$W[, 1],
+    Z = dat$Z, y = dat$Y[, 1], g = NULL, w = dat$W,
     W_mat = dat$W, W_avg = W_avg, covars = dat$synthetic_data,
     methods = iconic:::.methods_all, feature_idx = 1L)
 
@@ -152,7 +158,7 @@ test_that(".estimate_mediation_feature without G: instrument methods not present
   res <- iconic:::.estimate_mediation_feature(
     Z = dat$Z, y = dat$Y[, 1], M_vec = dat$M,
     g = NULL, gm = dat$Gm,
-    w = dat$W[, 1], W_mat = dat$W,
+    w = dat$W, W_mat = dat$W,
     W1_mat = dat$W1, W2_mat = dat$W2,
     W_avg = W_avg, covars = dat$synthetic_data,
     methods = NULL, feature_idx = 1L)
@@ -285,7 +291,7 @@ test_that(".estimate_total_feature respects methods subset", {
   dat <- .make_refac_dat()
   W_avg <- rowMeans(dat$W)
   res <- iconic:::.estimate_total_feature(
-    Z = dat$Z, y = dat$Y[, 1], g = dat$G[, 1], w = dat$W[, 1],
+    Z = dat$Z, y = dat$Y[, 1], g = dat$G[, 1], w = dat$W,
     W_mat = dat$W, W_avg = W_avg, covars = dat$synthetic_data,
     methods = c("UNADJ", "IV2SLS"), feature_idx = 1L)
   expect_true(all(res$method %in% c("UNADJ", "IV2SLS")))

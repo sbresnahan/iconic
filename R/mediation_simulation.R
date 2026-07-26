@@ -59,6 +59,8 @@
 #' @param separate_U   Draw separate confounders for Z->M and M->Y paths (v0.5.0). Default FALSE.
 #' @param omega_1      Coverage of U_XM by W1 (v0.5.0). NULL = use w_signal.
 #' @param omega_2      Coverage of U_MY by W2 (v0.5.0). NULL = use w_signal.
+#' @param feat_cor     Within-module correlation for block-diagonal co-expression
+#'   modules in Y and W (v0.9.0). 0 = independent features. Default 0.
 #' @param base_seed    Starting seed; replicate i uses base_seed + i. Default 100.
 #' @param n_cores      Number of parallel workers. Default 1.
 #'
@@ -68,7 +70,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' res <- run_mediation_sim(n_iter = 50, mo_confounding = 0.8)
 #' res$summary
 #' }
@@ -174,7 +176,7 @@ run_mediation_sim <- function(n_iter       = 100,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' res <- sweep_mediation_param("conf_str", c(0.2, 0.5, 0.8, 1.0), n_iter = 50)
 #' }
 sweep_mediation_param <- function(param,
@@ -306,6 +308,8 @@ sweep_mediation_param <- function(param,
 #' @param separate_U   Draw separate confounders (v0.5.0). Default FALSE.
 #' @param omega_1      Coverage of U_XM by W1 (v0.5.0). NULL = use w_signal.
 #' @param omega_2      Coverage of U_MY by W2 (v0.5.0). NULL = use w_signal.
+#' @param feat_cor     Within-module correlation for block-diagonal co-expression
+#'   modules in Y and W (v0.9.0). 0 = independent features. Default 0.
 #' @param base_seed    Seed offset. Default 300.
 #' @param n_cores      Parallel workers. Default 1.
 #' @param alpha        Significance threshold. Default 0.05.
@@ -394,7 +398,7 @@ run_null_mediation_sim <- function(n_iter       = 200,
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' t1e <- sweep_mediation_null_by_conf(c(0.2, 0.4, 0.6, 0.8, 1.0), n_iter = 50)
 #' }
 sweep_mediation_null_by_conf <- function(conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),

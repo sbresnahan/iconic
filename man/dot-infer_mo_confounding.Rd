@@ -2,7 +2,7 @@
 % Please edit documentation in R/infer_confounding.R
 \name{.infer_mo_confounding}
 \alias{.infer_mo_confounding}
-\title{Infer mo_confounding (delta_mo) from IV2SLS–IV2SLS2 NIE gap (internal)}
+\title{Infer mo_confounding (delta_mo) from IV2SLS--IV2SLS2 NIE gap (internal)}
 \usage{
 .infer_mo_confounding(estimate, data, F_G, F_Gm, warnings)
 }

@@ -94,11 +94,11 @@ supplied, only those methods are run (user override).  If neither is
 supplied, all estimators whose required inputs are present are run.
 }
 \examples{
-\dontrun{
+set.seed(1)
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
                     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 diag <- iconic_diagnose(data)
-est <- iconic_estimate(data, diagnosis = diag, n_cores = 4)
+est <- iconic_estimate(data, diagnosis = diag)
 head(est)
 
 # Survival outcome (v0.9.4)
@@ -107,5 +107,4 @@ sdat <- iconic_data(Z = rnorm(100), outcome_type = "survival",
                     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 est <- iconic_estimate(sdat, effect_scale = "loghr")
 est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
-}
 }

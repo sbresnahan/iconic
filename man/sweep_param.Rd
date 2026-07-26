@@ -55,7 +55,7 @@ A list with summary (data frame) and iter_bias (data frame).
 Sweep a single simulation parameter across a grid
 }
 \examples{
-\dontrun{
+\donttest{
 res <- sweep_param("conf_str", c(0.2, 0.5, 0.8, 1.0), n_iter = 50)
 }
 }

@@ -75,7 +75,6 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # Total-effect only (no mediation)
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))
 #'
@@ -95,7 +94,6 @@
 #'   W = matrix(rnorm(100 * 10), 10, 100)
 #' )
 #' print(data)
-#' }
 iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
                         W1 = NULL, W2 = NULL, covariates = NULL,
                         feature_names = NULL, mediator_names = NULL,
@@ -332,17 +330,15 @@ validate_iconic_data <- function(obj) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # From a load_real_input_data() result
 #' input <- load_real_input_data(example = TRUE)
 #' data <- as_iconic_data(input)
 #' print(data)
 #'
 #' # From named components (delegates to iconic_data())
-#' data <- as_iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
+#' data <- as_iconic_data(rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 #'                        G = rnorm(100), Gm = rnorm(100),
 #'                        W = matrix(rnorm(100*10), 10, 100))
-#' }
 as_iconic_data <- function(input, ...) {
   dots <- list(...)
 
@@ -376,6 +372,7 @@ as_iconic_data <- function(input, ...) {
 #'
 #' @param x An `iconic_data` object.
 #' @param ... Unused.
+#' @return Invisibly returns `x` (the `iconic_data` object); called for its side effect of printing a human-readable summary.
 #' @export
 print.iconic_data <- function(x, ...) {
   if (x$outcome_type == "survival") {

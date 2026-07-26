@@ -19,7 +19,7 @@ H0(2)/H0(3) it is >1.  Default 1 (conservative).}
 collection of tests.  Default 1.}
 }
 \value{
-Numeric scalar in \link{0, 1}.
+Numeric scalar in \eqn{[0, 1]}.
 }
 \description{
 Computes the Huang (2019) JT-comp composite p-value for testing

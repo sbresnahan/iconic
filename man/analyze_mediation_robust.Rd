@@ -58,7 +58,7 @@ A scalar-bridge variant (\code{\link[=fit_pgc_scalar_mediation]{fit_pgc_scalar_m
 standalone use but is not included in the default pipeline.
 }
 \examples{
-\dontrun{
+\donttest{
 dat <- iconic:::generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
 analyze_mediation_robust(dat)
 }

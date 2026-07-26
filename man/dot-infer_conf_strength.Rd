@@ -2,7 +2,7 @@
 % Please edit documentation in R/infer_confounding.R
 \name{.infer_conf_strength}
 \alias{.infer_conf_strength}
-\title{Infer conf_strength (delta) from UNADJ–IV2SLS gap (internal)}
+\title{Infer conf_strength (delta) from UNADJ--IV2SLS gap (internal)}
 \usage{
 .infer_conf_strength(estimate, data, F_G, warnings)
 }

@@ -36,7 +36,7 @@ produce realistic synthetic feature vectors that preserve the marginal
 shapes and correlation structure of the user's mediator panel.
 }
 \examples{
-\dontrun{
+\donttest{
 M <- matrix(rnorm(30 * 200), 30, 200)  # 30 transcripts, 200 samples
 ft <- train_feature_texture(M)
 draws <- sample_feature_texture(ft, 100)  # 30 x 100 synthetic draws

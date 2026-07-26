@@ -51,14 +51,14 @@ rationale.
 \details{
 The tier system reflects the strength of identification:
 \itemize{
-\item \strong{Tier A (identified)}: IV2SLS2, PGC2Gm — use two
+\item \strong{Tier A (identified)}: IV2SLS2, PGC2Gm -- use two
 instruments and path-specific negative controls, providing point
 identification under mediator-outcome confounding.
-\item \strong{Tier B (negative-control)}: PGC, PGC2, COCA — use
+\item \strong{Tier B (negative-control)}: PGC, PGC2, COCA -- use
 negative controls to proxy unmeasured confounding.
-\item \strong{Tier C (instrument-based)}: IV2SLS — single
+\item \strong{Tier C (instrument-based)}: IV2SLS -- single
 instrument without NC correction.
-\item \strong{Tier D (bias reference)}: UNADJ, DIRECT — naive
+\item \strong{Tier D (bias reference)}: UNADJ, DIRECT -- naive
 adjustment with no causal identification.
 }
 
@@ -68,7 +68,7 @@ are further ranked by robustness: the estimator whose estimates
 degrade least across the assumption-violation surface ranks higher.
 }
 \examples{
-\dontrun{
+\donttest{
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
                     G = rnorm(100), W = matrix(rnorm(100*10), 10, 100))
 diag <- iconic_diagnose(data)

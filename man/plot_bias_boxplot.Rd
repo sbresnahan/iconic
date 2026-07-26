@@ -32,6 +32,9 @@ plot_bias_boxplot(
 
 \item{methods}{Methods to include. Default: all five.}
 }
+\value{
+Invisibly returns \code{NULL}; called for the side effect of drawing a boxplot of bias across parameter values.
+}
 \description{
 Grouped boxplots of per-seed bias across a parameter sweep
 }

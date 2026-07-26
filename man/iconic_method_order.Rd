@@ -6,6 +6,9 @@
 \usage{
 iconic_method_order
 }
+\value{
+A character vector giving the canonical display order of the eight ICONIC estimators.
+}
 \description{
 Default method display order
 }

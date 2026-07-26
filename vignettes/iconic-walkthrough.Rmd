@@ -21,6 +21,7 @@ knitr::opts_chunk$set(
 
 set.seed(1)
 library(iconic)
+has_torch <- check_torch_setup()
 ```
 
 # What this package is for
@@ -110,25 +111,24 @@ simulate data that mirrors your cohort's marginal and joint structure. Train
 it **once** and attach it to the `iconic_data` object so every downstream
 function reuses it without retraining.
 
-```{r workflow-gan}
-# Build the training frame from the same data.
-input <- load_real_input_data(
-  Z_matrix = matrix(dat$Z, nrow = 1),
-  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
-  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
-)
+For speed, this vignette loads a pre-trained texture model shipped with the
+package. In practice you would train your own with `train_gan_on_real_data()`
+(see the *Texture Model* vignette).
 
-# Train the hybrid GAN + copula (requires torch). epochs = 10 for speed;
-# use 100-300 in practice.
-gan <- train_gan_on_real_data(
-  input$gan_training_data,
-  feature_correlations = input$feature_correlations,
-  feature_texture = input$feature_texture,
-  epochs = 10, seed = 1, verbose = FALSE
-)
+```{r workflow-gan, eval=has_torch}
+# Load the pre-trained texture model shipped with the package.
+gan <- readRDS(system.file("pretrained_gan.rds", package = "iconic"))
 
 # Attach it: iconic_sensitivity() and iconic_prospect() will now reuse it.
 idat$trained_gan <- gan
+```
+
+```{r workflow-no-torch, eval=!has_torch, echo=FALSE, results="asis"}
+cat(
+"The sensitivity, recommendation, and prospective chunks in this vignette ",
+"are skipped because torch is not available. Install torch with ",
+"`install.packages(\"torch\")` and run `torch::install_torch()` to run them."
+)
 ```
 
 The texture model requires `torch`; install it with
@@ -140,8 +140,8 @@ The texture model requires `torch`; install it with
 (`rho_G1`, `rho_G2`) and reports how each estimator's bias degrades. It
 reuses the attached GAN, so no retraining happens here.
 
-```{r workflow-sensitivity}
-sens <- iconic_sensitivity(idat, n_iter = 5)
+```{r workflow-sensitivity, eval=has_torch}
+sens <- iconic_sensitivity(idat, n_iter = 3)
 sens
 ```
 
@@ -166,7 +166,7 @@ negative-control residual variance. Pass `confounding = "inferred"` to
 `iconic_recommend()` combines eligibility, point estimates, and the
 sensitivity surface into a single ranked recommendation.
 
-```{r workflow-recommend}
+```{r workflow-recommend, eval=has_torch}
 rec <- iconic_recommend(idat, diag, est, sens)
 rec
 ```
@@ -183,8 +183,8 @@ strong instrument, how strong does it need to be?* It sweeps the instrument
 strength (`gamma_G`) and reports how estimates converge, then simulates a
 prospective study at a target strength.
 
-```{r workflow-prospect}
-pros <- iconic_prospect(idat, n_iter = 10)
+```{r workflow-prospect, eval=has_torch}
+pros <- iconic_prospect(idat, n_iter = 3)
 pros
 ```
 

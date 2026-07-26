@@ -1,6 +1,6 @@
 # ICONIC
 
-<img src="man/figures/logo.png" align="right" width="125" height="125" alt="ICONIC logo" />
+<img src="man/figures/logo.png" align="right" width="259" height="300" alt="ICONIC logo" />
 
 [![Project Status: Active](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![R-CMD-check](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml)
@@ -97,7 +97,7 @@ NIE, confounding strength, instrument strength, NC coverage) is a
 closed-form function of the parameters, making it suitable for estimator
 validation under controlled confounding scenarios.
 
-![](man/figures/iconic_benchmark_simulation_mode.pdf)
+![](man/figures/iconic_benchmark_simulation_mode.png)
 
 **Benchmark simulation mode: the structural synthetic-data generator
 (`generate_toy_data`).** Latent confounders $U_{XM}$ (opening the
@@ -121,7 +121,7 @@ mediator panel's marginals and cross-feature dependence). Neither
 component learns the causal effect; the ground truth is imposed by the
 structural skeleton and guaranteed by construction.
 
-![](man/figures/ICONIC_generative_texture.pdf)
+![](man/figures/ICONIC_generative_texture.png)
 
 **Data-calibrated simulation mode: the hybrid GAN-plus-copula generative
 texture pipeline.** (1) Texture learning: a sample-level GAN and a

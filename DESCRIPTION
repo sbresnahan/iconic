@@ -29,13 +29,15 @@ Description: Provides a model selection workflow for causal inference
     plan future studies. infer_confounding() estimates held-fixed
     confounding parameters from the data. Time-to-event outcomes are
     supported on the Cox log-hazard-ratio and restricted-mean-survival-time
-    scales. The torch package is required.
+    scales. The torch package is required for the generative texture model
+    (sensitivity and prospective analysis); all other functionality works
+    without it.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Imports: AER, MASS, parallel, stats, survival, torch, utils
+Imports: AER, MASS, parallel, stats, survival, utils
 Suggests: testthat (>= 3.0.0), ggplot2, patchwork, scales, knitr,
-        rmarkdown
+        rmarkdown, torch
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 URL: https://github.com/sbresnahan/iconic

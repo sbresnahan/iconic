@@ -19,6 +19,7 @@ knitr::opts_chunk$set(
 )
 set.seed(1)
 library(iconic)
+has_torch <- check_torch_setup()
 ```
 
 # What sensitivity analysis does
@@ -45,7 +46,7 @@ run the sensitivity sweep.
 
 ```{r sens-data}
 dat <- generate_toy_data(
-  n = 100, n_features = 5, seed = 1,
+  n = 200, n_features = 10, seed = 1,
   phi = 0.8, separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7
 )
 
@@ -57,22 +58,20 @@ idat <- iconic_data(
 )
 ```
 
-```{r sens-gan}
-# Train a texture model once and attach it (requires torch).
-input <- load_real_input_data(
-  Z_matrix = matrix(dat$Z, nrow = 1),
-  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
-  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
-)
-idat$trained_gan <- train_gan_on_real_data(
-  input$gan_training_data,
-  feature_correlations = input$feature_correlations,
-  feature_texture = input$feature_texture,
-  epochs = 5, seed = 1, verbose = FALSE
+```{r sens-gan, eval=has_torch}
+# Load the pre-trained texture model shipped with the package.
+idat$trained_gan <- readRDS(system.file("pretrained_gan.rds", package = "iconic"))
+```
+
+```{r sens-no-torch, eval=!has_torch, echo=FALSE, results="asis"}
+cat(
+"The sensitivity-sweep chunks in this vignette are skipped because torch ",
+"is not available. Install torch with `install.packages(\"torch\")` and ",
+"run `torch::install_torch()` to run them."
 )
 ```
 
-```{r sens-run}
+```{r sens-run, eval=has_torch}
 sens <- iconic_sensitivity(idat, n_iter = 3)
 sens
 ```
@@ -107,7 +106,7 @@ always swept.
 
 # Inferred vs. default confounding
 
-```{r sens-inferred}
+```{r sens-inferred, eval=has_torch}
 sens_inf <- iconic_sensitivity(idat, n_iter = 3, confounding = "inferred")
 sens_inf
 ```

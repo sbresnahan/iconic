@@ -14,7 +14,7 @@ fit_direct(y, Z, g, w, covars = NULL)
 \item{g}{Numeric instrument vector (length n).}
 
 \item{w}{Numeric negative-control vector (length n) or matrix
-(n x q).  When a matrix, all q columns are included as
+(n x q). When a matrix, all q columns are included as
 separate covariates.}
 
 \item{covars}{Optional data frame of additional covariates (n rows).}
@@ -24,7 +24,7 @@ Named list: \code{beta}, \code{se}, \code{pvalue}.
 }
 \description{
 Regresses Y on Z plus the genetic instrument G, the negative-control W,
-and any additional covariates.  This is a "naive" adjustment that uses
+and any additional covariates. This is a "naive" adjustment that uses
 whatever observables are available but does NOT correct for unmeasured
 confounding via a ratio or IV approach.
 }

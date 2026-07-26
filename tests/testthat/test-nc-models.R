@@ -4,7 +4,7 @@ test_that("built-in NC models return n x n_features matrices", {
   cv <- data.frame(row.names = seq_len(n))
 
   Wp <- nc_proxy(U, cv, list(n_features = p, coverage = 0.7))
-  Wc <- nc_cpg(U,   cv, list(n_features = p, coverage = 0.7))
+  Wc <- nc_cpg(U, cv, list(n_features = p, coverage = 0.7))
   expect_equal(dim(Wp), c(n, p))
   expect_equal(dim(Wc), c(n, p))
   expect_true(all(is.finite(Wp)))

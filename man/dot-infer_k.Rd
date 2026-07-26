@@ -13,7 +13,7 @@
 }
 \description{
 Performs Horn's parallel analysis on the correlation matrix of
-outcomes residualized on Z + C.  Returns a point estimate and a
+outcomes residualized on Z + C. Returns a point estimate and a
 simple bootstrap confidence interval.
 }
 \keyword{internal}

@@ -1,4 +1,4 @@
-# Tests for the feature-level copula texture model (v0.9.0)
+# Tests for the feature-level copula texture model
 
 test_that("train_feature_texture returns correct structure", {
   M <- matrix(rnorm(30 * 200), 30, 200)
@@ -36,8 +36,8 @@ test_that("sampled features are centered and scaled", {
   ft <- train_feature_texture(M)
   draws <- sample_feature_texture(ft, n_samples = 500)
   for (f in seq_len(15)) {
-    expect_lt(abs(mean(draws[f, ])), 0.1)  # approximately zero mean
-    expect_lt(abs(sd(draws[f, ]) - 1), 0.1)  # approximately unit sd
+    expect_lt(abs(mean(draws[f, ])), 0.1) # approximately zero mean
+    expect_lt(abs(sd(draws[f, ]) - 1), 0.1) # approximately unit sd
   }
 })
 
@@ -56,7 +56,7 @@ test_that("parametric marginal method fits distributions", {
   M_normal <- matrix(rnorm(10 * 200), 10, 200)
   ft <- train_feature_texture(M_normal, marginal_method = "parametric")
   normal_count <- sum(ft$marginal_types == "normal")
-  expect_true(normal_count >= 8)  # most should fit normal
+  expect_true(normal_count >= 8) # most should fit normal
 })
 
 test_that("auto method uses parametric when KS passes, empirical otherwise", {
@@ -65,14 +65,14 @@ test_that("auto method uses parametric when KS passes, empirical otherwise", {
   M_normal <- matrix(rnorm(10 * 200), 10, 200)
   ft_auto <- train_feature_texture(M_normal, marginal_method = "auto")
   param_count <- sum(ft_auto$marginal_types != "empirical")
-  expect_true(param_count >= 7)  # most should pass KS for normal
+  expect_true(param_count >= 7) # most should pass KS for normal
 
   # Heavy-tailed data: auto should fall back to empirical for some
-  M_tailed <- matrix(rt(10 * 50, df = 2), 10, 50)  # t-dist, very heavy tails
+  M_tailed <- matrix(rt(10 * 50, df = 2), 10, 50) # t-dist, very heavy tails
   ft_tailed <- train_feature_texture(M_tailed, marginal_method = "auto")
   # At least some should be empirical (t-dist with df=2 is very heavy-tailed)
   emp_count <- sum(ft_tailed$marginal_types == "empirical")
-  expect_true(emp_count >= 0)  # KS may still pass for some; just check no error
+  expect_true(emp_count >= 0) # KS may still pass for some; just check no error
 })
 
 test_that("copula captures correlation structure", {
@@ -80,8 +80,8 @@ test_that("copula captures correlation structure", {
   # Create correlated features: feature 2 = feature 1 + noise
   n <- 200
   x1 <- rnorm(n)
-  x2 <- x1 + rnorm(n, 0, 0.1)  # strong correlation
-  x3 <- rnorm(n)                # independent
+  x2 <- x1 + rnorm(n, 0, 0.1) # strong correlation
+  x3 <- rnorm(n) # independent
   M <- rbind(x1, x2, x3)
   ft <- train_feature_texture(M)
   # Copula correlation should be high between features 1 and 2

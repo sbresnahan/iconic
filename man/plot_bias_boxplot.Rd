@@ -8,7 +8,7 @@ plot_bias_boxplot(
   iter_bias,
   param_grid,
   xlab,
-  ylab = "Bias  (mean estimate - true)",
+  ylab = "Bias (mean estimate - true)",
   main = "",
   xfmt = "\%.2f",
   legend_pos = "topleft",
@@ -22,7 +22,7 @@ plot_bias_boxplot(
 
 \item{xlab}{X-axis label.}
 
-\item{ylab}{Y-axis label. Default "Bias  (mean estimate - true)".}
+\item{ylab}{Y-axis label. Default "Bias (mean estimate - true)".}
 
 \item{main}{Plot title.}
 

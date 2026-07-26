@@ -2,7 +2,7 @@
 % Please edit documentation in R/estimate.R
 \name{.estimate_mediation_surv_driver}
 \alias{.estimate_mediation_surv_driver}
-\title{Mediation survival estimation driver (internal, v0.9.4)}
+\title{Mediation survival estimation driver}
 \usage{
 .estimate_mediation_surv_driver(
   data,
@@ -18,7 +18,7 @@
 }
 \description{
 Loops over mediators, calling the survival mediation estimators for
-each.  Returns a data frame with the same columns as
+each. Returns a data frame with the same columns as
 \code{.estimate_mediation_driver}.
 }
 \keyword{internal}

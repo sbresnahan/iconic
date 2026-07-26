@@ -1,12 +1,12 @@
 # ============================================================
-# iconic_data: Standardized data interface for the v0.6.0 model
+# iconic_data: Standardized data interface for the model
 # selection workflow.
 #
-# iconic_data()        – construct a validated S3 object from the
-#                        user's real data (vectors or matrices).
-# as_iconic_data()     – convert a load_real_input_data() result.
+# iconic_data() – construct a validated S3 object from the
+# user's real data (vectors or matrices).
+# as_iconic_data() – convert a load_real_input_data() result.
 # validate_iconic_data() – internal validation.
-# print.iconic_data()  – human-readable summary.
+# print.iconic_data() – human-readable summary.
 #
 # This is the estimation-facing data constructor. It is distinct
 # from load_real_input_data(), which is designed for GAN training
@@ -21,57 +21,57 @@
 #' standardizing vectors and matrices into a consistent format that
 #' all downstream model selection functions consume.
 #'
-#' @param Z       Exposure: numeric vector (length n) or features x samples
-#'   matrix. If a matrix, column means are taken and scaled (one exposure
-#'   per sample).
-#' @param Y       Outcome: numeric vector (length n) or features x samples
-#'   matrix. When a matrix, estimation runs per-feature.
-#' @param M       Optional mediator: numeric vector (length n) or features x
-#'   samples matrix. When a matrix, estimation runs per-mediator x
-#'   per-outcome.
-#' @param G       Optional exposure instrument: numeric vector (length n) or
-#'   n x n_features matrix (as returned by [generate_toy_data()]). If a matrix,
-#'   the first column is extracted. E.g., a polygenic risk score.
-#' @param Gm      Optional mediator instrument: numeric vector (length n) or
-#'   matrix (n x n_mediators). When a matrix, each column is the instrument
-#'   for the corresponding mediator (e.g., per-isoform cis-eQTLs).
-#' @param W       Optional negative-control panel: features x samples matrix.
-#'   Single-panel NCs used for COCA, PGC.
-#' @param W1      Optional path-specific NCs for the Z->M path: features x
-#'   samples matrix. Captures U_XM. When W1/W2 are absent but W is present,
-#'   W1 = W2 = W.
-#' @param W2      Optional path-specific NCs for the M->Y path: features x
-#'   samples matrix. Captures U_MY.
+#' @param Z Exposure: numeric vector (length n) or features x samples
+#' matrix. If a matrix, column means are taken and scaled (one exposure
+#' per sample).
+#' @param Y Outcome: numeric vector (length n) or features x samples
+#' matrix. When a matrix, estimation runs per-feature.
+#' @param M Optional mediator: numeric vector (length n) or features x
+#' samples matrix. When a matrix, estimation runs per-mediator x
+#' per-outcome.
+#' @param G Optional exposure instrument: numeric vector (length n) or
+#' n x n_features matrix (as returned by [generate_toy_data()]). If a matrix,
+#' the first column is extracted. E.g., a polygenic risk score.
+#' @param Gm Optional mediator instrument: numeric vector (length n) or
+#' matrix (n x n_mediators). When a matrix, each column is the instrument
+#' for the corresponding mediator (e.g., per-isoform cis-eQTLs).
+#' @param W Optional negative-control panel: features x samples matrix.
+#' Single-panel NCs used for COCA, PGC.
+#' @param W1 Optional path-specific NCs for the Z->M path: features x
+#' samples matrix. Captures U_XM. When W1/W2 are absent but W is present,
+#' W1 = W2 = W.
+#' @param W2 Optional path-specific NCs for the M->Y path: features x
+#' samples matrix. Captures U_MY.
 #' @param covariates Optional data frame of sample-level covariates (n rows).
-#'   Recognized columns `sex`, `GA`, `mother_ethnicity` are encoded; other
-#'   numeric columns are z-scored. Names colliding with estimator-reserved
-#'   tokens are renamed.
-#' @param feature_names  Optional character vector of outcome feature names.
+#' Recognized columns `sex`, `GA`, `mother_ethnicity` are encoded; other
+#' numeric columns are z-scored. Names colliding with estimator-reserved
+#' tokens are renamed.
+#' @param feature_names Optional character vector of outcome feature names.
 #' @param mediator_names Optional character vector of mediator names.
-#' @param trained_gan    Optional \code{iconic_gan} from
-#'   \code{\link{train_gan_on_real_data}()}.  When supplied, the GAN is
-#'   attached to the data object and reused by
-#'   \code{\link{iconic_sensitivity}()} and \code{\link{iconic_prospect}()}
-#'   instead of auto-training a new one.  This avoids retraining when the
-#'   same data is used across multiple workflow steps.
-#' @param outcome_type   Character (v0.9.4): \code{"continuous"} (default,
-#'   backward-compatible) or \code{"survival"}.  When \code{"survival"},
-#'   \code{Y} is not required; instead supply \code{surv_time} and
-#'   \code{surv_event}.  Estimation uses Cox proportional-hazards
-#'   (\code{\link[survival]{coxph}}) or RMST pseudo-observation OLS
-#'   (see \code{effect_scale} in \code{\link{iconic_estimate}()}).
-#' @param surv_time      Numeric follow-up time vector (length n).  Required
-#'   when \code{outcome_type = "survival"}; ignored otherwise.
-#' @param surv_event     Numeric 0/1 event indicator (length n; 1 = event
-#'   observed, 0 = censored).  Required when
-#'   \code{outcome_type = "survival"}; ignored otherwise.
+#' @param trained_gan Optional \code{iconic_gan} from
+#' \code{\link{train_gan_on_real_data}()}. When supplied, the GAN is
+#' attached to the data object and reused by
+#' \code{\link{iconic_sensitivity}()} and \code{\link{iconic_prospect}()}
+#' instead of auto-training a new one. This avoids retraining when the
+#' same data is used across multiple workflow steps.
+#' @param outcome_type Character: \code{"continuous"} (default,
+#' backward-compatible) or \code{"survival"}. When \code{"survival"},
+#' \code{Y} is not required; instead supply \code{surv_time} and
+#' \code{surv_event}. Estimation uses Cox proportional-hazards
+#' (\code{\link[survival]{coxph}}) or RMST pseudo-observation OLS
+#' (see \code{effect_scale} in \code{\link{iconic_estimate}()}).
+#' @param surv_time Numeric follow-up time vector (length n). Required
+#' when \code{outcome_type = "survival"}; ignored otherwise.
+#' @param surv_event Numeric 0/1 event indicator (length n; 1 = event
+#' observed, 0 = censored). Required when
+#' \code{outcome_type = "survival"}; ignored otherwise.
 #'
 #' @return An `iconic_data` S3 object: a named list with `$Z`, `$Y`, `$M`,
-#'   `$G`, `$Gm`, `$W`, `$W1`, `$W2`, `$covariates`, `$n`, `$n_features`,
-#'   `$n_mediators`, `$has_instrument`, `$has_mediator_instrument`,
-#'   `$has_nc`, `$has_path_nc`, `$is_mediation`, `$feature_names`,
-#'   `$mediator_names`, `$trained_gan`, `$outcome_type`, and (when
-#'   survival) `$surv_time`, `$surv_event`.
+#' `$G`, `$Gm`, `$W`, `$W1`, `$W2`, `$covariates`, `$n`, `$n_features`,
+#' `$n_mediators`, `$has_instrument`, `$has_mediator_instrument`,
+#' `$has_nc`, `$has_path_nc`, `$is_mediation`, `$feature_names`,
+#' `$mediator_names`, `$trained_gan`, `$outcome_type`, and (when
+#' survival) `$surv_time`, `$surv_event`.
 #' @export
 #'
 #' @examples
@@ -80,18 +80,18 @@
 #'
 #' # Full mediation with instruments and NCs
 #' data <- iconic_data(
-#'   Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-#'   M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-#'   W = matrix(rnorm(100 * 10), 10, 100)
+#' Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+#' W = matrix(rnorm(100 * 10), 10, 100)
 #' )
 #' print(data)
 #'
-#' # Survival outcome (v0.9.4)
+#' # Survival outcome
 #' data <- iconic_data(
-#'   Z = rnorm(100), outcome_type = "survival",
-#'   surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
-#'   M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-#'   W = matrix(rnorm(100 * 10), 10, 100)
+#' Z = rnorm(100), outcome_type = "survival",
+#' surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+#' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+#' W = matrix(rnorm(100 * 10), 10, 100)
 #' )
 #' print(data)
 iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
@@ -118,7 +118,7 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
   ## --- Y: outcome ---
   if (outcome_type == "survival") {
     # Survival outcome: Y is not required; surv_time + surv_event define
-    # the outcome.  n_features = 1 (single time-to-event outcome).
+    # the outcome. n_features = 1 (single time-to-event outcome).
     if (is.null(surv_time) || is.null(surv_event))
       stop("When outcome_type = 'survival', surv_time and surv_event ",
            "are required.")
@@ -153,7 +153,7 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
   n_mediators <- NULL
   if (is_mediation) {
     if (is.matrix(M)) {
-      if (nrow(M) == n) M <- t(M)  # samples x mediators -> mediators x samples
+      if (nrow(M) == n) M <- t(M) # samples x mediators -> mediators x samples
       if (ncol(M) != n)
         stop("M must have n samples.")
       n_mediators <- nrow(M)
@@ -316,15 +316,15 @@ validate_iconic_data <- function(obj) {
 #' Can be called in two ways:
 #'
 #' 1. With a list returned by [load_real_input_data()] (the original
-#'    interface).
+#' interface).
 #' 2. With named arguments matching [iconic_data()] (Z, Y, M, G, Gm,
-#'    W, W1, W2, covariates, feature_names, mediator_names), which
-#'    simply delegates to [iconic_data()].
+#' W, W1, W2, covariates, feature_names, mediator_names), which
+#' simply delegates to [iconic_data()].
 #'
-#' @param input  Either a list returned by [load_real_input_data()], or
-#'   the exposure vector Z (when using named-argument form).
-#' @param ...    Named arguments passed to [iconic_data()] when using
-#'   the named-argument form. Ignored when \code{input} is a list.
+#' @param input Either a list returned by [load_real_input_data()], or
+#' the exposure vector Z (when using named-argument form).
+#' @param ... Named arguments passed to [iconic_data()] when using
+#' the named-argument form. Ignored when \code{input} is a list.
 #'
 #' @return An `iconic_data` S3 object.
 #' @export
@@ -337,8 +337,8 @@ validate_iconic_data <- function(obj) {
 #'
 #' # From named components (delegates to iconic_data())
 #' data <- as_iconic_data(rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-#'                        G = rnorm(100), Gm = rnorm(100),
-#'                        W = matrix(rnorm(100*10), 10, 100))
+#' G = rnorm(100), Gm = rnorm(100),
+#' W = matrix(rnorm(100*10), 10, 100))
 as_iconic_data <- function(input, ...) {
   dots <- list(...)
 
@@ -351,9 +351,9 @@ as_iconic_data <- function(input, ...) {
   if (is.list(input) && !is.null(input$original_matrices)) {
     om <- input$original_matrices
     iconic_data(
-      Z          = om$Z,
-      Y          = om$Y,
-      W          = om$W,
+      Z = om$Z,
+      Y = om$Y,
+      W = om$W,
       covariates = input$covariates,
       feature_names = input$feature_names
     )
@@ -388,25 +388,25 @@ print.iconic_data <- function(x, ...) {
   cat("\n")
 
   present <- character(0)
-  if (x$has_instrument)         present <- c(present, "G (exposure instrument)")
+  if (x$has_instrument) present <- c(present, "G (exposure instrument)")
   if (x$has_mediator_instrument) present <- c(present, "Gm (mediator instrument)")
-  if (x$has_nc)                 present <- c(present, "W (negative controls)")
+  if (x$has_nc) present <- c(present, "W (negative controls)")
   if (x$has_path_nc &&
       !is.null(x$W1) && !identical(x$W1, x$W))
     present <- c(present, "W1/W2 (path-specific NCs)")
 
   if (length(present)) {
-    cat("  Available:", paste(present, collapse = ", "), "\n")
+    cat(" Available:", paste(present, collapse = ", "), "\n")
   } else {
-    cat("  No instruments or negative controls supplied.\n")
+    cat(" No instruments or negative controls supplied.\n")
   }
 
   if (ncol(x$covariates) > 0)
-    cat("  Covariates:", paste(names(x$covariates), collapse = ", "), "\n")
+    cat(" Covariates:", paste(names(x$covariates), collapse = ", "), "\n")
 
   if (!is.null(x$trained_gan))
-    cat("  GAN: attached (", x$trained_gan$model_type, ")\n", sep = "")
+    cat(" GAN: attached (", x$trained_gan$model_type, ")\n", sep = "")
 
-  cat("  Mode:", if (x$is_mediation) "mediation" else "total effect", "\n")
+  cat(" Mode:", if (x$is_mediation) "mediation" else "total effect", "\n")
   invisible(x)
 }

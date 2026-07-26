@@ -41,10 +41,10 @@ mediators have F_Gm >= \code{R}. Default NULL: legacy scalar behavior
 (median F_Gm vs \code{min_f}).}
 
 \item{n_cores}{Number of parallel workers for NC validity screens and
-panel instrument-strength computation. Default 1 (sequential).  Uses
+panel instrument-strength computation. Default 1 (sequential). Uses
 \code{parallel::mclapply} on Unix and a PSOCK cluster on Windows.}
 
-\item{allow_no_proxy}{Logical (v0.9.2, JYH #503): when \code{TRUE}
+\item{allow_no_proxy}{Logical: when \code{TRUE}
 (default), proceed with a message if no instruments and no NCs are
 supplied (only UNADJ is eligible). When \code{FALSE}, error instead.}
 }
@@ -59,7 +59,7 @@ per instrument / mediator).
 }
 \description{
 Runs a battery of diagnostic checks on the user's data and returns
-an eligibility report for all eight ICONIC estimators.  The checks
+an eligibility report for all eight ICONIC estimators. The checks
 include:
 }
 \details{
@@ -97,7 +97,7 @@ has enough features to span the confounder subspace
 \examples{
 set.seed(1)
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-                    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 diag <- iconic_diagnose(data)
 print(diag)
 }

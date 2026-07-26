@@ -1,5 +1,5 @@
 # ============================================================
-# iconic_diagnose: Diagnostic eligibility layer for the v0.6.0
+# iconic_diagnose: Diagnostic eligibility layer for the
 # model selection workflow.
 #
 # Runs instrument-strength checks, negative-control validity
@@ -14,76 +14,76 @@
 #' Diagnose data and determine estimator eligibility
 #'
 #' Runs a battery of diagnostic checks on the user's data and returns
-#' an eligibility report for all eight ICONIC estimators.  The checks
+#' an eligibility report for all eight ICONIC estimators. The checks
 #' include:
 #'
 #' \itemize{
-#'   \item \strong{Instrument strength}: first-stage partial F-statistics
-#'     for G (exposure instrument) and Gm (mediator instrument), with
-#'     the Stock-Yogo weak-instrument threshold (F >= 10).
-#'   \item \strong{NC validity (A1)}: screens each negative-control
-#'     feature for association with the exposure Z
-#'     (\code{\link{nc_validity_screen}()}).
-#'   \item \strong{NC independence (A2)}: screens each NC for association
-#'     with the instrument G (\code{\link{nc_independence_check}()}).
-#'   \item \strong{NC independence (A2')}: screens each NC for association
-#'     with the mediator instrument Gm
-#'     (\code{\link{nc_independence_check_gm}()}).
-#'   \item \strong{Path completeness}: checks whether the valid NC panel
-#'     has enough features to span the confounder subspace
-#'     (\code{\link{nc_completeness_check}()}).
+#' \item \strong{Instrument strength}: first-stage partial F-statistics
+#' for G (exposure instrument) and Gm (mediator instrument), with
+#' the Stock-Yogo weak-instrument threshold (F >= 10).
+#' \item \strong{NC validity (A1)}: screens each negative-control
+#' feature for association with the exposure Z
+#' (\code{\link{nc_validity_screen}()}).
+#' \item \strong{NC independence (A2)}: screens each NC for association
+#' with the instrument G (\code{\link{nc_independence_check}()}).
+#' \item \strong{NC independence (A2')}: screens each NC for association
+#' with the mediator instrument Gm
+#' (\code{\link{nc_independence_check_gm}()}).
+#' \item \strong{Path completeness}: checks whether the valid NC panel
+#' has enough features to span the confounder subspace
+#' (\code{\link{nc_completeness_check}()}).
 #' }
 #'
-#' @param data      An \code{iconic_data} object from \code{\link{iconic_data}()}.
+#' @param data An \code{iconic_data} object from \code{\link{iconic_data}()}.
 #' @param fdr_level FDR level for NC screens. Default 0.10.
-#' @param min_f     Minimum partial F for instrument strength. Default 10.
-#'   Used as the scalar threshold when \code{g_threshold}/\code{gm_threshold}
-#'   are NULL (legacy behavior). When thresholds are supplied, \code{min_f}
-#'   is unused for the panel decision (the threshold's \code{R} governs).
-#' @param k         Number of latent confounders assumed for the
-#'                  completeness check. Default 1 (a single confounder
-#'                  is the typical case in mediation settings).
-#' @param g_threshold  Optional list \code{list(E = 0.5, R = 10)} controlling
-#'   G-dependent method eligibility via the panel distribution. A method is
-#'   eligible if at least fraction \code{E} of instruments have F_G >= \code{R}.
-#'   Default NULL: legacy scalar behavior (median F_G vs \code{min_f}).
+#' @param min_f Minimum partial F for instrument strength. Default 10.
+#' Used as the scalar threshold when \code{g_threshold}/\code{gm_threshold}
+#' are NULL (legacy behavior). When thresholds are supplied, \code{min_f}
+#' is unused for the panel decision (the threshold's \code{R} governs).
+#' @param k Number of latent confounders assumed for the
+#' completeness check. Default 1 (a single confounder
+#' is the typical case in mediation settings).
+#' @param g_threshold Optional list \code{list(E = 0.5, R = 10)} controlling
+#' G-dependent method eligibility via the panel distribution. A method is
+#' eligible if at least fraction \code{E} of instruments have F_G >= \code{R}.
+#' Default NULL: legacy scalar behavior (median F_G vs \code{min_f}).
 #' @param gm_threshold Optional list \code{list(E = 0.5, R = 10)} controlling
-#'   Gm-dependent method eligibility (IV2SLS2, PGC2Gm) via the panel
-#'   distribution. A method is eligible if at least fraction \code{E} of
-#'   mediators have F_Gm >= \code{R}. Default NULL: legacy scalar behavior
-#'   (median F_Gm vs \code{min_f}).
-#' @param n_cores   Number of parallel workers for NC validity screens and
-#'   panel instrument-strength computation. Default 1 (sequential).  Uses
-#'   \code{parallel::mclapply} on Unix and a PSOCK cluster on Windows.
-#' @param allow_no_proxy Logical (v0.9.2, JYH #503): when \code{TRUE}
-#'   (default), proceed with a message if no instruments and no NCs are
-#'   supplied (only UNADJ is eligible). When \code{FALSE}, error instead.
+#' Gm-dependent method eligibility (IV2SLS2, PGC2Gm) via the panel
+#' distribution. A method is eligible if at least fraction \code{E} of
+#' mediators have F_Gm >= \code{R}. Default NULL: legacy scalar behavior
+#' (median F_Gm vs \code{min_f}).
+#' @param n_cores Number of parallel workers for NC validity screens and
+#' panel instrument-strength computation. Default 1 (sequential). Uses
+#' \code{parallel::mclapply} on Unix and a PSOCK cluster on Windows.
+#' @param allow_no_proxy Logical: when \code{TRUE}
+#' (default), proceed with a message if no instruments and no NCs are
+#' supplied (only UNADJ is eligible). When \code{FALSE}, error instead.
 #'
 #' @section Defaults:
 #' \tabular{lll}{
-#'   \strong{Parameter} \tab \strong{Default} \tab \strong{Source} \cr
-#'   \code{fdr_level} \tab 0.10 \tab BH-FDR level for NC screens \cr
-#'   \code{min_f} \tab 10 \tab Stock-Yogo weak-instrument threshold \cr
-#'   \code{k} \tab 1 \tab Single-confounder assumption (typical mediation) \cr
-#'   \code{g_threshold} \tab NULL \tab Legacy scalar (median F_G vs min_f) \cr
-#'   \code{gm_threshold} \tab NULL \tab Legacy scalar (median F_Gm vs min_f) \cr
-#'   \code{n_cores} \tab 1 \tab Sequential \cr
-#'   \code{allow_no_proxy} \tab TRUE \tab Proceed with UNADJ-only when no IV/NC \cr
+#' \strong{Parameter} \tab \strong{Default} \tab \strong{Source} \cr
+#' \code{fdr_level} \tab 0.10 \tab BH-FDR level for NC screens \cr
+#' \code{min_f} \tab 10 \tab Stock-Yogo weak-instrument threshold \cr
+#' \code{k} \tab 1 \tab Single-confounder assumption (typical mediation) \cr
+#' \code{g_threshold} \tab NULL \tab Legacy scalar (median F_G vs min_f) \cr
+#' \code{gm_threshold} \tab NULL \tab Legacy scalar (median F_Gm vs min_f) \cr
+#' \code{n_cores} \tab 1 \tab Sequential \cr
+#' \code{allow_no_proxy} \tab TRUE \tab Proceed with UNADJ-only when no IV/NC \cr
 #' }
 #'
 #' @return An \code{iconic_diagnosis} S3 object: a named list with
-#'   \code{$instrument_strength}, \code{$nc_validity},
-#'   \code{$nc_independence}, \code{$nc_independence_gm},
-#'   \code{$completeness}, \code{$eligibility}, and \code{$summary}.
-#'   \code{$instrument_strength$F_G} and \code{$instrument_strength$F_Gm}
-#'   are numeric vectors containing the full panel distributions (one entry
-#'   per instrument / mediator).
+#' \code{$instrument_strength}, \code{$nc_validity},
+#' \code{$nc_independence}, \code{$nc_independence_gm},
+#' \code{$completeness}, \code{$eligibility}, and \code{$summary}.
+#' \code{$instrument_strength$F_G} and \code{$instrument_strength$F_Gm}
+#' are numeric vectors containing the full panel distributions (one entry
+#' per instrument / mediator).
 #' @export
 #'
 #' @examples
 #' set.seed(1)
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-#'                     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#' G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' diag <- iconic_diagnose(data)
 #' print(diag)
 iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
@@ -92,12 +92,12 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
   if (!inherits(data, "iconic_data"))
     stop("data must be an iconic_data object from iconic_data().")
 
-  # v0.9.2 (JYH #503): explicit control over proceed-without-proxy behavior.
+  # explicit control over proceed-without-proxy behavior.
   # When allow_no_proxy = FALSE, error if neither instruments nor NCs are
   # present; when TRUE (default), proceed with a message noting only UNADJ
   # is eligible.
-  has_iv  <- !is.null(data$G) || !is.null(data$Gm)
-  has_nc  <- !is.null(data$W)
+  has_iv <- !is.null(data$G) || !is.null(data$Gm)
+  has_nc <- !is.null(data$W)
   if (!has_iv && !has_nc) {
     if (!allow_no_proxy) {
       stop("No genetic instruments (G/Gm) and no negative controls (W) ",
@@ -122,7 +122,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
   completeness <- NULL
 
   if (data$has_nc) {
-    nc_dat <- .to_nc_dat(data)  # bridge to nc_diagnostics format
+    nc_dat <- .to_nc_dat(data) # bridge to nc_diagnostics format
     nc_val <- nc_validity_screen(nc_dat, fdr_level = fdr_level, n_cores = n_cores)
     if (data$has_instrument)
       nc_ind <- nc_independence_check(nc_dat, fdr_level = fdr_level, n_cores = n_cores)
@@ -131,7 +131,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
 
     # Completeness
     n_valid <- .count_valid_ncs(nc_val, nc_ind)
-    # v0.9.2: COCA-specific valid count (A2 exempt per JYH #509).
+    # COCA-specific valid count (A2 exempt per).
     # COCA's identifying assumption does not involve the instrument, so it
     # should not be gated on A2. Because the FDR-based A1 screen flags valid
     # NCs that share U with Z (the "always significant via U" problem), the
@@ -160,15 +160,15 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
 
   obj <- list(
     instrument_strength = inst,
-    nc_validity         = nc_val,
-    nc_independence     = nc_ind,
-    nc_independence_gm  = nc_ind_gm,
-    completeness        = completeness,
-    eligibility         = eligibility,
-    summary             = summary_txt,
-    min_f               = min_f,
-    k                   = k,
-    fdr_level           = fdr_level
+    nc_validity = nc_val,
+    nc_independence = nc_ind,
+    nc_independence_gm = nc_ind_gm,
+    completeness = completeness,
+    eligibility = eligibility,
+    summary = summary_txt,
+    min_f = min_f,
+    k = k,
+    fdr_level = fdr_level
   )
   class(obj) <- c("iconic_diagnosis", "list")
   obj
@@ -181,8 +181,8 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
 #' Gm (in M ~ Z_hat + Gm + W + covars), matching the first-stage
 #' regressions used by fit_iv2sls() and fit_iv2sls_mediation2().
 #'
-#' @param data   iconic_data object.
-#' @param min_f  Minimum acceptable partial F. Default 10.
+#' @param data iconic_data object.
+#' @param min_f Minimum acceptable partial F. Default 10.
 #' @return List: F_G, F_Gm, weak_G (logical), weak_Gm (logical).
 #' @keywords internal
 .check_instrument_strength <- function(data, min_f = 10, g_threshold = NULL,
@@ -203,11 +203,11 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
     }
     n_pass <- sum(F_vec >= R)
     list(
-      min     = min(F_vec),
-      median  = median(F_vec),
-      mean    = mean(F_vec),
-      p_pass  = n_pass / length(F_vec),
-      n_pass  = n_pass,
+      min = min(F_vec),
+      median = median(F_vec),
+      mean = mean(F_vec),
+      p_pass = n_pass / length(F_vec),
+      n_pass = n_pass,
       n_total = length(F_vec)
     )
   }
@@ -286,7 +286,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
 
     # Gm: n_mediators x n matrix (rows = mediators). Compute F_Gm for each.
     Gm_mat <- if (is.matrix(data$Gm)) data$Gm else matrix(data$Gm, nrow = 1)
-    M_mat  <- if (is.matrix(data$M))  data$M  else matrix(data$M,  nrow = 1)
+    M_mat <- if (is.matrix(data$M)) data$M else matrix(data$M, nrow = 1)
     nm <- nrow(Gm_mat)
     F_Gm_vec <- .parallel_lapply(seq_len(nm), function(m) {
       d_ms <- .bind_covars(data.frame(M = M_mat[m, ], Z_hat = Z_hat,
@@ -312,26 +312,26 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
   gms <- gm_dec$summary
 
   list(
-    F_G          = F_G_vec,
-    F_G_panel    = F_G_vec,          # alias for clarity
-    F_G_min      = gs$min,
-    F_G_median   = gs$median,
-    F_G_mean     = gs$mean,
-    F_G_p_pass   = gs$p_pass,
-    F_G_n_pass   = gs$n_pass,
-    F_G_n_total  = gs$n_total,
-    F_Gm         = F_Gm_vec,
-    F_Gm_panel   = F_Gm_vec,         # alias for clarity
-    F_Gm_min     = gms$min,
-    F_Gm_median  = gms$median,
-    F_Gm_mean    = gms$mean,
-    F_Gm_p_pass  = gms$p_pass,
-    F_Gm_n_pass  = gms$n_pass,
+    F_G = F_G_vec,
+    F_G_panel = F_G_vec, # alias for clarity
+    F_G_min = gs$min,
+    F_G_median = gs$median,
+    F_G_mean = gs$mean,
+    F_G_p_pass = gs$p_pass,
+    F_G_n_pass = gs$n_pass,
+    F_G_n_total = gs$n_total,
+    F_Gm = F_Gm_vec,
+    F_Gm_panel = F_Gm_vec, # alias for clarity
+    F_Gm_min = gms$min,
+    F_Gm_median = gms$median,
+    F_Gm_mean = gms$mean,
+    F_Gm_p_pass = gms$p_pass,
+    F_Gm_n_pass = gms$n_pass,
     F_Gm_n_total = gms$n_total,
-    weak_G       = weak_G,
-    weak_Gm      = weak_Gm,
-    min_f        = min_f,
-    g_threshold  = g_threshold,
+    weak_G = weak_G,
+    weak_Gm = weak_Gm,
+    min_f = min_f,
+    g_threshold = g_threshold,
     gm_threshold = gm_threshold
   )
 }
@@ -341,7 +341,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
 #'
 #' The existing nc_validity_screen / nc_independence_check functions
 #' expect a `dat` list with $W (n x q), $Z, $G (n x p), $Gm, and
-#' $synthetic_data.  This helper converts an iconic_data object to
+#' $synthetic_data. This helper converts an iconic_data object to
 #' that format.
 #' @keywords internal
 .to_nc_dat <- function(data) {
@@ -349,12 +349,12 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
   W_mat <- data$W
   if (is.null(W_mat) && data$has_path_nc)
     W_mat <- data$W1
-  W <- if (!is.null(W_mat)) t(W_mat) else NULL  # q x n -> n x q
+  W <- if (!is.null(W_mat)) t(W_mat) else NULL # q x n -> n x q
   list(
-    W              = W,
-    Z              = data$Z,
-    G              = if (!is.null(data$G)) matrix(data$G, ncol = 1) else NULL,
-    Gm             = if (!is.null(data$Gm)) {
+    W = W,
+    Z = data$Z,
+    G = if (!is.null(data$G)) matrix(data$G, ncol = 1) else NULL,
+    Gm = if (!is.null(data$Gm)) {
       if (is.matrix(data$Gm)) {
         if (ncol(data$Gm) == data$n) data$Gm[1, ] else as.numeric(data$Gm[1, ])
       } else as.numeric(data$Gm)
@@ -371,8 +371,8 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
 #' violation) from "W shares a cause with Z" (intended NC behavior).
 #' A1 is reported but not used for eligibility.
 #'
-#' v0.9.2: `for_estimator` controls which screen is used as the gate,
-#' implementing the COCA A2 exemption (JYH #509). COCA's identifying
+#' `for_estimator` controls which screen is used as the gate,
+#' implementing the COCA A2 exemption. COCA's identifying
 #' assumption does not involve the instrument, so COCA uses A1 only;
 #' IV2SLS/PGC/IV2SLS2/PGC2/PGC2Gm use A2 (the legacy behavior).
 #' @keywords internal
@@ -411,9 +411,9 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
   }
   list(
     n_valid_controls = n_valid,
-    k                = k,
-    dim_W            = dim_W,
-    completeness     = status
+    k = k,
+    dim_W = dim_W,
+    completeness = status
   )
 }
 
@@ -421,17 +421,17 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
 #' Assess estimator eligibility from diagnostics (internal)
 #'
 #' Applies the eligibility rules:
-#'   UNADJ:   always eligible
-#'   DIRECT:  requires G + W
-#'   COCA:    requires W, A1 passed (at least some valid NCs); A2 NOT required (v0.9.2)
-#'   IV2SLS:  requires G, F_G >= min_f, W
-#'   PGC:     requires G, F_G >= min_f, completeness satisfied
-#'   IV2SLS2: requires G + Gm + W, F_G >= min_f, F_Gm >= min_f
-#'   PGC2:    requires G + W1 + W2, F_G >= min_f, path completeness
-#'   PGC2Gm:  requires G + Gm + W1 + W2, F_G >= min_f, path completeness
+#' UNADJ: always eligible
+#' DIRECT: requires G + W
+#' COCA: requires W, A1 passed (at least some valid NCs); A2 NOT required
+#' IV2SLS: requires G, F_G >= min_f, W
+#' PGC: requires G, F_G >= min_f, completeness satisfied
+#' IV2SLS2: requires G + Gm + W, F_G >= min_f, F_Gm >= min_f
+#' PGC2: requires G + W1 + W2, F_G >= min_f, path completeness
+#' PGC2Gm: requires G + Gm + W1 + W2, F_G >= min_f, path completeness
 #'
-#' v0.9.2: COCA no longer requires the A2 (instrument-independence) screen,
-#' only A1 + completeness (JYH #509). The eligibility table gains an
+#' COCA no longer requires the A2 (instrument-independence) screen,
+#' only A1 + completeness. The eligibility table gains an
 #' `a2_required` column documenting which estimators need A2.
 #' @keywords internal
 .assess_eligibility <- function(data, inst, completeness, min_f) {
@@ -449,7 +449,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
     completeness$completeness != "under-identified" else FALSE
   has_valid_nc <- if (!is.null(completeness))
     completeness$n_valid_controls > 0 else has_W
-  # v0.9.2: COCA uses the A1-only valid count (A2 exempt).
+  # COCA uses the A1-only valid count (A2 exempt).
   has_valid_nc_coca <- if (!is.null(completeness))
     completeness$n_valid_coca > 0 else has_W
 
@@ -458,17 +458,17 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
                "IV2SLS2", "PGC2", "PGC2Gm")
 
   eligible <- c(
-    TRUE,                                           # UNADJ
-    has_G && has_W,                                 # DIRECT
-    has_W && has_valid_nc_coca,                     # COCA (A2 exempt, v0.9.2)
-    has_G && has_W && F_G_ok,                       # IV2SLS
-    has_G && has_W && F_G_ok && comp_ok,            # PGC
-    is_med && has_G && has_Gm && has_W && F_G_ok && F_Gm_ok,  # IV2SLS2
-    is_med && has_G && has_W1W2 && F_G_ok && comp_ok,         # PGC2
+    TRUE, # UNADJ
+    has_G && has_W, # DIRECT
+    has_W && has_valid_nc_coca, # COCA (A2 exempt)
+    has_G && has_W && F_G_ok, # IV2SLS
+    has_G && has_W && F_G_ok && comp_ok, # PGC
+    is_med && has_G && has_Gm && has_W && F_G_ok && F_Gm_ok, # IV2SLS2
+    is_med && has_G && has_W1W2 && F_G_ok && comp_ok, # PGC2
     is_med && has_G && has_Gm && has_W1W2 && F_G_ok && comp_ok # PGC2Gm
   )
 
-  # v0.9.2: document which estimators require A2 (instrument-independence).
+  # document which estimators require A2 (instrument-independence).
   a2_required <- c(FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE)
 
   # Build reason strings
@@ -513,10 +513,10 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
     paste0("requires G + Gm + W1/W2 + completeness (have Gm=", has_Gm, ", W1/W2=", has_W1W2, ")")
 
   data.frame(
-    estimator   = methods,
-    eligible    = eligible,
+    estimator = methods,
+    eligible = eligible,
     a2_required = a2_required,
-    reason      = reasons,
+    reason = reasons,
     stringsAsFactors = FALSE
   )
 }
@@ -532,12 +532,12 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
   # Instrument strength
   if (data$has_instrument) {
     if (is.null(inst$g_threshold)) {
-      lines <- c(lines, sprintf("  G (exposure instrument):  partial F = %.1f %s",
+      lines <- c(lines, sprintf(" G (exposure instrument): partial F = %.1f %s",
                                 inst$F_G_median,
                                 ifelse(inst$weak_G, "(WEAK)", "(ok)")))
     } else {
       lines <- c(lines, sprintf(
-        "  G (exposure instrument):  median F = %.1f, %.0f%% of %d transcripts >= %g %s (E threshold: %.0f%%)",
+        " G (exposure instrument): median F = %.1f, %.0f%% of %d transcripts >= %g %s (E threshold: %.0f%%)",
         inst$F_G_median, 100 * inst$F_G_p_pass, inst$F_G_n_total,
         inst$g_threshold$R,
         ifelse(inst$weak_G, "(BELOW E)", "(ok)"),
@@ -546,12 +546,12 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
   }
   if (data$has_mediator_instrument) {
     if (is.null(inst$gm_threshold)) {
-      lines <- c(lines, sprintf("  Gm (mediator instrument):  partial F = %.1f %s",
+      lines <- c(lines, sprintf(" Gm (mediator instrument): partial F = %.1f %s",
                                 inst$F_Gm_median,
                                 ifelse(inst$weak_Gm, "(WEAK)", "(ok)")))
     } else {
       lines <- c(lines, sprintf(
-        "  Gm (mediator instrument):  median F = %.1f, %.0f%% of %d transcripts >= %g %s (E threshold: %.0f%%)",
+        " Gm (mediator instrument): median F = %.1f, %.0f%% of %d transcripts >= %g %s (E threshold: %.0f%%)",
         inst$F_Gm_median, 100 * inst$F_Gm_p_pass, inst$F_Gm_n_total,
         inst$gm_threshold$R,
         ifelse(inst$weak_Gm, "(BELOW E)", "(ok)"),
@@ -563,25 +563,25 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
   if (!is.null(nc_val)) {
     n_drop <- sum(nc_val$significant, na.rm = TRUE)
     n_total <- nrow(nc_val)
-    lines <- c(lines, sprintf("  NC validity (A1):  %d/%d controls valid (%d flagged)",
+    lines <- c(lines, sprintf(" NC validity (A1): %d/%d controls valid (%d flagged)",
                               n_total - n_drop, n_total, n_drop))
   }
   if (!is.null(nc_ind)) {
     n_drop <- sum(nc_ind$significant, na.rm = TRUE)
     n_total <- nrow(nc_ind)
-    lines <- c(lines, sprintf("  NC independence (A2):  %d/%d controls valid (%d flagged)",
+    lines <- c(lines, sprintf(" NC independence (A2): %d/%d controls valid (%d flagged)",
                               n_total - n_drop, n_total, n_drop))
   }
   if (!is.null(nc_ind_gm)) {
     n_drop <- sum(nc_ind_gm$significant, na.rm = TRUE)
     n_total <- nrow(nc_ind_gm)
-    lines <- c(lines, sprintf("  NC independence (A2'):  %d/%d controls valid (%d flagged)",
+    lines <- c(lines, sprintf(" NC independence (A2'): %d/%d controls valid (%d flagged)",
                               n_total - n_drop, n_total, n_drop))
   }
 
   # Completeness
   if (!is.null(completeness)) {
-    lines <- c(lines, sprintf("  Completeness:  %d valid NCs vs k=%d -> %s",
+    lines <- c(lines, sprintf(" Completeness: %d valid NCs vs k=%d -> %s",
                               completeness$n_valid_controls,
                               completeness$k,
                               completeness$completeness))
@@ -589,10 +589,10 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = 1,
 
   # Eligibility
   n_elig <- sum(eligibility$eligible)
-  lines <- c(lines, "", sprintf("  Eligible estimators: %d/%d", n_elig, nrow(eligibility)))
+  lines <- c(lines, "", sprintf(" Eligible estimators: %d/%d", n_elig, nrow(eligibility)))
   elig_methods <- eligibility$estimator[eligibility$eligible]
   if (length(elig_methods))
-    lines <- c(lines, paste("   ", paste(elig_methods, collapse = ", ")))
+    lines <- c(lines, paste(" ", paste(elig_methods, collapse = ", ")))
 
   paste(lines, collapse = "\n")
 }

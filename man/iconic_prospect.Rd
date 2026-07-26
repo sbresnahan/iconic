@@ -35,11 +35,11 @@ iconic_prospect(
 M is required for mediation prospect).}
 
 \item{trained_gan}{Optional \code{iconic_gan} from
-\code{\link{train_gan_on_real_data}()}.  If \code{NULL}, a texture
-model is auto-trained from \code{data} (v0.7.0).}
+\code{\link{train_gan_on_real_data}()}. If \code{NULL}, a texture
+model is auto-trained from \code{data}.}
 
 \item{confounding}{Confounding parameter source: \code{"default"},
-\code{"inferred"}, or \code{"manual"}.  Default \code{"default"}.}
+\code{"inferred"}, or \code{"manual"}. Default \code{"default"}.}
 
 \item{gan_epochs}{Epochs for auto-trained GAN. Default 100.}
 
@@ -67,22 +67,22 @@ Default TRUE.}
 \item{base_seed}{Base RNG seed. Default 500.}
 
 \item{n_cores}{Number of parallel workers for simulation replicates.
-Default 1 (sequential).  Uses \code{parallel::mclapply} on Unix
+Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
 and a PSOCK cluster on Windows.}
 
-\item{allow_no_proxy}{Logical (v0.9.2, JYH #503): when \code{TRUE}
+\item{allow_no_proxy}{Logical: when \code{TRUE}
 (default), proceed with the prospective sweep even if the data
 already has instruments/NCs (with a message). When \code{FALSE},
 error if the data already has IV+NC (use iconic_estimate instead).}
 
 \item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
-(v0.9.4).  Threads through to the simulation DGP.}
+Threads through to the simulation DGP.}
 
-\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}.  Only
+\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}. Only
 used when \code{outcome_type = "survival"}.}
 
 \item{surv_h0, surv_event_frac, surv_censor_rate}{Survival DGP parameters
-(v0.9.4).  See \code{\link{generate_toy_data}}.}
+See \code{\link{generate_toy_data}}.}
 }
 \value{
 An \code{iconic_prospect} S3 object: a named list with
@@ -100,7 +100,7 @@ collect such data.
 }
 \details{
 Phase 1 sweeps instrument strength (\code{gamma_G}) to show how
-estimates converge as the instrument strengthens.  Phase 2 runs a
+estimates converge as the instrument strengthens. Phase 2 runs a
 full prospective simulation at a target strength, generating
 synthetic instruments and NCs calibrated to the user's sample size
 and confounding level.
@@ -120,16 +120,16 @@ estimate from your current data, but tells you what a future
 instrumented study would yield.
 }
 
-\section{Texture model (v0.7.0)}{
+\section{Texture model}{
 
 When \code{trained_gan} is \code{NULL} and no GAN is attached to
 \code{data}, a texture model is auto-trained from the user's data.
 }
 
-\section{Confounding calibration (v0.7.0)}{
+\section{Confounding calibration}{
 
 The \code{confounding} argument controls how the held-fixed
-confounding parameters are set.  In the prospective setting (no
+confounding parameters are set. In the prospective setting (no
 instruments or NCs), most parameters cannot be inferred and will
 fall back to defaults with warnings -- this is an honest limitation,
 not a silent failure.
@@ -157,7 +157,7 @@ not a silent failure.
 \examples{
 \donttest{
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-                    M = rnorm(100))
+M = rnorm(100))
 result <- iconic_prospect(data, n_iter = 10, n_cores = 4)
 print(result)
 }

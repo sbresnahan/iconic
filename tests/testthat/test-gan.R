@@ -43,11 +43,11 @@ test_that("effect_size = 0 gives a null (zero) true total", {
 })
 
 test_that("column alignment holds when the NC model returns a different width", {
-  narrow_nc <- function(U, covariates, params)   # returns only 2 controls
+  narrow_nc <- function(U, covariates, params) # returns only 2 controls
     matrix(rowMeans(U), nrow(U), 2)
   dat <- run_single_iteration(NULL, n_synthetic_samples = 150, n_features = 6,
                               nc_model = narrow_nc, seed = 4)
-  expect_equal(ncol(dat$W), 6)                    # recycled to match Y
+  expect_equal(ncol(dat$W), 6) # recycled to match Y
   expect_silent(iconic:::run_methods(dat, 6))
 })
 
@@ -55,7 +55,7 @@ test_that("IV2SLS is approximately unbiased on synthetic data", {
   dat <- run_single_iteration(NULL, n_synthetic_samples = 1500, n_features = 8,
                               conf_strength = 0.8, seed = 5)
   res <- iconic:::run_methods(dat, 8)
-  iv  <- mean(res$beta[res$method == "IV2SLS"], na.rm = TRUE)
+  iv <- mean(res$beta[res$method == "IV2SLS"], na.rm = TRUE)
   expect_lt(abs(iv - dat$true_total), 0.06)
 })
 

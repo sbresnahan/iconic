@@ -1,4 +1,4 @@
-# Tests for the v0.6.0 iconic_data() constructor and validation
+# Tests for the iconic_data() constructor and validation
 
 test_that("iconic_data constructs from vectors", {
   d <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50))
@@ -11,13 +11,13 @@ test_that("iconic_data constructs from vectors", {
 })
 
 test_that("iconic_data auto-transposes samples x features Y", {
-  Y <- matrix(rnorm(50 * 3), 50, 3)  # samples x features
+  Y <- matrix(rnorm(50 * 3), 50, 3) # samples x features
   d <- iconic_data(Z = rnorm(50), Y = Y)
-  expect_equal(dim(d$Y), c(3, 50))  # stored as features x samples
+  expect_equal(dim(d$Y), c(3, 50)) # stored as features x samples
 })
 
 test_that("iconic_data accepts features x samples Y", {
-  Y <- matrix(rnorm(50 * 3), 3, 50)  # features x samples
+  Y <- matrix(rnorm(50 * 3), 3, 50) # features x samples
   d <- iconic_data(Z = rnorm(50), Y = Y)
   expect_equal(dim(d$Y), c(3, 50))
 })
@@ -30,7 +30,7 @@ test_that("iconic_data handles mediation mode", {
 })
 
 test_that("iconic_data handles matrix mediator", {
-  M <- matrix(rnorm(50 * 2), 2, 50)  # 2 mediators x 50 samples
+  M <- matrix(rnorm(50 * 2), 2, 50) # 2 mediators x 50 samples
   d <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50), M = M)
   expect_true(d$is_mediation)
   expect_equal(d$n_mediators, 2)
@@ -85,7 +85,7 @@ test_that("iconic_data handles matrix Z (column means)", {
 })
 
 test_that("iconic_data handles matrix G (extracts first column)", {
-  Gmat <- matrix(rnorm(50 * 5), 50, 5)  # n x n_features, as from generate_toy_data
+  Gmat <- matrix(rnorm(50 * 5), 50, 5) # n x n_features, as from generate_toy_data
   d <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50), G = Gmat)
   expect_true(d$has_instrument)
   expect_length(d$G, 50)

@@ -20,7 +20,7 @@ A \code{patchwork} ggplot object.
 }
 \description{
 Produces a 2-panel figure showing expected gains from adding
-genetic instruments.  Panel A: NDE bias vs instrument strength.
+genetic instruments. Panel A: NDE bias vs instrument strength.
 Panel B: prospective NDE/NIE estimates at target instrument
 strength.
 }

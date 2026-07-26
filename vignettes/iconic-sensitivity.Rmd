@@ -1,0 +1,128 @@
+---
+title: "Sensitivity Analysis and Confounding Inference"
+author: "Sean T. Bresnahan and Charis Xiong"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Sensitivity Analysis and Confounding Inference}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 7, fig.height = 4.5, comment = "#>"
+)
+set.seed(1)
+library(iconic)
+```
+
+# What sensitivity analysis does
+
+Even after diagnosis declares an estimator eligible, its validity rests on
+the assumption that the genetic instrument is exogenous — that the
+instrument-confounder correlations $\rho_{G1}$ and $\rho_{G2}$ are zero.
+These correlations cannot be estimated from data (the confounders are
+unobserved), so `iconic_sensitivity()` sweeps them over a plausible grid
+and reports how each estimator's bias degrades.
+
+The output reports, for each estimator:
+
+- **Maximum absolute bias** across the sensitivity surface.
+- **Tipping points**: the first $\rho_{G2}$ at $\rho_{G1} = 0$ where
+  $|\text{bias}| > 0.10$.
+- **Texture source**: whether the synthetic data used the generative
+  texture model (GAN + copula) or the parametric benchmark generator.
+
+# A minimal example
+
+We simulate a small mediation panel, train a texture model briefly, and
+run the sensitivity sweep.
+
+```{r sens-data}
+dat <- generate_toy_data(
+  n = 100, n_features = 5, seed = 1,
+  phi = 0.8, separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7
+)
+
+idat <- iconic_data(
+  Z = dat$Z, Y = dat$Y, M = dat$M,
+  G = dat$G, Gm = dat$Gm,
+  W1 = dat$W1, W2 = dat$W2,
+  covariates = dat$synthetic_data
+)
+```
+
+```{r sens-gan}
+# Train a texture model once and attach it (requires torch).
+input <- load_real_input_data(
+  Z_matrix = matrix(dat$Z, nrow = 1),
+  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
+  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
+)
+idat$trained_gan <- train_gan_on_real_data(
+  input$gan_training_data,
+  feature_correlations = input$feature_correlations,
+  feature_texture = input$feature_texture,
+  epochs = 5, seed = 1, verbose = FALSE
+)
+```
+
+```{r sens-run}
+sens <- iconic_sensitivity(idat, n_iter = 3)
+sens
+```
+
+# Inferring confounding from the data
+
+`infer_confounding()` estimates the held-fixed confounding parameters from
+your data, supplying a `confounding = "inferred"` mode for
+`iconic_sensitivity()` and `iconic_prospect()`.
+
+```{r sens-infer}
+diag <- iconic_diagnose(idat)
+est <- iconic_estimate(idat, diagnosis = diag)
+conf <- infer_confounding(idat, diag, est)
+conf
+```
+
+The inferred parameters include:
+
+- **Confounding strength** ($\delta$): from the gap between unadjusted OLS
+  and IV2SLS estimates.
+- **Mediator-outcome confounding** ($\delta_{mo}$): from the gap between
+  IV2SLS and IV2SLS2 natural indirect effects.
+- **Negative-control coverage** ($\omega_1$, $\omega_2$): from the
+  $R^2$ of each NC feature regressed on the outcome residual.
+- **Number of latent confounders** ($k$): via parallel analysis on the
+  residualized outcome correlation matrix.
+
+Parameters that cannot be inferred (the instrument-confounder correlations
+$\rho_{G1}$, $\rho_{G2}$) fall back to defaults with a warning and are
+always swept.
+
+# Inferred vs. default confounding
+
+```{r sens-inferred}
+sens_inf <- iconic_sensitivity(idat, n_iter = 3, confounding = "inferred")
+sens_inf
+```
+
+The `confounding = "default"` mode uses fixed defaults
+($\delta_{mo} = 0.8$, $\omega_1 = \omega_2 = 0.7$, $\phi = 0.8$) and is the
+recommended starting point. The `confounding = "inferred"` mode calibrates
+to your data but uses estimator validity (e.g., that IV2SLS is unbiased) to
+set up a benchmark whose purpose is to test estimator validity — so
+inferred values should be read as best-case calibrations under the stated
+assumptions.
+
+# Further reading
+
+- **Texture model vignette**: `vignette("iconic-texture-model")` — how the
+  GAN + copula texture model is trained and why it matters for sensitivity.
+- **Function reference**: `?iconic_sensitivity` for the full argument list,
+  including the $\rho_{G1} \times \rho_{G2}$ grid and the `n_iter` control.

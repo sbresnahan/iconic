@@ -38,7 +38,7 @@ generate_toy_data(
 
 \item{n_features}{Number of outcome and negative-control features. Default 20.}
 
-\item{n_mediators}{Number of independent mediators (v0.8.4). When > 1,
+\item{n_mediators}{Number of independent mediators. When > 1,
 each mediator M_m has its own genetic instrument Gm_m
 and contributes additively to Y. M and Gm are returned
 as \code{n_mediators x n} matrices. Default 1 (single
@@ -62,7 +62,7 @@ total NIE = n_mediators * alpha_M * beta_M). Default 0.30.}
 violating the exclusion restriction. 0 = no pleiotropy
 (valid instrument, original DGP). Default 0.}
 
-\item{phi}{Strength of the mediator instrument Gm -> M (v0.4.0).
+\item{phi}{Strength of the mediator instrument Gm -> M.
 0 = no mediator instrument (original DGP, no Gm generated).
 Default 0. When > 0, a valid instrument for M is generated,
 enabling point identification of NDE/NIE via
@@ -70,58 +70,58 @@ enabling point identification of NDE/NIE via
 
 \item{gamma_G}{Strength of the exposure instrument G -> Z. Default 0.6.}
 
-\item{rho_G1}{Correlation of G1 with U_XM (v0.5.0). Default 0.}
+\item{rho_G1}{Correlation of G1 with U_XM. Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY (v0.5.0). Default 0.}
+\item{rho_G2}{Correlation of G2 with U_MY. Default 0.}
 
 \item{rho_pop}{Shared population structure inducing G1-G2 correlation
-(v0.5.0). Default 0.}
+. Default 0.}
 
 \item{separate_U}{If TRUE, draw separate confounders U_XM and U_MY for
-the Z->M and M->Y paths (v0.5.0). Default FALSE.}
+the Z->M and M->Y paths. Default FALSE.}
 
-\item{omega_1}{Coverage of U_XM by W1 (v0.5.0). NULL = use w_signal.}
+\item{omega_1}{Coverage of U_XM by W1. NULL = use w_signal.}
 
-\item{omega_2}{Coverage of U_MY by W2 (v0.5.0). NULL = use w_signal.}
+\item{omega_2}{Coverage of U_MY by W2. NULL = use w_signal.}
 
-\item{feat_cor}{Within-module feature correlation (v0.8.1).  When > 0,
+\item{feat_cor}{Within-module feature correlation. When > 0,
 the idiosyncratic noise in the Y and W panels is drawn
 from a multivariate normal with a block-diagonal
 correlation matrix modelling co-expression modules.
 0 = independent noise (backward compatible). Default 0.}
 
-\item{u_strength}{Numeric scalar (v0.9.2, JYH #864): scales the single
+\item{u_strength}{Numeric scalar: scales the single
 confounder's effect on Z, M, and Y. Default NULL → 1
 (backward compatible). See \code{\link{run_single_iteration}}
 for the length-k vector version (multiple confounders).}
 
 \item{w_coverage_profile}{A list with optional \code{w1} and \code{w2}
-numeric vectors (v0.9.2, JYH #864): per-control coverage
+numeric vectors: per-control coverage
 of U_XM / U_MY. Default NULL → scalar omega applied
 uniformly (backward compatible).}
 
 \item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
-(v0.9.4).  When \code{"survival"}, the continuous
+When \code{"survival"}, the continuous
 linear predictor Y is converted to \code{surv_time}
 and \code{surv_event} via an exponential PH model.}
 
-\item{surv_h0}{Baseline hazard for the survival DGP (v0.9.4).
+\item{surv_h0}{Baseline hazard for the survival DGP.
 Default 0.1.}
 
-\item{surv_event_frac}{Target fraction of observed events (v0.9.4).
-Default 0.6.  The censoring rate is solved
+\item{surv_event_frac}{Target fraction of observed events.
+Default 0.6. The censoring rate is solved
 internally from this.}
 
-\item{surv_censor_rate}{Explicit censoring rate (v0.9.4).  Default NULL
+\item{surv_censor_rate}{Explicit censoring rate. Default NULL
 → solved from \code{surv_event_frac}.}
 
 \item{seed}{Optional integer RNG seed for reproducibility.}
 }
 \value{
 A named list with elements Z, G (n x n_features matrix), Y, W, U1, M,
-synthetic_data, true_total, true_NDE, true_NIE.  When \code{phi > 0}, also
+synthetic_data, true_total, true_NDE, true_NIE. When \code{phi > 0}, also
 includes \code{Gm} (numeric vector, length n, or \code{n_mediators x n}
-matrix when \code{n_mediators > 1}).  When any v0.5.0 parameter
+matrix when \code{n_mediators > 1}). When any parameter
 is non-default, also includes \code{G1}, \code{G2}, \code{W1}, \code{W2},
 \code{U_XM}, \code{U_MY}, and (when \code{rho_pop > 0}) \code{P}.
 When \code{n_mediators > 1}, \code{M} is an \code{n_mediators x n} matrix.
@@ -129,43 +129,43 @@ When \code{n_mediators > 1}, \code{M} is an \code{n_mediators x n} matrix.
 \description{
 When \code{mo_confounding > 0}, the unmeasured confounder U1 also
 affects the mediator M, creating mediator-outcome confounding — the
-key extension for the mediation simulation.  When \code{mo_confounding = 0}
+key extension for the mediation simulation. When \code{mo_confounding = 0}
 (default), the original DGP is preserved exactly.
 }
 \details{
-When \code{phi > 0} (v0.4.0), a mediator-specific genetic instrument
+When \code{phi > 0}, a mediator-specific genetic instrument
 \code{Gm} is generated: \eqn{Gm \sim \mathcal{N}(0,1)}, independent of
 \code{G}, \code{U}, and all other variables, and the mediator equation
 becomes \eqn{M = \alpha_M Z + \delta_{mo} 0.5 U_1 + \phi Gm + \varepsilon_M}.
 \code{Gm} is a valid instrument for \code{M}: it moves \code{M} but is
-independent of the confounders and has no direct path to \code{Y}.  This
+independent of the confounders and has no direct path to \code{Y}. This
 enables the 2-stage MR mediation estimator (\code{\link{fit_iv2sls_mediation2}})
-to point-identify NDE and NIE even under M-O confounding.  When
+to point-identify NDE and NIE even under M-O confounding. When
 \code{phi = 0} (default), no \code{Gm} is generated and the original DGP
 is preserved exactly.
 }
-\section{v0.5.0 — imperfect instrument independence}{
+\section{imperfect instrument independence}{
 
-The v0.4.0 DGP generates instruments as pure noise, independent of the
-confounders — the best possible case.  v0.5.0 adds parameters that
+The generates instruments as pure noise, independent of the
+confounders — the best possible case. adds parameters that
 violate this independence, modelling realistic genomic structure:
 \describe{
 \item{\code{rho_G1}}{Correlation of the exposure instrument G1 with the
-Z->M confounder U_XM (instrument exogeneity violation).  Default 0.}
+Z->M confounder U_XM (instrument exogeneity violation). Default 0.}
 \item{\code{rho_G2}}{Correlation of the mediator instrument G2 with the
-M->Y confounder U_MY (instrument exogeneity violation).  Default 0.}
+M->Y confounder U_MY (instrument exogeneity violation). Default 0.}
 \item{\code{rho_pop}}{Shared population-structure factor P that induces
-correlation between G1 and G2 (linkage / stratification).  Default 0.}
+correlation between G1 and G2 (linkage / stratification). Default 0.}
 \item{\code{separate_U}}{If \code{TRUE}, draw U_XM and U_MY as
 independent confounders for the Z->M and M->Y paths respectively.
 If \code{FALSE} (default), U_XM = U_MY = U1 (backward compatible).}
 \item{\code{omega_1}}{Coverage of U_XM by the path-specific negative
-controls W1.  \code{NULL} (default) uses \code{w_signal}.}
+controls W1. \code{NULL} (default) uses \code{w_signal}.}
 \item{\code{omega_2}}{Coverage of U_MY by the path-specific negative
-controls W2.  \code{NULL} (default) uses \code{w_signal}.}
+controls W2. \code{NULL} (default) uses \code{w_signal}.}
 }
-When all v0.5.0 parameters are at their defaults, the DGP is identical
-to v0.4.0.  When any is non-default, the output additionally includes
+When all are at their defaults, the DGP is identical
+to the default. When any is non-default, the output additionally includes
 \code{G1}, \code{G2}, \code{W1}, \code{W2}, \code{U_XM}, \code{U_MY},
 and (when \code{rho_pop > 0}) \code{P}.
 }
@@ -176,9 +176,9 @@ dat <- generate_toy_data(n = 200, n_features = 10, seed = 42)
 
 # Mediation with mediator instrument and path-specific NCs
 dat <- generate_toy_data(n = 200, n_features = 10, phi = 0.8,
-                         mo_confounding = 0.8, separate_U = TRUE,
-                         omega_1 = 0.7, omega_2 = 0.7, seed = 42)
+mo_confounding = 0.8, separate_U = TRUE,
+omega_1 = 0.7, omega_2 = 0.7, seed = 42)
 idata <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
-                     G = dat$G[, 1], Gm = dat$Gm,
-                     W1 = dat$W1, W2 = dat$W2)
+G = dat$G[, 1], Gm = dat$Gm,
+W1 = dat$W1, W2 = dat$W2)
 }

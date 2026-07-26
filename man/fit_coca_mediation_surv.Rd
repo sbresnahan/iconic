@@ -27,8 +27,8 @@ All-NA list with an informative \code{"reason"} attribute.
 \description{
 COCA mediation regresses the negative control W on the outcome Y in
 both stages (\code{W ~ M + Z}, \code{W ~ y + Z + M}), placing the
-outcome on the right-hand side.  This is structurally impossible when
-the outcome is a \code{survival::Surv} object.  COCA mediation is
+outcome on the right-hand side. This is structurally impossible when
+the outcome is a \code{survival::Surv} object. COCA mediation is
 therefore unsupported for survival outcomes and always returns NA.
 }
 \examples{

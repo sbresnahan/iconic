@@ -22,14 +22,14 @@ are used.}
 
 \item{feature_correlations}{Optional list with elements \code{Y}, \code{W},
 each a p x p residual correlation matrix from
-\code{\link[=load_real_input_data]{load_real_input_data()}}.  When supplied, the matrices are stored in the
+\code{\link[=load_real_input_data]{load_real_input_data()}}. When supplied, the matrices are stored in the
 returned \code{iconic_gan} object and used by \code{\link[=run_single_iteration]{run_single_iteration()}} to
-generate correlated noise.  Default \code{NULL}.}
+generate correlated noise. Default \code{NULL}.}
 
 \item{feature_texture}{Optional \code{iconic_feature_texture} object from
-\code{\link[=train_feature_texture]{train_feature_texture()}}.  When supplied, it is stored in the returned
+\code{\link[=train_feature_texture]{train_feature_texture()}}. When supplied, it is stored in the returned
 \code{iconic_gan} object and used by \code{\link[=run_single_iteration]{run_single_iteration()}} to inject
-realistic mediator texture.  Default \code{NULL}.}
+realistic mediator texture. Default \code{NULL}.}
 
 \item{epochs}{GAN training epochs. Default 300.}
 
@@ -60,13 +60,13 @@ dummies) are detected automatically and stored in the returned object.
 exclusivity, so synthetic draws respect the discrete structure.
 
 Feature-level residual correlation matrices (for the Y and W panels)
-can be attached via the \code{feature_correlations} argument.  When present,
+can be attached via the \code{feature_correlations} argument. When present,
 \code{\link[=run_single_iteration]{run_single_iteration()}} uses them to inject correlated noise into the
 simulated outcome and negative-control panels.
 
 A feature-level copula texture model for the mediator (M) panel can be
 attached via the \code{feature_texture} argument (an
-\code{iconic_feature_texture} object from \code{\link[=train_feature_texture]{train_feature_texture()}}).  When
+\code{iconic_feature_texture} object from \code{\link[=train_feature_texture]{train_feature_texture()}}). When
 present, \code{\link[=run_single_iteration]{run_single_iteration()}} uses it to draw realistic mediator
 feature vectors that preserve the marginal distributions and
 cross-feature correlation structure of the user's mediator panel.
@@ -75,9 +75,9 @@ cross-feature correlation structure of the user's mediator panel.
 \donttest{
 dat <- load_real_input_data(example = TRUE)
 gan <- train_gan_on_real_data(dat$gan_training_data,
-                              feature_correlations = dat$feature_correlations,
-                              feature_texture = dat$feature_texture,
-                              epochs = 50)
+feature_correlations = dat$feature_correlations,
+feature_texture = dat$feature_texture,
+epochs = 50)
 head(sample_texture(gan, 5))
 }
 }

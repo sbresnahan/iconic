@@ -2,7 +2,7 @@
 % Please edit documentation in R/estimate.R
 \name{.estimate_total_surv_driver}
 \alias{.estimate_total_surv_driver}
-\title{Total-effect survival estimation driver (internal, v0.9.4)}
+\title{Total-effect survival estimation driver}
 \usage{
 .estimate_total_surv_driver(
   data,
@@ -16,7 +16,7 @@
 }
 \description{
 Runs all eligible survival estimators on a single time-to-event
-outcome.  Returns a data frame with the same columns as
+outcome. Returns a data frame with the same columns as
 \code{.estimate_total_driver}.
 }
 \keyword{internal}

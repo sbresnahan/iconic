@@ -16,18 +16,18 @@ iconic_recommend(
 \item{data}{An \code{iconic_data} object.}
 
 \item{diagnosis}{Optional \code{iconic_diagnosis} from
-\code{\link{iconic_diagnose}()}.  If \code{NULL}, auto-eligibility
+\code{\link{iconic_diagnose}()}. If \code{NULL}, auto-eligibility
 is computed from the data.}
 
 \item{estimate}{Optional estimate data frame from
-\code{\link{iconic_estimate}()}.  Used to report point estimates
+\code{\link{iconic_estimate}()}. Used to report point estimates
 alongside the recommendation.}
 
 \item{sensitivity}{Optional \code{iconic_sensitivity} from
-\code{\link{iconic_sensitivity}()}.  Used for robustness ranking
+\code{\link{iconic_sensitivity}()}. Used for robustness ranking
 within tiers.}
 
-\item{criterion}{Character (v0.9.2, JYH #544): \code{"combined"} (default),
+\item{criterion}{Character: \code{"combined"} (default),
 \code{"minimax_bias"}, or \code{"ci_coverage"}. Controls how robustness
 is ranked within tiers. \code{"combined"} blends bias and CI coverage;
 \code{"minimax_bias"} ranks by worst-case bias across the violation grid;
@@ -39,13 +39,13 @@ is ranked within tiers. \code{"combined"} blends bias and CI coverage;
 An \code{iconic_recommendation} S3 object: a named list with
 \code{$ranking} (data frame: estimator, tier, eligible, rank,
 rationale), \code{$recommended} (name of top estimator),
-\code{$recommended_tier}, \code{$per_scenario} (v0.9.2, when
-\code{sensitivity} is supplied), and \code{$summary}.
+\code{$recommended_tier}, \code{$per_scenario}
+(when \code{sensitivity} is supplied), and \code{$summary}.
 }
 \description{
 Ranks all eligible estimators by identification strength (tier) and,
 when a sensitivity analysis is supplied, by robustness to assumption
-violations.  Returns the top-ranked estimator with a transparent
+violations. Returns the top-ranked estimator with a transparent
 rationale.
 }
 \details{
@@ -70,10 +70,10 @@ degrade least across the assumption-violation surface ranks higher.
 \examples{
 \donttest{
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-                    G = rnorm(100), W = matrix(rnorm(100*10), 10, 100))
+G = rnorm(100), W = matrix(rnorm(100*10), 10, 100))
 diag <- iconic_diagnose(data)
-est  <- iconic_estimate(data, diagnosis = diag)
-rec  <- iconic_recommend(data, diagnosis = diag, estimate = est)
+est <- iconic_estimate(data, diagnosis = diag)
+rec <- iconic_recommend(data, diagnosis = diag, estimate = est)
 print(rec)
 }
 }

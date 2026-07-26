@@ -34,7 +34,7 @@ A \code{patchwork} ggplot object.
 }
 \description{
 Produces a 3-panel figure showing the ICONIC model selection
-workflow on example data.  Panels: (A) eligibility table from
+workflow on example data. Panels: (A) eligibility table from
 \code{iconic_diagnose()}, (B) NDE/NIE forest plot from
 \code{iconic_estimate()}, (C) degradation surface heatmap from
 \code{iconic_sensitivity()}.

@@ -1,8 +1,7 @@
 # ============================================================
-# TODO(v1.0): supplement — move generative pipeline detail to supplement
-# (JYH #416). The comprehensive draft documents the GAN texture model
+#. The comprehensive draft documents the GAN texture model
 # inline; when condensed to a journal submission, this material moves to
-# a supplementary methods section. No code change in v0.9.2.
+# a supplementary methods section. No code change.
 # ============================================================
 # Generative texture model trained on the user's real data.
 #
@@ -113,7 +112,7 @@ check_torch_setup <- function() {
 #' 1024 -> output_dim`, ReLU + batch-norm + dropout, linear output.
 #'
 #' @param output_dim Number of output variables (columns of the training frame).
-#' @param noise_dim  Latent noise dimension. Default 100.
+#' @param noise_dim Latent noise dimension. Default 100.
 #' @return A torch `nn_module` instance. Requires torch.
 #' @keywords internal
 create_generator <- function(output_dim, noise_dim = 100) {
@@ -123,10 +122,10 @@ create_generator <- function(output_dim, noise_dim = 100) {
     initialize = function(noise_dim, output_dim) {
       self$net <- torch::nn_sequential(
         torch::nn_linear(noise_dim, 256), torch::nn_relu(),
-        torch::nn_batch_norm1d(256),      torch::nn_dropout(0.2),
-        torch::nn_linear(256, 512),       torch::nn_relu(),
-        torch::nn_batch_norm1d(512),      torch::nn_dropout(0.2),
-        torch::nn_linear(512, 1024),      torch::nn_relu(),
+        torch::nn_batch_norm1d(256), torch::nn_dropout(0.2),
+        torch::nn_linear(256, 512), torch::nn_relu(),
+        torch::nn_batch_norm1d(512), torch::nn_dropout(0.2),
+        torch::nn_linear(512, 1024), torch::nn_relu(),
         torch::nn_linear(1024, output_dim))
     },
     forward = function(z) self$net(z))
@@ -148,8 +147,8 @@ create_discriminator <- function(input_dim) {
     initialize = function(input_dim) {
       self$net <- torch::nn_sequential(
         torch::nn_linear(input_dim, 1024), torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
-        torch::nn_linear(1024, 512),       torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
-        torch::nn_linear(512, 256),        torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
+        torch::nn_linear(1024, 512), torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
+        torch::nn_linear(512, 256), torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
         torch::nn_linear(256, 1))
     },
     forward = function(x) self$net(x))
@@ -169,49 +168,49 @@ create_discriminator <- function(input_dim) {
 #' exclusivity, so synthetic draws respect the discrete structure.
 #'
 #' Feature-level residual correlation matrices (for the Y and W panels)
-#' can be attached via the `feature_correlations` argument.  When present,
+#' can be attached via the `feature_correlations` argument. When present,
 #' [run_single_iteration()] uses them to inject correlated noise into the
 #' simulated outcome and negative-control panels.
 #'
 #' A feature-level copula texture model for the mediator (M) panel can be
 #' attached via the `feature_texture` argument (an
-#' `iconic_feature_texture` object from [train_feature_texture()]).  When
+#' `iconic_feature_texture` object from [train_feature_texture()]). When
 #' present, [run_single_iteration()] uses it to draw realistic mediator
 #' feature vectors that preserve the marginal distributions and
 #' cross-feature correlation structure of the user's mediator panel.
 #'
-#' @param real_data  Data frame of numeric variables (e.g. the
-#'   `gan_training_data` element from [load_real_input_data()]). Complete cases
-#'   are used.
+#' @param real_data Data frame of numeric variables (e.g. the
+#' `gan_training_data` element from [load_real_input_data()]). Complete cases
+#' are used.
 #' @param feature_correlations Optional list with elements `Y`, `W`,
-#'   each a p x p residual correlation matrix from
-#'   [load_real_input_data()].  When supplied, the matrices are stored in the
-#'   returned `iconic_gan` object and used by [run_single_iteration()] to
-#'   generate correlated noise.  Default `NULL`.
+#' each a p x p residual correlation matrix from
+#' [load_real_input_data()]. When supplied, the matrices are stored in the
+#' returned `iconic_gan` object and used by [run_single_iteration()] to
+#' generate correlated noise. Default `NULL`.
 #' @param feature_texture Optional `iconic_feature_texture` object from
-#'   [train_feature_texture()].  When supplied, it is stored in the returned
-#'   `iconic_gan` object and used by [run_single_iteration()] to inject
-#'   realistic mediator texture.  Default `NULL`.
-#' @param epochs     GAN training epochs. Default 300.
+#' [train_feature_texture()]. When supplied, it is stored in the returned
+#' `iconic_gan` object and used by [run_single_iteration()] to inject
+#' realistic mediator texture. Default `NULL`.
+#' @param epochs GAN training epochs. Default 300.
 #' @param batch_size Mini-batch size. Default 32.
-#' @param lr         Adam learning rate. Default 2e-4.
-#' @param seed       Optional RNG seed (sets both R and torch seeds).
-#' @param verbose    Print progress. Default TRUE.
+#' @param lr Adam learning rate. Default 2e-4.
+#' @param seed Optional RNG seed (sets both R and torch seeds).
+#' @param verbose Print progress. Default TRUE.
 #'
 #' @return An `iconic_gan` object: a list with `model_type` (`"gan"`),
-#'   `columns`, `norm` (per-column centre/scale), `binary_cols` (names of
-#'   0/1 columns), `onehot_groups` (list of one-hot dummy groups),
-#'   `feature_correlations` (list or NULL), `feature_texture` (object or
-#'   NULL), training statistics, and the trained networks + loss history.
+#' `columns`, `norm` (per-column centre/scale), `binary_cols` (names of
+#' 0/1 columns), `onehot_groups` (list of one-hot dummy groups),
+#' `feature_correlations` (list or NULL), `feature_texture` (object or
+#' NULL), training statistics, and the trained networks + loss history.
 #' @export
 #'
 #' @examples
 #' \donttest{
 #' dat <- load_real_input_data(example = TRUE)
 #' gan <- train_gan_on_real_data(dat$gan_training_data,
-#'                               feature_correlations = dat$feature_correlations,
-#'                               feature_texture = dat$feature_texture,
-#'                               epochs = 50)
+#' feature_correlations = dat$feature_correlations,
+#' feature_texture = dat$feature_texture,
+#' epochs = 50)
 #' head(sample_texture(gan, 5))
 #' }
 train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
@@ -227,18 +226,18 @@ train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
   X <- as.data.frame(real_data)
   X <- X[stats::complete.cases(X), , drop = FALSE]
   num <- vapply(X, is.numeric, logical(1))
-  X   <- X[, num, drop = FALSE]
+  X <- X[, num, drop = FALSE]
   if (!nrow(X) || !ncol(X)) stop("real_data has no complete numeric rows/columns to train on.")
 
-  columns      <- names(X)
-  binary_cols  <- .detect_binary_cols(X)
+  columns <- names(X)
+  binary_cols <- .detect_binary_cols(X)
   onehot_groups <- .detect_onehot_groups(columns)
 
-  ctr     <- vapply(X, mean, numeric(1))
-  scl     <- vapply(X, stats::sd, numeric(1)); scl[scl == 0 | is.na(scl)] <- 1
-  Xn      <- as.matrix(sweep(sweep(X, 2, ctr, "-"), 2, scl, "/"))
+  ctr <- vapply(X, mean, numeric(1))
+  scl <- vapply(X, stats::sd, numeric(1)); scl[scl == 0 | is.na(scl)] <- 1
+  Xn <- as.matrix(sweep(sweep(X, 2, ctr, "-"), 2, scl, "/"))
 
-  norm  <- list(center = ctr, scale = scl)
+  norm <- list(center = ctr, scale = scl)
   stats <- list(mu = colMeans(as.matrix(X)), Sigma = stats::cov(as.matrix(X)),
                 n_train = nrow(X))
 
@@ -257,42 +256,42 @@ train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
                             feature_texture = NULL) {
   if (!is.null(seed)) torch::torch_manual_seed(seed)
   noise_dim <- 100L
-  d_in      <- ncol(Xn)
-  n         <- nrow(Xn)
-  bs        <- min(batch_size, n)
+  d_in <- ncol(Xn)
+  n <- nrow(Xn)
+  bs <- min(batch_size, n)
 
   G <- create_generator(d_in, noise_dim)
   D <- create_discriminator(d_in)
   g_opt <- torch::optim_adam(G$parameters, lr = lr, betas = c(0.5, 0.999))
   d_opt <- torch::optim_adam(D$parameters, lr = lr, betas = c(0.5, 0.999))
-  bce   <- function(logit, target) torch::nnf_binary_cross_entropy_with_logits(logit, target)
+  bce <- function(logit, target) torch::nnf_binary_cross_entropy_with_logits(logit, target)
   real_t <- torch::torch_tensor(Xn, dtype = torch::torch_float())
 
   d_hist <- numeric(epochs); g_hist <- numeric(epochs)
   for (ep in seq_len(epochs)) {
-    idx   <- sample.int(n, bs, replace = n < bs)
+    idx <- sample.int(n, bs, replace = n < bs)
     batch <- real_t[idx, , drop = FALSE]
 
     # Discriminator step (detach fake so the generator is not updated here).
     d_opt$zero_grad()
-    z         <- torch::torch_randn(bs, noise_dim)
-    fake      <- G(z)
-    d_real    <- D(batch)
-    d_fake    <- D(fake$detach())
-    d_loss    <- bce(d_real, torch::torch_ones_like(d_real) * 0.9) +
+    z <- torch::torch_randn(bs, noise_dim)
+    fake <- G(z)
+    d_real <- D(batch)
+    d_fake <- D(fake$detach())
+    d_loss <- bce(d_real, torch::torch_ones_like(d_real) * 0.9) +
                  bce(d_fake, torch::torch_zeros_like(d_fake))
     d_loss$backward(); d_opt$step()
 
     # Generator step (fresh noise/graph; non-saturating loss).
     g_opt$zero_grad()
-    z2        <- torch::torch_randn(bs, noise_dim)
+    z2 <- torch::torch_randn(bs, noise_dim)
     gen_logit <- D(G(z2))
-    g_loss    <- bce(gen_logit, torch::torch_ones_like(gen_logit))
+    g_loss <- bce(gen_logit, torch::torch_ones_like(gen_logit))
     g_loss$backward(); g_opt$step()
 
     d_hist[ep] <- as.numeric(d_loss$item()); g_hist[ep] <- as.numeric(g_loss$item())
     if (verbose && ep %% max(1L, epochs %/% 5L) == 0)
-      message(sprintf("epoch %d/%d  D=%.3f  G=%.3f", ep, epochs, d_hist[ep], g_hist[ep]))
+      message(sprintf("epoch %d/%d D=%.3f G=%.3f", ep, epochs, d_hist[ep], g_hist[ep]))
   }
   G$eval()
 
@@ -314,16 +313,16 @@ train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
 #' (the column with the highest pre-rounding value wins per row).
 #'
 #' @param trained_gan An `iconic_gan` object from [train_gan_on_real_data()].
-#' @param n           Number of rows to draw.
+#' @param n Number of rows to draw.
 #'
 #' @return A data frame of `n` rows with the trained columns, on the original
-#'   (de-normalised) scale. Binary columns contain only 0/1 values.
+#' (de-normalised) scale. Binary columns contain only 0/1 values.
 #' @export
 sample_texture <- function(trained_gan, n) {
   stopifnot(inherits(trained_gan, "iconic_gan"))
   cols <- trained_gan$columns
 
-  z   <- torch::torch_randn(n, trained_gan$noise_dim)
+  z <- torch::torch_randn(n, trained_gan$noise_dim)
   out <- torch::with_no_grad(as.matrix(trained_gan$generator(z)$detach()))
   # De-normalise from the training z-scores back to the original scale.
   out <- sweep(sweep(out, 2, trained_gan$norm$scale, "*"),
@@ -332,9 +331,9 @@ sample_texture <- function(trained_gan, n) {
   names(out) <- cols
 
   # Round binary columns back to 0/1 and enforce one-hot mutual exclusivity.
-  bin  <- trained_gan$binary_cols %||% character(0)
+  bin <- trained_gan$binary_cols %||% character(0)
   grps <- trained_gan$onehot_groups %||% list()
-  out  <- .enforce_discrete(out, bin, grps)
+  out <- .enforce_discrete(out, bin, grps)
   out
 }
 
@@ -351,20 +350,20 @@ sample_texture <- function(trained_gan, n) {
 #' @export
 print.iconic_gan <- function(x, ...) {
   cat("<iconic_gan>\n")
-  cat("  engine     : torch GAN\n")
-  cat("  variables  :", paste(x$columns, collapse = ", "), "\n")
-  cat("  trained on :", x$n_train, "samples\n")
+  cat(" engine : torch GAN\n")
+  cat(" variables :", paste(x$columns, collapse = ", "), "\n")
+  cat(" trained on :", x$n_train, "samples\n")
   bin <- x$binary_cols %||% character(0)
   if (length(bin))
-    cat("  binary cols:", paste(bin, collapse = ", "), "\n")
+    cat(" binary cols:", paste(bin, collapse = ", "), "\n")
   fc <- x$feature_correlations %||% list()
   fc_present <- names(fc)[vapply(fc, function(m) !is.null(m), logical(1))]
   if (length(fc_present))
-    cat("  feat. cors :", paste(fc_present, collapse = ", "), "\n")
+    cat(" feat. cors :", paste(fc_present, collapse = ", "), "\n")
   if (!is.null(x$feature_texture))
-    cat("  feat. tex  : copula (", x$feature_texture$n_features, " features)\n", sep = "")
+    cat(" feat. tex : copula (", x$feature_texture$n_features, " features)\n", sep = "")
   if (!is.null(x$loss))
-    cat(sprintf("  final loss : D=%.3f  G=%.3f\n",
+    cat(sprintf(" final loss : D=%.3f G=%.3f\n",
                 utils::tail(x$loss$d, 1), utils::tail(x$loss$g, 1)))
   invisible(x)
 }

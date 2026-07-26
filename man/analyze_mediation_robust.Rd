@@ -15,7 +15,7 @@ analyze_mediation_robust(
 }
 \arguments{
 \item{iteration_data}{Dataset list from \code{\link{run_single_iteration}()}
-(or \code{generate_toy_data()}).  When \code{Gm} is present, the
+(or \code{generate_toy_data()}). When \code{Gm} is present, the
 2-stage MR estimator is included.}
 
 \item{test_features}{Optional integer indices of outcome features to test.
@@ -26,8 +26,8 @@ Default \code{NULL} (all features).}
 \item{n_cores}{Number of parallel workers. Default 1 (sequential).
 Uses \code{parallel::mclapply} on Unix and a PSOCK cluster on Windows.}
 
-\item{se_method}{"delta" (default), "bootstrap" (v0.9.2, JYH #867), or
-"composite" (v0.9.3, Huang 2019 JT-comp).  See
+\item{se_method}{"delta" (default), "bootstrap", or
+"composite". See
 \code{\link{iconic_estimate}()} for details.}
 
 \item{n_boot}{Number of bootstrap resamples when
@@ -42,10 +42,10 @@ Data frame: \code{feature}, \code{method}, \code{NDE}, \code{NDE_se},
 Reference-named entry point: applies UNADJ, DIRECT, COCA, IV2SLS, and PGC
 (matrix bridge) mediation estimators to each tested outcome feature and
 returns tidy per-feature results with significance flags for both NDE
-and NIE.  When the dataset includes a mediator instrument (\code{Gm}),
+and NIE. When the dataset includes a mediator instrument (\code{Gm}),
 the 2-stage MR estimator \code{\link{fit_iv2sls_mediation2}} (method
-"IV2SLS2") is also run.  When the dataset includes path-specific
-negative controls (\code{W1}, \code{W2}; v0.5.0 DGP), the two-stage
+"IV2SLS2") is also run. When the dataset includes path-specific
+negative controls (\code{W1}, \code{W2};), the two-stage
 proximal estimator \code{\link{fit_pgc_mediation2}} is run as "PGC2"
 (without Gm) and "PGC2Gm" (with Gm, when Gm is also present).
 }

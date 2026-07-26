@@ -45,9 +45,9 @@ renamed with a \code{cov_} prefix.}
 texture model (mediator panel): \code{"auto"} (default, uses parametric
 if KS test passes at p > 0.05, otherwise empirical), \code{"empirical"}
 (always empirical CDF), or \code{"parametric"} (always best parametric
-fit by AIC).  See \code{\link[=train_feature_texture]{train_feature_texture()}}.}
+fit by AIC). See \code{\link[=train_feature_texture]{train_feature_texture()}}.}
 
-\item{residualize_on}{Character (v0.9.2, JYH #1109): \code{"ZC"} (default)
+\item{residualize_on}{Character: \code{"ZC"} (default)
 residualizes the Y/W correlation on exposure + covariates only;
 \code{"ZCW"} additionally residualizes on the W bridge proxy (PC1 of W),
 reducing U-signature double-counting. Recommended only when the
@@ -74,7 +74,7 @@ covariate frame, and returns the tidy structures used by
 In addition to the sample-level training frame (one row per sample with
 exposure level, outcome level, and encoded covariates), the function
 computes feature-level residual correlation matrices for each available
-panel (Y, M, W).  These capture the cross-feature correlation structure
+panel (Y, M, W). These capture the cross-feature correlation structure
 that remains after removing the sample-level signal, so the simulation
 can inject realistic correlated noise into the mediator and negative-
 control panels.

@@ -9,7 +9,7 @@ nc_independence_check_gm(dat, fdr_level = 0.1, n_cores = 1)
 \arguments{
 \item{dat}{Dataset list from \code{\link[=run_single_iteration]{run_single_iteration()}} or
 \code{\link[=generate_toy_data]{generate_toy_data()}}, containing \code{Gm}, \code{W}, and
-\code{synthetic_data}.  If \code{Gm} is absent (i.e. no mediator
+\code{synthetic_data}. If \code{Gm} is absent (i.e. no mediator
 instrument was generated), the function returns \code{NULL}
 with a message.}
 
@@ -27,10 +27,10 @@ Returns \code{NULL} if \code{dat$Gm} is not present.
 \description{
 For each control feature, computes the partial correlation with the
 mediator-specific genetic instrument Gm after residualising both on
-observed covariates C, and reports the p-value.  Controls significantly
+observed covariates C, and reports the p-value. Controls significantly
 associated with Gm after FDR correction may carry eQTL / allele-specific
 effects that violate the mediator-instrument-independence assumption
-(A2').  This is the mediator-instrument analogue of
+(A2'). This is the mediator-instrument analogue of
 \code{\link[=nc_independence_check]{nc_independence_check()}}: just as the exposure instrument G must be
 independent of the negative controls, so must the mediator instrument Gm.
 }

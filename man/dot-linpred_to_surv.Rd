@@ -2,7 +2,7 @@
 % Please edit documentation in R/surv_dgp.R
 \name{.linpred_to_surv}
 \alias{.linpred_to_surv}
-\title{Convert a linear predictor to survival data (internal, v0.9.4)}
+\title{Convert a linear predictor to survival data}
 \usage{
 .linpred_to_surv(eta, h0 = 0.1, event_frac = 0.6, censor_rate = NULL)
 }
@@ -23,7 +23,7 @@ list(surv_time, surv_event, true_h0, true_censor_rate)
 \description{
 Given an n-vector (or n x p matrix) of linear predictors \code{eta} and a
 target event fraction, returns a list with \code{surv_time} and
-\code{surv_event} vectors.  When \code{eta} is a matrix, the first
+\code{surv_event} vectors. When \code{eta} is a matrix, the first
 column is used (survival outcomes are scalar — n_features = 1).
 }
 \keyword{internal}

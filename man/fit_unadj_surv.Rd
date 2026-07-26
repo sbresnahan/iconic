@@ -34,7 +34,7 @@ Named list: \code{beta}, \code{se}, \code{pvalue}.
 }
 \description{
 Regresses the survival outcome on the exposure Z (plus covariates)
-with no instrument or negative-control adjustment.  Bias reference.
+with no instrument or negative-control adjustment. Bias reference.
 }
 \details{
 When \code{effect_scale = "loghr"} (default), fits a Cox

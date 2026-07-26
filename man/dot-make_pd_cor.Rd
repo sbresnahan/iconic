@@ -14,6 +14,6 @@ A valid correlation matrix (symmetric, positive-definite, unit diagonal).
 }
 \description{
 Clips eigenvalues to a small positive floor and renormalizes to unit
-diagonal.  Same approach as .residual_correlation() in load_data.R.
+diagonal. Same approach as .residual_correlation() in load_data.R.
 }
 \keyword{internal}

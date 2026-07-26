@@ -15,7 +15,7 @@
 }
 \description{
 Regresses each NC feature on the outcome residualized on Z + C and
-takes sqrt(R^2), averaged across features.  This is a composite of
+takes sqrt(R^2), averaged across features. This is a composite of
 coverage and confounder strength, not pure coverage.
 }
 \keyword{internal}

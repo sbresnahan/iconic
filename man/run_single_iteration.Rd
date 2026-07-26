@@ -55,7 +55,7 @@ covariates are used.}
 \item{n_confounders}{Number of latent confounders \code{k}. Default 1
 (backward-compatible single-confounder model).}
 
-\item{n_mediators}{Number of independent mediators (v0.8.4). When > 1,
+\item{n_mediators}{Number of independent mediators. When > 1,
 each mediator has its own genetic instrument Gm and contributes
 additively to Y. Default 1 (single mediator, backward compatible).}
 
@@ -92,7 +92,7 @@ violating the exclusion restriction. 0 = no pleiotropy (valid instrument,
 original DGP). Default 0. When > 0, G affects Y directly in addition to
 through Z, allowing benchmarking of IV/2SLS under instrument invalidity.}
 
-\item{phi}{Strength of the mediator instrument Gm -> M (v0.4.0).
+\item{phi}{Strength of the mediator instrument Gm -> M.
 0 = no mediator instrument (original DGP, no Gm generated). Default 0.
 When > 0, a valid instrument for M is generated (independent of U and G,
 no direct path to Y), enabling point identification of NDE/NIE via
@@ -100,48 +100,48 @@ no direct path to Y), enabling point identification of NDE/NIE via
 
 \item{gamma_G}{Strength of the exposure instrument G -> Z. Default 0.6.}
 
-\item{rho_G1}{Correlation of G1 with U_XM (v0.5.0, instrument exogeneity
+\item{rho_G1}{Correlation of G1 with U_XM (instrument exogeneity
 violation). Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY (v0.5.0, instrument exogeneity
+\item{rho_G2}{Correlation of G2 with U_MY (instrument exogeneity
 violation). Default 0.}
 
 \item{rho_pop}{Shared population structure inducing G1-G2 correlation
-(v0.5.0). Default 0.}
+Default 0.}
 
 \item{separate_U}{If TRUE, draw separate confounders for the Z->M and M->Y
-paths (v0.5.0). Default FALSE.}
+paths. Default FALSE.}
 
-\item{omega_1}{Coverage of U_XM by W1 (v0.5.0). NULL = use \code{coverage}.}
+\item{omega_1}{Coverage of U_XM by W1. NULL = use \code{coverage}.}
 
-\item{omega_2}{Coverage of U_MY by W2 (v0.5.0). NULL = use \code{coverage}.}
+\item{omega_2}{Coverage of U_MY by W2. NULL = use \code{coverage}.}
 
-\item{feat_cor}{Within-module feature correlation (v0.8.1). When > 0 and
+\item{feat_cor}{Within-module feature correlation. When > 0 and
 the GAN does not provide feature_correlations, a block-diagonal
 correlation matrix is used for the NC and outcome noise. GAN-learned
 correlations take precedence. Default 0.}
 
-\item{u_strength}{Numeric vector (v0.9.2, JYH #864): per-confounder strength
+\item{u_strength}{Numeric vector: per-confounder strength
 profile (length k). Default NULL → rep(1, k) (equal strength, backward
 compatible). Recycled to length k and normalized so the total confounding
 budget is unchanged.}
 
 \item{w_coverage_profile}{A list with optional \code{w1} and \code{w2}
-numeric vectors (v0.9.2, JYH #864): per-control coverage of U_XM / U_MY
+numeric vectors: per-control coverage of U_XM / U_MY
 (length n_features). Default NULL → scalar omega applied uniformly.}
 
 \item{MMExp, MMOut, MMCon, MMCpG}{Per-pathway confounding multipliers (exposure,
 outcome, controls, methylation). Default 1.}
 
 \item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
-(v0.9.4).  When \code{"survival"}, the linear predictor is converted to
+When \code{"survival"}, the linear predictor is converted to
 \code{surv_time} and \code{surv_event} via an exponential PH model.}
 
-\item{surv_h0}{Baseline hazard for the survival DGP (v0.9.4). Default 0.1.}
+\item{surv_h0}{Baseline hazard for the survival DGP. Default 0.1.}
 
-\item{surv_event_frac}{Target fraction of observed events (v0.9.4). Default 0.6.}
+\item{surv_event_frac}{Target fraction of observed events. Default 0.6.}
 
-\item{surv_censor_rate}{Explicit censoring rate (v0.9.4). Default NULL.}
+\item{surv_censor_rate}{Explicit censoring rate. Default NULL.}
 
 \item{seed}{Optional RNG seed.}
 }
@@ -152,7 +152,7 @@ n_features), \code{Y}, \code{W}, \code{U1}, \code{M}, \code{synthetic_data}, \co
 \code{genetic_instrument}, \code{successful_features}, \code{failed_features}, and
 \code{params}. When \code{phi > 0}, also includes \code{Gm} (numeric vector, length n,
 or \verb{n_mediators x n} matrix when \code{n_mediators > 1}).
-When any v0.5.0 parameter is non-default, also includes \code{G1}, \code{G2},
+When any parameter is non-default, also includes \code{G1}, \code{G2},
 \code{W1}, \code{W2}, \code{U_XM}, \code{U_MY}, and (when \code{rho_pop > 0}) \code{P}.
 When \code{n_mediators > 1}, \code{M} is an \verb{n_mediators x n} matrix.
 }
@@ -163,7 +163,7 @@ Generate one synthetic dataset under the generalised SCM
 \donttest{
 gan <- train_gan_on_real_data(load_real_input_data(example = TRUE)$gan_training_data)
 dat <- run_single_iteration(gan, n_features = 10, n_confounders = 2,
-                            nc_model = "cpg", coverage = 0.5)
+nc_model = "cpg", coverage = 0.5)
 analyze_methods_robust(dat)
 }
 }

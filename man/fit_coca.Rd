@@ -27,9 +27,9 @@ Returns \code{list(beta=NA, se=NA, pvalue=NA)} if estimation is
 unstable (near-zero \eqn{\hat\beta_Y} or extreme ratio).
 }
 \description{
-Implements the Correlated Outcome Control Approach (COCA).  Fits
+Implements the Correlated Outcome Control Approach (COCA). Fits
 \code{w ~ y + Z + covars} and recovers the causal effect as
-\eqn{\hat\beta = -\hat\beta_Z / \hat\beta_Y}.  Standard errors are
+\eqn{\hat\beta = -\hat\beta_Z / \hat\beta_Y}. Standard errors are
 obtained via the delta method.
 }
 \details{

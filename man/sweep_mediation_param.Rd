@@ -34,8 +34,8 @@ sweep_mediation_param(
 \arguments{
 \item{param}{Parameter to vary: one of "beta_Z", "conf_str",
 "w_signal", "alpha_M", "beta_M", "n_samples", "mo_confounding", "phi",
-"rho_G1", "rho_G2", "rho_pop", "omega_1", "omega_2" (v0.5.0),
-"feat_cor" (v0.8.1).}
+"rho_G1", "rho_G2", "rho_pop", "omega_1", "omega_2",
+"feat_cor".}
 
 \item{param_grid}{Numeric vector of values to sweep.}
 
@@ -45,7 +45,7 @@ sweep_mediation_param(
 
 \item{n_features}{Features per replicate. Default 20.}
 
-\item{n_mediators}{Number of independent mediators (v0.8.4). Default 1.}
+\item{n_mediators}{Number of independent mediators. Default 1.}
 
 \item{beta_Z}{Baseline direct effect. Default 0.10.}
 
@@ -59,29 +59,29 @@ sweep_mediation_param(
 
 \item{mo_confounding}{Baseline M-O confounding. Default 0.80.}
 
-\item{phi}{Baseline mediator-instrument strength (v0.4.0).
+\item{phi}{Baseline mediator-instrument strength.
 0 = no mediator instrument. Default 0.}
 
-\item{rho_G1}{Baseline G1-U_XM correlation (v0.5.0). Default 0.}
+\item{rho_G1}{Baseline G1-U_XM correlation. Default 0.}
 
-\item{rho_G2}{Baseline G2-U_MY correlation (v0.5.0). Default 0.}
+\item{rho_G2}{Baseline G2-U_MY correlation. Default 0.}
 
-\item{rho_pop}{Baseline population structure (v0.5.0). Default 0.}
+\item{rho_pop}{Baseline population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders (v0.5.0). Default FALSE.}
+\item{separate_U}{Draw separate confounders. Default FALSE.}
 
-\item{omega_1}{Baseline W1 coverage (v0.5.0). NULL = use w_signal.}
+\item{omega_1}{Baseline W1 coverage. NULL = use w_signal.}
 
-\item{omega_2}{Baseline W2 coverage (v0.5.0). NULL = use w_signal.}
+\item{omega_2}{Baseline W2 coverage. NULL = use w_signal.}
 
-\item{feat_cor}{Baseline within-module feature correlation (v0.8.1). Default 0.}
+\item{feat_cor}{Baseline within-module feature correlation. Default 0.}
 
-\item{u_strength}{Numeric vector (v0.9.2, JYH #864): per-confounder
+\item{u_strength}{Numeric vector: per-confounder
 strength scaling. \code{NULL} = uniform (legacy behavior). See
 \code{\link{generate_toy_data}()}.}
 
 \item{w_coverage_profile}{A list with \code{w1}/\code{w2} per-control
-coverage vectors (v0.9.2, JYH #864). \code{NULL} = uniform coverage.
+coverage vectors. \code{NULL} = uniform coverage.
 See \code{\link{generate_toy_data}()}.}
 
 \item{base_seed}{Seed offset. Default 0.}

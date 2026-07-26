@@ -1,33 +1,32 @@
 # ============================================================
-# TODO(v1.0): supplement — move generative pipeline detail to supplement
-# (JYH #416). The copula texture model documentation moves to a
+#. The copula texture model documentation moves to a
 # supplementary methods section when the draft is condensed. No code
-# change in v0.9.2.
+# change.
 # ============================================================
 # Feature-level texture model for the mediator (M) panel.
 #
 # Learns the full joint distribution of the mediator panel using a
-# Gaussian copula with flexible marginal distributions.  Unlike the
+# Gaussian copula with flexible marginal distributions. Unlike the
 # sample-level GAN (which learns per-sample summaries), this model
 # captures the per-feature marginal shapes (skewness, tails, bounded
 # support) and their cross-feature dependence structure.
 #
 # Marginal fitting:
-#   - "empirical":  empirical CDF (step function from observed data)
-#   - "parametric": best fit among {normal, log-normal, gamma, beta} by AIC
-#   - "auto" (default): fit parametric families, run KS test; use the
-#     best parametric fit if it passes KS at p > 0.05, otherwise fall
-#     back to empirical CDF.  The user can override with marginal_method.
+# - "empirical": empirical CDF (step function from observed data)
+# - "parametric": best fit among {normal, log-normal, gamma, beta} by AIC
+# - "auto" (default): fit parametric families, run KS test; use the
+# best parametric fit if it passes KS at p > 0.05, otherwise fall
+# back to empirical CDF. The user can override with marginal_method.
 #
 # Dependence:
-#   Gaussian copula — the p x p correlation matrix of the normal scores
-#   (rank-transformed to uniform, then qnorm).  Near-PD corrected.
+# Gaussian copula — the p x p correlation matrix of the normal scores
+# (rank-transformed to uniform, then qnorm). Near-PD corrected.
 #
 # Sampling:
-#   Draw n samples from MVN(0, copula_cor), then transform each feature
-#   through its inverse marginal CDF.  The result is centered and scaled
-#   so the texture is zero-mean noise; the structural signal provides the
-#   mean in run_single_iteration().
+# Draw n samples from MVN(0, copula_cor), then transform each feature
+# through its inverse marginal CDF. The result is centered and scaled
+# so the texture is zero-mean noise; the structural signal provides the
+# mean in run_single_iteration().
 # ============================================================
 
 
@@ -37,9 +36,9 @@
 #' (where applicable) by maximum likelihood, and returns the best fit
 #' by AIC along with the KS test p-value.
 #'
-#' @param x  Numeric vector (the feature's observed values).
+#' @param x Numeric vector (the feature's observed values).
 #' @return A list with \code{family}, \code{params}, \code{aic}, \code{ks_p},
-#'   or NULL if no parametric fit succeeds.
+#' or NULL if no parametric fit succeeds.
 #' @keywords internal
 .fit_parametric_marginal <- function(x) {
   x <- x[is.finite(x)]
@@ -119,9 +118,9 @@
 #'
 #' Returns the quantile function for a parametric or empirical marginal.
 #'
-#' @param marginal  A marginal specification list from .fit_parametric_marginal
-#'   or an empirical CDF object.
-#' @param p         Vector of probabilities in (0, 1).
+#' @param marginal A marginal specification list from .fit_parametric_marginal
+#' or an empirical CDF object.
+#' @param p Vector of probabilities in (0, 1).
 #' @return Numeric vector of quantiles.
 #' @keywords internal
 .marginal_quantile <- function(marginal, p) {
@@ -132,10 +131,10 @@
     fam <- marginal$family
     prm <- marginal$params
     switch(fam,
-      normal    = stats::qnorm(p, prm$mu, prm$sigma),
+      normal = stats::qnorm(p, prm$mu, prm$sigma),
       lognormal = stats::qlnorm(p, prm$mu, prm$sigma),
-      gamma     = stats::qgamma(p, shape = prm$shape, rate = prm$rate),
-      beta      = stats::qbeta(p, shape1 = prm$shape1, shape2 = prm$shape2),
+      gamma = stats::qgamma(p, shape = prm$shape, rate = prm$rate),
+      beta = stats::qbeta(p, shape1 = prm$shape1, shape2 = prm$shape2),
       # Fallback: normal
       stats::qnorm(p)
     )
@@ -160,8 +159,8 @@
 #' Returns the cumulative distribution function for a parametric or
 #' empirical marginal.
 #'
-#' @param marginal  A marginal specification list.
-#' @param q         Numeric vector of quantiles.
+#' @param marginal A marginal specification list.
+#' @param q Numeric vector of quantiles.
 #' @return Numeric vector of probabilities.
 #' @keywords internal
 .marginal_cdf <- function(marginal, q) {
@@ -169,10 +168,10 @@
     fam <- marginal$family
     prm <- marginal$params
     switch(fam,
-      normal    = stats::pnorm(q, prm$mu, prm$sigma),
+      normal = stats::pnorm(q, prm$mu, prm$sigma),
       lognormal = stats::plnorm(q, prm$mu, prm$sigma),
-      gamma     = stats::pgamma(q, shape = prm$shape, rate = prm$rate),
-      beta      = stats::pbeta(q, shape1 = prm$shape1, shape2 = prm$shape2),
+      gamma = stats::pgamma(q, shape = prm$shape, rate = prm$rate),
+      beta = stats::pbeta(q, shape1 = prm$shape1, shape2 = prm$shape2),
       stats::pnorm(q)
     )
   } else if (marginal$type == "empirical") {
@@ -189,9 +188,9 @@
 #' Near-PD correction for a correlation matrix (internal)
 #'
 #' Clips eigenvalues to a small positive floor and renormalizes to unit
-#' diagonal.  Same approach as .residual_correlation() in load_data.R.
+#' diagonal. Same approach as .residual_correlation() in load_data.R.
 #'
-#' @param cor_mat  A symmetric matrix (intended to be a correlation matrix).
+#' @param cor_mat A symmetric matrix (intended to be a correlation matrix).
 #' @return A valid correlation matrix (symmetric, positive-definite, unit diagonal).
 #' @keywords internal
 .make_pd_cor <- function(cor_mat) {
@@ -211,35 +210,35 @@
 #' Train a feature-level texture model for the mediator panel
 #'
 #' Learns the joint distribution of a features x samples mediator matrix
-#' using a Gaussian copula with flexible marginal distributions.  For each
+#' using a Gaussian copula with flexible marginal distributions. For each
 #' feature, the marginal is fitted as either an empirical CDF (default) or
 #' the best parametric family (normal, log-normal, gamma, beta) selected by
-#' AIC with a Kolmogorov-Smirnov goodness-of-fit check.  Cross-feature
+#' AIC with a Kolmogorov-Smirnov goodness-of-fit check. Cross-feature
 #' dependence is captured by the Gaussian copula correlation matrix.
 #'
 #' The resulting model can be sampled via [sample_feature_texture()] to
 #' produce realistic synthetic feature vectors that preserve the marginal
 #' shapes and correlation structure of the user's mediator panel.
 #'
-#' @param M_matrix       Mediator panel, `features x samples` (e.g. placental
-#'   transcript expression, one row per transcript, one column per sample).
+#' @param M_matrix Mediator panel, `features x samples` (e.g. placental
+#' transcript expression, one row per transcript, one column per sample).
 #' @param marginal_method Marginal fitting method: \code{"auto"} (default,
-#'   uses parametric if KS test passes at p > 0.05, otherwise empirical),
-#'   \code{"empirical"} (always use empirical CDF), or \code{"parametric"}
-#'   (always use best parametric fit by AIC).
+#' uses parametric if KS test passes at p > 0.05, otherwise empirical),
+#' \code{"empirical"} (always use empirical CDF), or \code{"parametric"}
+#' (always use best parametric fit by AIC).
 #'
 #' @return An \code{iconic_feature_texture} S3 object: a named list with
-#'   \code{marginals} (list of per-feature marginal specs), \code{copula_cor}
-#'   (p x p correlation matrix), \code{n_features}, \code{n_samples},
-#'   \code{marginal_method}, and \code{marginal_types} (summary of how many
-#'   features used each method).
+#' \code{marginals} (list of per-feature marginal specs), \code{copula_cor}
+#' (p x p correlation matrix), \code{n_features}, \code{n_samples},
+#' \code{marginal_method}, and \code{marginal_types} (summary of how many
+#' features used each method).
 #' @export
 #'
 #' @examples
 #' \donttest{
-#' M <- matrix(rnorm(30 * 200), 30, 200)  # 30 transcripts, 200 samples
+#' M <- matrix(rnorm(30 * 200), 30, 200) # 30 transcripts, 200 samples
 #' ft <- train_feature_texture(M)
-#' draws <- sample_feature_texture(ft, 100)  # 30 x 100 synthetic draws
+#' draws <- sample_feature_texture(ft, 100) # 30 x 100 synthetic draws
 #' }
 train_feature_texture <- function(M_matrix, marginal_method = "auto") {
   M_matrix <- as.matrix(M_matrix)
@@ -317,12 +316,12 @@ train_feature_texture <- function(M_matrix, marginal_method = "auto") {
 
   structure(
     list(
-      marginals       = marginals,
-      copula_cor      = copula_cor,
-      n_features      = p,
-      n_samples       = n,
+      marginals = marginals,
+      copula_cor = copula_cor,
+      n_features = p,
+      n_samples = n,
       marginal_method = marginal_method,
-      marginal_types  = marginal_types
+      marginal_types = marginal_types
     ),
     class = "iconic_feature_texture"
   )
@@ -333,20 +332,20 @@ train_feature_texture <- function(M_matrix, marginal_method = "auto") {
 #'
 #' Samples from the Gaussian copula: draws n_samples from
 #' MVN(0, copula_cor), then transforms each feature through its inverse
-#' marginal CDF.  The result is centered and scaled to zero mean and unit
+#' marginal CDF. The result is centered and scaled to zero mean and unit
 #' variance per feature, so the texture acts as noise that the structural
 #' signal in [run_single_iteration()] provides the mean for.
 #'
 #' @param feature_texture An \code{iconic_feature_texture} object from
-#'   [train_feature_texture()].
-#' @param n_samples  Number of synthetic samples to draw.
+#' [train_feature_texture()].
+#' @param n_samples Number of synthetic samples to draw.
 #' @param n_features Target number of features. If NULL, uses the number
-#'   of features in the training data. If larger, additional features are
-#'   drawn by sampling existing columns with replacement and adding
-#'   independent noise. If smaller, the first n_features are used.
+#' of features in the training data. If larger, additional features are
+#' drawn by sampling existing columns with replacement and adding
+#' independent noise. If smaller, the first n_features are used.
 #'
 #' @return A \code{n_features x n_samples} matrix of synthetic texture
-#'   values, centered and scaled per feature.
+#' values, centered and scaled per feature.
 #' @export
 #'
 #' @examples
@@ -406,19 +405,19 @@ sample_feature_texture <- function(feature_texture, n_samples, n_features = NULL
 #' @export
 print.iconic_feature_texture <- function(x, ...) {
   cat("<iconic_feature_texture>\n")
-  cat("  features  :", x$n_features, "\n")
-  cat("  samples   :", x$n_samples, "\n")
-  cat("  method    :", x$marginal_method, "\n")
+  cat(" features :", x$n_features, "\n")
+  cat(" samples :", x$n_samples, "\n")
+  cat(" method :", x$marginal_method, "\n")
 
   # Summarise marginal types
   type_tab <- table(x$marginal_types)
   type_str <- paste(sprintf("%s (%d)", names(type_tab), as.integer(type_tab)),
                     collapse = ", ")
-  cat("  marginals :", type_str, "\n")
+  cat(" marginals :", type_str, "\n")
 
   # Copula correlation summary
   cor_vals <- x$copula_cor[lower.tri(x$copula_cor)]
-  cat(sprintf("  copula cor: mean=%.3f, range=[%.3f, %.3f]\n",
+  cat(sprintf(" copula cor: mean=%.3f, range=[%.3f, %.3f]\n",
               mean(cor_vals, na.rm = TRUE),
               min(cor_vals, na.rm = TRUE),
               max(cor_vals, na.rm = TRUE)))

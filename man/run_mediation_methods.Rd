@@ -22,8 +22,8 @@ run_mediation_methods(
 
 \item{n_cores}{Number of parallel workers. Default 1 (sequential).}
 
-\item{se_method}{"delta" (default), "bootstrap" (v0.9.2, JYH #867), or
-"composite" (v0.9.3, Huang 2019 JT-comp).}
+\item{se_method}{"delta" (default), "bootstrap", or
+"composite".}
 
 \item{n_boot}{Number of bootstrap resamples when \code{se_method="bootstrap"}.}
 }

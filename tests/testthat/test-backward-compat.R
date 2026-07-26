@@ -1,13 +1,13 @@
-# Backward compatibility tests for v0.6.0
+# Backward compatibility tests
 #
-# Verifies that all v0.5.0 functionality is unchanged:
-#   - run_single_iteration() with gamma_G = 0.6 (default) produces
-#     identical output to v0.5.0
-#   - analyze_methods_robust() / analyze_mediation_robust() unchanged
-#   - run_simulation(), sweep_param(), run_mediation_sim(),
-#     sweep_mediation_param() unchanged
-#   - gan_sensitivity(), gan_mediation_sensitivity(),
-#     recommend_estimator() unchanged
+# Verifies that all functionality is unchanged:
+# - run_single_iteration() with gamma_G = 0.6 (default) produces
+# identical output to the default
+# - analyze_methods_robust() / analyze_mediation_robust() unchanged
+# - run_simulation(), sweep_param(), run_mediation_sim(),
+# sweep_mediation_param() unchanged
+# - gan_sensitivity(), gan_mediation_sensitivity(),
+# recommend_estimator() unchanged
 
 # ═══════════════════════════════════════════════════════════════
 # gamma_G backward compatibility
@@ -81,7 +81,7 @@ test_that("analyze_methods_robust respects test_features", {
 # analyze_mediation_robust unchanged
 # ═══════════════════════════════════════════════════════════════
 
-test_that("analyze_mediation_robust produces 8 methods with phi and v0.5.0 DGP", {
+test_that("analyze_mediation_robust produces 8 methods with phi and", {
   set.seed(42)
   dat <- run_single_iteration(n_synthetic_samples = 200, n_features = 5,
                               mo_confounding = 0.8, phi = 0.8,

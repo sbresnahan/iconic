@@ -54,16 +54,16 @@ stage (2SPS):
 \item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M_hat + W + covars} ->
 NDE (coef on Z_hat), beta_M (coef on M_hat).
 }
-\code{NIE = alpha_M * beta_M}.  Weak-instrument gates (partial F for
+\code{NIE = alpha_M * beta_M}. Weak-instrument gates (partial F for
 G and Gm) apply to the OLS first stages.
 }
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
-                                  mo_confounding = 0.8, phi = 0.8, seed = 1)
+mo_confounding = 0.8, phi = 0.8, seed = 1)
 fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-                           dat$G[, 1], dat$Gm, dat$W[, 1])
+dat$G[, 1], dat$Gm, dat$W[, 1])
 }
 }
 \references{

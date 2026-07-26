@@ -26,12 +26,12 @@ instrument. Default 10.}
 }
 \value{
 Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
-\code{NIE}, \code{NIE_se}, \code{NIE_p}.  Returns all-\code{NA} if
+\code{NIE}, \code{NIE_se}, \code{NIE_p}. Returns all-\code{NA} if
 either first-stage partial F is below \code{min_f}.
 }
 \description{
 Uses TWO genetic instruments: G for the exposure Z and Gm for the
-mediator M.  This is the key v0.4.0 extension: by instrumenting both
+mediator M. This is the key extension: by instrumenting both
 endogenous variables, NDE and NIE become \strong{point-identified} even
 under mediator-outcome (M-O) confounding, resolving the identification
 failure that limits the single-instrument estimators.
@@ -39,7 +39,7 @@ failure that limits the single-instrument estimators.
 \details{
 The motivating example is placental eQTLs: fetal-genotype-derived eQTLs
 instrument placental isoform expression (M), while a PFAS-metabolism PRS
-instruments the exposure (Z).  The mediator set must be restricted to
+instruments the exposure (Z). The mediator set must be restricted to
 isoforms for which eQTLs have been identified.
 
 Strategy (sequential 2SLS, three OLS stages):
@@ -55,7 +55,7 @@ NIE = alpha_M * beta_M (delta-method SE).
 
 Including Z_hat in the M first-stage (stage 2) is essential: M
 structurally depends on Z, so the Z -> M path must be captured for
-alpha_M and the NIE to be correctly estimated.  Gm provides the
+alpha_M and the NIE to be correctly estimated. Gm provides the
 exogenous variation that identifies the M -> Y effect net of U1
 confounding.
 
@@ -63,7 +63,7 @@ The sequential 2SLS implementation matches the pattern of
 \code{\link{fit_iv2sls_mediation}} (three separate OLS stages).
 Standard errors in the outcome stage do not account for the
 two-stage estimation of M_hat, consistent with the existing
-estimators; the simulation benchmarks bias, not SE accuracy.  A unit
+estimators; the simulation benchmarks bias, not SE accuracy. A unit
 test cross-validates this estimator's NDE and beta_M against
 \code{AER::ivreg} on the just-identified system
 (\code{Y ~ Z + M + W | G + Gm + W}).
@@ -72,9 +72,9 @@ test cross-validates this estimator's NDE and beta_M against
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
-                                  phi = 0.8, seed = 1)
+phi = 0.8, seed = 1)
 fit_iv2sls_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$Gm,
-                      dat$W[, 1])
+dat$W[, 1])
 }
 }
 \references{

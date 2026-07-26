@@ -40,23 +40,23 @@ run_null_mediation_sim(
 
 \item{mo_confounding}{Strength of U1 -> M. Default 0.80.}
 
-\item{phi}{Strength of the mediator instrument Gm -> M (v0.4.0).
+\item{phi}{Strength of the mediator instrument Gm -> M.
 0 = no mediator instrument. Default 0.}
 
-\item{rho_G1}{Correlation of G1 with U_XM (v0.5.0). Default 0.}
+\item{rho_G1}{Correlation of G1 with U_XM. Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY (v0.5.0). Default 0.}
+\item{rho_G2}{Correlation of G2 with U_MY. Default 0.}
 
-\item{rho_pop}{Shared population structure (v0.5.0). Default 0.}
+\item{rho_pop}{Shared population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders (v0.5.0). Default FALSE.}
+\item{separate_U}{Draw separate confounders. Default FALSE.}
 
-\item{omega_1}{Coverage of U_XM by W1 (v0.5.0). NULL = use w_signal.}
+\item{omega_1}{Coverage of U_XM by W1. NULL = use w_signal.}
 
-\item{omega_2}{Coverage of U_MY by W2 (v0.5.0). NULL = use w_signal.}
+\item{omega_2}{Coverage of U_MY by W2. NULL = use w_signal.}
 
 \item{feat_cor}{Within-module correlation for block-diagonal co-expression
-modules in Y and W (v0.9.0). 0 = independent features. Default 0.}
+modules in Y and W. 0 = independent features. Default 0.}
 
 \item{base_seed}{Seed offset. Default 300.}
 
@@ -70,7 +70,7 @@ and \code{raw} (full results).
 }
 \description{
 Sets \code{alpha_M = 0} and \code{beta_M = 0} (no true NIE) while
-keeping \code{beta_Z} active (NDE still present).  Reports Type I
+keeping \code{beta_Z} active (NDE still present). Reports Type I
 error for both NIE (should be 0 under the null) and NDE (should
 reflect power for the direct effect).
 }

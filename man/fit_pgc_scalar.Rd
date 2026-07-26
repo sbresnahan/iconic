@@ -24,16 +24,16 @@ Named list: \code{beta}, \code{se}, \code{pvalue}.
 \description{
 The original ICONIC PGC implementation, which summarises the
 negative-control panel as a scalar (\code{rowMeans(W)}) before
-bridging.  This version is numerically stable and works in small
+bridging. This version is numerically stable and works in small
 samples, but the scalar bridge produces \eqn{\hat W} proportional
 to the G-residualised exposure by construction, making the
 estimator algebraically equivalent to IV/2SLS when the instrument
-is valid.  The proximal completeness condition
+is valid. The proximal completeness condition
 (\code{dim(W_valid) >= k}) is NOT binding for this estimator.
 }
 \details{
 Use \code{\link{fit_pgc}} (matrix bridge) when the completeness
-condition is of interest.  Use this function as a stable fallback
+condition is of interest. Use this function as a stable fallback
 when \code{n} is small relative to the number of valid controls,
 or as an IV-equivalent benchmark.
 }

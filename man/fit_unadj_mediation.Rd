@@ -25,7 +25,7 @@ Stage 2: \code{Y ~ Z + M} (estimate NDE = beta_Z, beta_M).
 NIE = alpha_M * beta_M.
 }
 \details{
-Does not adjust for unmeasured confounding.  Provided as a bias
+Does not adjust for unmeasured confounding. Provided as a bias
 reference floor, analogous to UNADJ in the total-effect setting.
 }
 \examples{

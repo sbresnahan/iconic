@@ -18,10 +18,10 @@ A p x n matrix, or NULL.
 }
 \description{
 Returns a p x n matrix of realistic mediator feature vectors drawn from
-the feature-level copula texture model (v0.9.0).  Each row is a feature
-(transcript), each column a sample.  The draws preserve the marginal
+the feature-level copula texture model. Each row is a feature
+(transcript), each column a sample. The draws preserve the marginal
 distributions and cross-feature correlation structure of the user's
-mediator panel.  The texture is drawn independently of U and never fed
+mediator panel. The texture is drawn independently of U and never fed
 into Z, so it cannot open a confounding backdoor.
 }
 \details{

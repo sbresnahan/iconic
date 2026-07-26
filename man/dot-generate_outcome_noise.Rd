@@ -18,7 +18,7 @@ An \verb{n x p} numeric matrix of outcome noise.
 }
 \description{
 When \code{noise_cor} is a valid \verb{p x p} correlation matrix, draws \code{n} samples
-from \code{MVN(0, 0.2^2 * noise_cor)}.  Otherwise uses independent
+from \code{MVN(0, 0.2^2 * noise_cor)}. Otherwise uses independent
 \code{rnorm(n, 0, 0.2)} (backward compatible).
 }
 \keyword{internal}

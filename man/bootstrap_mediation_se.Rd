@@ -2,7 +2,7 @@
 % Please edit documentation in R/mediation.R
 \name{bootstrap_mediation_se}
 \alias{bootstrap_mediation_se}
-\title{Bootstrap SE for a mediation estimator (internal, v0.9.2)}
+\title{Bootstrap SE for a mediation estimator}
 \usage{
 bootstrap_mediation_se(estimator_fn, n, n_boot = 500)
 }
@@ -20,7 +20,7 @@ A list with NDE_boot_se, NIE_boot_se, NDE_boot_dist, NIE_boot_dist.
 \description{
 Resamples the data \code{n_boot} times and returns the SD of the bootstrap
 NDE/NIE distribution. This is an opt-in alternative to the delta-method
-SE for users who want a non-parametric SE (JYH #867: "can these be
+SE for users who want a non-parametric SE (
 bootstrapped reasonably"). Slower than the delta method.
 }
 \details{

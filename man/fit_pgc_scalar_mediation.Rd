@@ -29,7 +29,7 @@ The original ICONIC PGC mediation implementation, which summarises the
 negative-control panel as a scalar (\code{rowMeans(W)}) before bridging.
 Like \code{\link{fit_pgc_scalar}}, this version is algebraically
 equivalent to the IV2SLS mediation estimator when the instrument is
-valid.  Use \code{\link{fit_pgc_mediation}} (matrix bridge) when the
+valid. Use \code{\link{fit_pgc_mediation}} (matrix bridge) when the
 completeness condition is of interest.
 }
 \examples{

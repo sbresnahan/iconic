@@ -10,15 +10,15 @@ infer_confounding(data, diagnosis = NULL, estimate = NULL, n_cores = 1)
 \item{data}{An \code{iconic_data} object.}
 
 \item{diagnosis}{Optional \code{iconic_diagnosis} from
-\code{\link{iconic_diagnose}()}.  Used to check instrument strength
+\code{\link{iconic_diagnose}()}. Used to check instrument strength
 before using estimator gaps.}
 
 \item{estimate}{Optional estimate data frame from
-\code{\link{iconic_estimate}()}.  If \code{NULL}, estimates are
+\code{\link{iconic_estimate}()}. If \code{NULL}, estimates are
 computed internally.}
 
 \item{n_cores}{Number of parallel workers for omega inference and
-k permutation. Default 1 (sequential).  Uses
+k permutation. Default 1 (sequential). Uses
 \code{parallel::mclapply} on Unix and a PSOCK cluster on Windows.}
 }
 \value{
@@ -26,7 +26,7 @@ An \code{iconic_confounding} S3 object: a named list with
 \code{$conf_strength}, \code{$mo_confounding}, \code{$omega_1},
 \code{$omega_2}, \code{$k}, \code{$unavailable} (character vector
 of parameters that could not be inferred), and \code{$warnings}
-(character vector of accumulated warnings).  Each parameter slot
+(character vector of accumulated warnings). Each parameter slot
 is a list with \code{estimate}, \code{method}, \code{assumption},
 \code{available} (logical), and \code{warning} (character or NULL).
 }
@@ -40,13 +40,13 @@ use when \code{confounding = "inferred"}.
 \itemize{
 \item \strong{conf_strength} (delta): the gap between the unadjusted
 OLS estimate and the IV2SLS estimate, averaged across features.
-Requires a valid exposure instrument G (F >= 10).  Assumes the
+Requires a valid exposure instrument G (F >= 10). Assumes the
 exclusion restriction holds -- using IV2SLS validity to calibrate
 a benchmark that tests IV2SLS validity is circular, so the
 estimate should be interpreted as a best-case calibration.
 \item \strong{mo_confounding} (delta_mo): the gap between the
 IV2SLS NIE and the IV2SLS2 NIE, averaged across features.
-Requires valid G + Gm (both F >= 10).  Same circularity caveat.
+Requires valid G + Gm (both F >= 10). Same circularity caveat.
 \item \strong{omega} (omega_1, omega_2): the square root of the
 R-squared from regressing each negative-control feature on the
 outcome residualized on Z + C, averaged across features.
@@ -54,8 +54,8 @@ Conflates NC coverage with confounder strength -- reported as a
 composite, not pure coverage.
 \item \strong{k}: the number of latent confounders, estimated via
 parallel analysis (Horn, 1965) on the correlation matrix of
-outcomes residualized on Z + C.  Requires at least 5 outcome
-features.  Returns a point estimate and a bootstrap confidence
+outcomes residualized on Z + C. Requires at least 5 outcome
+features. Returns a point estimate and a bootstrap confidence
 interval.
 }
 }
@@ -80,10 +80,10 @@ value was not inferred from their data.
 \examples{
 \donttest{
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-                    M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-                    W = matrix(rnorm(100*10), 10, 100))
+M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+W = matrix(rnorm(100*10), 10, 100))
 diag <- iconic_diagnose(data)
-est  <- iconic_estimate(data, diagnosis = diag)
+est <- iconic_estimate(data, diagnosis = diag)
 conf <- infer_confounding(data, diagnosis = diag, estimate = est, n_cores = 4)
 print(conf)
 }

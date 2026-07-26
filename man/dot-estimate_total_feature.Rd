@@ -28,20 +28,20 @@
 Used for DIRECT, IV2SLS (full panel as covariates), and
 COCA (via W_avg scalar).}
 
-\item{W_mat}{Numeric NC matrix (n x q), or NULL.  Used for PGC
-(matrix bridge).  If NULL, PGC is skipped.}
+\item{W_mat}{Numeric NC matrix (n x q), or NULL. Used for PGC
+(matrix bridge). If NULL, PGC is skipped.}
 
 \item{W_avg}{Numeric vector (length n): row means of the NC panel
-for COCA.  If NULL but W_mat is present, computed inline.}
+for COCA. If NULL but W_mat is present, computed inline.}
 
 \item{covars}{Optional data frame of covariates (n rows).}
 
-\item{methods}{Character vector of methods to run.  Default: all five.
+\item{methods}{Character vector of methods to run. Default: all five.
 Methods whose required inputs are missing are silently
 skipped.}
 
 \item{feature_idx}{Integer or character: feature identifier for the
-output \code{feature} column.  Default 1L.}
+output \code{feature} column. Default 1L.}
 }
 \value{
 Data frame: \code{feature}, \code{method}, \code{beta}, \code{se}, \code{pvalue}.
@@ -49,7 +49,7 @@ Returns NULL if fewer than 20 complete cases.
 }
 \description{
 Format-agnostic per-feature estimation: takes explicit vectors and
-covariates (no dependency on the \code{dat} list format).  Called by both
+covariates (no dependency on the \code{dat} list format). Called by both
 the simulation driver (.analyze_feature) and the real-data driver
 (iconic_estimate).
 }

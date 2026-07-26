@@ -38,22 +38,22 @@ Default c(0.2, 0.4, 0.6, 0.8, 1.0).}
 
 \item{mo_confounding}{Strength of U1 -> M. Default 0.80.}
 
-\item{phi}{Strength of the mediator instrument Gm -> M (v0.4.0).
+\item{phi}{Strength of the mediator instrument Gm -> M.
 0 = no mediator instrument. Default 0.}
 
-\item{rho_G1}{Correlation of G1 with U_XM (v0.5.0). Default 0.}
+\item{rho_G1}{Correlation of G1 with U_XM. Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY (v0.5.0). Default 0.}
+\item{rho_G2}{Correlation of G2 with U_MY. Default 0.}
 
-\item{rho_pop}{Shared population structure (v0.5.0). Default 0.}
+\item{rho_pop}{Shared population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders (v0.5.0). Default FALSE.}
+\item{separate_U}{Draw separate confounders. Default FALSE.}
 
-\item{omega_1}{Coverage of U_XM by W1 (v0.5.0). NULL = use w_signal.}
+\item{omega_1}{Coverage of U_XM by W1. NULL = use w_signal.}
 
-\item{omega_2}{Coverage of U_MY by W2 (v0.5.0). NULL = use w_signal.}
+\item{omega_2}{Coverage of U_MY by W2. NULL = use w_signal.}
 
-\item{feat_cor}{Within-module feature correlation (v0.8.1). Default 0.}
+\item{feat_cor}{Within-module feature correlation. Default 0.}
 
 \item{base_seed}{Seed offset. Default 900.}
 

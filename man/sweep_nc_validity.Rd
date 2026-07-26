@@ -34,7 +34,7 @@ sweep_nc_validity(
 \item{n_valid_grid}{Number of valid controls grid (A3).}
 
 \item{n_cores}{Number of parallel workers for the replicate loops.
-Default 1 (sequential).  Uses \code{parallel::mclapply} on Unix
+Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
 and a PSOCK cluster on Windows.}
 }
 \value{

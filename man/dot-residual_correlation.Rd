@@ -20,7 +20,7 @@
 \item{covars}{A data frame of encoded covariates (n_samples rows).}
 
 \item{residualize_on}{Character: \code{"ZC"} (default, legacy) residualizes on
-exposure + covariates only; \code{"ZCW"} (v0.9.2, JYH #1109) additionally
+exposure + covariates only; \code{"ZCW"} additionally
 residualizes on the negative-control bridge proxy Ŵ, obtained by
 regressing \code{W_mat} on exposure + covariates. This partials out the
 U-signature that W captures, reducing the double-counting of U's
@@ -37,7 +37,7 @@ A p x p correlation matrix, or NULL.
 }
 \description{
 Residualizes each feature (row) on the sample-level exposure and covariates,
-then computes the p x p correlation matrix of the residuals.  Returns NULL
+then computes the p x p correlation matrix of the residuals. Returns NULL
 if the matrix has fewer than 2 features or the correlation is degenerate.
 }
 \keyword{internal}

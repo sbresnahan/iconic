@@ -47,7 +47,7 @@ pseudo-observation OLS.
 }
 \details{
 A weak-instrument check (partial F for the excluded instrument G,
-Stock & Yogo 2005) is applied to the OLS first stage.  If the partial
+Stock & Yogo 2005) is applied to the OLS first stage. If the partial
 F is below \code{min_f}, the function returns NA.
 }
 \examples{

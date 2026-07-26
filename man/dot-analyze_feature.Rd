@@ -14,7 +14,7 @@
 \item{W_avg}{Row means of the full negative-control panel (for COCA).}
 
 \item{W_valid}{Optional: validity-screened W matrix (n x q) for the
-matrix-bridge PGC.  If NULL, uses the full W panel.}
+matrix-bridge PGC. If NULL, uses the full W panel.}
 }
 \value{
 Data frame of five rows (one per method) or \code{NULL} if too few cases.

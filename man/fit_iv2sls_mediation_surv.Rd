@@ -50,8 +50,8 @@ mediator instrument):
 \item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M + W + covars} ->
 NDE (coef on Z_hat), beta_M (coef on M).
 }
-\code{NIE = alpha_M * beta_M}.  Weak-instrument gate (partial F for G)
-applies to the OLS first stage.  Unlike
+\code{NIE = alpha_M * beta_M}. Weak-instrument gate (partial F for G)
+applies to the OLS first stage. Unlike
 \code{\link{fit_iv2sls_mediation2_surv}}, this estimator does not
 instrument the mediator and is NOT point-identified under M-O
 confounding — it is included for parity with the continuous
@@ -62,6 +62,6 @@ confounding — it is included for parity with the continuous
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
-                          dat$G[, 1], dat$W[, 1])
+dat$G[, 1], dat$W[, 1])
 }
 }

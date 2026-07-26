@@ -31,7 +31,7 @@ Requires \pkg{AER}.
 \details{
 A weak-instrument check is applied using the partial F-statistic for the
 excluded instrument G (testing G conditional on W and covariates in the
-first stage), following Stock & Yogo (2005).  If the partial F is below
+first stage), following Stock & Yogo (2005). If the partial F is below
 \code{min_f}, the function returns \code{NA}.
 }
 \examples{

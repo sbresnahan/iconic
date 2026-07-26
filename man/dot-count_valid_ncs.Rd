@@ -13,8 +13,8 @@ violation) from "W shares a cause with Z" (intended NC behavior).
 A1 is reported but not used for eligibility.
 }
 \details{
-v0.9.2: \code{for_estimator} controls which screen is used as the gate,
-implementing the COCA A2 exemption (JYH #509). COCA's identifying
+\code{for_estimator} controls which screen is used as the gate,
+implementing the COCA A2 exemption. COCA's identifying
 assumption does not involve the instrument, so COCA uses A1 only;
 IV2SLS/PGC/IV2SLS2/PGC2/PGC2Gm use A2 (the legacy behavior).
 }

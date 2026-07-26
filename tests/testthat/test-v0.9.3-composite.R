@@ -1,4 +1,4 @@
-# Tests for ICONIC v0.9.3: composite null hypothesis test (JT-comp)
+# Tests for ICONIC composite null hypothesis test (JT-comp)
 # Huang (2019) closed-form composite p-value for mediation NIE.
 #
 # These tests verify:
@@ -125,7 +125,7 @@ test_that(".apply_composite_pvalues adds var_a and var_b columns", {
                                    seed = 42)
   res <- iconic:::analyze_mediation_robust(dat, se_method = "delta")
   # Add the z-statistic columns that .apply_composite_pvalues needs
-  # (they are already present from the row() function in v0.9.3)
+  # (they are already present from the row() function)
   res2 <- iconic:::.apply_composite_pvalues(res)
   expect_true("var_a" %in% names(res2))
   expect_true("var_b" %in% names(res2))
@@ -136,7 +136,7 @@ test_that(".apply_composite_pvalues replaces NIE_p but not NDE_p", {
   dat <- iconic::generate_toy_data(n = 200, n_features = 10, n_mediators = 1,
                                    seed = 42)
   res_delta <- iconic:::analyze_mediation_robust(dat, se_method = "delta")
-  res_comp  <- iconic:::.apply_composite_pvalues(res_delta)
+  res_comp <- iconic:::.apply_composite_pvalues(res_delta)
   # NIE_p should change
   expect_true(!all(res_comp$NIE_p == res_delta$NIE_p, na.rm = TRUE))
   # NDE_p should NOT change
@@ -148,7 +148,7 @@ test_that(".apply_composite_pvalues preserves NIE_se", {
   dat <- iconic::generate_toy_data(n = 200, n_features = 10, n_mediators = 1,
                                    seed = 42)
   res_delta <- iconic:::analyze_mediation_robust(dat, se_method = "delta")
-  res_comp  <- iconic:::.apply_composite_pvalues(res_delta)
+  res_comp <- iconic:::.apply_composite_pvalues(res_delta)
   expect_equal(res_delta$NIE_se, res_comp$NIE_se)
 })
 
@@ -192,7 +192,7 @@ test_that("composite NIE_p differs from delta NIE_p", {
   dat <- iconic::generate_toy_data(n = 200, n_features = 10, n_mediators = 1,
                                    seed = 42)
   res_delta <- iconic:::analyze_mediation_robust(dat, se_method = "delta")
-  res_comp  <- iconic:::analyze_mediation_robust(dat, se_method = "composite")
+  res_comp <- iconic:::analyze_mediation_robust(dat, se_method = "composite")
   # At least some NIE_p values should differ
   diffs <- res_delta$NIE_p != res_comp$NIE_p
   expect_true(sum(diffs, na.rm = TRUE) > 0)
@@ -203,7 +203,7 @@ test_that("composite preserves NDE_p and NIE_se", {
   dat <- iconic::generate_toy_data(n = 200, n_features = 10, n_mediators = 1,
                                    seed = 42)
   res_delta <- iconic:::analyze_mediation_robust(dat, se_method = "delta")
-  res_comp  <- iconic:::analyze_mediation_robust(dat, se_method = "composite")
+  res_comp <- iconic:::analyze_mediation_robust(dat, se_method = "composite")
   expect_equal(res_delta$NDE_p, res_comp$NDE_p)
   expect_equal(res_delta$NIE_se, res_comp$NIE_se)
 })
@@ -246,7 +246,7 @@ test_that("iconic_estimate composite preserves NDE_p", {
   M <- matrix(rnorm(n), 1, n)
   idat <- iconic::iconic_data(Z = Z, Y = Y, G = G, W = W, M = M)
   est_delta <- iconic::iconic_estimate(idat, se_method = "delta", n_cores = 1)
-  est_comp  <- iconic::iconic_estimate(idat, se_method = "composite", n_cores = 1)
+  est_comp <- iconic::iconic_estimate(idat, se_method = "composite", n_cores = 1)
   expect_equal(est_delta$NDE_p, est_comp$NDE_p)
 })
 
@@ -283,15 +283,15 @@ test_that("composite type I error is reasonable under point null", {
 #
 # ICONIC's real case studies (GDM -> placental isoforms -> birth weight;
 # smoking -> tumor expression -> survival) have a scalar outcome Y and a
-# panel of mediators M.  The composite test groups by method only, so
+# panel of mediators M. The composite test groups by method only, so
 # Var(a) and Var(b) are estimated across mediators within each method.
 # Each mediator has its own stage-1 regression M_m ~ Z, giving real
 # variation in a = alpha_M / SE(alpha_M).
 
 test_that(".apply_composite_pvalues groups by method, not method x mediator", {
   # With n_features = 1 and n_mediators = 20, each method has 20 rows
-  # (one per mediator).  Grouping by method gives 20 tests per group,
-  # enough to estimate Var(a) > 0.  Grouping by (method, mediator)
+  # (one per mediator). Grouping by method gives 20 tests per group,
+  # enough to estimate Var(a) > 0. Grouping by (method, mediator)
   # would give 1 test per group, falling back to Var = 1.
   set.seed(42)
   dat <- iconic::generate_toy_data(n = 200, n_features = 1, n_mediators = 20,
@@ -308,7 +308,7 @@ test_that("composite NIE_p differs from delta with multiple mediators", {
   dat <- iconic::generate_toy_data(n = 200, n_features = 1, n_mediators = 20,
                                    alpha_M = 0.1, beta_M = 0.05, seed = 42)
   res_delta <- iconic:::analyze_mediation_robust(dat, se_method = "delta")
-  res_comp  <- iconic:::analyze_mediation_robust(dat, se_method = "composite")
+  res_comp <- iconic:::analyze_mediation_robust(dat, se_method = "composite")
   diffs <- res_delta$NIE_p != res_comp$NIE_p
   expect_true(sum(diffs, na.rm = TRUE) > 0)
 })

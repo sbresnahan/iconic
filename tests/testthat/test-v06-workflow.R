@@ -1,4 +1,4 @@
-# Tests for the v0.6.0 model selection workflow:
+# Tests for the model selection workflow:
 # diagnose, estimate, recommend, sensitivity, prospect
 
 # ── Helper: create a small iconic_data from run_single_iteration ──
@@ -315,7 +315,7 @@ test_that("gamma_G affects instrument strength", {
 })
 
 # ═══════════════════════════════════════════════════════════════
-# v0.7.0: GAN auto-training and texture_source
+# GAN auto-training and texture_source
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity reports texture_source field", {
@@ -399,7 +399,7 @@ test_that("iconic_sensitivity confounding=manual uses provided values", {
 })
 
 # ═══════════════════════════════════════════════════════════════
-# v0.7.0: iconic_prospect GAN and confounding
+# iconic_prospect GAN and confounding
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_prospect reports texture_source field", {
@@ -423,7 +423,7 @@ test_that("iconic_prospect confounding=inferred populates inferred_confounding",
 })
 
 # ═══════════════════════════════════════════════════════════════
-# v0.7.0: iconic_data trained_gan slot
+# iconic_data trained_gan slot
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_data stores trained_gan slot", {

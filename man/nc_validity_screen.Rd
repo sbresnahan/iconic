@@ -29,13 +29,13 @@ adjustment (informational only). Default 0.05.}
 Uses \code{parallel::mclapply} on Unix and a PSOCK cluster on
 Windows.}
 
-\item{criterion}{v0.9.2. Which criterion to use: \code{"fdr"} (legacy),
+\item{criterion}{Which criterion to use: \code{"fdr"} (legacy),
 \code{"magnitude"}, or \code{"both"} (default).}
 
-\item{magnitude_threshold}{v0.9.2. |partial_r(W,Z|C)| cutoff for the
+\item{magnitude_threshold}{|partial_r(W,Z|C)| cutoff for the
 magnitude branch. Default 0.10.}
 
-\item{u_proxy}{v0.9.2. Optional outcome-derived proxy for U (e.g. the
+\item{u_proxy}{Optional outcome-derived proxy for U (e.g. the
 leading residualized-outcome principal component) used
 to compute \code{relative_effect} = |partial_r(W,Z|C)| /
 |partial_r(W,U_proxy|C)|. When \code{NULL} (default),
@@ -58,7 +58,7 @@ A control that is significantly associated with Z after adjusting
 for C violates the negative-control assumption (A1): it is either
 Such controls should be dropped before running COCA / PGC.
 }
-\section{Assumption (v0.9.2 wording)}{
+\section{Assumption}{
 
 A1 states that negative-control outcomes are independent of the exposure
 \strong{conditional on observed covariates C and the unmeasured confounder U}
@@ -67,7 +67,7 @@ outcome or instruments; the screen tests the observable marginal
 association with Z given C.
 }
 
-\section{Criterion (v0.9.2)}{
+\section{Criterion}{
 
 \code{criterion = "fdr"} (the legacy behavior) flags controls whose
 association with Z survives BH-FDR. \code{criterion = "magnitude"} flags

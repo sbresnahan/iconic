@@ -62,24 +62,24 @@ tokens are renamed.}
 \item{mediator_names}{Optional character vector of mediator names.}
 
 \item{trained_gan}{Optional \code{iconic_gan} from
-\code{\link{train_gan_on_real_data}()}.  When supplied, the GAN is
+\code{\link{train_gan_on_real_data}()}. When supplied, the GAN is
 attached to the data object and reused by
 \code{\link{iconic_sensitivity}()} and \code{\link{iconic_prospect}()}
-instead of auto-training a new one.  This avoids retraining when the
+instead of auto-training a new one. This avoids retraining when the
 same data is used across multiple workflow steps.}
 
-\item{outcome_type}{Character (v0.9.4): \code{"continuous"} (default,
-backward-compatible) or \code{"survival"}.  When \code{"survival"},
+\item{outcome_type}{Character: \code{"continuous"} (default,
+backward-compatible) or \code{"survival"}. When \code{"survival"},
 \code{Y} is not required; instead supply \code{surv_time} and
-\code{surv_event}.  Estimation uses Cox proportional-hazards
+\code{surv_event}. Estimation uses Cox proportional-hazards
 (\code{\link[survival]{coxph}}) or RMST pseudo-observation OLS
 (see \code{effect_scale} in \code{\link{iconic_estimate}()}).}
 
-\item{surv_time}{Numeric follow-up time vector (length n).  Required
+\item{surv_time}{Numeric follow-up time vector (length n). Required
 when \code{outcome_type = "survival"}; ignored otherwise.}
 
 \item{surv_event}{Numeric 0/1 event indicator (length n; 1 = event
-observed, 0 = censored).  Required when
+observed, 0 = censored). Required when
 \code{outcome_type = "survival"}; ignored otherwise.}
 }
 \value{
@@ -101,18 +101,18 @@ data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))
 
 # Full mediation with instruments and NCs
 data <- iconic_data(
-  Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-  M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-  W = matrix(rnorm(100 * 10), 10, 100)
+Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+W = matrix(rnorm(100 * 10), 10, 100)
 )
 print(data)
 
-# Survival outcome (v0.9.4)
+# Survival outcome
 data <- iconic_data(
-  Z = rnorm(100), outcome_type = "survival",
-  surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
-  M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-  W = matrix(rnorm(100 * 10), 10, 100)
+Z = rnorm(100), outcome_type = "survival",
+surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+W = matrix(rnorm(100 * 10), 10, 100)
 )
 print(data)
 }

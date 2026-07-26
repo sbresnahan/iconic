@@ -9,7 +9,7 @@
 \description{
 The existing nc_validity_screen / nc_independence_check functions
 expect a \code{dat} list with $W (n x q), $Z, $G (n x p), $Gm, and
-$synthetic_data.  This helper converts an iconic_data object to
+$synthetic_data. This helper converts an iconic_data object to
 that format.
 }
 \keyword{internal}

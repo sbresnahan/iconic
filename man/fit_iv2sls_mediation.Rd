@@ -39,7 +39,7 @@ Strategy:
 }
 
 The IV cleans Z of U1 confounding, but M remains endogenous via
-U1 -> M.  With a single instrument, natural effects are not fully
+U1 -> M. With a single instrument, natural effects are not fully
 identified (Rudolph et al., 2024); NDE and NIE are approximations
 whose bias from M-O confounding is the key finding the simulation
 demonstrates.

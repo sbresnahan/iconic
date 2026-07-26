@@ -1,5 +1,5 @@
 # ============================================================
-# Survival (time-to-event) total-effect estimators — v0.9.4
+# Survival (time-to-event) total-effect estimators
 #
 # Mirrors R/estimators.R but replaces the OLS outcome stage with a
 # Cox proportional-hazards model (survival::coxph + Surv) or, when
@@ -25,20 +25,20 @@
 # estimate of restricted mean survival time up to tau).
 #
 # For subject i, the pseudo-observation is
-#   psi_i = n * RMST_full - (n - 1) * RMST_{-i}
+# psi_i = n * RMST_full - (n - 1) * RMST_{-i}
 # where RMST is the area under the Kaplan-Meier curve up to tau.
 # Pseudo-observations are approximately unbiased for E[min(T, tau)] and
 # can be regressed via OLS / GEE to obtain collapsible, linear effect
 # estimates (Andersen et al. 2003; Graw et al. 2009).
 #
-# @param time   numeric, observed/censored follow-up times (length n).
-# @param event  numeric 0/1, event indicator (1 = observed event).
-# @param tau    numeric, restriction time horizon. Default: 90th
-#               percentile of `time` (avoids extrapolation beyond the
-#               bulk of observed follow-up).
+# @param time numeric, observed/censored follow-up times (length n).
+# @param event numeric 0/1, event indicator (1 = observed event).
+# @param tau numeric, restriction time horizon. Default: 90th
+# percentile of `time` (avoids extrapolation beyond the
+# bulk of observed follow-up).
 # @return numeric vector of length n (the pseudo-observations).
 .rmst_pseudo <- function(time, event, tau = NULL) {
-  time  <- as.numeric(time)
+  time <- as.numeric(time)
   event <- as.numeric(event)
   n <- length(time)
   if (is.null(tau)) tau <- as.numeric(quantile(time, 0.90))
@@ -59,8 +59,8 @@
 }
 
 # Area under a Kaplan-Meier curve up to tau (restricted mean survival time).
-# @param km   a survfit object (KM estimate).
-# @param tau  restriction time.
+# @param km a survfit object (KM estimate).
+# @param tau restriction time.
 .km_rmst <- function(km, tau) {
   tt <- c(0, km$time)
   ss <- c(1, km$surv)
@@ -75,9 +75,9 @@
 # Build the outcome-stage response for a survival estimator.
 # Returns either a survival::Surv object (loghr scale) or a numeric
 # vector of RMST pseudo-observations (rmst scale).
-# @param time, event  survival inputs.
+# @param time, event survival inputs.
 # @param effect_scale "loghr" or "rmst".
-# @param tau           RMST horizon (used only when rmst).
+# @param tau RMST horizon (used only when rmst).
 .make_surv_response <- function(time, event, effect_scale, tau = NULL) {
   if (effect_scale == "rmst") {
     .rmst_pseudo(time, event, tau)
@@ -92,9 +92,9 @@
   sm <- summary(fit)$coefficients
   if (!term %in% rownames(sm)) return(NULL)
   list(
-    b  = as.numeric(coef(fit)[term]),
+    b = as.numeric(coef(fit)[term]),
     se = as.numeric(sm[term, 2]),
-    p  = as.numeric(sm[term, if ("Pr(>|z|)" %in% colnames(sm)) "Pr(>|z|)" else "Pr(>|t|)"])
+    p = as.numeric(sm[term, if ("Pr(>|z|)" %in% colnames(sm)) "Pr(>|z|)" else "Pr(>|t|)"])
   )
 }
 
@@ -104,7 +104,7 @@
 #' UNADJ survival estimator: unadjusted Cox / RMST regression
 #'
 #' Regresses the survival outcome on the exposure Z (plus covariates)
-#' with no instrument or negative-control adjustment.  Bias reference.
+#' with no instrument or negative-control adjustment. Bias reference.
 #'
 #' When \code{effect_scale = "loghr"} (default), fits a Cox
 #' proportional-hazards model and returns the log-hazard ratio for Z.
@@ -113,15 +113,15 @@
 #' effect on the restricted-mean-survival-time (time) scale — a
 #' collapsible, linear alternative to the non-collapsible hazard ratio.
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param covars       Optional data frame of covariates (n rows).
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param covars Optional data frame of covariates (n rows).
 #' @param effect_scale Character: \code{"loghr"} (Cox) or \code{"rmst"}
-#'   (pseudo-observation OLS). Default \code{"loghr"}.
-#' @param tau          RMST restriction time horizon. Default \code{NULL}
-#'   (90th percentile of follow-up). Used only when
-#'   \code{effect_scale = "rmst"}.
+#' (pseudo-observation OLS). Default \code{"loghr"}.
+#' @param tau RMST restriction time horizon. Default \code{NULL}
+#' (90th percentile of follow-up). Used only when
+#' \code{effect_scale = "rmst"}.
 #'
 #' @return Named list: \code{beta}, \code{se}, \code{pvalue}.
 #' @export
@@ -162,17 +162,17 @@ fit_unadj_surv <- function(time, event, Z, covars = NULL,
 #' DIRECT survival estimator: Cox / RMST with instrument and NC covariates
 #'
 #' Regresses the survival outcome on Z plus the genetic instrument G, the
-#' negative-control panel W, and covariates.  Naive adjustment; does not
+#' negative-control panel W, and covariates. Naive adjustment; does not
 #' correct for unmeasured confounding via a ratio or IV approach.
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param g            Numeric instrument vector (length n).
-#' @param w            Numeric NC vector (length n) or matrix (n x q).
-#' @param covars       Optional data frame of covariates (n rows).
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param g Numeric instrument vector (length n).
+#' @param w Numeric NC vector (length n) or matrix (n x q).
+#' @param covars Optional data frame of covariates (n rows).
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
-#' @param tau          RMST horizon (rmst only).
+#' @param tau RMST horizon (rmst only).
 #'
 #' @return Named list: \code{beta}, \code{se}, \code{pvalue}.
 #' @export
@@ -221,18 +221,18 @@ fit_direct_surv <- function(time, event, Z, g, w, covars = NULL,
 #' pseudo-observation OLS.
 #'
 #' A weak-instrument check (partial F for the excluded instrument G,
-#' Stock & Yogo 2005) is applied to the OLS first stage.  If the partial
+#' Stock & Yogo 2005) is applied to the OLS first stage. If the partial
 #' F is below \code{min_f}, the function returns NA.
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param g            Numeric instrument vector (length n).
-#' @param w            Numeric NC vector (length n) or matrix (n x q).
-#' @param covars       Optional data frame of covariates (n rows).
-#' @param min_f        Minimum partial F for the excluded instrument. Default 10.
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param g Numeric instrument vector (length n).
+#' @param w Numeric NC vector (length n) or matrix (n x q).
+#' @param covars Optional data frame of covariates (n rows).
+#' @param min_f Minimum partial F for the excluded instrument. Default 10.
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
-#' @param tau          RMST horizon (rmst only).
+#' @param tau RMST horizon (rmst only).
 #'
 #' @return Named list: \code{beta}, \code{se}, \code{pvalue}.
 #' @export
@@ -288,20 +288,20 @@ fit_iv2sls_surv <- function(time, event, Z, g, w, covars = NULL, min_f = 10,
 #'
 #' Three-step bridge-function estimator with a survival outcome stage:
 #' \enumerate{
-#'   \item Residualise Z on G -> Z_resid (OLS).
-#'   \item Bridge Z_resid on the FULL W matrix -> W_hat (OLS).
-#'   \item Regress the survival outcome on Z + W_hat via Cox (log-HR) or
-#'         RMST pseudo-observation OLS.
+#' \item Residualise Z on G -> Z_resid (OLS).
+#' \item Bridge Z_resid on the FULL W matrix -> W_hat (OLS).
+#' \item Regress the survival outcome on Z + W_hat via Cox (log-HR) or
+#' RMST pseudo-observation OLS.
 #' }
 #'
-#' @param time         Numeric follow-up time vector (length n).
-#' @param event        Numeric 0/1 event indicator (length n).
-#' @param Z            Numeric exposure vector (length n).
-#' @param g            Numeric instrument vector (length n).
-#' @param W            Numeric NC matrix (n x q) or vector (length n).
-#' @param covars       Optional data frame of covariates (n rows).
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param g Numeric instrument vector (length n).
+#' @param W Numeric NC matrix (n x q) or vector (length n).
+#' @param covars Optional data frame of covariates (n rows).
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
-#' @param tau          RMST horizon (rmst only).
+#' @param tau RMST horizon (rmst only).
 #'
 #' @return Named list: \code{beta}, \code{se}, \code{pvalue}.
 #' @export
@@ -365,21 +365,21 @@ fit_pgc_surv <- function(time, event, Z, g, W, covars = NULL,
 #'
 #' COCA (Correlated Outcome Control Approach) regresses the negative
 #' control W on the outcome Y (\code{W ~ y + Z}) and recovers the causal
-#' effect as a ratio \eqn{-\hat\beta_Z / \hat\beta_Y}.  This places the
+#' effect as a ratio \eqn{-\hat\beta_Z / \hat\beta_Y}. This places the
 #' outcome on the right-hand side of the regression, which is
 #' structurally impossible when the outcome is a \code{survival::Surv}
-#' object (time-to-event).  COCA is therefore unsupported for survival
+#' object (time-to-event). COCA is therefore unsupported for survival
 #' outcomes and always returns \code{list(beta=NA, se=NA, pvalue=NA)}.
 #'
-#' @param time   Numeric follow-up time vector (length n).
-#' @param event  Numeric 0/1 event indicator (length n).
-#' @param Z      Numeric exposure vector (length n).
-#' @param w      Numeric NC vector (length n).
+#' @param time Numeric follow-up time vector (length n).
+#' @param event Numeric 0/1 event indicator (length n).
+#' @param Z Numeric exposure vector (length n).
+#' @param w Numeric NC vector (length n).
 #' @param covars Optional data frame of covariates (n rows).
-#' @param ...    Ignored (accepted for signature compatibility).
+#' @param ... Ignored (accepted for signature compatibility).
 #'
 #' @return \code{list(beta = NA, se = NA, pvalue = NA)} with an
-#'   informative \code{"reason"} attribute.
+#' informative \code{"reason"} attribute.
 #' @export
 #'
 #' @examples
@@ -387,7 +387,7 @@ fit_pgc_surv <- function(time, event, Z, g, W, covars = NULL,
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_coca_surv(dat$surv_time, dat$surv_event, dat$Z, dat$W[, 1])
-#' # $beta [1] NA  (COCA unsupported for survival outcomes)
+#' # $beta [1] NA (COCA unsupported for survival outcomes)
 #' }
 fit_coca_surv <- function(time, event, Z, w, covars = NULL, ...) {
   out <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)

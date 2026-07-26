@@ -17,7 +17,7 @@ A \verb{p_target x p_target} correlation matrix, or NULL.
 \description{
 If \code{cor_mat} is a valid \verb{p_target x p_target} matrix, return it as-is.
 If it's a different size, return NULL (the simulation falls back to
-independent noise).  This guards against dimension mismatches when the
+independent noise). This guards against dimension mismatches when the
 simulation uses a different \code{n_features} than the training data.
 }
 \keyword{internal}

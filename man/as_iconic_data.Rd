@@ -37,6 +37,6 @@ print(data)
 
 # From named components (delegates to iconic_data())
 data <- as_iconic_data(rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-                       G = rnorm(100), Gm = rnorm(100),
-                       W = matrix(rnorm(100*10), 10, 100))
+G = rnorm(100), Gm = rnorm(100),
+W = matrix(rnorm(100*10), 10, 100))
 }

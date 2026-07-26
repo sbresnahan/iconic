@@ -22,7 +22,7 @@
 
 \item{W_valid}{Optional: validity-screened W matrix for matrix-bridge PGC.}
 
-\item{se_method}{"delta" (default) or "bootstrap" (v0.9.2, JYH #867).}
+\item{se_method}{"delta" (default) or "bootstrap".}
 
 \item{n_boot}{Number of bootstrap resamples when \code{se_method="bootstrap"}.}
 }
@@ -38,8 +38,8 @@ from the \code{dat} list format used by the simulation pipeline.
 \details{
 When \code{dat$Gm} is present (i.e. a mediator instrument was supplied),
 the 2-stage MR estimator \code{\link{fit_iv2sls_mediation2}} is also
-run, producing a sixth row (method = "IV2SLS2").  When \code{dat$W1}
-and \code{dat$W2} are present (v0.5.0 DGP), the two-stage proximal
+run, producing a sixth row (method = "IV2SLS2"). When \code{dat$W1}
+and \code{dat$W2} are present, the two-stage proximal
 estimator \code{\link{fit_pgc_mediation2}} is run as "PGC2" (without
 Gm) and "PGC2Gm" (with Gm, when Gm is also present).
 }

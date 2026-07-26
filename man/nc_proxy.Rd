@@ -39,14 +39,14 @@ correlations conditional on the confounder. When \code{noise_cor} is \code{NULL}
 
 \describe{
 \item{\code{"shared"}}{All columns carry the same \code{rowMeans(U[, captured])}
-signal.  This is the original behaviour (backward-compatible) and is
+signal. This is the original behaviour (backward-compatible) and is
 numerically stable, but the W matrix has only one effective dimension
 regardless of \code{n_features}, so the proximal completeness condition is
 never binding for the matrix-bridge PGC.}
 \item{\code{"distinct"}}{Column \code{f} captures confounder
-\verb{captured[((f - 1) \\\%\\\% length(captured)) + 1]}.  Different columns
+\verb{captured[((f - 1) \\\%\\\% length(captured)) + 1]}. Different columns
 therefore carry signals from different confounders, giving the W
-matrix genuine dimensional structure.  This is the mode to use when
+matrix genuine dimensional structure. This is the mode to use when
 benchmarking the completeness cliff: the matrix-bridge PGC is
 identified only when \code{n_features >= k}.}
 }

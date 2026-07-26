@@ -1,15 +1,15 @@
-# tests/testthat/test-v0.9.4-survival.R
-# Survival / time-to-event outcome support (v0.9.4)
+# tests/testthat/test--survival.R
+# Survival / time-to-event outcome support
 #
 # Test groups:
-#   1. iconic_data() survival interface
-#   2. Total-effect survival estimators (loghr + rmst)
-#   3. Mediation survival estimators (loghr + rmst)
-#   4. iconic_estimate() survival dispatch (total + mediation)
-#   5. Survival simulation DGP (generate_toy_data + run_single_iteration)
-#   6. Sensitivity / prospect survival threading
-#   7. COCA returns NA for survival (structural incompatibility)
-#   8. Backward compatibility with continuous outcomes
+# 1. iconic_data() survival interface
+# 2. Total-effect survival estimators (loghr + rmst)
+# 3. Mediation survival estimators (loghr + rmst)
+# 4. iconic_estimate() survival dispatch (total + mediation)
+# 5. Survival simulation DGP (generate_toy_data + run_single_iteration)
+# 6. Sensitivity / prospect survival threading
+# 7. COCA returns NA for survival (structural incompatibility)
+# 8. Backward compatibility with continuous outcomes
 
 skip_if_not_installed("survival")
 
@@ -227,7 +227,7 @@ test_that("PGC and PGC2 produce distinct results in survival mediation", {
                       M = dat$M, G = dat$G[, 1], Gm = dat$Gm,
                       W = dat$W, W1 = dat$W1, W2 = dat$W2)
   est <- iconic_estimate(sdat, effect_scale = "loghr")
-  pgc  <- est[est$method == "PGC", ]
+  pgc <- est[est$method == "PGC", ]
   pgc2 <- est[est$method == "PGC2", ]
   # Both should produce non-NA estimates
   expect_true(!is.na(pgc$NDE))

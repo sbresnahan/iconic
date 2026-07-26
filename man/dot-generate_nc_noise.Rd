@@ -20,10 +20,10 @@ An \verb{n x (2*p)} numeric matrix.
 }
 \description{
 When \code{noise_cor} is a valid \verb{p x p} correlation matrix, draws \code{n} samples
-from \code{MVN(0, noise_cor)} and scales by \code{sd0}.  Returns an \verb{n x (2*p)}
+from \code{MVN(0, noise_cor)} and scales by \code{sd0}. Returns an \verb{n x (2*p)}
 matrix: columns \code{1:p} are the "uncaptured" noise component and columns
 \code{(p+1):(2*p)} are the idiosyncratic noise component (both with the same
-correlation structure).  When \code{noise_cor} is NULL, uses independent
+correlation structure). When \code{noise_cor} is NULL, uses independent
 \code{rnorm} (backward compatible).
 }
 \keyword{internal}

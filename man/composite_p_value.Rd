@@ -2,21 +2,21 @@
 % Please edit documentation in R/mediation.R
 \name{composite_p_value}
 \alias{composite_p_value}
-\title{Composite null hypothesis test p-value (v0.9.3)}
+\title{Composite null hypothesis test p-value}
 \usage{
 composite_p_value(a, b, var_a = 1, var_b = 1)
 }
 \arguments{
 \item{a}{Standardized z-statistic for alpha (alpha_hat / SE).}
 
-\item{b}{Standardized z-statistic for beta  (beta_hat  / SE).}
+\item{b}{Standardized z-statistic for beta (beta_hat / SE).}
 
 \item{var_a}{Variance of the z-statistic for alpha across the
-collection of tests.  Under the point null this is ~1; under
-H0(2)/H0(3) it is >1.  Default 1 (conservative).}
+collection of tests. Under the point null this is ~1; under
+H0(2)/H0(3) it is >1. Default 1 (conservative).}
 
 \item{var_b}{Variance of the z-statistic for beta across the
-collection of tests.  Default 1.}
+collection of tests. Default 1.}
 }
 \value{
 Numeric scalar in \eqn{[0, 1]}.
@@ -27,16 +27,16 @@ H0: alpha * beta = 0 against H1: alpha * beta != 0.
 }
 \details{
 The composite null decomposes into three cases (alpha=beta=0,
-alpha!=0/beta=0, alpha=0/beta!=0).  The Wald/Sobel test is
+alpha!=0/beta=0, alpha=0/beta!=0). The Wald/Sobel test is
 conservative under the first case because the product of two
 independent normals follows a normal product distribution, not a
-normal.  This function computes a closed-form p-value that accounts
+normal. This function computes a closed-form p-value that accounts
 for all three cases without estimating their proportions.
 }
 \examples{
-composite_p_value(0, 0)     # null: p = 1
-composite_p_value(2, 2)     # strong signal: small p
-composite_p_value(2, 0)     # H0(2): p = 1 (no mediation)
+composite_p_value(0, 0) # null: p = 1
+composite_p_value(2, 2) # strong signal: small p
+composite_p_value(2, 0) # H0(2): p = 1 (no mediation)
 }
 \references{
 Huang, Y.-T. (2019). Genome-wide analyses of sparse

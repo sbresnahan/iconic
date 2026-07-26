@@ -52,9 +52,9 @@ If NULL but W_mat present, computed inline.}
 
 \item{feature_idx}{Integer or character: feature identifier. Default 1L.}
 
-\item{se_method}{"delta" (default), "bootstrap", or "composite" (v0.9.3).
+\item{se_method}{"delta" (default), "bootstrap", or "composite".
 When "bootstrap", NDE_se/NIE_se are replaced by the SD of \code{n_boot}
-nonparametric bootstrap resamples (JYH #867). Point estimates (NDE/NIE)
+nonparametric bootstrap resamples. Point estimates (NDE/NIE)
 and p-values are unchanged; only the SE column is swapped.
 When "composite", NIE_p is replaced by the Huang (2019) JT-comp
 composite null p-value (post-processed across features by the driver).}
@@ -63,13 +63,13 @@ composite null p-value (post-processed across features by the driver).}
 }
 \value{
 Data frame: \code{feature}, \code{method}, \code{NDE}, \code{NDE_se}, \code{NDE_p},
-\code{NIE}, \code{NIE_se}, \code{NIE_p}.  Returns NULL if < 20 complete cases.
+\code{NIE}, \code{NIE_se}, \code{NIE_p}. Returns NULL if < 20 complete cases.
 When \code{se_method="composite"}, also includes \code{alpha_M}, \code{alpha_se},
 \code{beta_M}, \code{beta_M_se} for downstream composite p-value computation.
 }
 \description{
 Format-agnostic per-feature mediation estimation: takes explicit vectors
-and covariates (no dependency on the \code{dat} list format).  Called by both
+and covariates (no dependency on the \code{dat} list format). Called by both
 the simulation driver (.analyze_mediation_feature) and the real-data
 driver (iconic_estimate).
 }

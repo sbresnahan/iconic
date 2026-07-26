@@ -60,7 +60,7 @@ test_that("conf_strength unavailable without G", {
                        covariates = dat$synthetic_data)
   conf <- infer_confounding(idata)
   expect_false(conf$conf_strength$available)
-  expect_equal(conf$conf_strength$estimate, 0.8)  # default
+  expect_equal(conf$conf_strength$estimate, 0.8) # default
 })
 
 # ═══════════════════════════════════════════════════════════════
@@ -83,7 +83,7 @@ test_that("mo_confounding unavailable without Gm", {
                        G = dat$G[, 1], covariates = dat$synthetic_data)
   conf <- infer_confounding(idata)
   expect_false(conf$mo_confounding$available)
-  expect_equal(conf$mo_confounding$estimate, 0.8)  # default
+  expect_equal(conf$mo_confounding$estimate, 0.8) # default
 })
 
 test_that("mo_confounding unavailable for non-mediation data", {
@@ -113,7 +113,7 @@ test_that("omega unavailable without W", {
                        G = dat$G[, 1], Gm = dat$Gm)
   conf <- infer_confounding(idata)
   expect_false(conf$omega_1$available)
-  expect_equal(conf$omega_1$estimate, 0.7)  # default
+  expect_equal(conf$omega_1$estimate, 0.7) # default
 })
 
 test_that("omega has composite warning", {
@@ -140,7 +140,7 @@ test_that("k unavailable with < 5 features", {
   idata <- .make_conf_data(n_features = 3)
   conf <- infer_confounding(idata)
   expect_false(conf$k$available)
-  expect_equal(conf$k$estimate, 1L)  # default
+  expect_equal(conf$k$estimate, 1L) # default
 })
 
 # ═══════════════════════════════════════════════════════════════
@@ -164,7 +164,7 @@ test_that("bare data has most parameters unavailable", {
   expect_false(conf$conf_strength$available)
   expect_false(conf$mo_confounding$available)
   expect_false(conf$omega_1$available)
-  expect_false(conf$k$available)  # < 5 features
+  expect_false(conf$k$available) # < 5 features
 })
 
 # ═══════════════════════════════════════════════════════════════

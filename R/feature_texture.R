@@ -350,6 +350,7 @@ train_feature_texture <- function(M_matrix, marginal_method = "auto") {
 #'
 #' @examples
 #' \donttest{
+#' M <- matrix(rnorm(30 * 200), 30, 200) # 30 transcripts, 200 samples
 #' ft <- train_feature_texture(M)
 #' draws <- sample_feature_texture(ft, 500, n_features = 20)
 #' }

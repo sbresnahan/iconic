@@ -155,10 +155,10 @@ not a silent failure.
 }
 
 \examples{
-\donttest{
+\dontrun{
 data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 M = rnorm(100))
-result <- iconic_prospect(data, n_iter = 10, n_cores = 4)
+result <- iconic_prospect(data, n_iter = 10, n_cores = 2)
 print(result)
 }
 }

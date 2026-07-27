@@ -332,7 +332,7 @@ nc_validity_check <- function(trained_gan = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' sens <- gan_mediation_sensitivity(NULL, conf_grid = c(0.3, 0.8),
 #' mo_confounding = 0.8, n_iter = 20)
 #' head(sens$summary)

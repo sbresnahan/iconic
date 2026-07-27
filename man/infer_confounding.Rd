@@ -84,7 +84,7 @@ M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 W = matrix(rnorm(100*10), 10, 100))
 diag <- iconic_diagnose(data)
 est <- iconic_estimate(data, diagnosis = diag)
-conf <- infer_confounding(data, diagnosis = diag, estimate = est, n_cores = 4)
+conf <- infer_confounding(data, diagnosis = diag, estimate = est, n_cores = 2)
 print(conf)
 }
 }

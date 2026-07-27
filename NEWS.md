@@ -1,5 +1,25 @@
 # iconic 0.9.7
 
+## Examples
+
+- **Fixed example failures under `R CMD check --as-cran --run-donttest`.**
+  Several examples errored when run by the check (which executes
+  `\donttest{}` blocks) on environments without a libtorch backend or under
+  CRAN's core limit:
+  - The `iconic_prospect`, `iconic_sensitivity`, `gan_mediation_sensitivity`,
+    `gan_pleiotropy_sensitivity`, `train_gan_on_real_data`, and
+    `run_single_iteration` examples reached a GAN-training path inside
+    `\donttest{}`; switched to `\dontrun{}` so they are not executed by the
+    check (they require the optional torch backend).
+  - The `infer_confounding` and `iconic_prospect` examples used
+    `n_cores = 4`, exceeding CRAN's two-core limit
+    (`.check_ncores`); reduced to `n_cores = 2`.
+  - The `sample_feature_texture` example referenced an undefined `M`;
+    made it self-contained by defining `M` first.
+  - The `nc_completeness_capture` and `nc_completeness_check` examples run
+    a 1000-permutation loop and exceeded the 5s example-time flag; wrapped
+    in `\dontrun{}`.
+
 ## Test suite
 
 - **Guarded all torch-dependent tests so `R CMD check` passes without a

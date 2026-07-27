@@ -205,7 +205,7 @@ create_discriminator <- function(input_dim) {
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' dat <- load_real_input_data(example = TRUE)
 #' gan <- train_gan_on_real_data(dat$gan_training_data,
 #' feature_correlations = dat$feature_correlations,

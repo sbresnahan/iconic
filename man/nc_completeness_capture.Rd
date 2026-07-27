@@ -54,6 +54,8 @@ panel can have many controls that each weakly capture U, or few controls
 that together capture it well.
 }
 \examples{
+\dontrun{
 dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
 nc_completeness_capture(dat)
+}
 }

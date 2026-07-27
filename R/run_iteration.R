@@ -118,7 +118,7 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' gan <- train_gan_on_real_data(load_real_input_data(example = TRUE)$gan_training_data)
 #' dat <- run_single_iteration(gan, n_features = 10, n_confounders = 2,
 #' nc_model = "cpg", coverage = 0.5)

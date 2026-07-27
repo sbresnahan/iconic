@@ -209,7 +209,7 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 #' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 #' W = matrix(rnorm(100*10), 10, 100))

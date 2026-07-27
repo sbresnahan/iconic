@@ -96,7 +96,7 @@
 #' W = matrix(rnorm(100*10), 10, 100))
 #' diag <- iconic_diagnose(data)
 #' est <- iconic_estimate(data, diagnosis = diag)
-#' conf <- infer_confounding(data, diagnosis = diag, estimate = est, n_cores = 4)
+#' conf <- infer_confounding(data, diagnosis = diag, estimate = est, n_cores = 2)
 #' print(conf)
 #' }
 infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,

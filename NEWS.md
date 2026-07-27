@@ -1,3 +1,20 @@
+# iconic 0.9.7
+
+## Packaging and vignettes
+
+- **Removed the shipped pre-trained GAN** (`inst/pretrained_gan.rds`). The
+  serialized object used serialization format version 3, which forced an
+  implicit `R (>= 3.5.0)` dependency and emitted an `R CMD build` warning.
+  Removing it drops that constraint. Texture models are now always trained
+  from data, consistent with the package's design that GANs are fit to the
+  user's cohort rather than loaded from a shipped artifact.
+
+- **Vignettes train the texture model instead of loading it.** The
+  *Walkthrough* and *Sensitivity Analysis* vignettes previously loaded the
+  bundled `pretrained_gan.rds` for speed; they now call
+  `train_gan_on_real_data()` for a small number of epochs (guarded by
+  `check_torch_setup()`), matching the *Texture Model* vignette.
+
 # iconic 0.9.6
 
 ## Documentation cleanup

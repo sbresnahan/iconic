@@ -111,13 +111,24 @@ simulate data that mirrors your cohort's marginal and joint structure. Train
 it **once** and attach it to the `iconic_data` object so every downstream
 function reuses it without retraining.
 
-For speed, this vignette loads a pre-trained texture model shipped with the
-package. In practice you would train your own with `train_gan_on_real_data()`
+For a runnable example we train a texture model briefly here; in practice you
+would train for more epochs on your own cohort with `train_gan_on_real_data()`
 (see the *Texture Model* vignette).
 
 ```{r workflow-gan, eval=has_torch}
-# Load the pre-trained texture model shipped with the package.
-gan <- readRDS(system.file("pretrained_gan.rds", package = "iconic"))
+# Train a texture model once (few epochs for the vignette).
+input <- load_real_input_data(
+  Z_matrix = matrix(dat$Z, nrow = 1),
+  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
+  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
+)
+
+gan <- train_gan_on_real_data(
+  input$gan_training_data,
+  feature_correlations = input$feature_correlations,
+  feature_texture = input$feature_texture,
+  epochs = 5, seed = 1, verbose = FALSE
+)
 
 # Attach it: iconic_sensitivity() and iconic_prospect() will now reuse it.
 idat$trained_gan <- gan

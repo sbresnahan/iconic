@@ -59,8 +59,19 @@ idat <- iconic_data(
 ```
 
 ```{r sens-gan, eval=has_torch}
-# Load the pre-trained texture model shipped with the package.
-idat$trained_gan <- readRDS(system.file("pretrained_gan.rds", package = "iconic"))
+# Train a texture model briefly and attach it to the iconic_data object.
+input <- load_real_input_data(
+  Z_matrix = matrix(dat$Z, nrow = 1),
+  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
+  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
+)
+
+idat$trained_gan <- train_gan_on_real_data(
+  input$gan_training_data,
+  feature_correlations = input$feature_correlations,
+  feature_texture = input$feature_texture,
+  epochs = 5, seed = 1, verbose = FALSE
+)
 ```
 
 ```{r sens-no-torch, eval=!has_torch, echo=FALSE, results="asis"}

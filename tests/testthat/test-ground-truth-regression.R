@@ -92,6 +92,8 @@ test_that("oracle bias decreases as n grows (feat_cor = 0.5)", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("GAN-learned correlations do not perturb ground truth (n = 50000)", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   skip_if_not_installed("MASS")
   real_data <- load_real_input_data(example = TRUE)
   trained_gan <- train_gan_on_real_data(real_data$gan_training_data,

@@ -185,6 +185,8 @@ test_that("print.iconic_confounding produces output", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity with confounding=inferred includes inferred_confounding", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_conf_data(n = 80, n_features = 5)
   diag <- iconic_diagnose(idata)
   sens <- iconic_sensitivity(idata, diagnosis = diag,
@@ -196,6 +198,8 @@ test_that("iconic_sensitivity with confounding=inferred includes inferred_confou
 })
 
 test_that("iconic_sensitivity with confounding=default has NULL inferred_confounding", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_conf_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),

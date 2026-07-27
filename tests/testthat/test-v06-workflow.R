@@ -169,6 +169,8 @@ test_that("print.iconic_recommendation produces output", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity returns surface and tipping points", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0, 0.3),
@@ -186,6 +188,8 @@ test_that("iconic_sensitivity rejects non-mediation data", {
 })
 
 test_that("iconic_sensitivity PGC2Gm robust at origin", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0),
@@ -196,6 +200,8 @@ test_that("iconic_sensitivity PGC2Gm robust at origin", {
 })
 
 test_that("print.iconic_sensitivity produces output", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),
@@ -209,6 +215,8 @@ test_that("print.iconic_sensitivity produces output", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_prospect returns strength surface and prospective", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50),
                       M = rnorm(50))
   result <- iconic_prospect(bare, gamma_G_grid = c(0.3, 0.6),
@@ -224,6 +232,8 @@ test_that("iconic_prospect rejects non-mediation data", {
 })
 
 test_that("iconic_prospect UNADJ bias exceeds IV2SLS2 bias", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   bare <- iconic_data(Z = rnorm(80), Y = matrix(rnorm(80 * 3), 3, 80),
                       M = rnorm(80))
   result <- iconic_prospect(bare, gamma_G_grid = c(0.6),
@@ -234,6 +244,8 @@ test_that("iconic_prospect UNADJ bias exceeds IV2SLS2 bias", {
 })
 
 test_that("print.iconic_prospect produces output", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50),
                       M = rnorm(50))
   result <- iconic_prospect(bare, gamma_G_grid = c(0.6),
@@ -319,6 +331,8 @@ test_that("gamma_G affects instrument strength", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity reports texture_source field", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),
@@ -330,6 +344,8 @@ test_that("iconic_sensitivity reports texture_source field", {
 })
 
 test_that("iconic_sensitivity auto-trains GAN when no trained_gan supplied", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),
@@ -339,6 +355,8 @@ test_that("iconic_sensitivity auto-trains GAN when no trained_gan supplied", {
 })
 
 test_that("iconic_sensitivity uses attached GAN from iconic_data", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   # Attach a GAN by training one (light)
   trained <- iconic:::.auto_train_gan(idata, epochs = 5)
@@ -353,6 +371,8 @@ test_that("iconic_sensitivity uses attached GAN from iconic_data", {
 })
 
 test_that("iconic_sensitivity uses supplied trained_gan argument", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   trained <- iconic:::.auto_train_gan(idata, epochs = 5)
   sens <- iconic_sensitivity(idata,
@@ -363,6 +383,8 @@ test_that("iconic_sensitivity uses supplied trained_gan argument", {
 })
 
 test_that("iconic_sensitivity confounding=default is backward compatible", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),
@@ -375,6 +397,8 @@ test_that("iconic_sensitivity confounding=default is backward compatible", {
 })
 
 test_that("iconic_sensitivity confounding=inferred populates inferred_confounding", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data(n = 80, n_features = 5)
   diag <- iconic_diagnose(idata)
   sens <- iconic_sensitivity(idata, diagnosis = diag,
@@ -387,6 +411,8 @@ test_that("iconic_sensitivity confounding=inferred populates inferred_confoundin
 })
 
 test_that("iconic_sensitivity confounding=manual uses provided values", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),
@@ -403,6 +429,8 @@ test_that("iconic_sensitivity confounding=manual uses provided values", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_prospect reports texture_source field", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50),
                       M = rnorm(50))
   result <- iconic_prospect(bare, gamma_G_grid = c(0.6),
@@ -412,6 +440,8 @@ test_that("iconic_prospect reports texture_source field", {
 })
 
 test_that("iconic_prospect confounding=inferred populates inferred_confounding", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data(n = 80, n_features = 5)
   result <- iconic_prospect(idata,
                             gamma_G_grid = c(0.6),
@@ -427,6 +457,8 @@ test_that("iconic_prospect confounding=inferred populates inferred_confounding",
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_data stores trained_gan slot", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   trained <- iconic:::.auto_train_gan(idata, epochs = 5)
   idata2 <- iconic_data(Z = idata$Z, Y = idata$Y, M = idata$M,
@@ -437,6 +469,8 @@ test_that("iconic_data stores trained_gan slot", {
 })
 
 test_that("iconic_data print reports GAN attachment", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   trained <- iconic:::.auto_train_gan(idata, epochs = 5)
   idata2 <- iconic_data(Z = idata$Z, Y = idata$Y, M = idata$M,

@@ -77,6 +77,8 @@ test_that("torch GAN trains when available (skipped otherwise)", {
 # ---- Binary-column handling tests ------------------------------------------
 
 test_that("binary columns are detected and stored in the iconic_gan object", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   inp <- load_real_input_data(example = TRUE)
   gan <- train_gan_on_real_data(inp$gan_training_data, epochs = 5, verbose = FALSE)
   expect_true("binary_cols" %in% names(gan))
@@ -89,6 +91,8 @@ test_that("binary columns are detected and stored in the iconic_gan object", {
 })
 
 test_that("sample_texture returns 0/1 values for binary columns", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   inp <- load_real_input_data(example = TRUE)
   gan <- train_gan_on_real_data(inp$gan_training_data, epochs = 5, verbose = FALSE)
   tex <- sample_texture(gan, 200)
@@ -100,6 +104,8 @@ test_that("sample_texture returns 0/1 values for binary columns", {
 })
 
 test_that("one-hot dummy groups are mutually exclusive in synthetic draws", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   inp <- load_real_input_data(example = TRUE)
   gan <- train_gan_on_real_data(inp$gan_training_data, epochs = 5, verbose = FALSE)
   tex <- sample_texture(gan, 500)
@@ -116,6 +122,8 @@ test_that("one-hot dummy groups are mutually exclusive in synthetic draws", {
 })
 
 test_that("plot_gan_diagnostics handles binary columns without error", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   inp <- load_real_input_data(example = TRUE)
   gan <- train_gan_on_real_data(inp$gan_training_data, epochs = 5, verbose = FALSE)
   # Should produce a plot with both bar charts (binary) and density overlays (continuous)
@@ -125,6 +133,8 @@ test_that("plot_gan_diagnostics handles binary columns without error", {
 })
 
 test_that("continuous columns are not flagged as binary", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   inp <- load_real_input_data(example = TRUE)
   gan <- train_gan_on_real_data(inp$gan_training_data, epochs = 5, verbose = FALSE)
   # exposure_level, outcome_level, and mediator_level are continuous

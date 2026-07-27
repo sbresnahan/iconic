@@ -1,12 +1,12 @@
 # ICONIC
 
-<img src="man/figures/logo.png" align="right" width="259" height="300" alt="ICONIC logo" />
-
 [![Project Status: Active](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![R-CMD-check](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/sbresnahan/iconic/graph/badge.svg)](https://app.codecov.io/gh/sbresnahan/iconic)
 
 ## About the Package
+
+<img src="man/figures/logo.png" align="right" width="259" height="300" alt="ICONIC logo" />
 
 The R package `iconic` provides a model selection workflow for causal
 inference with genetic instruments and negative controls in observational

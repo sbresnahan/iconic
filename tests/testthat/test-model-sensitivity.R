@@ -18,6 +18,8 @@
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity mediation surface includes IV2SLS2 and PGC2Gm", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0, 0.3),
@@ -29,6 +31,8 @@ test_that("iconic_sensitivity mediation surface includes IV2SLS2 and PGC2Gm", {
 })
 
 test_that("iconic_sensitivity surface includes all 8 methods at origin", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0),
@@ -53,6 +57,8 @@ test_that("iconic_sensitivity rejects non-mediation data", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity custom grid dimensions match", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   r1 <- c(0, 0.1, 0.2, 0.3, 0.5)
   r2 <- c(0, 0.2, 0.5)
@@ -67,6 +73,8 @@ test_that("iconic_sensitivity custom grid dimensions match", {
 })
 
 test_that("iconic_sensitivity single-cell grid works", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0.3),
@@ -81,6 +89,8 @@ test_that("iconic_sensitivity single-cell grid works", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity tipping_points has expected structure", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0, 0.3, 0.5),
@@ -96,6 +106,8 @@ test_that("iconic_sensitivity tipping_points has expected structure", {
 })
 
 test_that("iconic_sensitivity tipping points are within grid range", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   r1 <- c(0, 0.1, 0.2, 0.3, 0.5)
   r2 <- c(0, 0.1, 0.2, 0.3, 0.5)
@@ -117,6 +129,8 @@ test_that("iconic_sensitivity tipping points are within grid range", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity surface has NDE_bias and tipped columns", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0, 0.3),
@@ -130,6 +144,8 @@ test_that("iconic_sensitivity surface has NDE_bias and tipped columns", {
 })
 
 test_that("iconic_sensitivity PGC2Gm robust at origin", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0),
@@ -142,6 +158,8 @@ test_that("iconic_sensitivity PGC2Gm robust at origin", {
 })
 
 test_that("iconic_sensitivity IV2SLS2 robust at origin", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0),
@@ -158,6 +176,8 @@ test_that("iconic_sensitivity IV2SLS2 robust at origin", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity bias values in same range as gan_mediation_sensitivity", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data(n = 200, n_features = 5)
   # Use the same parameters for both
   common_args <- list(
@@ -200,6 +220,8 @@ test_that("iconic_sensitivity bias values in same range as gan_mediation_sensiti
 # ═══════════════════════════════════════════════════════════════
 
 test_that("print.iconic_sensitivity produces output", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),
@@ -215,6 +237,8 @@ test_that("print.iconic_sensitivity produces output", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("iconic_sensitivity calibrates n_samples to data", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data(n = 150)
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),
@@ -223,6 +247,8 @@ test_that("iconic_sensitivity calibrates n_samples to data", {
 })
 
 test_that("iconic_sensitivity respects explicit n_samples override", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data(n = 100)
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),
@@ -232,6 +258,8 @@ test_that("iconic_sensitivity respects explicit n_samples override", {
 })
 
 test_that("iconic_sensitivity respects bias_threshold override", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0, 0.3),
@@ -244,6 +272,8 @@ test_that("iconic_sensitivity respects bias_threshold override", {
 })
 
 test_that("iconic_sensitivity returns S3 class", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
   idata <- .make_sens_data()
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0), rho_G2_grid = c(0),

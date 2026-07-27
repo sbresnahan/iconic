@@ -1,5 +1,22 @@
 # iconic 0.9.7
 
+## Test suite
+
+- **Guarded all torch-dependent tests so `R CMD check` passes without a
+  libtorch backend.** Forty `test_that()` blocks across `test-gan.R`,
+  `test-model-sensitivity.R`, `test-v06-workflow.R`,
+  `test-infer-confounding.R`, and `test-ground-truth-regression.R` reach a
+  GAN-training code path (`train_gan_on_real_data()` directly, or
+  `iconic_sensitivity()` / `iconic_prospect()` via the internal
+  `.auto_train_gan()` step) but lacked a skip guard. On environments where
+  the `torch` R package is installed but its libtorch backend is not (e.g.
+  the GitHub Actions runners, which do not run `torch::install_torch()`),
+  these tests errored with "torch is required for the generative texture
+  model" instead of skipping, failing the check. Each block now begins with
+  `skip_if_not_installed("torch")` and `skip_if_not(check_torch_setup())`,
+  matching the guard convention already used elsewhere in the suite. The
+  tests still run (and pass) wherever the libtorch backend is available.
+
 ## Packaging and vignettes
 
 - **Removed the shipped pre-trained GAN** (`inst/pretrained_gan.rds`). The

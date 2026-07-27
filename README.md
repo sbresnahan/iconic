@@ -16,11 +16,11 @@ stress-tests them against confounding and pleiotropy violations, and
 recommends the one most likely to be unbiased.
 
 The motivating application is estimating the causal effect of an exposure
-(e.g. gestational diabetes mellitus) on birth outcomes (e.g. birth weight) via 
-a panel of molecular outcomes (e.g. placental transcriptome), but the package 
-is applicable to any observational study with a genetic instrument, negative controls, and a
-mediator and/or outcome panel. A hybrid generative texture model (a torch
-GAN for sample-level structure and a Gaussian copula for the mediator
+(e.g. gestational diabetes mellitus) on on an outcome (e.g., fetal birth weight) 
+via a panel of molecular outcomes (e.g. placental transcriptomics), 
+but the package is applicable to any observational study with a genetic instrument, 
+negative controls, and a mediator and/or outcome panel. A hybrid generative texture 
+model (a torch GAN for sample-level structure and a Gaussian copula for the mediator
 panel) lets the sensitivity analysis mirror the marginal and joint
 structure of the user's cohort. Time-to-event outcomes are supported on
 the Cox log-hazard-ratio and restricted-mean-survival-time scales.
@@ -85,14 +85,14 @@ instrument or path-specific negative controls.
 
 | | UNADJ | DIRECT | COCA | IV2SLS | PGC | IV2SLS2 | PGC2 | PGC2Gm |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Continuous outcome | X | X | X | X | X | X | X | X |
-| Survival outcome | X | X |   | X | X | X | X | X |
-| Total effect | X | X | X | X | X | X | X | X |
-| Mediation (NDE + NIE) | X | X | X | X | X | X | X | X |
-| Requires exposure instrument |   |   |   | X |   | X |   |   |
-| Requires mediator instrument |   |   |   |   |   | X |   | X |
-| Requires negative controls |   | X | X |   | X |   | X | X |
-| Requires completeness |   |   |   |   | X |   | X | X |
+| Continuous outcome | yes | yes | yes | yes | yes | yes | yes | yes |
+| Survival outcome | yes | yes | no | yes | yes | yes | yes | yes |
+| Total effect | yes | yes | yes | yes | yes | yes | yes | yes |
+| Mediation (NDE + NIE) | yes | yes | yes | yes | yes | yes | yes | yes |
+| Requires exposure instrument | no | no | no | yes | no | yes | no | no |
+| Requires mediator instrument | no | no | no | no | no | yes | no | yes |
+| Requires negative controls | no | yes | yes | no | yes | no | yes | yes |
+| Requires completeness | no | no | no | no | yes | no | yes | yes |
 
 ## Benchmark simulation mode
 

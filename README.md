@@ -85,14 +85,14 @@ instrument or path-specific negative controls.
 
 | | UNADJ | DIRECT | COCA | IV2SLS | PGC | IV2SLS2 | PGC2 | PGC2Gm |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Continuous outcome | yes | yes | yes | yes | yes | yes | yes | yes |
-| Survival outcome | yes | yes | no | yes | yes | yes | yes | yes |
-| Total effect | yes | yes | yes | yes | yes | yes | yes | yes |
-| Mediation (NDE + NIE) | yes | yes | yes | yes | yes | yes | yes | yes |
-| Requires exposure instrument | no | no | no | yes | no | yes | no | no |
-| Requires mediator instrument | no | no | no | no | no | yes | no | yes |
-| Requires negative controls | no | yes | yes | no | yes | no | yes | yes |
-| Requires completeness | no | no | no | no | yes | no | yes | yes |
+| Continuous outcome | X | X | X | X | X | X | X | X |
+| Survival outcome | X | X |   | X | X | X | X | X |
+| Total effect | X | X | X | X | X | X | X | X |
+| Mediation (NDE + NIE) | X | X | X | X | X | X | X | X |
+| Requires exposure instrument |   |   |   | X |   | X |   |   |
+| Requires mediator instrument |   |   |   |   |   | X |   | X |
+| Requires negative controls |   | X | X |   | X |   | X | X |
+| Requires completeness |   |   |   |   | X |   | X | X |
 
 ## Benchmark simulation mode
 

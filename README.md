@@ -16,9 +16,9 @@ stress-tests them against confounding and pleiotropy violations, and
 recommends the one most likely to be unbiased.
 
 The motivating application is estimating the causal effect of an exposure
-(e.g. gestational diabetes mellitus) on a panel of molecular outcomes
-(e.g. placental transcriptome), but the package is applicable to any
-observational study with a genetic instrument, negative controls, and a
+(e.g. gestational diabetes mellitus) on birth outcomes (e.g. birth weight) via 
+a panel of molecular outcomes (e.g. placental transcriptome), but the package 
+is applicable to any observational study with a genetic instrument, negative controls, and a
 mediator and/or outcome panel. A hybrid generative texture model (a torch
 GAN for sample-level structure and a Gaussian copula for the mediator
 panel) lets the sensitivity analysis mirror the marginal and joint

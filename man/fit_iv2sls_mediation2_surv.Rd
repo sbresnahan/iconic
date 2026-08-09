@@ -7,7 +7,7 @@
 fit_iv2sls_mediation2_surv(
   time,
   event,
-  Z,
+  X,
   M,
   g,
   gm,
@@ -23,11 +23,11 @@ fit_iv2sls_mediation2_surv(
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
-\item{g}{Numeric instrument for Z (length n).}
+\item{g}{Numeric instrument for X (length n).}
 
 \item{gm}{Numeric instrument for M (length n).}
 
@@ -49,10 +49,10 @@ Returns all-NA if either first-stage partial F is below \code{min_f}.
 Two-stage Mendelian-randomization mediation with a survival outcome
 stage (2SPS):
 \enumerate{
-\item OLS: \code{Z ~ g + W + covars} -> Z_hat (purge U1 from Z).
-\item OLS: \code{M ~ Z_hat + gm + W + covars} -> M_hat, alpha_M.
-\item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M_hat + W + covars} ->
-NDE (coef on Z_hat), beta_M (coef on M_hat).
+\item OLS: \code{X ~ g + W + covars} -> X_hat (purge U1 from X).
+\item OLS: \code{M ~ X_hat + gm + W + covars} -> M_hat, alpha_M.
+\item Cox / RMST: \code{Surv(t,e) ~ X_hat + M_hat + W + covars} ->
+NDE (coef on X_hat), beta_M (coef on M_hat).
 }
 \code{NIE = alpha_M * beta_M}. Weak-instrument gates (partial F for
 G and Gm) apply to the OLS first stages.
@@ -62,7 +62,7 @@ G and Gm) apply to the OLS first stages.
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
 mo_confounding = 0.8, phi = 0.8, seed = 1)
-fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
+fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 dat$G[, 1], dat$Gm, dat$W[, 1])
 }
 }

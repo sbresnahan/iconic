@@ -19,7 +19,7 @@ test_that("gamma_G default 0.6 produces identical output to explicit 0.6", {
   set.seed(42)
   d2 <- run_single_iteration(n_synthetic_samples = 50, n_features = 3,
                              gamma_G = 0.6, seed = 42)
-  expect_identical(d1$Z, d2$Z)
+  expect_identical(d1$X, d2$X)
   expect_identical(d1$Y, d2$Y)
   expect_identical(d1$M, d2$M)
   expect_identical(d1$W, d2$W)
@@ -35,7 +35,7 @@ test_that("gamma_G default produces identical output to no gamma_G arg", {
   d2 <- run_single_iteration(n_synthetic_samples = 80, n_features = 4,
                              mo_confounding = 0.8, phi = 0.8,
                              gamma_G = 0.6, seed = 100)
-  expect_identical(d1$Z, d2$Z)
+  expect_identical(d1$X, d2$X)
   expect_identical(d1$Y, d2$Y)
 })
 
@@ -49,8 +49,8 @@ test_that("gamma_G changes instrument strength", {
                              mo_confounding = 0.8, phi = 0.8,
                              gamma_G = 1.0, seed = 42)
   # Stronger gamma_G should produce stronger first-stage relationship
-  cor_w <- cor(dw$G[, 1], dw$Z)
-  cor_s <- cor(ds$G[, 1], ds$Z)
+  cor_w <- cor(dw$G[, 1], dw$X)
+  cor_s <- cor(ds$G[, 1], ds$X)
   expect_lt(abs(cor_w), abs(cor_s))
 })
 
@@ -85,11 +85,11 @@ test_that("analyze_mediation_robust produces 8 methods with phi and", {
   set.seed(42)
   dat <- run_single_iteration(n_synthetic_samples = 200, n_features = 5,
                               mo_confounding = 0.8, phi = 0.8,
-                              separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7,
+                              omega_1 = 0.7, omega_2 = 0.7,
                               seed = 42)
   res <- analyze_mediation_robust(dat)
   methods_present <- unique(res$method)
-  # With phi > 0 and separate_U, all 8 methods should be present
+  # With phi > 0 and path-specific loadings, all 8 methods should be present
   for (m in c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
               "IV2SLS2", "PGC2", "PGC2Gm")) {
     expect_true(m %in% methods_present, label = paste("method", m))
@@ -251,6 +251,6 @@ test_that("generate_toy_data gamma_G=0.6 identical to default", {
   set.seed(42)
   d2 <- generate_toy_data(n = 50, n_features = 3, mo_confounding = 0.8,
                           phi = 0.8, gamma_G = 0.6, seed = 42)
-  expect_identical(d1$Z, d2$Z)
+  expect_identical(d1$X, d2$X)
   expect_identical(d1$Y, d2$Y)
 })

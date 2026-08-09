@@ -7,7 +7,7 @@
 fit_unadj_mediation_surv(
   time,
   event,
-  Z,
+  X,
   M,
   covars = NULL,
   effect_scale = c("loghr", "rmst"),
@@ -19,7 +19,7 @@ fit_unadj_mediation_surv(
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
@@ -35,8 +35,8 @@ Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
 \code{alpha_se}, \code{beta_M}, \code{beta_M_se}.
 }
 \description{
-Stage 1 (OLS): \code{M ~ Z} -> alpha_M. Stage 2 (Cox / RMST):
-survival outcome ~ Z + M -> NDE (coef on Z), beta_M (coef on M).
+Stage 1 (OLS): \code{M ~ X} -> alpha_M. Stage 2 (Cox / RMST):
+survival outcome ~ X + M -> NDE (coef on X), beta_M (coef on M).
 \code{NIE = alpha_M * beta_M}. No confounding adjustment; bias
 reference.
 }
@@ -45,6 +45,6 @@ reference.
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
 mo_confounding = 0.8, seed = 1)
-fit_unadj_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M)
+fit_unadj_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M)
 }
 }

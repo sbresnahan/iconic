@@ -3,8 +3,8 @@
 # indirect (NIE) effects under unmeasured confounding.
 #
 # Each estimator returns list(NDE, NDE_se, NDE_p, NIE, NIE_se, NIE_p).
-# NDE = natural direct effect (beta_Z, Z -> Y not through M)
-# NIE = natural indirect effect (alpha_M * beta_M, Z -> M -> Y)
+# NDE = natural direct effect (beta_X, X -> Y not through M)
+# NIE = natural indirect effect (alpha_M * beta_M, X -> M -> Y)
 #
 # The data-generating process may include mediator-outcome (M-O)
 # confounding via a shared unmeasured confounder U1 that affects
@@ -14,11 +14,11 @@
 # central quantity the simulation benchmarks.
 #
 # fit_pgc_mediation() now uses a MATRIX bridge (regresses
-# Z_resid on the full W matrix). The original scalar-bridge version
+# X_resid on the full W matrix). The original scalar-bridge version
 # is retained as fit_pgc_scalar_mediation().
 #
 # fit_iv2sls_mediation2() implements a 2-stage MR mediation
-# estimator that uses TWO instruments -- G for Z and Gm for M --
+# estimator that uses TWO instruments -- G for X and Gm for M --
 # making NDE and NIE point-identified under M-O confounding when both
 # instruments are valid and strong. This resolves the identification
 # failure that limits the single-instrument estimators above.
@@ -63,7 +63,7 @@ delta_se_product <- function(alpha, alpha_se, beta, beta_se, cov_ab = 0) {
 #' This guarantees every resampled draw uses a synchronised bootstrap
 #' sample across all variables — critical for the instrumented estimators
 #' (IV2SLS, PGC, PGC2Gm) whose instruments and NC panels must be resampled
-#' in lockstep with y, Z, and M.
+#' in lockstep with y, X, and M.
 #'
 #' @param estimator_fn A closure `function(idx)` returning a fit list with
 #' `NDE` and `NIE` (and optionally `NDE_se`, `NIE_se`).
@@ -233,7 +233,7 @@ composite_p_value <- function(a, b, var_a = 1, var_b = 1) {
   # correct grouping for ICONIC's design: in the real case studies Y is
   # a scalar outcome and M is a panel of mediators, so the variation in
   # a = alpha_M / SE(alpha_M) comes from the different stage-1
-  # regressions M_m ~ Z for each mediator m. Grouping by (method,
+  # regressions M_m ~ X for each mediator m. Grouping by (method,
   # mediator) instead would give one test per group when n_features = 1,
   # falling back to Var = 1 and making the composite test a no-op.
   groups <- factor(res$method, levels = unique(res$method))
@@ -300,15 +300,15 @@ composite_p_value <- function(a, b, var_a = 1, var_b = 1) {
 
 #' UNADJ mediation estimator: naive Baron-Kenny style
 #'
-#' Stage 1: \code{M ~ Z} (estimate alpha_M).
-#' Stage 2: \code{Y ~ Z + M} (estimate NDE = beta_Z, beta_M).
+#' Stage 1: \code{M ~ X} (estimate alpha_M).
+#' Stage 2: \code{Y ~ X + M} (estimate NDE = beta_X, beta_M).
 #' NIE = alpha_M * beta_M.
 #'
 #' Does not adjust for unmeasured confounding. Provided as a bias
 #' reference floor, analogous to UNADJ in the total-effect setting.
 #'
 #' @param y Numeric outcome vector (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param covars Optional data frame of additional covariates (n rows).
 #'
@@ -320,34 +320,34 @@ composite_p_value <- function(a, b, var_a = 1, var_b = 1) {
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-#' fit_unadj_mediation(dat$Y[, 1], dat$Z, dat$M)
+#' fit_unadj_mediation(dat$Y[, 1], dat$X, dat$M)
 #' }
-fit_unadj_mediation <- function(y, Z, M, covars = NULL) {
+fit_unadj_mediation <- function(y, X, M, covars = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
                  alpha_M = NA_real_, alpha_se = NA_real_, beta_M = NA_real_, beta_M_se = NA_real_)
   cnames <- if (!is.null(covars)) names(covars) else character(0)
   cs <- .covar_str(cnames)
 
-  # Stage 1: M ~ Z
-  d1 <- .bind_covars(data.frame(M = M, Z = Z), covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("M ~ Z", cs)), data = d1),
+  # Stage 1: M ~ X
+  d1 <- .bind_covars(data.frame(M = M, X = X), covars)
+  fit1 <- tryCatch(lm(as.formula(paste0("M ~ X", cs)), data = d1),
                    error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   s1 <- summary(fit1)$coefficients
-  if (!"Z" %in% rownames(s1)) return(NA_res)
-  alpha <- as.numeric(coef(fit1)["Z"])
-  alpha_se <- as.numeric(s1["Z", 2])
+  if (!"X" %in% rownames(s1)) return(NA_res)
+  alpha <- as.numeric(coef(fit1)["X"])
+  alpha_se <- as.numeric(s1["X", 2])
 
-  # Stage 2: Y ~ Z + M
-  d2 <- .bind_covars(data.frame(y = y, Z = Z, M = M), covars)
-  fit2 <- tryCatch(lm(as.formula(paste0("y ~ Z + M", cs)), data = d2),
+  # Stage 2: Y ~ X + M
+  d2 <- .bind_covars(data.frame(y = y, X = X, M = M), covars)
+  fit2 <- tryCatch(lm(as.formula(paste0("y ~ X + M", cs)), data = d2),
                    error = function(e) NULL)
   if (is.null(fit2)) return(NA_res)
   s2 <- summary(fit2)$coefficients
-  if (!"Z" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
-  beta_Z <- as.numeric(coef(fit2)["Z"])
-  beta_Z_se <- as.numeric(s2["Z", 2])
+  if (!"X" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
+  beta_X <- as.numeric(coef(fit2)["X"])
+  beta_X_se <- as.numeric(s2["X", 2])
   beta_M <- as.numeric(coef(fit2)["M"])
   beta_M_se <- as.numeric(s2["M", 2])
 
@@ -355,7 +355,7 @@ fit_unadj_mediation <- function(y, Z, M, covars = NULL) {
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(s2["Z", 4]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(s2["X", 4]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -372,7 +372,7 @@ fit_unadj_mediation <- function(y, Z, M, covars = NULL) {
 #' confounding via a ratio or IV approach.
 #'
 #' @param y Numeric outcome vector (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param g Numeric instrument vector (length n).
 #' @param w Numeric negative-control vector (length n).
@@ -386,9 +386,9 @@ fit_unadj_mediation <- function(y, Z, M, covars = NULL) {
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-#' fit_direct_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$W[, 1])
+#' fit_direct_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W[, 1])
 #' }
-fit_direct_mediation <- function(y, Z, M, g, w, covars = NULL) {
+fit_direct_mediation <- function(y, X, M, g, w, covars = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
                  alpha_M = NA_real_, alpha_se = NA_real_, beta_M = NA_real_, beta_M_se = NA_real_)
@@ -396,29 +396,29 @@ fit_direct_mediation <- function(y, Z, M, g, w, covars = NULL) {
   cs <- .covar_str(cnames)
   we <- .expand_w(w)
 
-  # Stage 1: M ~ Z + G + W (full W panel)
-  d1 <- data.frame(M = M, Z = Z, g = g)
+  # Stage 1: M ~ X + G + W (full W panel)
+  d1 <- data.frame(M = M, X = X, g = g)
   d1 <- cbind(d1, we$df)
   d1 <- .bind_covars(d1, covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("M ~ Z + g + ", we$frag, cs)), data = d1),
+  fit1 <- tryCatch(lm(as.formula(paste0("M ~ X + g + ", we$frag, cs)), data = d1),
                    error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   s1 <- summary(fit1)$coefficients
-  if (!"Z" %in% rownames(s1)) return(NA_res)
-  alpha <- as.numeric(coef(fit1)["Z"])
-  alpha_se <- as.numeric(s1["Z", 2])
+  if (!"X" %in% rownames(s1)) return(NA_res)
+  alpha <- as.numeric(coef(fit1)["X"])
+  alpha_se <- as.numeric(s1["X", 2])
 
-  # Stage 2: Y ~ Z + M + G + W (full W panel)
-  d2 <- data.frame(y = y, Z = Z, M = M, g = g)
+  # Stage 2: Y ~ X + M + G + W (full W panel)
+  d2 <- data.frame(y = y, X = X, M = M, g = g)
   d2 <- cbind(d2, we$df)
   d2 <- .bind_covars(d2, covars)
-  fit2 <- tryCatch(lm(as.formula(paste0("y ~ Z + M + g + ", we$frag, cs)), data = d2),
+  fit2 <- tryCatch(lm(as.formula(paste0("y ~ X + M + g + ", we$frag, cs)), data = d2),
                    error = function(e) NULL)
   if (is.null(fit2)) return(NA_res)
   s2 <- summary(fit2)$coefficients
-  if (!"Z" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
-  beta_Z <- as.numeric(coef(fit2)["Z"])
-  beta_Z_se <- as.numeric(s2["Z", 2])
+  if (!"X" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
+  beta_X <- as.numeric(coef(fit2)["X"])
+  beta_X_se <- as.numeric(s2["X", 2])
   beta_M <- as.numeric(coef(fit2)["M"])
   beta_M_se <- as.numeric(s2["M", 2])
 
@@ -426,7 +426,7 @@ fit_direct_mediation <- function(y, Z, M, g, w, covars = NULL) {
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(s2["Z", 4]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(s2["X", 4]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -441,13 +441,13 @@ fit_direct_mediation <- function(y, Z, M, g, w, covars = NULL) {
 #' and outcome regressions, extending \code{\link{fit_coca}} to the
 #' mediation setting.
 #'
-#' Stage 1: \code{W ~ M + Z} -> calibrated alpha_M = -beta_Z / beta_M.
-#' Stage 2: \code{W ~ Y + Z + M} -> calibrated NDE = -beta_Z / beta_Y,
+#' Stage 1: \code{W ~ M + X} -> calibrated alpha_M = -beta_X / beta_M.
+#' Stage 2: \code{W ~ Y + X + M} -> calibrated NDE = -beta_X / beta_Y,
 #' calibrated beta_M = -beta_M / beta_Y.
 #' NIE = alpha_M * beta_M (both calibrated).
 #'
 #' @param y Numeric primary outcome vector (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param w Numeric negative-control outcome vector (length n).
 #' Recommended: pass \code{rowMeans(W_matrix)} for stability.
@@ -463,42 +463,42 @@ fit_direct_mediation <- function(y, Z, M, g, w, covars = NULL) {
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-#' fit_coca_mediation(dat$Y[, 1], dat$Z, dat$M, rowMeans(dat$W))
+#' fit_coca_mediation(dat$Y[, 1], dat$X, dat$M, rowMeans(dat$W))
 #' }
-fit_coca_mediation <- function(y, Z, M, w, covars = NULL, ratio_cap = 10) {
+fit_coca_mediation <- function(y, X, M, w, covars = NULL, ratio_cap = 10) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
                  alpha_M = NA_real_, alpha_se = NA_real_, beta_M = NA_real_, beta_M_se = NA_real_)
   cnames <- if (!is.null(covars)) names(covars) else character(0)
   cs <- .covar_str(cnames)
 
-  # Stage 1: W ~ M + Z -> alpha_M calibrated as -beta_Z / beta_M
-  d1 <- .bind_covars(data.frame(w = w, M = M, Z = Z), covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("w ~ M + Z", cs)), data = d1),
+  # Stage 1: W ~ M + X -> alpha_M calibrated as -beta_X / beta_M
+  d1 <- .bind_covars(data.frame(w = w, M = M, X = X), covars)
+  fit1 <- tryCatch(lm(as.formula(paste0("w ~ M + X", cs)), data = d1),
                    error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   b1 <- coef(fit1)
-  bZ1 <- b1["Z"]; bM1 <- b1["M"]
+  bZ1 <- b1["X"]; bM1 <- b1["M"]
   if (is.na(bM1) || abs(bM1) < 1e-8) return(NA_res)
   alpha <- -bZ1 / bM1
   if (abs(alpha) > ratio_cap) return(NA_res)
-  V1 <- vcov(fit1)[c("Z", "M"), c("Z", "M")]
+  V1 <- vcov(fit1)[c("X", "M"), c("X", "M")]
   grad1 <- c(-1 / bM1, bZ1 / bM1^2)
   alpha_se <- sqrt(as.numeric(t(grad1) %*% V1 %*% grad1))
 
-  # Stage 2: W ~ Y + Z + M -> NDE and beta_M calibrated
-  d2 <- .bind_covars(data.frame(w = w, y = y, Z = Z, M = M), covars)
-  fit2 <- tryCatch(lm(as.formula(paste0("w ~ y + Z + M", cs)), data = d2),
+  # Stage 2: W ~ Y + X + M -> NDE and beta_M calibrated
+  d2 <- .bind_covars(data.frame(w = w, y = y, X = X, M = M), covars)
+  fit2 <- tryCatch(lm(as.formula(paste0("w ~ y + X + M", cs)), data = d2),
                    error = function(e) NULL)
   if (is.null(fit2)) return(NA_res)
   b2 <- coef(fit2)
-  bY2 <- b2["y"]; bZ2 <- b2["Z"]; bM2 <- b2["M"]
+  bY2 <- b2["y"]; bZ2 <- b2["X"]; bM2 <- b2["M"]
   if (is.na(bY2) || abs(bY2) < 1e-8) return(NA_res)
   NDE <- -bZ2 / bY2
   beta_M_cal <- -bM2 / bY2
   if (abs(NDE) > ratio_cap) return(NA_res)
 
-  V2 <- vcov(fit2)[c("Z", "y"), c("Z", "y")]
+  V2 <- vcov(fit2)[c("X", "y"), c("X", "y")]
   grad2 <- c(-1 / bY2, bZ2 / bY2^2)
   NDE_se <- sqrt(as.numeric(t(grad2) %*% V2 %*% grad2))
 
@@ -520,24 +520,24 @@ fit_coca_mediation <- function(y, Z, M, w, covars = NULL, ratio_cap = 10) {
 
 #' IV2SLS mediation estimator: instrumented exposure in both stages
 #'
-#' Uses the genetic instrument G to purge U1 from Z, then estimates
+#' Uses the genetic instrument G to purge U1 from X, then estimates
 #' the mediator and outcome regressions with the cleaned exposure.
 #'
 #' Strategy:
 #' \enumerate{
-#' \item \code{Z ~ G + W} -> Z_hat (purge U1 from Z).
-#' \item \code{M ~ Z_hat} -> alpha_M (clean effect of Z on M).
-#' \item \code{Y ~ Z_hat + M + W} -> NDE = beta_Z, beta_M (OLS).
+#' \item \code{X ~ G + W} -> X_hat (purge U1 from X).
+#' \item \code{M ~ X_hat} -> alpha_M (clean effect of X on M).
+#' \item \code{Y ~ X_hat + M + W} -> NDE = beta_X, beta_M (OLS).
 #' }
 #'
-#' The IV cleans Z of U1 confounding, but M remains endogenous via
+#' The IV cleans X of U1 confounding, but M remains endogenous via
 #' U1 -> M. With a single instrument, natural effects are not fully
 #' identified (Rudolph et al., 2024); NDE and NIE are approximations
 #' whose bias from M-O confounding is the key finding the simulation
 #' demonstrates.
 #'
 #' @param y Numeric outcome vector (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param g Numeric instrument vector (length n).
 #' @param w Numeric negative-control vector (length n).
@@ -557,9 +557,9 @@ fit_coca_mediation <- function(y, Z, M, w, covars = NULL, ratio_cap = 10) {
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
-#' fit_iv2sls_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$W[, 1])
+#' fit_iv2sls_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W[, 1])
 #' }
-fit_iv2sls_mediation <- function(y, Z, M, g, w, covars = NULL, min_f = 10) {
+fit_iv2sls_mediation <- function(y, X, M, g, w, covars = NULL, min_f = 10) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
                  alpha_M = NA_real_, alpha_se = NA_real_, beta_M = NA_real_, beta_M_se = NA_real_)
@@ -567,40 +567,40 @@ fit_iv2sls_mediation <- function(y, Z, M, g, w, covars = NULL, min_f = 10) {
   cs <- .covar_str(cnames)
   we <- .expand_w(w)
 
-  # Weak instrument check: Z ~ G + W (full W panel)
-  d_fs <- data.frame(Z = Z, g = g)
-  d_fs <- cbind(d_fs, we$df)
+  # Weak instrument check: X ~ G (+ W when present)
+  d_fs <- data.frame(X = X, g = g)
+  d_fs <- .bind_covars(d_fs, we$df)
   d_fs <- .bind_covars(d_fs, covars)
-  fs <- tryCatch(lm(as.formula(paste0("Z ~ g + ", we$frag, cs)), data = d_fs),
+  fs <- tryCatch(lm(as.formula(paste0("X ~ g", .plus_frag(we$frag), cs)), data = d_fs),
                  error = function(e) NULL)
   if (is.null(fs)) return(NA_res)
   Fst <- .partial_F(fs, "g")
   if (is.na(Fst) || Fst < min_f) return(NA_res)
 
-  # Stage 1: Z ~ G + W -> Z_hat (purge U1 from Z)
-  Z_hat <- fitted(fs)
+  # Stage 1: X ~ G (+ W) -> X_hat (purge U1 from X)
+  X_hat <- fitted(fs)
 
-  # Stage 2 (mediator): M ~ Z_hat -> alpha_M
-  d1 <- .bind_covars(data.frame(M = M, Z_hat = Z_hat), covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("M ~ Z_hat", cs)), data = d1),
+  # Stage 2 (mediator): M ~ X_hat -> alpha_M
+  d1 <- .bind_covars(data.frame(M = M, X_hat = X_hat), covars)
+  fit1 <- tryCatch(lm(as.formula(paste0("M ~ X_hat", cs)), data = d1),
                    error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   s1 <- summary(fit1)$coefficients
-  if (!"Z_hat" %in% rownames(s1)) return(NA_res)
-  alpha <- as.numeric(coef(fit1)["Z_hat"])
-  alpha_se <- as.numeric(s1["Z_hat", 2])
+  if (!"X_hat" %in% rownames(s1)) return(NA_res)
+  alpha <- as.numeric(coef(fit1)["X_hat"])
+  alpha_se <- as.numeric(s1["X_hat", 2])
 
-  # Stage 3 (outcome): Y ~ Z_hat + M + W (full W panel; Z cleaned, M observed)
-  d2 <- data.frame(y = y, Z_hat = Z_hat, M = M)
-  d2 <- cbind(d2, we$df)
+  # Stage 3 (outcome): Y ~ X_hat + M (+ W when present; X cleaned, M observed)
+  d2 <- data.frame(y = y, X_hat = X_hat, M = M)
+  d2 <- .bind_covars(d2, we$df)
   d2 <- .bind_covars(d2, covars)
-  fit2 <- tryCatch(lm(as.formula(paste0("y ~ Z_hat + M + ", we$frag, cs)), data = d2),
+  fit2 <- tryCatch(lm(as.formula(paste0("y ~ X_hat + M", .plus_frag(we$frag), cs)), data = d2),
                    error = function(e) NULL)
   if (is.null(fit2)) return(NA_res)
   s2 <- summary(fit2)$coefficients
-  if (!"Z_hat" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
-  beta_Z <- as.numeric(coef(fit2)["Z_hat"])
-  beta_Z_se <- as.numeric(s2["Z_hat", 2])
+  if (!"X_hat" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
+  beta_X <- as.numeric(coef(fit2)["X_hat"])
+  beta_X_se <- as.numeric(s2["X_hat", 2])
   beta_M <- as.numeric(coef(fit2)["M"])
   beta_M_se <- as.numeric(s2["M", 2])
 
@@ -608,7 +608,7 @@ fit_iv2sls_mediation <- function(y, Z, M, g, w, covars = NULL, min_f = 10) {
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(s2["Z_hat", 4]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(s2["X_hat", 4]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -617,9 +617,9 @@ fit_iv2sls_mediation <- function(y, Z, M, g, w, covars = NULL, min_f = 10) {
 
 # ── 5. IV2SLS2 mediation (two instruments: 2-stage MR) ──
 
-#' IV2SLS2 mediation estimator: 2-stage MR with instruments for both Z and M
+#' IV2SLS2 mediation estimator: 2-stage MR with instruments for both X and M
 #'
-#' Uses TWO genetic instruments: G for the exposure Z and Gm for the
+#' Uses TWO genetic instruments: G for the exposure X and Gm for the
 #' mediator M. This is the key extension: by instrumenting both
 #' endogenous variables, NDE and NIE become \strong{point-identified} even
 #' under mediator-outcome (M-O) confounding, resolving the identification
@@ -627,22 +627,22 @@ fit_iv2sls_mediation <- function(y, Z, M, g, w, covars = NULL, min_f = 10) {
 #'
 #' The motivating example is placental eQTLs: fetal-genotype-derived eQTLs
 #' instrument placental isoform expression (M), while a PFAS-metabolism PRS
-#' instruments the exposure (Z). The mediator set must be restricted to
+#' instruments the exposure (X). The mediator set must be restricted to
 #' isoforms for which eQTLs have been identified.
 #'
 #' Strategy (sequential 2SLS, three OLS stages):
 #' \enumerate{
-#' \item \code{Z ~ G + W + covars} -> Z_hat (purge U1 from Z).
+#' \item \code{X ~ G + W + covars} -> X_hat (purge U1 from X).
 #' Weak-IV check: partial F for G >= \code{min_f}.
-#' \item \code{M ~ Z_hat + Gm + W + covars} -> M_hat, alpha_M = coef on Z_hat.
+#' \item \code{M ~ X_hat + Gm + W + covars} -> M_hat, alpha_M = coef on X_hat.
 #' Weak-IV check: partial F for Gm >= \code{min_f}.
-#' \item \code{Y ~ Z_hat + M_hat + W + covars} -> NDE = beta_Z_hat, beta_M = coef on M_hat.
+#' \item \code{Y ~ X_hat + M_hat + W + covars} -> NDE = beta_X_hat, beta_M = coef on M_hat.
 #' }
 #'
 #' NIE = alpha_M * beta_M (delta-method SE).
 #'
-#' Including Z_hat in the M first-stage (stage 2) is essential: M
-#' structurally depends on Z, so the Z -> M path must be captured for
+#' Including X_hat in the M first-stage (stage 2) is essential: M
+#' structurally depends on X, so the X -> M path must be captured for
 #' alpha_M and the NIE to be correctly estimated. Gm provides the
 #' exogenous variation that identifies the M -> Y effect net of U1
 #' confounding.
@@ -654,12 +654,12 @@ fit_iv2sls_mediation <- function(y, Z, M, g, w, covars = NULL, min_f = 10) {
 #' estimators; the simulation benchmarks bias, not SE accuracy. A unit
 #' test cross-validates this estimator's NDE and beta_M against
 #' \code{AER::ivreg} on the just-identified system
-#' (\code{Y ~ Z + M + W | G + Gm + W}).
+#' (\code{Y ~ X + M + W | G + Gm + W}).
 #'
 #' @param y Numeric outcome vector (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
-#' @param g Numeric instrument for Z (length n).
+#' @param g Numeric instrument for X (length n).
 #' @param gm Numeric instrument for M (length n).
 #' @param w Numeric negative-control vector (length n).
 #' @param covars Optional data frame of additional covariates (n rows).
@@ -680,10 +680,10 @@ fit_iv2sls_mediation <- function(y, Z, M, g, w, covars = NULL, min_f = 10) {
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
 #' phi = 0.8, seed = 1)
-#' fit_iv2sls_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$Gm,
+#' fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$Gm,
 #' dat$W[, 1])
 #' }
-fit_iv2sls_mediation2 <- function(y, Z, M, g, gm, w, covars = NULL, min_f = 10) {
+fit_iv2sls_mediation2 <- function(y, X, M, g, gm, w, covars = NULL, min_f = 10) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
                  alpha_M = NA_real_, alpha_se = NA_real_, beta_M = NA_real_, beta_M_se = NA_real_)
@@ -691,46 +691,46 @@ fit_iv2sls_mediation2 <- function(y, Z, M, g, gm, w, covars = NULL, min_f = 10) 
   cs <- .covar_str(cnames)
   we <- .expand_w(w)
 
-  # ── Stage 1: Z ~ G + W + covars -> Z_hat (purge U1 from Z) ──
-  d_fs <- data.frame(Z = Z, g = g)
-  d_fs <- cbind(d_fs, we$df)
+  # ── Stage 1: X ~ G (+ W) + covars -> X_hat (purge U1 from X) ──
+  d_fs <- data.frame(X = X, g = g)
+  d_fs <- .bind_covars(d_fs, we$df)
   d_fs <- .bind_covars(d_fs, covars)
-  fs <- tryCatch(lm(as.formula(paste0("Z ~ g + ", we$frag, cs)), data = d_fs),
+  fs <- tryCatch(lm(as.formula(paste0("X ~ g", .plus_frag(we$frag), cs)), data = d_fs),
                  error = function(e) NULL)
   if (is.null(fs)) return(NA_res)
   Fst_g <- .partial_F(fs, "g")
   if (is.na(Fst_g) || Fst_g < min_f) return(NA_res)
-  Z_hat <- fitted(fs)
+  X_hat <- fitted(fs)
 
-  # ── Stage 2: M ~ Z_hat + Gm + W + covars -> M_hat, alpha_M ──
-  # Z_hat captures the Z -> M path; Gm provides exogenous variation
+  # ── Stage 2: M ~ X_hat + Gm (+ W) + covars -> M_hat, alpha_M ──
+  # X_hat captures the X -> M path; Gm provides exogenous variation
   # that identifies M net of U1 confounding.
-  d_ms <- data.frame(M = M, Z_hat = Z_hat, gm = gm)
-  d_ms <- cbind(d_ms, we$df)
+  d_ms <- data.frame(M = M, X_hat = X_hat, gm = gm)
+  d_ms <- .bind_covars(d_ms, we$df)
   d_ms <- .bind_covars(d_ms, covars)
-  ms <- tryCatch(lm(as.formula(paste0("M ~ Z_hat + gm + ", we$frag, cs)), data = d_ms),
+  ms <- tryCatch(lm(as.formula(paste0("M ~ X_hat + gm", .plus_frag(we$frag), cs)), data = d_ms),
                  error = function(e) NULL)
   if (is.null(ms)) return(NA_res)
   Fst_gm <- .partial_F(ms, "gm")
   if (is.na(Fst_gm) || Fst_gm < min_f) return(NA_res)
 
   s_ms <- summary(ms)$coefficients
-  if (!"Z_hat" %in% rownames(s_ms)) return(NA_res)
-  alpha <- as.numeric(coef(ms)["Z_hat"])
-  alpha_se <- as.numeric(s_ms["Z_hat", 2])
+  if (!"X_hat" %in% rownames(s_ms)) return(NA_res)
+  alpha <- as.numeric(coef(ms)["X_hat"])
+  alpha_se <- as.numeric(s_ms["X_hat", 2])
   M_hat <- fitted(ms)
 
-  # ── Stage 3: Y ~ Z_hat + M_hat + W + covars -> NDE, beta_M ──
-  d_os <- data.frame(y = y, Z_hat = Z_hat, M_hat = M_hat)
-  d_os <- cbind(d_os, we$df)
+  # ── Stage 3: Y ~ X_hat + M_hat (+ W) + covars -> NDE, beta_M ──
+  d_os <- data.frame(y = y, X_hat = X_hat, M_hat = M_hat)
+  d_os <- .bind_covars(d_os, we$df)
   d_os <- .bind_covars(d_os, covars)
-  os <- tryCatch(lm(as.formula(paste0("y ~ Z_hat + M_hat + ", we$frag, cs)), data = d_os),
+  os <- tryCatch(lm(as.formula(paste0("y ~ X_hat + M_hat", .plus_frag(we$frag), cs)), data = d_os),
                  error = function(e) NULL)
   if (is.null(os)) return(NA_res)
   s_os <- summary(os)$coefficients
-  if (!"Z_hat" %in% rownames(s_os) || !"M_hat" %in% rownames(s_os)) return(NA_res)
-  beta_Z <- as.numeric(coef(os)["Z_hat"])
-  beta_Z_se <- as.numeric(s_os["Z_hat", 2])
+  if (!"X_hat" %in% rownames(s_os) || !"M_hat" %in% rownames(s_os)) return(NA_res)
+  beta_X <- as.numeric(coef(os)["X_hat"])
+  beta_X_se <- as.numeric(s_os["X_hat", 2])
   beta_M <- as.numeric(coef(os)["M_hat"])
   beta_M_se <- as.numeric(s_os["M_hat", 2])
 
@@ -738,7 +738,7 @@ fit_iv2sls_mediation2 <- function(y, Z, M, g, gm, w, covars = NULL, min_f = 10) 
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(s_os["Z_hat", 4]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(s_os["X_hat", 4]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -755,17 +755,17 @@ fit_iv2sls_mediation2 <- function(y, Z, M, g, gm, w, covars = NULL, min_f = 10) 
 #'
 #' Steps:
 #' \enumerate{
-#' \item Residualise Z on G -> Z_resid (U-driven residual).
-#' \item Bridge Z_resid on the FULL W matrix -> W_hat (proxy for U).
-#' \item \code{M ~ Z + W_hat} -> alpha_M (adjusted for confounding proxy).
-#' \item \code{Y ~ Z + M + W_hat} -> NDE = beta_Z, beta_M (adjusted).
+#' \item Residualise X on G -> X_resid (U-driven residual).
+#' \item Bridge X_resid on the FULL W matrix -> W_hat (proxy for U).
+#' \item \code{M ~ X + W_hat} -> alpha_M (adjusted for confounding proxy).
+#' \item \code{Y ~ X + M + W_hat} -> NDE = beta_X, beta_M (adjusted).
 #' }
 #'
 #' The matrix bridge requires \code{ncol(W) >= k} (proximal completeness)
 #' for the bridge to span the confounder subspace.
 #'
 #' @param y Numeric outcome vector (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param g Numeric instrument vector (length n).
 #' @param W Numeric negative-control matrix (n x q) or vector
@@ -780,9 +780,9 @@ fit_iv2sls_mediation2 <- function(y, Z, M, g, gm, w, covars = NULL, min_f = 10) 
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-#' fit_pgc_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$W)
+#' fit_pgc_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W)
 #' }
-fit_pgc_mediation <- function(y, Z, M, g, W, covars = NULL) {
+fit_pgc_mediation <- function(y, X, M, g, W, covars = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
                  alpha_M = NA_real_, alpha_se = NA_real_, beta_M = NA_real_, beta_M_se = NA_real_)
@@ -792,44 +792,44 @@ fit_pgc_mediation <- function(y, Z, M, g, W, covars = NULL) {
   # Ensure W is a matrix
   if (!is.matrix(W)) W <- as.matrix(W)
 
-  # Step 1: residualise Z on G -> U-driven residual
-  d_r <- .bind_covars(data.frame(Zc = Z, g = g), covars)
-  fit_resid <- tryCatch(lm(as.formula(paste0("Zc ~ g", cs)), data = d_r),
+  # Step 1: residualise X on G -> U-driven residual
+  d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
+  fit_resid <- tryCatch(lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
                         error = function(e) NULL)
   if (is.null(fit_resid)) return(NA_res)
-  Z_resid <- residuals(fit_resid)
+  X_resid <- residuals(fit_resid)
 
-  # Step 2: bridge Z_resid on the FULL W matrix -> W_hat
-  d_b <- data.frame(Z_resid = Z_resid)
+  # Step 2: bridge X_resid on the FULL W matrix -> W_hat
+  d_b <- data.frame(X_resid = X_resid)
   d_b <- cbind(d_b, as.data.frame(W))
   if (!is.null(covars)) d_b <- cbind(d_b, covars)
   w_names <- paste0("W", seq_len(ncol(W)))
   names(d_b)[2:(ncol(W) + 1)] <- w_names
-  fml_b <- as.formula(paste0("Z_resid ~ ",
+  fml_b <- as.formula(paste0("X_resid ~ ",
                              paste(w_names, collapse = " + "), cs))
   fit_b <- tryCatch(lm(fml_b, data = d_b), error = function(e) NULL)
   if (is.null(fit_b)) return(NA_res)
   W_hat <- fitted(fit_b)
 
-  # Stage 1: M ~ Z + W_hat
-  d1 <- .bind_covars(data.frame(M = M, Z = Z, W_hat = W_hat), covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("M ~ Z + W_hat", cs)), data = d1),
+  # Stage 1: M ~ X + W_hat
+  d1 <- .bind_covars(data.frame(M = M, X = X, W_hat = W_hat), covars)
+  fit1 <- tryCatch(lm(as.formula(paste0("M ~ X + W_hat", cs)), data = d1),
                    error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   s1 <- summary(fit1)$coefficients
-  if (!"Z" %in% rownames(s1)) return(NA_res)
-  alpha <- as.numeric(coef(fit1)["Z"])
-  alpha_se <- as.numeric(s1["Z", 2])
+  if (!"X" %in% rownames(s1)) return(NA_res)
+  alpha <- as.numeric(coef(fit1)["X"])
+  alpha_se <- as.numeric(s1["X", 2])
 
-  # Stage 2: Y ~ Z + M + W_hat
-  d2 <- .bind_covars(data.frame(y = y, Z = Z, M = M, W_hat = W_hat), covars)
-  fit2 <- tryCatch(lm(as.formula(paste0("y ~ Z + M + W_hat", cs)), data = d2),
+  # Stage 2: Y ~ X + M + W_hat
+  d2 <- .bind_covars(data.frame(y = y, X = X, M = M, W_hat = W_hat), covars)
+  fit2 <- tryCatch(lm(as.formula(paste0("y ~ X + M + W_hat", cs)), data = d2),
                    error = function(e) NULL)
   if (is.null(fit2)) return(NA_res)
   s2 <- summary(fit2)$coefficients
-  if (!"Z" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
-  beta_Z <- as.numeric(coef(fit2)["Z"])
-  beta_Z_se <- as.numeric(s2["Z", 2])
+  if (!"X" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
+  beta_X <- as.numeric(coef(fit2)["X"])
+  beta_X_se <- as.numeric(s2["X", 2])
   beta_M <- as.numeric(coef(fit2)["M"])
   beta_M_se <- as.numeric(s2["M", 2])
 
@@ -837,7 +837,7 @@ fit_pgc_mediation <- function(y, Z, M, g, W, covars = NULL) {
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(s2["Z", 4]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(s2["X", 4]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -850,60 +850,60 @@ fit_pgc_mediation <- function(y, Z, M, g, W, covars = NULL) {
 #'
 #' Extends the proximal-inference approach to the two-linked-DAG mediation
 #' setting. Uses \strong{path-specific} negative controls — W1
-#' capturing the Z->M confounder U_XM and W2 capturing the M->Y confounder
-#' U_MY — to purge confounding at both stages via bridge functions.
+#' capturing the X->M confounder conf_XM and W2 capturing the M->Y confounder
+#' conf_MY — to purge confounding at both stages via bridge functions.
 #'
 #' When \code{gm} is \code{NULL} (no mediator instrument), Stage 2 residualises
-#' M on the cleaned exposure Z_hat to isolate the U_MY-driven component, then
+#' M on the cleaned exposure X_hat to isolate the conf_MY-driven component, then
 #' bridges on W2. This is pure negative-control identification at both stages
 #' — no mediator instrument is required.
 #'
 #' When \code{gm} is supplied (mediator instrument present but its exogeneity
-#' may be in doubt), Stage 2 uses Gm to help isolate U_MY's effect on M before
+#' may be in doubt), Stage 2 uses Gm to help isolate conf_MY's effect on M before
 #' bridging on W2. The bridge W_hat_M does the confounding removal, so the
-#' estimator is robust to Gm being correlated with U_MY — the residual bias
+#' estimator is robust to Gm being correlated with conf_MY — the residual bias
 #' from Gm-U correlation is smaller than IV2SLS2's.
 #'
 #' Strategy (three stages):
 #' \enumerate{
-#' \item \strong{Bridge for Z} (purge U_XM from Z):
-#' \code{Z_resid = residuals(Z ~ G1 + C)};
-#' \code{W_hat_Z = bridge(Z_resid ~ W1)} (fitted values, proxy for U_XM);
-#' \code{Z_hat = fitted(Z ~ G1 + W_hat_Z + C)}.
+#' \item \strong{Bridge for X} (purge conf_XM from X):
+#' \code{X_resid = residuals(X ~ G1 + C)};
+#' \code{W_hat_X = bridge(X_resid ~ W1)} (fitted values, proxy for conf_XM);
+#' \code{X_hat = fitted(X ~ G1 + W_hat_X + C)}.
 #' Weak-IV check: partial F for G1 >= \code{min_f}.
-#' \item \strong{Bridge for M} (purge U_MY from M):
-#' \code{M_resid = residuals(M ~ Z_hat + C)} (\code{gm = NULL}), or
+#' \item \strong{Bridge for M} (purge conf_MY from M):
+#' \code{M_resid = residuals(M ~ X_hat + C)} (\code{gm = NULL}), or
 #' \code{M_resid = residuals(M ~ Gm + C)} (\code{gm} supplied);
-#' \code{W_hat_M = bridge(M_resid ~ W2)} (fitted values, proxy for U_MY);
-#' \code{M_hat = fitted(M ~ Z_hat + W_hat_M + C)} (\code{gm = NULL}), or
-#' \code{M_hat = fitted(M ~ Z_hat + Gm + W_hat_M + C)} (\code{gm} supplied);
-#' \code{alpha_M = coefficient on Z_hat}.
+#' \code{W_hat_M = bridge(M_resid ~ W2)} (fitted values, proxy for conf_MY);
+#' \code{M_hat = fitted(M ~ X_hat + W_hat_M + C)} (\code{gm = NULL}), or
+#' \code{M_hat = fitted(M ~ X_hat + Gm + W_hat_M + C)} (\code{gm} supplied);
+#' \code{alpha_M = coefficient on X_hat}.
 #' \item \strong{Outcome}:
-#' \code{Y ~ Z_hat + M_hat + W_hat_Z + W_hat_M + C};
-#' \code{NDE = coefficient on Z_hat}, \code{beta_M = coefficient on M_hat}.
+#' \code{Y ~ X_hat + M_hat + W_hat_X + W_hat_M + C};
+#' \code{NDE = coefficient on X_hat}, \code{beta_M = coefficient on M_hat}.
 #' }
 #'
 #' NIE = alpha_M * beta_M (delta-method SE).
 #'
 #' The key advantage over \code{\link{fit_iv2sls_mediation2}}: PGC-2 does not
 #' require instrument exogeneity. When the mediator instrument Gm is
-#' correlated with the confounder U_MY (rho_G2 > 0), IV2SLS2 is biased but
-#' PGC-2's bridge absorbs U_MY regardless of the instrument violation. The
+#' correlated with the confounder conf_MY (rho_G2 > 0), IV2SLS2 is biased but
+#' PGC-2's bridge absorbs conf_MY regardless of the instrument violation. The
 #' tipping-point simulation maps where PGC-2 bias crosses below IV2SLS2 bias.
 #'
 #' @param y Numeric outcome vector (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
-#' @param g Numeric instrument for Z (length n).
+#' @param g Numeric instrument for X (length n).
 #' @param W1 Numeric negative-control matrix (n x q) or vector for the
-#' Z->M path (captures U_XM). If a matrix, the bridge uses
+#' X->M path (captures conf_XM). If a matrix, the bridge uses
 #' all q columns.
 #' @param W2 Numeric negative-control matrix (n x q) or vector for the
-#' M->Y path (captures U_MY). If a matrix, the bridge uses
+#' M->Y path (captures conf_MY). If a matrix, the bridge uses
 #' all q columns.
 #' @param gm Optional numeric mediator instrument vector (length n).
 #' When \code{NULL} (default), Stage 2 uses pure NC
-#' identification. When supplied, Gm helps isolate U_MY
+#' identification. When supplied, Gm helps isolate conf_MY
 #' before bridging — robust to Gm-U correlation.
 #' @param covars Optional data frame of additional covariates (n rows).
 #' @param min_f Minimum acceptable partial F-statistic for the excluded
@@ -923,15 +923,15 @@ fit_pgc_mediation <- function(y, Z, M, g, W, covars = NULL) {
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
-#' rho_G2 = 0.3, separate_U = TRUE,
+#' rho_G2 = 0.3, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
 #' omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 #' # Without mediator instrument (pure NC identification)
-#' fit_pgc_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G1, dat$W1, dat$W2)
+#' fit_pgc_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G1, dat$W1, dat$W2)
 #' # With (possibly imperfect) mediator instrument
-#' fit_pgc_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G1, dat$W1, dat$W2,
+#' fit_pgc_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G1, dat$W1, dat$W2,
 #' gm = dat$Gm)
 #' }
-fit_pgc_mediation2 <- function(y, Z, M, g, W1, W2, gm = NULL,
+fit_pgc_mediation2 <- function(y, X, M, g, W1, W2, gm = NULL,
                                covars = NULL, min_f = 10) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
@@ -943,59 +943,59 @@ fit_pgc_mediation2 <- function(y, Z, M, g, W1, W2, gm = NULL,
   if (!is.matrix(W1)) W1 <- as.matrix(W1)
   if (!is.matrix(W2)) W2 <- as.matrix(W2)
 
-  # ── Stage 1: Bridge for Z (purge U_XM from Z) ──
-  # Weak-IV check: partial F for G1 in Z ~ G1 + W1 + covars
-  d_fs <- .bind_covars(data.frame(Z = Z, g = g), covars)
+  # ── Stage 1: Bridge for X (purge conf_XM from X) ──
+  # Weak-IV check: partial F for G1 in X ~ G1 + W1 + covars
+  d_fs <- .bind_covars(data.frame(X = X, g = g), covars)
   # Include W1 in the first stage so the partial F is conditional on W1
   d_fs <- cbind(d_fs, as.data.frame(W1))
   w1_names <- paste0("W1_", seq_len(ncol(W1)))
   names(d_fs)[(ncol(d_fs) - ncol(W1) + 1):ncol(d_fs)] <- w1_names
-  fs_fml <- as.formula(paste0("Z ~ g + ",
+  fs_fml <- as.formula(paste0("X ~ g + ",
                               paste(w1_names, collapse = " + "), cs))
   fs <- tryCatch(lm(fs_fml, data = d_fs), error = function(e) NULL)
   if (is.null(fs)) return(NA_res)
   Fst_g <- .partial_F(fs, "g")
   if (is.na(Fst_g) || Fst_g < min_f) return(NA_res)
 
-  # Residualise Z on G1 -> U_XM-driven residual
-  d_r <- .bind_covars(data.frame(Zc = Z, g = g), covars)
-  fit_resid <- tryCatch(lm(as.formula(paste0("Zc ~ g", cs)), data = d_r),
+  # Residualise X on G1 -> conf_XM-driven residual
+  d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
+  fit_resid <- tryCatch(lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
                         error = function(e) NULL)
   if (is.null(fit_resid)) return(NA_res)
-  Z_resid <- residuals(fit_resid)
+  X_resid <- residuals(fit_resid)
 
-  # Bridge Z_resid on W1 -> W_hat_Z (proxy for U_XM)
-  d_b1 <- data.frame(Z_resid = Z_resid)
+  # Bridge X_resid on W1 -> W_hat_X (proxy for conf_XM)
+  d_b1 <- data.frame(X_resid = X_resid)
   d_b1 <- cbind(d_b1, as.data.frame(W1))
   if (!is.null(covars)) d_b1 <- cbind(d_b1, covars)
   w1b_names <- paste0("W1b_", seq_len(ncol(W1)))
   names(d_b1)[2:(ncol(W1) + 1)] <- w1b_names
-  fml_b1 <- as.formula(paste0("Z_resid ~ ",
+  fml_b1 <- as.formula(paste0("X_resid ~ ",
                               paste(w1b_names, collapse = " + "), cs))
   fit_b1 <- tryCatch(lm(fml_b1, data = d_b1), error = function(e) NULL)
   if (is.null(fit_b1)) return(NA_res)
-  W_hat_Z <- fitted(fit_b1)
+  W_hat_X <- fitted(fit_b1)
 
-  # Z_hat = fitted(Z ~ G1 + W_hat_Z + C)
-  d_zh <- .bind_covars(data.frame(Z = Z, g = g, W_hat_Z = W_hat_Z), covars)
-  fit_zh <- tryCatch(lm(as.formula(paste0("Z ~ g + W_hat_Z", cs)), data = d_zh),
+  # X_hat = fitted(X ~ G1 + W_hat_X + C)
+  d_zh <- .bind_covars(data.frame(X = X, g = g, W_hat_X = W_hat_X), covars)
+  fit_zh <- tryCatch(lm(as.formula(paste0("X ~ g + W_hat_X", cs)), data = d_zh),
                      error = function(e) NULL)
   if (is.null(fit_zh)) return(NA_res)
-  Z_hat <- fitted(fit_zh)
+  X_hat <- fitted(fit_zh)
 
-  # ── Stage 2: Bridge for M (purge U_MY from M) ──
-  # Branch on gm: residualise on Z_hat (pure NC) or on Gm (NC-augmented)
+  # ── Stage 2: Bridge for M (purge conf_MY from M) ──
+  # Branch on gm: residualise on X_hat (pure NC) or on Gm (NC-augmented)
   if (is.null(gm)) {
-    # Pure NC: M_resid = residuals(M ~ Z_hat + C)
-    # Isolates U_MY's effect on M + noise (Z path removed)
-    d_mr <- .bind_covars(data.frame(M = M, Z_hat = Z_hat), covars)
-    fit_mr <- tryCatch(lm(as.formula(paste0("M ~ Z_hat", cs)), data = d_mr),
+    # Pure NC: M_resid = residuals(M ~ X_hat + C)
+    # Isolates conf_MY's effect on M + noise (X path removed)
+    d_mr <- .bind_covars(data.frame(M = M, X_hat = X_hat), covars)
+    fit_mr <- tryCatch(lm(as.formula(paste0("M ~ X_hat", cs)), data = d_mr),
                        error = function(e) NULL)
     if (is.null(fit_mr)) return(NA_res)
     M_resid <- residuals(fit_mr)
   } else {
     # NC-augmented: M_resid = residuals(M ~ Gm + C)
-    # Gm helps isolate U_MY; bridge W_hat_M does confounding removal
+    # Gm helps isolate conf_MY; bridge W_hat_M does confounding removal
     d_mr <- .bind_covars(data.frame(M = M, gm = gm), covars)
     fit_mr <- tryCatch(lm(as.formula(paste0("M ~ gm", cs)), data = d_mr),
                        error = function(e) NULL)
@@ -1003,7 +1003,7 @@ fit_pgc_mediation2 <- function(y, Z, M, g, W1, W2, gm = NULL,
     M_resid <- residuals(fit_mr)
   }
 
-  # Bridge M_resid on W2 -> W_hat_M (proxy for U_MY)
+  # Bridge M_resid on W2 -> W_hat_M (proxy for conf_MY)
   d_b2 <- data.frame(M_resid = M_resid)
   d_b2 <- cbind(d_b2, as.data.frame(W2))
   if (!is.null(covars)) d_b2 <- cbind(d_b2, covars)
@@ -1017,35 +1017,35 @@ fit_pgc_mediation2 <- function(y, Z, M, g, W1, W2, gm = NULL,
 
   # M_hat and alpha_M
   if (is.null(gm)) {
-    # M_hat = fitted(M ~ Z_hat + W_hat_M + C)
-    d_mh <- .bind_covars(data.frame(M = M, Z_hat = Z_hat, W_hat_M = W_hat_M), covars)
-    fit_mh <- tryCatch(lm(as.formula(paste0("M ~ Z_hat + W_hat_M", cs)),
+    # M_hat = fitted(M ~ X_hat + W_hat_M + C)
+    d_mh <- .bind_covars(data.frame(M = M, X_hat = X_hat, W_hat_M = W_hat_M), covars)
+    fit_mh <- tryCatch(lm(as.formula(paste0("M ~ X_hat + W_hat_M", cs)),
                           data = d_mh), error = function(e) NULL)
   } else {
-    # M_hat = fitted(M ~ Z_hat + Gm + W_hat_M + C)
-    d_mh <- .bind_covars(data.frame(M = M, Z_hat = Z_hat, gm = gm,
+    # M_hat = fitted(M ~ X_hat + Gm + W_hat_M + C)
+    d_mh <- .bind_covars(data.frame(M = M, X_hat = X_hat, gm = gm,
                                     W_hat_M = W_hat_M), covars)
-    fit_mh <- tryCatch(lm(as.formula(paste0("M ~ Z_hat + gm + W_hat_M", cs)),
+    fit_mh <- tryCatch(lm(as.formula(paste0("M ~ X_hat + gm + W_hat_M", cs)),
                           data = d_mh), error = function(e) NULL)
   }
   if (is.null(fit_mh)) return(NA_res)
   s_mh <- summary(fit_mh)$coefficients
-  if (!"Z_hat" %in% rownames(s_mh)) return(NA_res)
-  alpha <- as.numeric(coef(fit_mh)["Z_hat"])
-  alpha_se <- as.numeric(s_mh["Z_hat", 2])
+  if (!"X_hat" %in% rownames(s_mh)) return(NA_res)
+  alpha <- as.numeric(coef(fit_mh)["X_hat"])
+  alpha_se <- as.numeric(s_mh["X_hat", 2])
   M_hat <- fitted(fit_mh)
 
   # ── Stage 3: Outcome ──
-  # Y ~ Z_hat + M_hat + W_hat_Z + W_hat_M + C
-  d_os <- .bind_covars(data.frame(y = y, Z_hat = Z_hat, M_hat = M_hat,
-                                  W_hat_Z = W_hat_Z, W_hat_M = W_hat_M), covars)
-  os <- tryCatch(lm(as.formula(paste0("y ~ Z_hat + M_hat + W_hat_Z + W_hat_M", cs)),
+  # Y ~ X_hat + M_hat + W_hat_X + W_hat_M + C
+  d_os <- .bind_covars(data.frame(y = y, X_hat = X_hat, M_hat = M_hat,
+                                  W_hat_X = W_hat_X, W_hat_M = W_hat_M), covars)
+  os <- tryCatch(lm(as.formula(paste0("y ~ X_hat + M_hat + W_hat_X + W_hat_M", cs)),
                     data = d_os), error = function(e) NULL)
   if (is.null(os)) return(NA_res)
   s_os <- summary(os)$coefficients
-  if (!"Z_hat" %in% rownames(s_os) || !"M_hat" %in% rownames(s_os)) return(NA_res)
-  beta_Z <- as.numeric(coef(os)["Z_hat"])
-  beta_Z_se <- as.numeric(s_os["Z_hat", 2])
+  if (!"X_hat" %in% rownames(s_os) || !"M_hat" %in% rownames(s_os)) return(NA_res)
+  beta_X <- as.numeric(coef(os)["X_hat"])
+  beta_X_se <- as.numeric(s_os["X_hat", 2])
   beta_M <- as.numeric(coef(os)["M_hat"])
   beta_M_se <- as.numeric(s_os["M_hat", 2])
 
@@ -1053,7 +1053,7 @@ fit_pgc_mediation2 <- function(y, Z, M, g, W1, W2, gm = NULL,
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(s_os["Z_hat", 4]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(s_os["X_hat", 4]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -1072,7 +1072,7 @@ fit_pgc_mediation2 <- function(y, Z, M, g, W1, W2, gm = NULL,
 #' completeness condition is of interest.
 #'
 #' @param y Numeric outcome vector (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param g Numeric instrument vector (length n).
 #' @param w Numeric negative-control vector (length n).
@@ -1087,48 +1087,48 @@ fit_pgc_mediation2 <- function(y, Z, M, g, W1, W2, gm = NULL,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-#' fit_pgc_scalar_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], rowMeans(dat$W))
+#' fit_pgc_scalar_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], rowMeans(dat$W))
 #' }
-fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
+fit_pgc_scalar_mediation <- function(y, X, M, g, w, covars = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
                  alpha_M = NA_real_, alpha_se = NA_real_, beta_M = NA_real_, beta_M_se = NA_real_)
   cnames <- if (!is.null(covars)) names(covars) else character(0)
   cs <- .covar_str(cnames)
 
-  # Step 1: residualise Z on G -> U-driven residual
-  d_r <- .bind_covars(data.frame(Zc = Z, g = g), covars)
-  fit_resid <- tryCatch(lm(as.formula(paste0("Zc ~ g", cs)), data = d_r),
+  # Step 1: residualise X on G -> U-driven residual
+  d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
+  fit_resid <- tryCatch(lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
                         error = function(e) NULL)
   if (is.null(fit_resid)) return(NA_res)
-  Z_resid <- residuals(fit_resid)
+  X_resid <- residuals(fit_resid)
 
-  # Step 2: bridge W (scalar) on Z_resid -> W_hat
-  d_b <- .bind_covars(data.frame(w = w, Z_resid = Z_resid), covars)
-  fit_b <- tryCatch(lm(as.formula(paste0("w ~ Z_resid", cs)), data = d_b),
+  # Step 2: bridge W (scalar) on X_resid -> W_hat
+  d_b <- .bind_covars(data.frame(w = w, X_resid = X_resid), covars)
+  fit_b <- tryCatch(lm(as.formula(paste0("w ~ X_resid", cs)), data = d_b),
                     error = function(e) NULL)
   if (is.null(fit_b)) return(NA_res)
   W_hat <- fitted(fit_b)
 
-  # Stage 1: M ~ Z + W_hat
-  d1 <- .bind_covars(data.frame(M = M, Z = Z, W_hat = W_hat), covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("M ~ Z + W_hat", cs)), data = d1),
+  # Stage 1: M ~ X + W_hat
+  d1 <- .bind_covars(data.frame(M = M, X = X, W_hat = W_hat), covars)
+  fit1 <- tryCatch(lm(as.formula(paste0("M ~ X + W_hat", cs)), data = d1),
                    error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   s1 <- summary(fit1)$coefficients
-  if (!"Z" %in% rownames(s1)) return(NA_res)
-  alpha <- as.numeric(coef(fit1)["Z"])
-  alpha_se <- as.numeric(s1["Z", 2])
+  if (!"X" %in% rownames(s1)) return(NA_res)
+  alpha <- as.numeric(coef(fit1)["X"])
+  alpha_se <- as.numeric(s1["X", 2])
 
-  # Stage 2: Y ~ Z + M + W_hat
-  d2 <- .bind_covars(data.frame(y = y, Z = Z, M = M, W_hat = W_hat), covars)
-  fit2 <- tryCatch(lm(as.formula(paste0("y ~ Z + M + W_hat", cs)), data = d2),
+  # Stage 2: Y ~ X + M + W_hat
+  d2 <- .bind_covars(data.frame(y = y, X = X, M = M, W_hat = W_hat), covars)
+  fit2 <- tryCatch(lm(as.formula(paste0("y ~ X + M + W_hat", cs)), data = d2),
                    error = function(e) NULL)
   if (is.null(fit2)) return(NA_res)
   s2 <- summary(fit2)$coefficients
-  if (!"Z" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
-  beta_Z <- as.numeric(coef(fit2)["Z"])
-  beta_Z_se <- as.numeric(s2["Z", 2])
+  if (!"X" %in% rownames(s2) || !"M" %in% rownames(s2)) return(NA_res)
+  beta_X <- as.numeric(coef(fit2)["X"])
+  beta_X_se <- as.numeric(s2["X", 2])
   beta_M <- as.numeric(coef(fit2)["M"])
   beta_M_se <- as.numeric(s2["M", 2])
 
@@ -1136,7 +1136,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(s2["Z", 4]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(s2["X", 4]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -1160,7 +1160,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
 #' the simulation driver (.analyze_mediation_feature) and the real-data
 #' driver (iconic_estimate).
 #'
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param y Numeric outcome vector (length n).
 #' @param M_vec Numeric mediator vector (length n).
 #' @param g Numeric instrument vector (length n), or NULL.
@@ -1168,7 +1168,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
 #' @param w Numeric NC vector (length n) or matrix (n x q), or NULL
 #' (for DIRECT, IV2SLS, IV2SLS2 — full panel as covariates).
 #' @param W_mat Numeric NC matrix (n x q), or NULL (for PGC matrix bridge).
-#' @param W1_mat Numeric path-specific NC matrix (n x q) for Z->M, or NULL.
+#' @param W1_mat Numeric path-specific NC matrix (n x q) for X->M, or NULL.
 #' @param W2_mat Numeric path-specific NC matrix (n x q) for M->Y, or NULL.
 #' @param W_avg Numeric vector (length n): row means of NC panel for COCA.
 #' If NULL but W_mat present, computed inline.
@@ -1187,7 +1187,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
 #' When `se_method="composite"`, also includes `alpha_M`, `alpha_se`,
 #' `beta_M`, `beta_M_se` for downstream composite p-value computation.
 #' @keywords internal
-.estimate_mediation_feature <- function(Z, y, M_vec, g = NULL, gm = NULL,
+.estimate_mediation_feature <- function(X, y, M_vec, g = NULL, gm = NULL,
                                         w = NULL, W_mat = NULL,
                                         W1_mat = NULL, W2_mat = NULL,
                                         W_avg = NULL, covars = NULL,
@@ -1201,23 +1201,39 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
              NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
              alpha_M = NA_real_, alpha_se = NA_real_,
              beta_M = NA_real_, beta_M_se = NA_real_)
-  row <- function(m, r) data.frame(
-    feature = feature_idx, method = m,
-    NDE = as.numeric(r$NDE), NDE_se = as.numeric(r$NDE_se),
-    NDE_p = as.numeric(r$NDE_p),
-    NIE = as.numeric(r$NIE), NIE_se = as.numeric(r$NIE_se),
-    NIE_p = as.numeric(r$NIE_p),
-    alpha_M = as.numeric(r$alpha_M), alpha_se = as.numeric(r$alpha_se),
-    beta_M = as.numeric(r$beta_M), beta_M_se = as.numeric(r$beta_M_se),
-    stringsAsFactors = FALSE)
+  row <- function(m, r) {
+    # Total effect = NDE + NIE on the estimand scale. SE from the delta
+    # method on the sum, treating NDE and NIE as independent (they are
+    # estimated from the same outcome model but the covariance is not
+    # returned by the fit_* functions; the independence approximation is
+    # conservative for the sum).
+    TE <- if (!is.na(r$NDE) && !is.na(r$NIE)) r$NDE + r$NIE else NA_real_
+    TE_se <- if (!is.na(r$NDE_se) && !is.na(r$NIE_se))
+      sqrt(r$NDE_se^2 + r$NIE_se^2) else NA_real_
+    TE_p <- if (!is.na(TE) && !is.na(TE_se) && TE_se > 0)
+      2 * pnorm(-abs(TE / TE_se)) else NA_real_
+    data.frame(
+      feature = feature_idx, method = m,
+      NDE = as.numeric(r$NDE), NDE_se = as.numeric(r$NDE_se),
+      NDE_p = as.numeric(r$NDE_p),
+      NIE = as.numeric(r$NIE), NIE_se = as.numeric(r$NIE_se),
+      NIE_p = as.numeric(r$NIE_p),
+      TE = TE, TE_se = TE_se, TE_p = TE_p,
+      alpha_M = as.numeric(r$alpha_M), alpha_se = as.numeric(r$alpha_se),
+      beta_M = as.numeric(r$beta_M), beta_M_se = as.numeric(r$beta_M_se),
+      stringsAsFactors = FALSE)
+  }
 
-  # Default methods: all that can run
+  # Default methods: all that can run. The IV estimators (IV2SLS, IV2SLS2)
+  # are identified by the instrument(s) alone; W is an optional proximal
+  # augmentation, so they run with or without W.
   if (is.null(methods)) {
     methods <- "UNADJ"
-    if (!is.null(g) && !is.null(w)) methods <- c(methods, "DIRECT", "IV2SLS")
+    if (!is.null(g)) methods <- c(methods, "IV2SLS")
+    if (!is.null(g) && !is.null(w)) methods <- c(methods, "DIRECT")
     if (!is.null(w)) methods <- c(methods, "COCA")
     if (!is.null(g) && !is.null(W_mat)) methods <- c(methods, "PGC")
-    if (!is.null(g) && !is.null(gm) && !is.null(w)) methods <- c(methods, "IV2SLS2")
+    if (!is.null(g) && !is.null(gm)) methods <- c(methods, "IV2SLS2")
     if (!is.null(g) && !is.null(W1_mat) && !is.null(W2_mat)) methods <- c(methods, "PGC2")
     if (!is.null(g) && !is.null(W1_mat) && !is.null(W2_mat) && !is.null(gm))
       methods <- c(methods, "PGC2Gm")
@@ -1228,9 +1244,9 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
   if ("UNADJ" %in% methods) can_run <- c(can_run, "UNADJ")
   if ("DIRECT" %in% methods && !is.null(g) && !is.null(w)) can_run <- c(can_run, "DIRECT")
   if ("COCA" %in% methods && !is.null(w)) can_run <- c(can_run, "COCA")
-  if ("IV2SLS" %in% methods && !is.null(g) && !is.null(w)) can_run <- c(can_run, "IV2SLS")
+  if ("IV2SLS" %in% methods && !is.null(g)) can_run <- c(can_run, "IV2SLS")
   if ("PGC" %in% methods && !is.null(g) && !is.null(W_mat)) can_run <- c(can_run, "PGC")
-  if ("IV2SLS2" %in% methods && !is.null(g) && !is.null(gm) && !is.null(w))
+  if ("IV2SLS2" %in% methods && !is.null(g) && !is.null(gm))
     can_run <- c(can_run, "IV2SLS2")
   if ("PGC2" %in% methods && !is.null(g) && !is.null(W1_mat) && !is.null(W2_mat))
     can_run <- c(can_run, "PGC2")
@@ -1240,7 +1256,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
   if (!length(can_run)) return(NULL)
 
   # Complete cases
-  needed <- cbind(y, Z, M_vec)
+  needed <- cbind(y, X, M_vec)
   if (!is.null(g)) needed <- cbind(needed, g)
   if (!is.null(w)) needed <- cbind(needed, as.matrix(w))
   if (!is.null(gm)) needed <- cbind(needed, gm)
@@ -1248,7 +1264,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
   ok <- stats::complete.cases(needed)
   if (sum(ok) < 20) return(NULL)
 
-  Z_f <- Z[ok]
+  X_f <- X[ok]
   y_f <- y[ok]
   M_f <- M_vec[ok]
   g_f <- if (!is.null(g)) g[ok] else NULL
@@ -1266,7 +1282,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
   # point estimate / p-value, then resample n_boot times and replace the
   # delta-method SE with the bootstrap SD. The closure `boot_fn(idx)`
   # subsets every model-specific input by `idx` so instruments, NCs, and
-  # covariates are resampled in lockstep with y, Z, M.
+  # covariates are resampled in lockstep with y, X, M.
   .with_se <- function(method, fit_call, boot_call) {
     r <- tryCatch(fit_call, error = function(e) na)
     if (se_method == "bootstrap" && !is.na(r$NDE)) {
@@ -1289,43 +1305,43 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
 
   if ("UNADJ" %in% can_run) {
     rows[["UNADJ"]] <- .with_se("UNADJ",
-      fit_unadj_mediation(y_f, Z_f, M_f, cv_f),
-      function(idx) fit_unadj_mediation(y_f[idx], Z_f[idx], M_f[idx],
+      fit_unadj_mediation(y_f, X_f, M_f, cv_f),
+      function(idx) fit_unadj_mediation(y_f[idx], X_f[idx], M_f[idx],
                                         cv_f[idx, , drop = FALSE]))
   }
   if ("DIRECT" %in% can_run) {
     rows[["DIRECT"]] <- .with_se("DIRECT",
-      fit_direct_mediation(y_f, Z_f, M_f, g_f, w_f, cv_f),
-      function(idx) fit_direct_mediation(y_f[idx], Z_f[idx], M_f[idx],
+      fit_direct_mediation(y_f, X_f, M_f, g_f, w_f, cv_f),
+      function(idx) fit_direct_mediation(y_f[idx], X_f[idx], M_f[idx],
                                          g_f[idx], w_f[idx, , drop = FALSE],
                                          cv_f[idx, , drop = FALSE]))
   }
   if ("COCA" %in% can_run) {
     rows[["COCA"]] <- .with_se("COCA",
-      fit_coca_mediation(y_f, Z_f, M_f, Wa_f, cv_f),
-      function(idx) fit_coca_mediation(y_f[idx], Z_f[idx], M_f[idx],
+      fit_coca_mediation(y_f, X_f, M_f, Wa_f, cv_f),
+      function(idx) fit_coca_mediation(y_f[idx], X_f[idx], M_f[idx],
                                        Wa_f[idx], cv_f[idx, , drop = FALSE]))
   }
   if ("IV2SLS" %in% can_run) {
     rows[["IV2SLS"]] <- .with_se("IV2SLS",
-      fit_iv2sls_mediation(y_f, Z_f, M_f, g_f, w_f, cv_f, min_f = min_f),
-      function(idx) fit_iv2sls_mediation(y_f[idx], Z_f[idx], M_f[idx],
+      fit_iv2sls_mediation(y_f, X_f, M_f, g_f, w_f, cv_f, min_f = min_f),
+      function(idx) fit_iv2sls_mediation(y_f[idx], X_f[idx], M_f[idx],
                                          g_f[idx], w_f[idx, , drop = FALSE],
                                          cv_f[idx, , drop = FALSE],
                                          min_f = min_f))
   }
   if ("PGC" %in% can_run) {
     rows[["PGC"]] <- .with_se("PGC",
-      fit_pgc_mediation(y_f, Z_f, M_f, g_f, W_mat_f, cv_f),
-      function(idx) fit_pgc_mediation(y_f[idx], Z_f[idx], M_f[idx],
+      fit_pgc_mediation(y_f, X_f, M_f, g_f, W_mat_f, cv_f),
+      function(idx) fit_pgc_mediation(y_f[idx], X_f[idx], M_f[idx],
                                       g_f[idx],
                                       W_mat_f[idx, , drop = FALSE],
                                       cv_f[idx, , drop = FALSE]))
   }
   if ("IV2SLS2" %in% can_run) {
     rows[["IV2SLS2"]] <- .with_se("IV2SLS2",
-      fit_iv2sls_mediation2(y_f, Z_f, M_f, g_f, gm_f, w_f, cv_f, min_f = min_f),
-      function(idx) fit_iv2sls_mediation2(y_f[idx], Z_f[idx], M_f[idx],
+      fit_iv2sls_mediation2(y_f, X_f, M_f, g_f, gm_f, w_f, cv_f, min_f = min_f),
+      function(idx) fit_iv2sls_mediation2(y_f[idx], X_f[idx], M_f[idx],
                                           g_f[idx], gm_f[idx],
                                           w_f[idx, , drop = FALSE],
                                           cv_f[idx, , drop = FALSE],
@@ -1333,9 +1349,9 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
   }
   if ("PGC2" %in% can_run) {
     rows[["PGC2"]] <- .with_se("PGC2",
-      fit_pgc_mediation2(y_f, Z_f, M_f, g_f, W1_f, W2_f,
+      fit_pgc_mediation2(y_f, X_f, M_f, g_f, W1_f, W2_f,
                          gm = NULL, covars = cv_f, min_f = min_f),
-      function(idx) fit_pgc_mediation2(y_f[idx], Z_f[idx], M_f[idx],
+      function(idx) fit_pgc_mediation2(y_f[idx], X_f[idx], M_f[idx],
                                        g_f[idx], W1_f[idx, , drop = FALSE],
                                        W2_f[idx, , drop = FALSE],
                                        gm = NULL,
@@ -1344,9 +1360,9 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
   }
   if ("PGC2Gm" %in% can_run) {
     rows[["PGC2Gm"]] <- .with_se("PGC2Gm",
-      fit_pgc_mediation2(y_f, Z_f, M_f, g_f, W1_f, W2_f,
+      fit_pgc_mediation2(y_f, X_f, M_f, g_f, W1_f, W2_f,
                          gm = gm_f, covars = cv_f, min_f = min_f),
-      function(idx) fit_pgc_mediation2(y_f[idx], Z_f[idx], M_f[idx],
+      function(idx) fit_pgc_mediation2(y_f[idx], X_f[idx], M_f[idx],
                                        g_f[idx], W1_f[idx, , drop = FALSE],
                                        W2_f[idx, , drop = FALSE],
                                        gm = gm_f[idx],
@@ -1381,7 +1397,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
 #' @keywords internal
 .analyze_mediation_feature <- function(dat, f, W_avg, W_valid = NULL,
                                        se_method = "delta", n_boot = 500) {
-  Z <- dat$Z
+  X <- dat$X
   cv <- dat$synthetic_data
   M <- dat$M
   y <- dat$Y[, f]
@@ -1403,7 +1419,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
       M_vec <- M[m, ]
       gm_m <- if (is.matrix(gm)) gm[m, ] else gm
       res <- .estimate_mediation_feature(
-        Z = Z, y = y, M_vec = M_vec, g = g, gm = gm_m,
+        X = X, y = y, M_vec = M_vec, g = g, gm = gm_m,
         w = w, W_mat = W_mat, W1_mat = W1, W2_mat = W2,
         W_avg = W_avg, covars = cv,
         methods = NULL, feature_idx = f,
@@ -1417,7 +1433,7 @@ fit_pgc_scalar_mediation <- function(y, Z, M, g, w, covars = NULL) {
     do.call(rbind, rows)
   } else {
     .estimate_mediation_feature(
-      Z = Z, y = y, M_vec = M, g = g, gm = gm,
+      X = X, y = y, M_vec = M, g = g, gm = gm,
       w = w, W_mat = W_mat, W1_mat = W1, W2_mat = W2,
       W_avg = W_avg, covars = cv,
       methods = NULL, feature_idx = f,

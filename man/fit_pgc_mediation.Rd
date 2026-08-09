@@ -4,12 +4,12 @@
 \alias{fit_pgc_mediation}
 \title{PGC mediation estimator: bridge-function-adjusted natural effects (matrix bridge)}
 \usage{
-fit_pgc_mediation(y, Z, M, g, W, covars = NULL)
+fit_pgc_mediation(y, X, M, g, W, covars = NULL)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
@@ -32,10 +32,10 @@ and including it in both the mediator and outcome regressions.
 \details{
 Steps:
 \enumerate{
-\item Residualise Z on G -> Z_resid (U-driven residual).
-\item Bridge Z_resid on the FULL W matrix -> W_hat (proxy for U).
-\item \code{M ~ Z + W_hat} -> alpha_M (adjusted for confounding proxy).
-\item \code{Y ~ Z + M + W_hat} -> NDE = beta_Z, beta_M (adjusted).
+\item Residualise X on G -> X_resid (U-driven residual).
+\item Bridge X_resid on the FULL W matrix -> W_hat (proxy for U).
+\item \code{M ~ X + W_hat} -> alpha_M (adjusted for confounding proxy).
+\item \code{Y ~ X + M + W_hat} -> NDE = beta_X, beta_M (adjusted).
 }
 
 The matrix bridge requires \code{ncol(W) >= k} (proximal completeness)
@@ -45,6 +45,6 @@ for the bridge to span the confounder subspace.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-fit_pgc_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$W)
+fit_pgc_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W)
 }
 }

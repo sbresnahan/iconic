@@ -26,13 +26,15 @@ test_that("covariate names colliding with reserved tokens are renamed", {
   n <- 40
   Zm <- matrix(rnorm(5 * n), 5, n)
   Ym <- matrix(rnorm(5 * n), 5, n)
-  cov <- data.frame(Z = rnorm(n), g = rnorm(n), ok = rnorm(n)) # Z, g are reserved
-  enc <- load_real_input_data(Z_matrix = Zm, Y_matrix = Ym, covariates_df = cov)$covariates
-  expect_false(any(names(enc) %in% c("Z", "g")))
-  expect_true(all(c("cov_Z", "cov_g", "ok") %in% names(enc)))
+  cov <- data.frame(X = rnorm(n), g = rnorm(n), ok = rnorm(n)) # X, g are reserved
+  enc <- load_real_input_data(X_matrix = Zm, Y_matrix = Ym, covariates_df = cov)$covariates
+  expect_false(any(names(enc) %in% c("X", "g")))
+  # Post v0.9.8 rename, the reserved exposure token is X, so a covariate
+  # named X is renamed to cov_X (was cov_Z before the rename).
+  expect_true(all(c("cov_X", "cov_g", "ok") %in% names(enc)))
 })
 
 test_that("missing Y_matrix is an error", {
-  expect_error(load_real_input_data(Z_matrix = matrix(1, 2, 2), example = FALSE),
+  expect_error(load_real_input_data(X_matrix = matrix(1, 2, 2), example = FALSE),
                "required")
 })

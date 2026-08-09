@@ -2,18 +2,18 @@
 % Please edit documentation in R/mediation.R
 \name{fit_iv2sls_mediation2}
 \alias{fit_iv2sls_mediation2}
-\title{IV2SLS2 mediation estimator: 2-stage MR with instruments for both Z and M}
+\title{IV2SLS2 mediation estimator: 2-stage MR with instruments for both X and M}
 \usage{
-fit_iv2sls_mediation2(y, Z, M, g, gm, w, covars = NULL, min_f = 10)
+fit_iv2sls_mediation2(y, X, M, g, gm, w, covars = NULL, min_f = 10)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
-\item{g}{Numeric instrument for Z (length n).}
+\item{g}{Numeric instrument for X (length n).}
 
 \item{gm}{Numeric instrument for M (length n).}
 
@@ -30,7 +30,7 @@ Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
 either first-stage partial F is below \code{min_f}.
 }
 \description{
-Uses TWO genetic instruments: G for the exposure Z and Gm for the
+Uses TWO genetic instruments: G for the exposure X and Gm for the
 mediator M. This is the key extension: by instrumenting both
 endogenous variables, NDE and NIE become \strong{point-identified} even
 under mediator-outcome (M-O) confounding, resolving the identification
@@ -39,22 +39,22 @@ failure that limits the single-instrument estimators.
 \details{
 The motivating example is placental eQTLs: fetal-genotype-derived eQTLs
 instrument placental isoform expression (M), while a PFAS-metabolism PRS
-instruments the exposure (Z). The mediator set must be restricted to
+instruments the exposure (X). The mediator set must be restricted to
 isoforms for which eQTLs have been identified.
 
 Strategy (sequential 2SLS, three OLS stages):
 \enumerate{
-\item \code{Z ~ G + W + covars} -> Z_hat (purge U1 from Z).
+\item \code{X ~ G + W + covars} -> X_hat (purge U1 from X).
 Weak-IV check: partial F for G >= \code{min_f}.
-\item \code{M ~ Z_hat + Gm + W + covars} -> M_hat, alpha_M = coef on Z_hat.
+\item \code{M ~ X_hat + Gm + W + covars} -> M_hat, alpha_M = coef on X_hat.
 Weak-IV check: partial F for Gm >= \code{min_f}.
-\item \code{Y ~ Z_hat + M_hat + W + covars} -> NDE = beta_Z_hat, beta_M = coef on M_hat.
+\item \code{Y ~ X_hat + M_hat + W + covars} -> NDE = beta_X_hat, beta_M = coef on M_hat.
 }
 
 NIE = alpha_M * beta_M (delta-method SE).
 
-Including Z_hat in the M first-stage (stage 2) is essential: M
-structurally depends on Z, so the Z -> M path must be captured for
+Including X_hat in the M first-stage (stage 2) is essential: M
+structurally depends on X, so the X -> M path must be captured for
 alpha_M and the NIE to be correctly estimated. Gm provides the
 exogenous variation that identifies the M -> Y effect net of U1
 confounding.
@@ -66,14 +66,14 @@ two-stage estimation of M_hat, consistent with the existing
 estimators; the simulation benchmarks bias, not SE accuracy. A unit
 test cross-validates this estimator's NDE and beta_M against
 \code{AER::ivreg} on the just-identified system
-(\code{Y ~ Z + M + W | G + Gm + W}).
+(\code{Y ~ X + M + W | G + Gm + W}).
 }
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
 phi = 0.8, seed = 1)
-fit_iv2sls_mediation2(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$Gm,
+fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$Gm,
 dat$W[, 1])
 }
 }

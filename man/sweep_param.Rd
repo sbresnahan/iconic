@@ -10,7 +10,7 @@ sweep_param(
   n_iter = 100,
   n_samples = 500,
   n_features = 20,
-  beta_Z = 0.1,
+  beta_X = 0.1,
   alpha_M = 0.5,
   beta_M = 0.3,
   conf_str = 0.8,
@@ -21,7 +21,7 @@ sweep_param(
 )
 }
 \arguments{
-\item{param}{Parameter to vary: one of "beta_Z", "conf_str",
+\item{param}{Parameter to vary: one of "beta_X", "conf_str",
 "w_signal", "alpha_M", "beta_M", "n_samples", "feat_cor".}
 
 \item{param_grid}{Numeric vector of values to sweep.}
@@ -32,7 +32,7 @@ sweep_param(
 
 \item{n_features}{Features per replicate. Default 20.}
 
-\item{beta_Z}{Baseline direct effect. Default 0.10.}
+\item{beta_X}{Baseline direct effect. Default 0.10.}
 
 \item{alpha_M}{Baseline mediator path. Default 0.50.}
 

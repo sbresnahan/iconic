@@ -4,12 +4,12 @@
 \alias{fit_iv2sls}
 \title{IV2SLS estimator: Two-Stage Least Squares with genetic instrument}
 \usage{
-fit_iv2sls(y, Z, g, w, covars = NULL, min_f = 10)
+fit_iv2sls(y, X, g, w, covars = NULL, min_f = 10)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{g}{Numeric instrument vector (length n).}
 
@@ -24,7 +24,7 @@ instrument. Default 10.}
 Named list: \code{beta}, \code{se}, \code{pvalue}.
 }
 \description{
-Uses the genetic instrument G to instrument for the exposure Z,
+Uses the genetic instrument G to instrument for the exposure X,
 controlling for the negative-control W and any additional covariates.
 Requires \pkg{AER}.
 }
@@ -38,6 +38,6 @@ first stage), following Stock & Yogo (2005). If the partial F is below
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, seed = 1)
-fit_iv2sls(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W[, 1])
+fit_iv2sls(dat$Y[, 1], dat$X, dat$G[, 1], dat$W[, 1])
 }
 }

@@ -21,7 +21,7 @@
 #' standardizing vectors and matrices into a consistent format that
 #' all downstream model selection functions consume.
 #'
-#' @param Z Exposure: numeric vector (length n) or features x samples
+#' @param X Exposure: numeric vector (length n) or features x samples
 #' matrix. If a matrix, column means are taken and scaled (one exposure
 #' per sample).
 #' @param Y Outcome: numeric vector (length n) or features x samples
@@ -37,11 +37,11 @@
 #' for the corresponding mediator (e.g., per-isoform cis-eQTLs).
 #' @param W Optional negative-control panel: features x samples matrix.
 #' Single-panel NCs used for COCA, PGC.
-#' @param W1 Optional path-specific NCs for the Z->M path: features x
-#' samples matrix. Captures U_XM. When W1/W2 are absent but W is present,
+#' @param W1 Optional path-specific NCs for the X->M path: features x
+#' samples matrix. Captures conf_XM. When W1/W2 are absent but W is present,
 #' W1 = W2 = W.
 #' @param W2 Optional path-specific NCs for the M->Y path: features x
-#' samples matrix. Captures U_MY.
+#' samples matrix. Captures conf_MY.
 #' @param covariates Optional data frame of sample-level covariates (n rows).
 #' Recognized columns `sex`, `GA`, `mother_ethnicity` are encoded; other
 #' numeric columns are z-scored. Names colliding with estimator-reserved
@@ -54,6 +54,10 @@
 #' \code{\link{iconic_sensitivity}()} and \code{\link{iconic_prospect}()}
 #' instead of auto-training a new one. This avoids retraining when the
 #' same data is used across multiple workflow steps.
+#' @param scale Logical: center and scale all continuous inputs (X, Y, M,
+#' G, Gm, W, W1, W2, and numeric covariates) to mean 0 / sd 1. Default
+#' \code{TRUE}. Scaling parameters are recorded in \code{$scaling} for
+#' back-transformation. Set \code{FALSE} to preserve the original scale.
 #' @param outcome_type Character: \code{"continuous"} (default,
 #' backward-compatible) or \code{"survival"}. When \code{"survival"},
 #' \code{Y} is not required; instead supply \code{surv_time} and
@@ -65,8 +69,11 @@
 #' @param surv_event Numeric 0/1 event indicator (length n; 1 = event
 #' observed, 0 = censored). Required when
 #' \code{outcome_type = "survival"}; ignored otherwise.
+#' @param Z Defunct. Renamed to \code{X} in v0.9.8; passing a value errors
+#'   with a message pointing to \code{X}. Retained in the signature only to
+#'   catch and redirect old calls.
 #'
-#' @return An `iconic_data` S3 object: a named list with `$Z`, `$Y`, `$M`,
+#' @return An `iconic_data` S3 object: a named list with `$X`, `$Y`, `$M`,
 #' `$G`, `$Gm`, `$W`, `$W1`, `$W2`, `$covariates`, `$n`, `$n_features`,
 #' `$n_mediators`, `$has_instrument`, `$has_mediator_instrument`,
 #' `$has_nc`, `$has_path_nc`, `$is_mediation`, `$feature_names`,
@@ -76,11 +83,11 @@
 #'
 #' @examples
 #' # Total-effect only (no mediation)
-#' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))
 #'
 #' # Full mediation with instruments and NCs
 #' data <- iconic_data(
-#' Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#' X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
 #' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 #' W = matrix(rnorm(100 * 10), 10, 100)
 #' )
@@ -88,32 +95,62 @@
 #'
 #' # Survival outcome
 #' data <- iconic_data(
-#' Z = rnorm(100), outcome_type = "survival",
+#' X = rnorm(100), outcome_type = "survival",
 #' surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
 #' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 #' W = matrix(rnorm(100 * 10), 10, 100)
 #' )
 #' print(data)
-iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
+iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
                         W1 = NULL, W2 = NULL, covariates = NULL,
                         feature_names = NULL, mediator_names = NULL,
                         trained_gan = NULL,
                         outcome_type = c("continuous", "survival"),
-                        surv_time = NULL, surv_event = NULL) {
+                        surv_time = NULL, surv_event = NULL,
+                        scale = TRUE,
+                        Z = NULL) {
   outcome_type <- match.arg(outcome_type)
 
-  ## --- Z: exposure ---
-  if (missing(Z) || is.null(Z)) stop("Z (exposure) is required.")
-  if (is.matrix(Z)) {
-    if (ncol(Z) == 1) {
-      Z <- as.numeric(scale(as.numeric(Z)))
+  ## Deprecated-argument trap: the exposure was renamed Z -> X in v0.9.8.
+  if (!is.null(Z))
+    stop("argument `Z` was renamed to `X` in v0.9.8; please use `X = ...`.",
+         call. = FALSE)
+
+  # Scaling helper: center and scale a numeric vector, recording the
+  # parameters for back-transformation. Returns list(x, center, scale).
+  .scale_vec <- function(v) {
+    v <- as.numeric(v)
+    ctr <- mean(v, na.rm = TRUE)
+    s <- stats::sd(v, na.rm = TRUE)
+    if (!is.finite(s) || s == 0) s <- 1
+    list(x = as.numeric((v - ctr) / s), center = ctr, scale = s)
+  }
+  # Scale a features x samples matrix column-wise (per feature).
+  .scale_mat <- function(Mm) {
+    ctr <- rowMeans(Mm, na.rm = TRUE)
+    s <- apply(Mm, 1, stats::sd, na.rm = TRUE)
+    s[!is.finite(s) | s == 0] <- 1
+    list(x = (Mm - ctr) / s, center = ctr, scale = s)
+  }
+  scaling <- list(enabled = scale)
+
+  ## --- X: exposure ---
+  if (missing(X) || is.null(X)) stop("X (exposure) is required.")
+  if (is.matrix(X)) {
+    if (ncol(X) == 1) {
+      X <- as.numeric(X)
     } else {
-      Z <- as.numeric(scale(colMeans(Z, na.rm = TRUE)))
+      X <- colMeans(X, na.rm = TRUE)
     }
   } else {
-    Z <- as.numeric(Z)
+    X <- as.numeric(X)
   }
-  n <- length(Z)
+  if (scale) {
+    sx <- .scale_vec(X)
+    X <- sx$x
+    scaling$X <- list(center = sx$center, scale = sx$scale)
+  }
+  n <- length(X)
 
   ## --- Y: outcome ---
   if (outcome_type == "survival") {
@@ -145,6 +182,11 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     if (ncol(Y) != n)
       stop("Y must have n samples. If a matrix, pass features x samples ",
            "(features in rows) or samples x features (samples in rows).")
+    if (scale) {
+      sy <- .scale_mat(Y)
+      Y <- sy$x
+      scaling$Y <- list(center = sy$center, scale = sy$scale)
+    }
     n_features <- nrow(Y)
   }
 
@@ -160,6 +202,11 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     } else {
       M <- matrix(as.numeric(M), nrow = 1, ncol = n)
       n_mediators <- 1L
+    }
+    if (scale) {
+      sm <- .scale_mat(M)
+      M <- sm$x
+      scaling$M <- list(center = sm$center, scale = sm$scale)
     }
   }
 
@@ -180,6 +227,11 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
       G <- as.numeric(G)
     }
     if (length(G) != n) stop("G must have length n (or n rows if a matrix).")
+    if (scale) {
+      sg <- .scale_vec(G)
+      G <- sg$x
+      scaling$G <- list(center = sg$center, scale = sg$scale)
+    }
   }
 
   ## --- Gm: mediator instrument ---
@@ -194,6 +246,11 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     } else {
       Gm <- matrix(as.numeric(Gm), nrow = 1, ncol = n)
     }
+    if (scale) {
+      sgm <- .scale_mat(Gm)
+      Gm <- sgm$x
+      scaling$Gm <- list(center = sgm$center, scale = sgm$scale)
+    }
   }
 
   ## --- W: negative controls (single panel) ---
@@ -205,6 +262,11 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     if (nrow(W) != n_features && outcome_type == "continuous")
       warning("W has ", nrow(W), " features but Y has ", n_features,
               ". Using row recycling.")
+    if (scale) {
+      sw <- .scale_mat(W)
+      W <- sw$x
+      scaling$W <- list(center = sw$center, scale = sw$scale)
+    }
   }
 
   ## --- W1, W2: path-specific NCs ---
@@ -229,6 +291,20 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
       W <- if (identical(W1, W2)) W1 else (W1 + W2) / 2
       has_nc <- TRUE
     }
+    if (scale) {
+      sw1 <- .scale_mat(W1)
+      W1 <- sw1$x
+      scaling$W1 <- list(center = sw1$center, scale = sw1$scale)
+      sw2 <- .scale_mat(W2)
+      W2 <- sw2$x
+      scaling$W2 <- list(center = sw2$center, scale = sw2$scale)
+      # re-derive combined W from scaled W1/W2 when it was derived above
+      if (!is.null(scaling$W)) {
+        # W was supplied and already scaled; leave it
+      } else {
+        W <- if (identical(W1, W2)) W1 else (W1 + W2) / 2
+      }
+    }
   } else {
     W1 <- NULL
     W2 <- NULL
@@ -238,6 +314,16 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
   if (!is.null(covariates)) {
     covariates <- .encode_covariates(as.data.frame(covariates), n,
                                      paste0("S", seq_len(n)))
+    if (scale && ncol(covariates) > 0) {
+      num_cols <- vapply(covariates, is.numeric, logical(1))
+      if (any(num_cols)) {
+        cov_num <- as.matrix(covariates[, num_cols, drop = FALSE])
+        sc <- .scale_mat(t(cov_num)) # scale per covariate (rows)
+        covariates[, num_cols] <- as.data.frame(t(sc$x))
+        scaling$covariates <- list(center = sc$center, scale = sc$scale,
+                                   columns = names(covariates)[num_cols])
+      }
+    }
   } else {
     covariates <- data.frame(row.names = seq_len(n))[, 0, drop = FALSE]
   }
@@ -255,7 +341,7 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
 
   ## --- Validate ---
   obj <- list(
-    Z = Z,
+    X = X,
     Y = Y,
     M = if (is_mediation) M else NULL,
     G = if (has_instrument) G else NULL,
@@ -277,7 +363,8 @@ iconic_data <- function(Z, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     trained_gan = trained_gan,
     outcome_type = outcome_type,
     surv_time = if (outcome_type == "survival") surv_time else NULL,
-    surv_event = if (outcome_type == "survival") surv_event else NULL
+    surv_event = if (outcome_type == "survival") surv_event else NULL,
+    scaling = scaling
   )
   validate_iconic_data(obj)
   class(obj) <- c("iconic_data", "list")
@@ -317,12 +404,12 @@ validate_iconic_data <- function(obj) {
 #'
 #' 1. With a list returned by [load_real_input_data()] (the original
 #' interface).
-#' 2. With named arguments matching [iconic_data()] (Z, Y, M, G, Gm,
+#' 2. With named arguments matching [iconic_data()] (X, Y, M, G, Gm,
 #' W, W1, W2, covariates, feature_names, mediator_names), which
 #' simply delegates to [iconic_data()].
 #'
 #' @param input Either a list returned by [load_real_input_data()], or
-#' the exposure vector Z (when using named-argument form).
+#' the exposure vector X (when using named-argument form).
 #' @param ... Named arguments passed to [iconic_data()] when using
 #' the named-argument form. Ignored when \code{input} is a list.
 #'
@@ -351,7 +438,7 @@ as_iconic_data <- function(input, ...) {
   if (is.list(input) && !is.null(input$original_matrices)) {
     om <- input$original_matrices
     iconic_data(
-      Z = om$Z,
+      X = om$X,
       Y = om$Y,
       W = om$W,
       covariates = input$covariates,
@@ -359,11 +446,11 @@ as_iconic_data <- function(input, ...) {
     )
   } else if (length(dots) > 0 || !is.null(input)) {
     # Named-argument form: delegate to iconic_data()
-    # input is Z, dots are the remaining named args
-    do.call(iconic_data, c(list(Z = input), dots))
+    # input is X, dots are the remaining named args
+    do.call(iconic_data, c(list(X = input), dots))
   } else {
     stop("as_iconic_data() requires either a load_real_input_data() result ",
-         "or named arguments (Z=, Y=, ...).")
+         "or named arguments (X=, Y=, ...).")
   }
 }
 

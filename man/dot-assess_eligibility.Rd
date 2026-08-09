@@ -11,13 +11,20 @@ Applies the eligibility rules:
 UNADJ: always eligible
 DIRECT: requires G + W
 COCA: requires W, A1 passed (at least some valid NCs); A2 NOT required
-IV2SLS: requires G, F_G >= min_f, W
+IV2SLS: requires G, F_G >= min_f (W optional proximal augmentation)
 PGC: requires G, F_G >= min_f, completeness satisfied
-IV2SLS2: requires G + Gm + W, F_G >= min_f, F_Gm >= min_f
+IV2SLS2: requires G + Gm, F_G >= min_f, F_Gm >= min_f (W optional proximal augmentation)
 PGC2: requires G + W1 + W2, F_G >= min_f, path completeness
 PGC2Gm: requires G + Gm + W1 + W2, F_G >= min_f, path completeness
 }
 \details{
+The IV estimators (IV2SLS, IV2SLS2) are identified by the instrument(s)
+alone, following classic 2SLS; when a negative-control panel W is present it
+is included as a proximal augmentation (adjustment covariate) to improve
+confounding control, but W is not required for eligibility. The proximal
+bridge estimators (PGC, PGC2, PGC2Gm) and COCA/DIRECT retain their W
+requirement because the bridge/ratio is identified through W.
+
 COCA no longer requires the A2 (instrument-independence) screen,
 only A1 + completeness. The eligibility table gains an
 \code{a2_required} column documenting which estimators need A2.

@@ -5,7 +5,7 @@
   dat <- run_single_iteration(
     n_synthetic_samples = n, n_features = n_features,
     mo_confounding = 0.8, phi = phi, seed = seed)
-  iconic_data(Z = dat$Z, Y = t(dat$Y), M = dat$M, W = t(dat$W),
+  iconic_data(X = dat$X, Y = t(dat$Y), M = dat$M, W = t(dat$W),
               G = dat$G[, 1], Gm = dat$Gm, covariates = dat$synthetic_data)
 }
 
@@ -56,7 +56,7 @@ test_that("conf_strength is available with valid G", {
 test_that("conf_strength unavailable without G", {
   dat <- run_single_iteration(n_synthetic_samples = 100, n_features = 10,
                               mo_confounding = 0.8, phi = 0, seed = 42)
-  idata <- iconic_data(Z = dat$Z, Y = t(dat$Y), M = dat$M, W = t(dat$W),
+  idata <- iconic_data(X = dat$X, Y = t(dat$Y), M = dat$M, W = t(dat$W),
                        covariates = dat$synthetic_data)
   conf <- infer_confounding(idata)
   expect_false(conf$conf_strength$available)
@@ -79,7 +79,7 @@ test_that("mo_confounding is available with G + Gm", {
 test_that("mo_confounding unavailable without Gm", {
   dat <- run_single_iteration(n_synthetic_samples = 100, n_features = 10,
                               mo_confounding = 0.8, phi = 0, seed = 42)
-  idata <- iconic_data(Z = dat$Z, Y = t(dat$Y), M = dat$M, W = t(dat$W),
+  idata <- iconic_data(X = dat$X, Y = t(dat$Y), M = dat$M, W = t(dat$W),
                        G = dat$G[, 1], covariates = dat$synthetic_data)
   conf <- infer_confounding(idata)
   expect_false(conf$mo_confounding$available)
@@ -89,7 +89,7 @@ test_that("mo_confounding unavailable without Gm", {
 test_that("mo_confounding unavailable for non-mediation data", {
   dat <- run_single_iteration(n_synthetic_samples = 100, n_features = 10,
                               seed = 42)
-  idata <- iconic_data(Z = dat$Z, Y = t(dat$Y), W = t(dat$W),
+  idata <- iconic_data(X = dat$X, Y = t(dat$Y), W = t(dat$W),
                        G = dat$G[, 1], covariates = dat$synthetic_data)
   conf <- infer_confounding(idata)
   expect_false(conf$mo_confounding$available)
@@ -109,7 +109,7 @@ test_that("omega_1 is available with W", {
 test_that("omega unavailable without W", {
   dat <- run_single_iteration(n_synthetic_samples = 100, n_features = 10,
                               mo_confounding = 0.8, phi = 0.8, seed = 42)
-  idata <- iconic_data(Z = dat$Z, Y = t(dat$Y), M = dat$M,
+  idata <- iconic_data(X = dat$X, Y = t(dat$Y), M = dat$M,
                        G = dat$G[, 1], Gm = dat$Gm)
   conf <- infer_confounding(idata)
   expect_false(conf$omega_1$available)
@@ -159,7 +159,7 @@ test_that("rho_G1 and rho_G2 are always unavailable", {
 # ═══════════════════════════════════════════════════════════════
 
 test_that("bare data has most parameters unavailable", {
-  bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50))
+  bare <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50))
   conf <- infer_confounding(bare)
   expect_false(conf$conf_strength$available)
   expect_false(conf$mo_confounding$available)

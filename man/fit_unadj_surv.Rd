@@ -7,7 +7,7 @@
 fit_unadj_surv(
   time,
   event,
-  Z,
+  X,
   covars = NULL,
   effect_scale = c("loghr", "rmst"),
   tau = NULL
@@ -18,7 +18,7 @@ fit_unadj_surv(
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{covars}{Optional data frame of covariates (n rows).}
 
@@ -33,14 +33,14 @@ fit_unadj_surv(
 Named list: \code{beta}, \code{se}, \code{pvalue}.
 }
 \description{
-Regresses the survival outcome on the exposure Z (plus covariates)
+Regresses the survival outcome on the exposure X (plus covariates)
 with no instrument or negative-control adjustment. Bias reference.
 }
 \details{
 When \code{effect_scale = "loghr"} (default), fits a Cox
-proportional-hazards model and returns the log-hazard ratio for Z.
+proportional-hazards model and returns the log-hazard ratio for X.
 When \code{effect_scale = "rmst"}, regresses leave-one-out RMST
-pseudo-observations (Graw et al. 2009) on Z via OLS, returning an
+pseudo-observations (Graw et al. 2009) on X via OLS, returning an
 effect on the restricted-mean-survival-time (time) scale — a
 collapsible, linear alternative to the non-collapsible hazard ratio.
 }
@@ -48,7 +48,7 @@ collapsible, linear alternative to the non-collapsible hazard ratio.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-fit_unadj_surv(dat$surv_time, dat$surv_event, dat$Z)
-fit_unadj_surv(dat$surv_time, dat$surv_event, dat$Z, effect_scale = "rmst")
+fit_unadj_surv(dat$surv_time, dat$surv_event, dat$X)
+fit_unadj_surv(dat$surv_time, dat$surv_event, dat$X, effect_scale = "rmst")
 }
 }

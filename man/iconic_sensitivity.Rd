@@ -18,12 +18,14 @@ iconic_sensitivity(
   n_features = 10,
   phi = NULL,
   mo_confounding = 0.8,
-  separate_U = TRUE,
-  omega_1 = 0.7,
-  omega_2 = 0.7,
+  lambda_XM = NULL,
+  lambda_MY = NULL,
+  omega_1 = c(0.3, 0.7, 1),
+  omega_2 = c(0.3, 0.7, 1),
   bias_threshold = 0.1,
   base_seed = 700,
   n_cores = 1,
+  verbose = FALSE,
   outcome_type = NULL,
   effect_scale = c("loghr", "rmst"),
   surv_h0 = 0.1,
@@ -49,10 +51,10 @@ explicitly supplied arguments). Default \code{"default"}.}
 
 \item{gan_epochs}{Epochs for auto-trained GAN. Default 100.}
 
-\item{rho_G1_grid}{Values of rho_G1 (G correlation with U_XM).
+\item{rho_G1_grid}{Values of rho_G1 (G correlation with conf_XM).
 Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.}
 
-\item{rho_G2_grid}{Values of rho_G2 (Gm correlation with U_MY).
+\item{rho_G2_grid}{Values of rho_G2 (Gm correlation with conf_MY).
 Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.}
 
 \item{n_iter}{Replicates per grid cell. Default 30.}
@@ -67,10 +69,17 @@ from diagnosis (F_Gm) or defaults to 0.8.}
 \item{mo_confounding}{M-O confounding strength. Default 0.8.
 Used when \code{confounding = "default"} or \code{"manual"}.}
 
-\item{separate_U}{Use separate confounders for Z->M and M->Y paths.
-Default TRUE (matches).}
+\item{lambda_XM}{Optional per-path confounder loading vector (X->M path).
+NULL (default) = shared loadings.}
 
-\item{omega_1, omega_2}{NC coverage of U_XM / U_MY. Default 0.7.
+\item{lambda_MY}{Optional per-path confounder loading vector (M->Y path).
+NULL (default) = shared loadings.}
+
+\item{omega_1, omega_2}{NC coverage of each path's confounder composite
+(conf_XM / conf_MY). Default \code{c(0.3, 0.7, 1.0)}, swept jointly with
+the rho grid. When the two vectors are identical (the default), the sweep
+is taken on the diagonal (\code{omega_1 == omega_2}); supply distinct
+vectors to cross the full \code{omega_1 x omega_2} grid.
 Used when \code{confounding = "default"} or \code{"manual"}.}
 
 \item{bias_threshold}{Absolute bias threshold for tipping-point
@@ -81,6 +90,9 @@ annotation. Default 0.10.}
 \item{n_cores}{Number of parallel workers for simulation replicates.
 Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
 and a PSOCK cluster on Windows.}
+
+\item{verbose}{Logical: print progress messages during the sweep.
+Default \code{FALSE} (quiet).}
 
 \item{outcome_type}{\code{NULL} (inherit from \code{data}, default) or
 \code{"continuous"} / \code{"survival"}. When survival, the
@@ -164,15 +176,15 @@ inferred fall back to defaults with warnings.
 \code{n_iter} \tab 30 \tab Replicates per grid cell \cr
 \code{n_features} \tab 10 \tab Features per replicate \cr
 \code{mo_confounding} \tab 0.8 \tab Simulation calibration (delta_mo) \cr
-\code{separate_U} \tab TRUE \tab Path-specific confounders \cr
-\code{omega_1, omega_2} \tab 0.7 \tab NC coverage (simulation calibration) \cr
+\code{lambda_XM}, \code{lambda_MY} \tab shared \tab Per-path confounder loadings \cr
+\code{omega_1, omega_2} \tab c(0.3,0.7,1.0) \tab NC coverage (swept on the diagonal) \cr
 \code{bias_threshold} \tab 0.10 \tab Tipping-point threshold \cr
 }
 }
 
 \examples{
 \dontrun{
-data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
+data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 W = matrix(rnorm(100*10), 10, 100))
 sens <- iconic_sensitivity(data, n_iter = 10)

@@ -49,7 +49,7 @@ A list with:
 \code{capture} (output of \code{\link[=nc_completeness_capture]{nc_completeness_capture()}}, or NULL),
 \code{completeness} (composite: "satisfied", "borderline",
 "under-identified", or "weak-capture"),
-\code{screen_Z} (A1 screen results, if run), \code{screen_G} (A2 screen
+\code{screen_X} (A1 screen results, if run), \code{screen_G} (A2 screen
 results, if run).
 }
 \description{

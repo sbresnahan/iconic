@@ -4,12 +4,12 @@
 \alias{fit_direct_mediation}
 \title{DIRECT mediation estimator: OLS with instrument and NC as covariates}
 \usage{
-fit_direct_mediation(y, Z, M, g, w, covars = NULL)
+fit_direct_mediation(y, X, M, g, w, covars = NULL)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
@@ -33,6 +33,6 @@ confounding via a ratio or IV approach.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-fit_direct_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$W[, 1])
+fit_direct_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W[, 1])
 }
 }

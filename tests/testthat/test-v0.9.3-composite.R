@@ -223,12 +223,12 @@ test_that("composite NIE_significant flag is set", {
 test_that("iconic_estimate accepts se_method = composite", {
   set.seed(42)
   n <- 200; p <- 10; q <- 10
-  Z <- rnorm(n)
+  X <- rnorm(n)
   Y <- matrix(rnorm(n * p), p, n)
   G <- rnorm(n)
   W <- matrix(rnorm(n * q), q, n)
   M <- matrix(rnorm(n), 1, n)
-  idat <- iconic::iconic_data(Z = Z, Y = Y, G = G, W = W, M = M)
+  idat <- iconic::iconic_data(X = X, Y = Y, G = G, W = W, M = M)
   est <- iconic::iconic_estimate(idat, se_method = "composite", n_cores = 1)
   expect_s3_class(est, "data.frame")
   expect_true("NIE_p" %in% names(est))
@@ -239,12 +239,12 @@ test_that("iconic_estimate accepts se_method = composite", {
 test_that("iconic_estimate composite preserves NDE_p", {
   set.seed(42)
   n <- 200; p <- 10; q <- 10
-  Z <- rnorm(n)
+  X <- rnorm(n)
   Y <- matrix(rnorm(n * p), p, n)
   G <- rnorm(n)
   W <- matrix(rnorm(n * q), q, n)
   M <- matrix(rnorm(n), 1, n)
-  idat <- iconic::iconic_data(Z = Z, Y = Y, G = G, W = W, M = M)
+  idat <- iconic::iconic_data(X = X, Y = Y, G = G, W = W, M = M)
   est_delta <- iconic::iconic_estimate(idat, se_method = "delta", n_cores = 1)
   est_comp <- iconic::iconic_estimate(idat, se_method = "composite", n_cores = 1)
   expect_equal(est_delta$NDE_p, est_comp$NDE_p)
@@ -285,7 +285,7 @@ test_that("composite type I error is reasonable under point null", {
 # smoking -> tumor expression -> survival) have a scalar outcome Y and a
 # panel of mediators M. The composite test groups by method only, so
 # Var(a) and Var(b) are estimated across mediators within each method.
-# Each mediator has its own stage-1 regression M_m ~ Z, giving real
+# Each mediator has its own stage-1 regression M_m ~ X, giving real
 # variation in a = alpha_M / SE(alpha_M).
 
 test_that(".apply_composite_pvalues groups by method, not method x mediator", {

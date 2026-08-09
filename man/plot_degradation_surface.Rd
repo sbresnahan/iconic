@@ -8,6 +8,7 @@ plot_degradation_surface(
   results,
   rho_G1_grid = c(0, 0.1, 0.2, 0.3, 0.5),
   rho_G2_grid = c(0, 0.1, 0.2, 0.3, 0.5),
+  omega_facet = TRUE,
   file = NULL,
   width = 15,
   height = 5.5
@@ -24,6 +25,11 @@ values.}
 
 \item{rho_G2_grid}{Numeric vector of mediator-instrument violation
 values.}
+
+\item{omega_facet}{Logical: when the sensitivity surface swept
+\code{omega_1} / \code{omega_2} (more than one distinct value), facet the
+rho_G1 x rho_G2 heatmaps by the omega cell. Default \code{TRUE}. Ignored
+when omega was not swept.}
 
 \item{file}{Optional file path to save the figure.}
 

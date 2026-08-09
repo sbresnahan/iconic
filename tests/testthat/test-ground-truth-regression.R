@@ -8,15 +8,15 @@
 # package is against a moving target and the feature must be reverted.
 #
 # Oracle estimator:
-# NDE = coef(lm(Y_f ~ Z + M + U1))[["Z"]] (= beta_Z)
-# alpha_M = coef(lm(M ~ Z + U1))[["Z"]] (= alpha_M)
-# beta_M = coef(lm(Y_f ~ Z + M + U1))[["M"]] (= beta_M)
+# NDE = coef(lm(Y_f ~ X + M + U1))[["X"]] (= beta_X)
+# alpha_M = coef(lm(M ~ X + U1))[["X"]] (= alpha_M)
+# beta_M = coef(lm(Y_f ~ X + M + U1))[["M"]] (= beta_M)
 # NIE = alpha_M * beta_M (= alpha_M * beta_M)
 #
 # The oracle is correct by construction under the linear DGP because
 # conditioning on U (the true confounder) removes all confounding.
 # Correlated noise is additive (MVN noise added to Y and W) and does
-# not enter the structural equations for M or the coefficients beta_Z,
+# not enter the structural equations for M or the coefficients beta_X,
 # alpha_M, beta_M.
 
 # ── Helper: compute oracle bias for one dataset ──
@@ -26,12 +26,12 @@
   U1 <- dat$U1
   if (is.null(U1)) U1 <- dat$U[, 1] # run_single_iteration stores U as matrix
   for (f in seq_len(n_features)) {
-    df_y <- data.frame(y = dat$Y[, f], Z = dat$Z, M = dat$M, U1 = U1)
-    fit_y <- lm(y ~ Z + M + U1, data = df_y)
-    nde_bias[f] <- coef(fit_y)[["Z"]] - dat$true_NDE
-    df_m <- data.frame(M = dat$M, Z = dat$Z, U1 = U1)
-    fit_m <- lm(M ~ Z + U1, data = df_m)
-    nie_bias[f] <- coef(fit_m)[["Z"]] * coef(fit_y)[["M"]] - dat$true_NIE
+    df_y <- data.frame(y = dat$Y[, f], X = dat$X, M = dat$M, U1 = U1)
+    fit_y <- lm(y ~ X + M + U1, data = df_y)
+    nde_bias[f] <- coef(fit_y)[["X"]] - dat$true_NDE
+    df_m <- data.frame(M = dat$M, X = dat$X, U1 = U1)
+    fit_m <- lm(M ~ X + U1, data = df_m)
+    nie_bias[f] <- coef(fit_m)[["X"]] * coef(fit_y)[["M"]] - dat$true_NIE
   }
   c(NDE_bias = mean(nde_bias), NIE_bias = mean(nie_bias))
 }

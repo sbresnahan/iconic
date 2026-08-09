@@ -15,8 +15,8 @@
 #' @param n_iter Number of simulation replicates. Default 100.
 #' @param n_samples Observations per replicate. Default 500.
 #' @param n_features Number of outcome and negative-control features. Default 20.
-#' @param beta_Z Direct effect of Z on Y. Default 0.10.
-#' @param alpha_M Effect of Z on mediator. Default 0.50.
+#' @param beta_X Direct effect of X on Y. Default 0.10.
+#' @param alpha_M Effect of X on mediator. Default 0.50.
 #' @param beta_M Effect of mediator on Y. Default 0.30.
 #' @param conf_str Confounding strength delta. Default 0.80.
 #' @param w_signal Proxy quality omega. Default 0.70.
@@ -30,14 +30,14 @@
 #'
 #' @examples
 #' \donttest{
-#' res <- run_simulation(n_iter = 50, beta_Z = 0.1, conf_str = 0.8)
+#' res <- run_simulation(n_iter = 50, beta_X = 0.1, conf_str = 0.8)
 #' res$summary
 #' }
 
 run_simulation <- function(n_iter = 100,
                            n_samples = 500,
                            n_features = 20,
-                           beta_Z = 0.10,
+                           beta_X = 0.10,
                            alpha_M = 0.50,
                            beta_M = 0.30,
                            conf_str = 0.80,
@@ -46,11 +46,11 @@ run_simulation <- function(n_iter = 100,
                            base_seed = 100,
                            n_cores= 1) {
 
-  true_total <- beta_Z + alpha_M * beta_M
+  true_total <- beta_X + alpha_M * beta_M
 
   worker <- function(i) {
     dat <- generate_toy_data(n = n_samples, n_features = n_features,
-                                  beta_Z = beta_Z, alpha_M = alpha_M,
+                                  beta_X = beta_X, alpha_M = alpha_M,
                                   beta_M = beta_M, conf_str = conf_str,
                                   w_signal = w_signal, feat_cor = feat_cor,
                                   seed = base_seed + i)
@@ -68,7 +68,7 @@ run_simulation <- function(n_iter = 100,
     iter_bias = compute_iter_bias(combined, true_total),
     true_total = true_total,
     params = list(n_iter = n_iter, n_samples = n_samples,
-                      n_features = n_features, beta_Z = beta_Z,
+                      n_features = n_features, beta_X = beta_X,
                       alpha_M = alpha_M, beta_M = beta_M,
                       conf_str = conf_str, w_signal = w_signal,
                       feat_cor = feat_cor)
@@ -78,13 +78,13 @@ run_simulation <- function(n_iter = 100,
 
 #' Sweep a single simulation parameter across a grid
 #'
-#' @param param Parameter to vary: one of "beta_Z", "conf_str",
+#' @param param Parameter to vary: one of "beta_X", "conf_str",
 #' "w_signal", "alpha_M", "beta_M", "n_samples", "feat_cor".
 #' @param param_grid Numeric vector of values to sweep.
 #' @param n_iter Replicates per grid point. Default 100.
 #' @param n_samples Observations per replicate. Default 500.
 #' @param n_features Features per replicate. Default 20.
-#' @param beta_Z Baseline direct effect. Default 0.10.
+#' @param beta_X Baseline direct effect. Default 0.10.
 #' @param alpha_M Baseline mediator path. Default 0.50.
 #' @param beta_M Baseline mediator effect. Default 0.30.
 #' @param conf_str Baseline confounding strength. Default 0.80.
@@ -105,7 +105,7 @@ sweep_param <- function(param,
                         n_iter = 100,
                         n_samples = 500,
                         n_features = 20,
-                        beta_Z = 0.10,
+                        beta_X = 0.10,
                         alpha_M = 0.50,
                         beta_M = 0.30,
                         conf_str = 0.80,
@@ -114,12 +114,12 @@ sweep_param <- function(param,
                         base_seed = 0,
                         n_cores = 1) {
 
-  allowed <- c("beta_Z", "conf_str", "w_signal", "alpha_M", "beta_M",
+  allowed <- c("beta_X", "conf_str", "w_signal", "alpha_M", "beta_M",
                "n_samples", "feat_cor")
   param <- match.arg(param, allowed)
 
   base_args <- list(n = n_samples, n_features = n_features,
-                    beta_Z = beta_Z, alpha_M = alpha_M,
+                    beta_X = beta_X, alpha_M = alpha_M,
                     beta_M = beta_M, conf_str = conf_str, w_signal = w_signal,
                     feat_cor = feat_cor)
 
@@ -130,7 +130,7 @@ sweep_param <- function(param,
     pval <- param_grid[gi]
     args <- base_args
     if (param == "n_samples") { args$n <- pval } else { args[[param]] <- pval }
-    true_total <- args$beta_Z + args$alpha_M * args$beta_M
+    true_total <- args$beta_X + args$alpha_M * args$beta_M
 
     worker <- function(i) {
       dat <- do.call(generate_toy_data,
@@ -190,7 +190,7 @@ run_null_sim <- function(n_iter = 200,
 
   worker <- function(i) {
     dat <- generate_toy_data(n = n_samples, n_features = n_features,
-                                  beta_Z = 0, alpha_M = 0, beta_M = 0,
+                                  beta_X = 0, alpha_M = 0, beta_M = 0,
                                   conf_str = conf_str, w_signal = w_signal,
                                   feat_cor = feat_cor,
                                   seed = base_seed + i)
@@ -256,7 +256,7 @@ sweep_null_by_conf <- function(conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),
 
     worker <- function(i) {
       dat <- generate_toy_data(n = n_samples, n_features = n_features,
-                                    beta_Z = 0, alpha_M = 0, beta_M = 0,
+                                    beta_X = 0, alpha_M = 0, beta_M = 0,
                                     conf_str = cs, w_signal = w_signal,
                                     feat_cor = feat_cor,
                                     seed = base_seed + ci * 1000L + i)

@@ -4,12 +4,12 @@
 \alias{fit_iv2sls_mediation}
 \title{IV2SLS mediation estimator: instrumented exposure in both stages}
 \usage{
-fit_iv2sls_mediation(y, Z, M, g, w, covars = NULL, min_f = 10)
+fit_iv2sls_mediation(y, X, M, g, w, covars = NULL, min_f = 10)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
@@ -27,18 +27,18 @@ Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
 \code{NIE}, \code{NIE_se}, \code{NIE_p}.
 }
 \description{
-Uses the genetic instrument G to purge U1 from Z, then estimates
+Uses the genetic instrument G to purge U1 from X, then estimates
 the mediator and outcome regressions with the cleaned exposure.
 }
 \details{
 Strategy:
 \enumerate{
-\item \code{Z ~ G + W} -> Z_hat (purge U1 from Z).
-\item \code{M ~ Z_hat} -> alpha_M (clean effect of Z on M).
-\item \code{Y ~ Z_hat + M + W} -> NDE = beta_Z, beta_M (OLS).
+\item \code{X ~ G + W} -> X_hat (purge U1 from X).
+\item \code{M ~ X_hat} -> alpha_M (clean effect of X on M).
+\item \code{Y ~ X_hat + M + W} -> NDE = beta_X, beta_M (OLS).
 }
 
-The IV cleans Z of U1 confounding, but M remains endogenous via
+The IV cleans X of U1 confounding, but M remains endogenous via
 U1 -> M. With a single instrument, natural effects are not fully
 identified (Rudolph et al., 2024); NDE and NIE are approximations
 whose bias from M-O confounding is the key finding the simulation
@@ -48,7 +48,7 @@ demonstrates.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
-fit_iv2sls_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], dat$W[, 1])
+fit_iv2sls_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W[, 1])
 }
 }
 \references{

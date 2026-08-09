@@ -14,14 +14,15 @@ gan_mediation_sensitivity(
   rho_G1 = 0,
   rho_G2 = 0,
   rho_pop = 0,
-  separate_U = FALSE,
+  lambda_XM = NULL,
+  lambda_MY = NULL,
   omega_1 = NULL,
   omega_2 = NULL,
   nc_model = "proxy",
   n_iter = 50,
   n_samples = 500,
   n_features = 20,
-  beta_Z = 0.1,
+  beta_X = 0.1,
   alpha_M = 0.5,
   beta_M = 0.3,
   base_seed = 750,
@@ -49,17 +50,19 @@ gan_mediation_sensitivity(
 generates Gm and includes the 2-stage MR estimator
 (IV2SLS2). Default 0.}
 
-\item{rho_G1}{Correlation of G1 with U_XM. Default 0.}
+\item{rho_G1}{Correlation of G1 with conf_XM. Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY. Default 0.}
+\item{rho_G2}{Correlation of G2 with conf_MY. Default 0.}
 
 \item{rho_pop}{Shared population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders for Z->M and M->Y. Default FALSE.}
+\item{lambda_XM}{Optional per-path confounder loading vector (X->M path).}
 
-\item{omega_1}{Coverage of U_XM by W1. NULL = use \code{coverage}.}
+\item{lambda_MY}{Optional per-path confounder loading vector (M->Y path).}
 
-\item{omega_2}{Coverage of U_MY by W2. NULL = use \code{coverage}.}
+\item{omega_1}{Coverage of conf_XM by W1. NULL = use \code{coverage}.}
+
+\item{omega_2}{Coverage of conf_MY by W2. NULL = use \code{coverage}.}
 
 \item{nc_model}{Negative-control model (function or name). Default \code{"proxy"}.}
 
@@ -69,7 +72,7 @@ generates Gm and includes the 2-stage MR estimator
 
 \item{n_features}{Features per replicate. Default 20.}
 
-\item{beta_Z, alpha_M, beta_M}{Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.}
+\item{beta_X, alpha_M, beta_M}{Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.}
 
 \item{base_seed}{Base RNG seed. Default 750.}
 

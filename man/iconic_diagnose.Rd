@@ -8,7 +8,7 @@ iconic_diagnose(
   data,
   fdr_level = 0.1,
   min_f = 10,
-  k = 1,
+  k = NULL,
   g_threshold = NULL,
   gm_threshold = NULL,
   n_cores = 1,
@@ -26,8 +26,11 @@ are NULL (legacy behavior). When thresholds are supplied, \code{min_f}
 is unused for the panel decision (the threshold's \code{R} governs).}
 
 \item{k}{Number of latent confounders assumed for the
-completeness check. Default 1 (a single confounder
-is the typical case in mediation settings).}
+completeness check. Default \code{NULL}: infer from the data via
+Horn parallel analysis on the residualized-outcome correlation matrix
+(\code{\link{infer_confounding}()}); falls back to 1 when inference
+is not possible (fewer than 5 outcome features). Supply an integer to
+override inference.}
 
 \item{g_threshold}{Optional list \code{list(E = 0.5, R = 10)} controlling
 G-dependent method eligibility via the panel distribution. A method is
@@ -68,15 +71,19 @@ include:
 for G (exposure instrument) and Gm (mediator instrument), with
 the Stock-Yogo weak-instrument threshold (F >= 10).
 \item \strong{NC validity (A1)}: screens each negative-control
-feature for association with the exposure Z
-(\code{\link{nc_validity_screen}()}).
+feature for association with the exposure X (the empirically testable
+projection of "W independent of X given C, U";
+\code{\link{nc_validity_screen}()}).
 \item \strong{NC independence (A2)}: screens each NC for association
-with the instrument G (\code{\link{nc_independence_check}()}).
+with the instrument G (the empirically testable projection of
+"W independent of G given C, U"; \code{\link{nc_independence_check}()}).
 \item \strong{NC independence (A2')}: screens each NC for association
-with the mediator instrument Gm
-(\code{\link{nc_independence_check_gm}()}).
+with the mediator instrument Gm (the empirically testable projection
+of "W independent of G_m given C, U";
+\code{\link{nc_independence_check_gm}()}).
 \item \strong{Path completeness}: checks whether the valid NC panel
-has enough features to span the confounder subspace
+has enough features to span the confounder subspace and captures the
+confounder covariance
 (\code{\link{nc_completeness_check}()}).
 }
 }
@@ -96,7 +103,7 @@ has enough features to span the confounder subspace
 
 \examples{
 set.seed(1)
-data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
 G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 diag <- iconic_diagnose(data)
 print(diag)

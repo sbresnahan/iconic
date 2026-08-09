@@ -4,7 +4,7 @@
 \alias{.build_recommendation_summary}
 \title{Build recommendation summary (internal)}
 \usage{
-.build_recommendation_summary(ranking, recommended, recommended_tier, data)
+.build_recommendation_summary(ranking, recommended, recommended_NIE, data)
 }
 \description{
 Build recommendation summary (internal)

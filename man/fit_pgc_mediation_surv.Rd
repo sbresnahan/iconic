@@ -7,7 +7,7 @@
 fit_pgc_mediation_surv(
   time,
   event,
-  Z,
+  X,
   M,
   g,
   W,
@@ -22,11 +22,11 @@ fit_pgc_mediation_surv(
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
-\item{g}{Numeric instrument for Z (length n).}
+\item{g}{Numeric instrument for X (length n).}
 
 \item{W}{Numeric NC matrix (n x q) or vector (length n).}
 
@@ -45,25 +45,25 @@ Returns all-NA if the first-stage partial F for G is below \code{min_f}.
 \description{
 Bridge-function-adjusted natural direct and indirect effects with a
 survival outcome stage, using a single negative-control panel W for
-both the Z->M and M->Y confounding paths. This is the survival
+both the X->M and M->Y confounding paths. This is the survival
 analogue of \code{\link{fit_pgc_mediation}} (continuous outcome):
 \enumerate{
-\item OLS: residualise Z on G -> Z_resid.
-\item OLS: bridge Z_resid on the FULL W matrix -> W_hat (proxy for U).
-\item OLS: \code{M ~ Z + W_hat + covars} -> alpha_M.
-\item Cox / RMST: \code{Surv(t,e) ~ Z + M + W_hat + covars} ->
-NDE (coef on Z), beta_M (coef on M).
+\item OLS: residualise X on G -> X_resid.
+\item OLS: bridge X_resid on the FULL W matrix -> W_hat (proxy for U).
+\item OLS: \code{M ~ X + W_hat + covars} -> alpha_M.
+\item Cox / RMST: \code{Surv(t,e) ~ X + M + W_hat + covars} ->
+NDE (coef on X), beta_M (coef on M).
 }
 \code{NIE = alpha_M * beta_M}. Unlike
 \code{\link{fit_pgc_mediation2_surv}}, which uses path-specific W1/W2
 bridges, this estimator uses a single combined W panel and is
-appropriate when separate U_XM / U_MY confounders are not assumed.
+appropriate when separate conf_XM / conf_MY confounders are not assumed.
 }
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
+fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 dat$G[, 1], dat$W)
 }
 }

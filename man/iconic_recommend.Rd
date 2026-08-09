@@ -9,7 +9,16 @@ iconic_recommend(
   diagnosis = NULL,
   estimate = NULL,
   sensitivity = NULL,
-  criterion = c("combined", "minimax_bias", "ci_coverage")
+  criterion = c("combined", "minimax_bias", "ci_coverage"),
+  auto_sensitivity = TRUE,
+  rho_G1_grid = c(0, 0.1, 0.2, 0.3, 0.5),
+  rho_G2_grid = c(0, 0.1, 0.2, 0.3, 0.5),
+  omega_1 = c(0.3, 0.7, 1),
+  omega_2 = c(0.3, 0.7, 1),
+  n_iter_sens = 30,
+  gan_epochs = 100,
+  n_cores = 1,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -24,52 +33,68 @@ is computed from the data.}
 alongside the recommendation.}
 
 \item{sensitivity}{Optional \code{iconic_sensitivity} from
-\code{\link{iconic_sensitivity}()}. Used for robustness ranking
-within tiers.}
+\code{\link{iconic_sensitivity}()}. Used for robustness ranking. When
+\code{NULL} and \code{auto_sensitivity = TRUE} (the default), the
+sensitivity suite is run automatically so the recommendation is
+robustness-based out of the box.}
 
 \item{criterion}{Character: \code{"combined"} (default),
 \code{"minimax_bias"}, or \code{"ci_coverage"}. Controls how robustness
-is ranked within tiers. \code{"combined"} blends bias and CI coverage;
+is ranked. \code{"combined"} blends bias and CI coverage;
 \code{"minimax_bias"} ranks by worst-case bias across the violation grid;
 \code{"ci_coverage"} ranks by CI coverage of the true effect. When
 \code{sensitivity} is supplied, also populates \code{$per_scenario}
 (best estimator at the origin vs at violation cells).}
+
+\item{auto_sensitivity}{Logical: when \code{TRUE} (default) and
+\code{sensitivity = NULL}, run \code{\link{iconic_sensitivity}()}
+internally to obtain the robustness surface. Requires the torch backend;
+when torch is unavailable the function falls back to eligibility-only
+ranking with a message. Set \code{FALSE} to skip the auto-run.}
+
+\item{rho_G1_grid, rho_G2_grid}{Instrument-exogeneity violation grid used
+for the auto-run sensitivity suite. Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.}
+
+\item{omega_1, omega_2}{Negative-control coverage grid for the auto-run.
+Default \code{c(0.3, 0.7, 1.0)}, swept on the diagonal
+(\code{omega_1 == omega_2}).}
+
+\item{n_iter_sens}{Replicates per grid cell for the auto-run. Default 30.}
+
+\item{gan_epochs}{GAN training epochs for the auto-run. Default 100.}
+
+\item{n_cores}{Cores for the auto-run sensitivity sweep. Default 1.}
+
+\item{verbose}{Logical: print progress messages. Default \code{FALSE}
+(quiet). Also silences the auto-run sensitivity suite.}
 }
 \value{
 An \code{iconic_recommendation} S3 object: a named list with
-\code{$ranking} (data frame: estimator, tier, eligible, rank,
-rationale), \code{$recommended} (name of top estimator),
-\code{$recommended_tier}, \code{$per_scenario}
-(when \code{sensitivity} is supplied), and \code{$summary}.
+\code{$ranking} (data frame: estimator, eligible, rank, per-estimand
+robustness scores, rationale), \code{$recommended} (top estimator for
+NDE), \code{$recommended_NIE} (top estimator for NIE, when it
+differs), \code{$per_scenario} (when \code{sensitivity} is supplied),
+and \code{$summary}.
 }
 \description{
-Ranks all eligible estimators by identification strength (tier) and,
-when a sensitivity analysis is supplied, by robustness to assumption
-violations. Returns the top-ranked estimator with a transparent
-rationale.
+Ranks all eligible estimators directly on per-estimand robustness
+(NDE and NIE separately) from a sensitivity analysis. Returns the
+top-ranked estimator with a transparent rationale. There is no tier
+system: every estimator is ranked on its measured robustness to
+assumption violations, not on an a priori identification-strength
+class.
 }
 \details{
-The tier system reflects the strength of identification:
-\itemize{
-\item \strong{Tier A (identified)}: IV2SLS2, PGC2Gm -- use two
-instruments and path-specific negative controls, providing point
-identification under mediator-outcome confounding.
-\item \strong{Tier B (negative-control)}: PGC, PGC2, COCA -- use
-negative controls to proxy unmeasured confounding.
-\item \strong{Tier C (instrument-based)}: IV2SLS -- single
-instrument without NC correction.
-\item \strong{Tier D (bias reference)}: UNADJ, DIRECT -- naive
-adjustment with no causal identification.
-}
-
 When \code{sensitivity} is supplied (from
-\code{\link{iconic_sensitivity}()}), estimators within the same tier
-are further ranked by robustness: the estimator whose estimates
-degrade least across the assumption-violation surface ranks higher.
+\code{\link{iconic_sensitivity}()}), eligible estimators are ranked by
+robustness: the estimator whose estimates degrade least across the
+assumption-violation surface ranks higher. NDE and NIE robustness are
+computed separately, so a mediation estimator is ranked on the
+estimand of interest rather than a pooled maximum.
 }
 \examples{
 \donttest{
-data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
+data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 G = rnorm(100), W = matrix(rnorm(100*10), 10, 100))
 diag <- iconic_diagnose(data)
 est <- iconic_estimate(data, diagnosis = diag)

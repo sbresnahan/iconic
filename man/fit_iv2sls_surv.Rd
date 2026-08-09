@@ -7,7 +7,7 @@
 fit_iv2sls_surv(
   time,
   event,
-  Z,
+  X,
   g,
   w,
   covars = NULL,
@@ -21,7 +21,7 @@ fit_iv2sls_surv(
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{g}{Numeric instrument vector (length n).}
 
@@ -39,10 +39,10 @@ fit_iv2sls_surv(
 Named list: \code{beta}, \code{se}, \code{pvalue}.
 }
 \description{
-Two-stage predictor substitution (2SPS): the first stage regresses Z on
+Two-stage predictor substitution (2SPS): the first stage regresses X on
 the instrument G (plus W and covariates) via OLS, producing fitted
-\eqn{\hat Z}; the second stage regresses the survival outcome on
-\eqn{\hat Z} (plus W and covariates) via Cox (log-HR) or RMST
+\eqn{\hat X}; the second stage regresses the survival outcome on
+\eqn{\hat X} (plus W and covariates) via Cox (log-HR) or RMST
 pseudo-observation OLS.
 }
 \details{
@@ -54,6 +54,6 @@ F is below \code{min_f}, the function returns NA.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-fit_iv2sls_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W[, 1])
+fit_iv2sls_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W[, 1])
 }
 }

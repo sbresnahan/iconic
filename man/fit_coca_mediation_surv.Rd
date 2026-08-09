@@ -4,14 +4,14 @@
 \alias{fit_coca_mediation_surv}
 \title{COCA survival mediation estimator: NOT supported (returns NA)}
 \usage{
-fit_coca_mediation_surv(time, event, Z, M, w, covars = NULL, ...)
+fit_coca_mediation_surv(time, event, X, M, w, covars = NULL, ...)
 }
 \arguments{
 \item{time}{Numeric follow-up time vector (length n).}
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
@@ -26,7 +26,7 @@ All-NA list with an informative \code{"reason"} attribute.
 }
 \description{
 COCA mediation regresses the negative control W on the outcome Y in
-both stages (\code{W ~ M + Z}, \code{W ~ y + Z + M}), placing the
+both stages (\code{W ~ M + X}, \code{W ~ y + X + M}), placing the
 outcome on the right-hand side. This is structurally impossible when
 the outcome is a \code{survival::Surv} object. COCA mediation is
 therefore unsupported for survival outcomes and always returns NA.
@@ -35,7 +35,7 @@ therefore unsupported for survival outcomes and always returns NA.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-fit_coca_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M, dat$W[, 1])
+fit_coca_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M, dat$W[, 1])
 # all NA (COCA mediation unsupported for survival outcomes)
 }
 }

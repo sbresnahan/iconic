@@ -5,7 +5,7 @@
 \title{Estimate mediation effects for a single feature with specified methods (internal)}
 \usage{
 .estimate_mediation_feature(
-  Z,
+  X,
   y,
   M_vec,
   g = NULL,
@@ -24,7 +24,7 @@
 )
 }
 \arguments{
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{y}{Numeric outcome vector (length n).}
 
@@ -39,7 +39,7 @@
 
 \item{W_mat}{Numeric NC matrix (n x q), or NULL (for PGC matrix bridge).}
 
-\item{W1_mat}{Numeric path-specific NC matrix (n x q) for Z->M, or NULL.}
+\item{W1_mat}{Numeric path-specific NC matrix (n x q) for X->M, or NULL.}
 
 \item{W2_mat}{Numeric path-specific NC matrix (n x q) for M->Y, or NULL.}
 

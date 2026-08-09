@@ -82,8 +82,7 @@ if (data$is_mediation) {
 
 ## 0b. Prospective analysis (if no instruments/NCs) ----------------------
 # If you have Z, M, Y but no instruments or negative controls:
-# prospect <- iconic_prospect(iconic_data(Z = my_Z, Y = my_Y, M = my_M),
-# n_cores = n_cores)
+# prospect <- iconic_prospect(iconic_data(Z = my_Z, Y = my_Y, M = my_M))
 # print(prospect)
 
 ## 1. GAN pipeline: train the generator ------------------------------------

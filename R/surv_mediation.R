@@ -3,7 +3,7 @@
 #
 # Mirrors the continuous mediation estimators in R/mediation.R using
 # two-stage predictor substitution (2SPS): the mediator first stages
-# (M ~ Z / M ~ Z_hat + Gm) and the confounder bridges (Z_resid ~ W,
+# (M ~ X / M ~ X_hat + Gm) and the confounder bridges (X_resid ~ W,
 # M_resid ~ W2) remain OLS, because M and the NC panels are continuous.
 # Only the outcome stage (stage 3) switches to a Cox proportional-
 # hazards model (log-HR scale) or an OLS regression on RMST pseudo-
@@ -29,14 +29,14 @@
 }
 
 # Fit the outcome stage (stage 3) on the survival response and extract
-# NDE (coef on Z_hat) and beta_M (coef on M_hat).
+# NDE (coef on X_hat) and beta_M (coef on M_hat).
 # @param resp Surv object (loghr) or numeric pseudo-observations (rmst).
-# @param d_os data frame with columns y, Z_hat, M_hat, [W_hat_*], [covars].
+# @param d_os data frame with columns y, X_hat, M_hat, [W_hat_*], [covars].
 # @param fml_os outcome-stage formula (character).
 # @param scale "loghr" or "rmst".
 # @return list(NDE, NDE_se, NDE_p, beta_M, beta_M_se) or NULL on failure.
 .fit_surv_outcome_stage <- function(resp, d_os, fml_os, scale,
-                                     nde_name = "Z_hat", med_name = "M_hat") {
+                                     nde_name = "X_hat", med_name = "M_hat") {
   d_os$y <- resp
   fit <- if (scale == "loghr") {
     tryCatch(survival::coxph(fml_os, data = d_os), error = function(e) NULL)
@@ -61,14 +61,14 @@
 
 #' UNADJ survival mediation estimator: naive Baron-Kenny with Cox / RMST
 #'
-#' Stage 1 (OLS): \code{M ~ Z} -> alpha_M. Stage 2 (Cox / RMST):
-#' survival outcome ~ Z + M -> NDE (coef on Z), beta_M (coef on M).
+#' Stage 1 (OLS): \code{M ~ X} -> alpha_M. Stage 2 (Cox / RMST):
+#' survival outcome ~ X + M -> NDE (coef on X), beta_M (coef on M).
 #' \code{NIE = alpha_M * beta_M}. No confounding adjustment; bias
 #' reference.
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param covars Optional data frame of covariates (n rows).
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
@@ -84,9 +84,9 @@
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
 #' mo_confounding = 0.8, seed = 1)
-#' fit_unadj_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M)
+#' fit_unadj_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M)
 #' }
-fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
+fit_unadj_mediation_surv <- function(time, event, X, M, covars = NULL,
                                      effect_scale = c("loghr", "rmst"),
                                      tau = NULL) {
   effect_scale <- match.arg(effect_scale)
@@ -94,21 +94,21 @@ fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
   cnames <- if (!is.null(covars)) names(covars) else character(0)
   cs <- .covar_str(cnames)
 
-  # Stage 1 (OLS): M ~ Z -> alpha_M
-  d1 <- .bind_covars(data.frame(M = M, Z = Z), covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("M ~ Z", cs)), data = d1),
+  # Stage 1 (OLS): M ~ X -> alpha_M
+  d1 <- .bind_covars(data.frame(M = M, X = X), covars)
+  fit1 <- tryCatch(lm(as.formula(paste0("M ~ X", cs)), data = d1),
                    error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   s1 <- summary(fit1)$coefficients
-  if (!"Z" %in% rownames(s1)) return(NA_res)
-  alpha <- as.numeric(coef(fit1)["Z"])
-  alpha_se <- as.numeric(s1["Z", 2])
+  if (!"X" %in% rownames(s1)) return(NA_res)
+  alpha <- as.numeric(coef(fit1)["X"])
+  alpha_se <- as.numeric(s1["X", 2])
 
-  # Stage 2 (Cox / RMST): outcome ~ Z + M
+  # Stage 2 (Cox / RMST): outcome ~ X + M
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d2 <- .bind_covars(data.frame(Z = Z, M = M), covars)
+  d2 <- .bind_covars(data.frame(X = X, M = M), covars)
   d2$y <- resp
-  fml2 <- as.formula(paste0("y ~ Z + M", cs))
+  fml2 <- as.formula(paste0("y ~ X + M", cs))
   fit2 <- if (effect_scale == "loghr") {
     tryCatch(survival::coxph(fml2, data = d2), error = function(e) NULL)
   } else {
@@ -117,9 +117,9 @@ fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
   if (is.null(fit2)) return(NA_res)
   sm <- summary(fit2)$coefficients
   pcol <- if ("Pr(>|z|)" %in% colnames(sm)) "Pr(>|z|)" else "Pr(>|t|)"
-  if (!"Z" %in% rownames(sm) || !"M" %in% rownames(sm)) return(NA_res)
-  beta_Z <- as.numeric(coef(fit2)["Z"])
-  beta_Z_se <- as.numeric(sm["Z", 2])
+  if (!"X" %in% rownames(sm) || !"M" %in% rownames(sm)) return(NA_res)
+  beta_X <- as.numeric(coef(fit2)["X"])
+  beta_X_se <- as.numeric(sm["X", 2])
   beta_M <- as.numeric(coef(fit2)["M"])
   beta_M_se <- as.numeric(sm["M", 2])
 
@@ -127,7 +127,7 @@ fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(sm["Z", pcol]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(sm["X", pcol]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -143,7 +143,7 @@ fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param g Numeric instrument vector (length n).
 #' @param w Numeric NC vector (length n) or matrix (n x q).
@@ -159,10 +159,10 @@ fit_unadj_mediation_surv <- function(time, event, Z, M, covars = NULL,
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
 #' mo_confounding = 0.8, seed = 1)
-#' fit_direct_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
+#' fit_direct_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$W[, 1])
 #' }
-fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
+fit_direct_mediation_surv <- function(time, event, X, M, g, w, covars = NULL,
                                       effect_scale = c("loghr", "rmst"),
                                       tau = NULL) {
   effect_scale <- match.arg(effect_scale)
@@ -171,25 +171,25 @@ fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
   cs <- .covar_str(cnames)
   we <- .expand_w(w)
 
-  # Stage 1 (OLS): M ~ Z + g + W
-  d1 <- data.frame(M = M, Z = Z, g = g)
+  # Stage 1 (OLS): M ~ X + g + W
+  d1 <- data.frame(M = M, X = X, g = g)
   d1 <- cbind(d1, we$df)
   d1 <- .bind_covars(d1, covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("M ~ Z + g + ", we$frag, cs)),
+  fit1 <- tryCatch(lm(as.formula(paste0("M ~ X + g + ", we$frag, cs)),
                       data = d1), error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   s1 <- summary(fit1)$coefficients
-  if (!"Z" %in% rownames(s1)) return(NA_res)
-  alpha <- as.numeric(coef(fit1)["Z"])
-  alpha_se <- as.numeric(s1["Z", 2])
+  if (!"X" %in% rownames(s1)) return(NA_res)
+  alpha <- as.numeric(coef(fit1)["X"])
+  alpha_se <- as.numeric(s1["X", 2])
 
-  # Stage 2 (Cox / RMST): outcome ~ Z + M + g + W
+  # Stage 2 (Cox / RMST): outcome ~ X + M + g + W
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d2 <- data.frame(Z = Z, M = M, g = g)
+  d2 <- data.frame(X = X, M = M, g = g)
   d2 <- cbind(d2, we$df)
   d2 <- .bind_covars(d2, covars)
   d2$y <- resp
-  fml2 <- as.formula(paste0("y ~ Z + M + g + ", we$frag, cs))
+  fml2 <- as.formula(paste0("y ~ X + M + g + ", we$frag, cs))
   fit2 <- if (effect_scale == "loghr") {
     tryCatch(survival::coxph(fml2, data = d2), error = function(e) NULL)
   } else {
@@ -198,9 +198,9 @@ fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
   if (is.null(fit2)) return(NA_res)
   sm <- summary(fit2)$coefficients
   pcol <- if ("Pr(>|z|)" %in% colnames(sm)) "Pr(>|z|)" else "Pr(>|t|)"
-  if (!"Z" %in% rownames(sm) || !"M" %in% rownames(sm)) return(NA_res)
-  beta_Z <- as.numeric(coef(fit2)["Z"])
-  beta_Z_se <- as.numeric(sm["Z", 2])
+  if (!"X" %in% rownames(sm) || !"M" %in% rownames(sm)) return(NA_res)
+  beta_X <- as.numeric(coef(fit2)["X"])
+  beta_X_se <- as.numeric(sm["X", 2])
   beta_M <- as.numeric(coef(fit2)["M"])
   beta_M_se <- as.numeric(sm["M", 2])
 
@@ -208,7 +208,7 @@ fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(sm["Z", pcol]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(sm["X", pcol]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -219,13 +219,13 @@ fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
 
 #' IV2SLS survival mediation estimator: single-instrument 2SPS with Cox / RMST
 #'
-#' Two-stage predictor substitution with a single instrument (G for Z, no
+#' Two-stage predictor substitution with a single instrument (G for X, no
 #' mediator instrument):
 #' \enumerate{
-#' \item OLS: \code{Z ~ g + W + covars} -> Z_hat (purge U1 from Z).
-#' \item OLS: \code{M ~ Z_hat + covars} -> alpha_M.
-#' \item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M + W + covars} ->
-#' NDE (coef on Z_hat), beta_M (coef on M).
+#' \item OLS: \code{X ~ g + W + covars} -> X_hat (purge U1 from X).
+#' \item OLS: \code{M ~ X_hat + covars} -> alpha_M.
+#' \item Cox / RMST: \code{Surv(t,e) ~ X_hat + M + W + covars} ->
+#' NDE (coef on X_hat), beta_M (coef on M).
 #' }
 #' \code{NIE = alpha_M * beta_M}. Weak-instrument gate (partial F for G)
 #' applies to the OLS first stage. Unlike
@@ -236,9 +236,9 @@ fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
-#' @param g Numeric instrument for Z (length n).
+#' @param g Numeric instrument for X (length n).
 #' @param w Numeric NC vector (length n) or matrix (n x q).
 #' @param covars Optional data frame of covariates (n rows).
 #' @param min_f Minimum partial F for the excluded instrument. Default 10.
@@ -252,10 +252,10 @@ fit_direct_mediation_surv <- function(time, event, Z, M, g, w, covars = NULL,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-#' fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
+#' fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$W[, 1])
 #' }
-fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
+fit_iv2sls_mediation_surv <- function(time, event, X, M, g, w,
                                       covars = NULL, min_f = 10,
                                       effect_scale = c("loghr", "rmst"),
                                       tau = NULL) {
@@ -265,34 +265,34 @@ fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
   cs <- .covar_str(cnames)
   we <- .expand_w(w)
 
-  # Stage 1 (OLS): Z ~ g + W + covars -> Z_hat
-  d_fs <- data.frame(Z = Z, g = g)
-  d_fs <- cbind(d_fs, we$df)
+  # Stage 1 (OLS): X ~ g (+ W) + covars -> X_hat
+  d_fs <- data.frame(X = X, g = g)
+  d_fs <- .bind_covars(d_fs, we$df)
   d_fs <- .bind_covars(d_fs, covars)
-  fs <- tryCatch(lm(as.formula(paste0("Z ~ g + ", we$frag, cs)),
+  fs <- tryCatch(lm(as.formula(paste0("X ~ g", .plus_frag(we$frag), cs)),
                     data = d_fs), error = function(e) NULL)
   if (is.null(fs)) return(NA_res)
   Fst <- .partial_F(fs, "g")
   if (is.na(Fst) || Fst < min_f) return(NA_res)
-  Z_hat <- fitted(fs)
+  X_hat <- fitted(fs)
 
-  # Stage 2 (OLS): M ~ Z_hat -> alpha_M
-  d1 <- .bind_covars(data.frame(M = M, Z_hat = Z_hat), covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("M ~ Z_hat", cs)), data = d1),
+  # Stage 2 (OLS): M ~ X_hat -> alpha_M
+  d1 <- .bind_covars(data.frame(M = M, X_hat = X_hat), covars)
+  fit1 <- tryCatch(lm(as.formula(paste0("M ~ X_hat", cs)), data = d1),
                    error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   s1 <- summary(fit1)$coefficients
-  if (!"Z_hat" %in% rownames(s1)) return(NA_res)
-  alpha <- as.numeric(coef(fit1)["Z_hat"])
-  alpha_se <- as.numeric(s1["Z_hat", 2])
+  if (!"X_hat" %in% rownames(s1)) return(NA_res)
+  alpha <- as.numeric(coef(fit1)["X_hat"])
+  alpha_se <- as.numeric(s1["X_hat", 2])
 
-  # Stage 3 (Cox / RMST): outcome ~ Z_hat + M + W + covars
+  # Stage 3 (Cox / RMST): outcome ~ X_hat + M (+ W) + covars
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d_os <- data.frame(Z_hat = Z_hat, M = M)
-  d_os <- cbind(d_os, we$df)
+  d_os <- data.frame(X_hat = X_hat, M = M)
+  d_os <- .bind_covars(d_os, we$df)
   d_os <- .bind_covars(d_os, covars)
   d_os$y <- resp
-  fml_os <- as.formula(paste0("y ~ Z_hat + M + ", we$frag, cs))
+  fml_os <- as.formula(paste0("y ~ X_hat + M", .plus_frag(we$frag), cs))
   fit_os <- if (effect_scale == "loghr") {
     tryCatch(survival::coxph(fml_os, data = d_os), error = function(e) NULL)
   } else {
@@ -301,9 +301,9 @@ fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
   if (is.null(fit_os)) return(NA_res)
   sm <- summary(fit_os)$coefficients
   pcol <- if ("Pr(>|z|)" %in% colnames(sm)) "Pr(>|z|)" else "Pr(>|t|)"
-  if (!"Z_hat" %in% rownames(sm) || !"M" %in% rownames(sm)) return(NA_res)
-  beta_Z <- as.numeric(coef(fit_os)["Z_hat"])
-  beta_Z_se <- as.numeric(sm["Z_hat", 2])
+  if (!"X_hat" %in% rownames(sm) || !"M" %in% rownames(sm)) return(NA_res)
+  beta_X <- as.numeric(coef(fit_os)["X_hat"])
+  beta_X_se <- as.numeric(sm["X_hat", 2])
   beta_M <- as.numeric(coef(fit_os)["M"])
   beta_M_se <- as.numeric(sm["M", 2])
 
@@ -311,7 +311,7 @@ fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
   NIE_se <- delta_se_product(alpha, alpha_se, beta_M, beta_M_se)
 
   list(
-    NDE = beta_Z, NDE_se = beta_Z_se, NDE_p = as.numeric(sm["Z_hat", pcol]),
+    NDE = beta_X, NDE_se = beta_X_se, NDE_p = as.numeric(sm["X_hat", pcol]),
     NIE = NIE, NIE_se = NIE_se, NIE_p = 2 * pnorm(-abs(NIE / NIE_se)),
     alpha_M = alpha, alpha_se = alpha_se, beta_M = beta_M, beta_M_se = beta_M_se
   )
@@ -325,19 +325,19 @@ fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
 #' Two-stage Mendelian-randomization mediation with a survival outcome
 #' stage (2SPS):
 #' \enumerate{
-#' \item OLS: \code{Z ~ g + W + covars} -> Z_hat (purge U1 from Z).
-#' \item OLS: \code{M ~ Z_hat + gm + W + covars} -> M_hat, alpha_M.
-#' \item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M_hat + W + covars} ->
-#' NDE (coef on Z_hat), beta_M (coef on M_hat).
+#' \item OLS: \code{X ~ g + W + covars} -> X_hat (purge U1 from X).
+#' \item OLS: \code{M ~ X_hat + gm + W + covars} -> M_hat, alpha_M.
+#' \item Cox / RMST: \code{Surv(t,e) ~ X_hat + M_hat + W + covars} ->
+#' NDE (coef on X_hat), beta_M (coef on M_hat).
 #' }
 #' \code{NIE = alpha_M * beta_M}. Weak-instrument gates (partial F for
 #' G and Gm) apply to the OLS first stages.
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
-#' @param g Numeric instrument for Z (length n).
+#' @param g Numeric instrument for X (length n).
 #' @param gm Numeric instrument for M (length n).
 #' @param w Numeric NC vector (length n) or matrix (n x q).
 #' @param covars Optional data frame of covariates (n rows).
@@ -358,10 +358,10 @@ fit_iv2sls_mediation_surv <- function(time, event, Z, M, g, w,
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
 #' mo_confounding = 0.8, phi = 0.8, seed = 1)
-#' fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
+#' fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$Gm, dat$W[, 1])
 #' }
-fit_iv2sls_mediation2_surv <- function(time, event, Z, M, g, gm, w,
+fit_iv2sls_mediation2_surv <- function(time, event, X, M, g, gm, w,
                                        covars = NULL, min_f = 10,
                                        effect_scale = c("loghr", "rmst"),
                                        tau = NULL) {
@@ -371,38 +371,38 @@ fit_iv2sls_mediation2_surv <- function(time, event, Z, M, g, gm, w,
   cs <- .covar_str(cnames)
   we <- .expand_w(w)
 
-  # Stage 1 (OLS): Z ~ g + W + covars -> Z_hat
-  d_fs <- data.frame(Z = Z, g = g)
-  d_fs <- cbind(d_fs, we$df)
+  # Stage 1 (OLS): X ~ g (+ W) + covars -> X_hat
+  d_fs <- data.frame(X = X, g = g)
+  d_fs <- .bind_covars(d_fs, we$df)
   d_fs <- .bind_covars(d_fs, covars)
-  fs <- tryCatch(lm(as.formula(paste0("Z ~ g + ", we$frag, cs)),
+  fs <- tryCatch(lm(as.formula(paste0("X ~ g", .plus_frag(we$frag), cs)),
                     data = d_fs), error = function(e) NULL)
   if (is.null(fs)) return(NA_res)
   Fst_g <- .partial_F(fs, "g")
   if (is.na(Fst_g) || Fst_g < min_f) return(NA_res)
-  Z_hat <- fitted(fs)
+  X_hat <- fitted(fs)
 
-  # Stage 2 (OLS): M ~ Z_hat + gm + W + covars -> M_hat, alpha_M
-  d_ms <- data.frame(M = M, Z_hat = Z_hat, gm = gm)
-  d_ms <- cbind(d_ms, we$df)
+  # Stage 2 (OLS): M ~ X_hat + gm (+ W) + covars -> M_hat, alpha_M
+  d_ms <- data.frame(M = M, X_hat = X_hat, gm = gm)
+  d_ms <- .bind_covars(d_ms, we$df)
   d_ms <- .bind_covars(d_ms, covars)
-  ms <- tryCatch(lm(as.formula(paste0("M ~ Z_hat + gm + ", we$frag, cs)),
+  ms <- tryCatch(lm(as.formula(paste0("M ~ X_hat + gm", .plus_frag(we$frag), cs)),
                     data = d_ms), error = function(e) NULL)
   if (is.null(ms)) return(NA_res)
   Fst_gm <- .partial_F(ms, "gm")
   if (is.na(Fst_gm) || Fst_gm < min_f) return(NA_res)
   s_ms <- summary(ms)$coefficients
-  if (!"Z_hat" %in% rownames(s_ms)) return(NA_res)
-  alpha <- as.numeric(coef(ms)["Z_hat"])
-  alpha_se <- as.numeric(s_ms["Z_hat", 2])
+  if (!"X_hat" %in% rownames(s_ms)) return(NA_res)
+  alpha <- as.numeric(coef(ms)["X_hat"])
+  alpha_se <- as.numeric(s_ms["X_hat", 2])
   M_hat <- fitted(ms)
 
-  # Stage 3 (Cox / RMST): outcome ~ Z_hat + M_hat + W + covars
+  # Stage 3 (Cox / RMST): outcome ~ X_hat + M_hat (+ W) + covars
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d_os <- data.frame(Z_hat = Z_hat, M_hat = M_hat)
-  d_os <- cbind(d_os, we$df)
+  d_os <- data.frame(X_hat = X_hat, M_hat = M_hat)
+  d_os <- .bind_covars(d_os, we$df)
   d_os <- .bind_covars(d_os, covars)
-  fml_os <- as.formula(paste0("y ~ Z_hat + M_hat + ", we$frag, cs))
+  fml_os <- as.formula(paste0("y ~ X_hat + M_hat", .plus_frag(we$frag), cs))
   os <- .fit_surv_outcome_stage(resp, d_os, fml_os, effect_scale)
   if (is.null(os)) return(NA_res)
 
@@ -424,25 +424,25 @@ fit_iv2sls_mediation2_surv <- function(time, event, Z, M, g, gm, w,
 #'
 #' Bridge-function-adjusted natural direct and indirect effects with a
 #' survival outcome stage, using a single negative-control panel W for
-#' both the Z->M and M->Y confounding paths. This is the survival
+#' both the X->M and M->Y confounding paths. This is the survival
 #' analogue of \code{\link{fit_pgc_mediation}} (continuous outcome):
 #' \enumerate{
-#' \item OLS: residualise Z on G -> Z_resid.
-#' \item OLS: bridge Z_resid on the FULL W matrix -> W_hat (proxy for U).
-#' \item OLS: \code{M ~ Z + W_hat + covars} -> alpha_M.
-#' \item Cox / RMST: \code{Surv(t,e) ~ Z + M + W_hat + covars} ->
-#' NDE (coef on Z), beta_M (coef on M).
+#' \item OLS: residualise X on G -> X_resid.
+#' \item OLS: bridge X_resid on the FULL W matrix -> W_hat (proxy for U).
+#' \item OLS: \code{M ~ X + W_hat + covars} -> alpha_M.
+#' \item Cox / RMST: \code{Surv(t,e) ~ X + M + W_hat + covars} ->
+#' NDE (coef on X), beta_M (coef on M).
 #' }
 #' \code{NIE = alpha_M * beta_M}. Unlike
 #' \code{\link{fit_pgc_mediation2_surv}}, which uses path-specific W1/W2
 #' bridges, this estimator uses a single combined W panel and is
-#' appropriate when separate U_XM / U_MY confounders are not assumed.
+#' appropriate when separate conf_XM / conf_MY confounders are not assumed.
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
-#' @param g Numeric instrument for Z (length n).
+#' @param g Numeric instrument for X (length n).
 #' @param W Numeric NC matrix (n x q) or vector (length n).
 #' @param covars Optional data frame of covariates (n rows).
 #' @param min_f Minimum partial F for G. Default 10.
@@ -457,10 +457,10 @@ fit_iv2sls_mediation2_surv <- function(time, event, Z, M, g, gm, w,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-#' fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
+#' fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$W)
 #' }
-fit_pgc_mediation_surv <- function(time, event, Z, M, g, W, covars = NULL,
+fit_pgc_mediation_surv <- function(time, event, X, M, g, W, covars = NULL,
                                    min_f = 10,
                                    effect_scale = c("loghr", "rmst"),
                                    tau = NULL) {
@@ -471,52 +471,52 @@ fit_pgc_mediation_surv <- function(time, event, Z, M, g, W, covars = NULL,
 
   if (!is.matrix(W)) W <- as.matrix(W)
 
-  # Weak-instrument check: partial F for G in Z ~ G + W + covars
-  d_fs <- .bind_covars(data.frame(Z = Z, g = g), covars)
+  # Weak-instrument check: partial F for G in X ~ G + W + covars
+  d_fs <- .bind_covars(data.frame(X = X, g = g), covars)
   d_fs <- cbind(d_fs, as.data.frame(W))
   w_fs_names <- paste0("Wfs_", seq_len(ncol(W)))
   names(d_fs)[(ncol(d_fs) - ncol(W) + 1):ncol(d_fs)] <- w_fs_names
-  fs_fml <- as.formula(paste0("Z ~ g + ",
+  fs_fml <- as.formula(paste0("X ~ g + ",
                               paste(w_fs_names, collapse = " + "), cs))
   fs <- tryCatch(lm(fs_fml, data = d_fs), error = function(e) NULL)
   if (is.null(fs)) return(NA_res)
   Fst_g <- .partial_F(fs, "g")
   if (is.na(Fst_g) || Fst_g < min_f) return(NA_res)
 
-  # Step 1: residualise Z on G -> Z_resid (OLS)
-  d_r <- .bind_covars(data.frame(Zc = Z, g = g), covars)
-  fit_resid <- tryCatch(lm(as.formula(paste0("Zc ~ g", cs)), data = d_r),
+  # Step 1: residualise X on G -> X_resid (OLS)
+  d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
+  fit_resid <- tryCatch(lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
                         error = function(e) NULL)
   if (is.null(fit_resid)) return(NA_res)
-  Z_resid <- residuals(fit_resid)
+  X_resid <- residuals(fit_resid)
 
-  # Step 2: bridge Z_resid on the FULL W matrix -> W_hat (OLS)
-  d_b <- data.frame(Z_resid = Z_resid)
+  # Step 2: bridge X_resid on the FULL W matrix -> W_hat (OLS)
+  d_b <- data.frame(X_resid = X_resid)
   d_b <- cbind(d_b, as.data.frame(W))
   if (!is.null(covars)) d_b <- cbind(d_b, covars)
   w_names <- paste0("W", seq_len(ncol(W)))
   names(d_b)[2:(ncol(W) + 1)] <- w_names
-  fml_b <- as.formula(paste0("Z_resid ~ ", paste(w_names, collapse = " + "), cs))
+  fml_b <- as.formula(paste0("X_resid ~ ", paste(w_names, collapse = " + "), cs))
   fit_b <- tryCatch(lm(fml_b, data = d_b), error = function(e) NULL)
   if (is.null(fit_b)) return(NA_res)
   W_hat <- fitted(fit_b)
 
-  # Stage 1 (OLS): M ~ Z + W_hat + covars -> alpha_M
-  d1 <- .bind_covars(data.frame(M = M, Z = Z, W_hat = W_hat), covars)
-  fit1 <- tryCatch(lm(as.formula(paste0("M ~ Z + W_hat", cs)), data = d1),
+  # Stage 1 (OLS): M ~ X + W_hat + covars -> alpha_M
+  d1 <- .bind_covars(data.frame(M = M, X = X, W_hat = W_hat), covars)
+  fit1 <- tryCatch(lm(as.formula(paste0("M ~ X + W_hat", cs)), data = d1),
                    error = function(e) NULL)
   if (is.null(fit1)) return(NA_res)
   s1 <- summary(fit1)$coefficients
-  if (!"Z" %in% rownames(s1)) return(NA_res)
-  alpha <- as.numeric(coef(fit1)["Z"])
-  alpha_se <- as.numeric(s1["Z", 2])
+  if (!"X" %in% rownames(s1)) return(NA_res)
+  alpha <- as.numeric(coef(fit1)["X"])
+  alpha_se <- as.numeric(s1["X", 2])
 
-  # Stage 2 (Cox / RMST): outcome ~ Z + M + W_hat + covars
+  # Stage 2 (Cox / RMST): outcome ~ X + M + W_hat + covars
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d_os <- .bind_covars(data.frame(Z = Z, M = M, W_hat = W_hat), covars)
-  fml_os <- as.formula(paste0("y ~ Z + M + W_hat", cs))
+  d_os <- .bind_covars(data.frame(X = X, M = M, W_hat = W_hat), covars)
+  fml_os <- as.formula(paste0("y ~ X + M + W_hat", cs))
   os <- .fit_surv_outcome_stage(resp, d_os, fml_os, effect_scale,
-                                nde_name = "Z", med_name = "M")
+                                nde_name = "X", med_name = "M")
   if (is.null(os)) return(NA_res)
 
   # Numerical-stability guard (see fit_pgc_mediation2_surv for rationale).
@@ -541,22 +541,22 @@ fit_pgc_mediation_surv <- function(time, event, Z, M, g, W, covars = NULL,
 #' PGC2 / PGC2Gm survival mediation estimator: path-specific bridges with Cox / RMST
 #'
 #' Two-stage proximal mediation with path-specific negative controls and
-#' a survival outcome stage. Stages 1-2 (Z bridge on W1, M bridge on W2,
-#' Z_hat / M_hat construction) are identical to \code{\link{fit_pgc_mediation2}}
+#' a survival outcome stage. Stages 1-2 (X bridge on W1, M bridge on W2,
+#' X_hat / M_hat construction) are identical to \code{\link{fit_pgc_mediation2}}
 #' and remain OLS. Only stage 3 switches to Cox (log-HR) or RMST
 #' pseudo-observation OLS:
-#' \code{Surv(t,e) ~ Z_hat + M_hat + W_hat_Z + W_hat_M + covars}.
+#' \code{Surv(t,e) ~ X_hat + M_hat + W_hat_X + W_hat_M + covars}.
 #'
 #' When \code{gm = NULL} (PGC2), stage 2 uses pure NC identification.
 #' When \code{gm} is supplied (PGC2Gm), the mediator instrument helps
-#' isolate U_MY before bridging W2.
+#' isolate conf_MY before bridging W2.
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
-#' @param g Numeric instrument for Z (length n).
-#' @param W1 Numeric NC matrix (n x q) or vector for the Z->M path.
+#' @param g Numeric instrument for X (length n).
+#' @param W1 Numeric NC matrix (n x q) or vector for the X->M path.
 #' @param W2 Numeric NC matrix (n x q) or vector for the M->Y path.
 #' @param gm Optional numeric mediator instrument (length n).
 #' @param covars Optional data frame of covariates (n rows).
@@ -573,11 +573,11 @@ fit_pgc_mediation_surv <- function(time, event, Z, M, g, W, covars = NULL,
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
 #' mo_confounding = 0.8, rho_G2 = 0.3,
-#' separate_U = TRUE, seed = 1)
-#' fit_pgc_mediation2_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
+#' lambda_XM = c(1, 0), lambda_MY = c(0, 1), seed = 1)
+#' fit_pgc_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
 #' }
-fit_pgc_mediation2_surv <- function(time, event, Z, M, g, W1, W2, gm = NULL,
+fit_pgc_mediation2_surv <- function(time, event, X, M, g, W1, W2, gm = NULL,
                                     covars = NULL, min_f = 10,
                                     effect_scale = c("loghr", "rmst"),
                                     tau = NULL) {
@@ -589,45 +589,45 @@ fit_pgc_mediation2_surv <- function(time, event, Z, M, g, W1, W2, gm = NULL,
   if (!is.matrix(W1)) W1 <- as.matrix(W1)
   if (!is.matrix(W2)) W2 <- as.matrix(W2)
 
-  # ── Stage 1: Bridge for Z (purge U_XM) — OLS, identical to continuous ──
-  d_fs <- .bind_covars(data.frame(Z = Z, g = g), covars)
+  # ── Stage 1: Bridge for X (purge conf_XM) — OLS, identical to continuous ──
+  d_fs <- .bind_covars(data.frame(X = X, g = g), covars)
   d_fs <- cbind(d_fs, as.data.frame(W1))
   w1_names <- paste0("W1_", seq_len(ncol(W1)))
   names(d_fs)[(ncol(d_fs) - ncol(W1) + 1):ncol(d_fs)] <- w1_names
-  fs_fml <- as.formula(paste0("Z ~ g + ",
+  fs_fml <- as.formula(paste0("X ~ g + ",
                               paste(w1_names, collapse = " + "), cs))
   fs <- tryCatch(lm(fs_fml, data = d_fs), error = function(e) NULL)
   if (is.null(fs)) return(NA_res)
   Fst_g <- .partial_F(fs, "g")
   if (is.na(Fst_g) || Fst_g < min_f) return(NA_res)
 
-  d_r <- .bind_covars(data.frame(Zc = Z, g = g), covars)
-  fit_resid <- tryCatch(lm(as.formula(paste0("Zc ~ g", cs)), data = d_r),
+  d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
+  fit_resid <- tryCatch(lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
                         error = function(e) NULL)
   if (is.null(fit_resid)) return(NA_res)
-  Z_resid <- residuals(fit_resid)
+  X_resid <- residuals(fit_resid)
 
-  d_b1 <- data.frame(Z_resid = Z_resid)
+  d_b1 <- data.frame(X_resid = X_resid)
   d_b1 <- cbind(d_b1, as.data.frame(W1))
   if (!is.null(covars)) d_b1 <- cbind(d_b1, covars)
   w1b_names <- paste0("W1b_", seq_len(ncol(W1)))
   names(d_b1)[2:(ncol(W1) + 1)] <- w1b_names
-  fml_b1 <- as.formula(paste0("Z_resid ~ ",
+  fml_b1 <- as.formula(paste0("X_resid ~ ",
                               paste(w1b_names, collapse = " + "), cs))
   fit_b1 <- tryCatch(lm(fml_b1, data = d_b1), error = function(e) NULL)
   if (is.null(fit_b1)) return(NA_res)
-  W_hat_Z <- fitted(fit_b1)
+  W_hat_X <- fitted(fit_b1)
 
-  d_zh <- .bind_covars(data.frame(Z = Z, g = g, W_hat_Z = W_hat_Z), covars)
-  fit_zh <- tryCatch(lm(as.formula(paste0("Z ~ g + W_hat_Z", cs)),
+  d_zh <- .bind_covars(data.frame(X = X, g = g, W_hat_X = W_hat_X), covars)
+  fit_zh <- tryCatch(lm(as.formula(paste0("X ~ g + W_hat_X", cs)),
                         data = d_zh), error = function(e) NULL)
   if (is.null(fit_zh)) return(NA_res)
-  Z_hat <- fitted(fit_zh)
+  X_hat <- fitted(fit_zh)
 
-  # ── Stage 2: Bridge for M (purge U_MY) — OLS, identical to continuous ──
+  # ── Stage 2: Bridge for M (purge conf_MY) — OLS, identical to continuous ──
   if (is.null(gm)) {
-    d_mr <- .bind_covars(data.frame(M = M, Z_hat = Z_hat), covars)
-    fit_mr <- tryCatch(lm(as.formula(paste0("M ~ Z_hat", cs)),
+    d_mr <- .bind_covars(data.frame(M = M, X_hat = X_hat), covars)
+    fit_mr <- tryCatch(lm(as.formula(paste0("M ~ X_hat", cs)),
                           data = d_mr), error = function(e) NULL)
   } else {
     d_mr <- .bind_covars(data.frame(M = M, gm = gm), covars)
@@ -649,29 +649,29 @@ fit_pgc_mediation2_surv <- function(time, event, Z, M, g, W1, W2, gm = NULL,
   W_hat_M <- fitted(fit_b2)
 
   if (is.null(gm)) {
-    d_mh <- .bind_covars(data.frame(M = M, Z_hat = Z_hat,
+    d_mh <- .bind_covars(data.frame(M = M, X_hat = X_hat,
                                     W_hat_M = W_hat_M), covars)
-    fit_mh <- tryCatch(lm(as.formula(paste0("M ~ Z_hat + W_hat_M", cs)),
+    fit_mh <- tryCatch(lm(as.formula(paste0("M ~ X_hat + W_hat_M", cs)),
                           data = d_mh), error = function(e) NULL)
   } else {
-    d_mh <- .bind_covars(data.frame(M = M, Z_hat = Z_hat, gm = gm,
+    d_mh <- .bind_covars(data.frame(M = M, X_hat = X_hat, gm = gm,
                                     W_hat_M = W_hat_M), covars)
-    fit_mh <- tryCatch(lm(as.formula(paste0("M ~ Z_hat + gm + W_hat_M", cs)),
+    fit_mh <- tryCatch(lm(as.formula(paste0("M ~ X_hat + gm + W_hat_M", cs)),
                           data = d_mh), error = function(e) NULL)
   }
   if (is.null(fit_mh)) return(NA_res)
   s_mh <- summary(fit_mh)$coefficients
-  if (!"Z_hat" %in% rownames(s_mh)) return(NA_res)
-  alpha <- as.numeric(coef(fit_mh)["Z_hat"])
-  alpha_se <- as.numeric(s_mh["Z_hat", 2])
+  if (!"X_hat" %in% rownames(s_mh)) return(NA_res)
+  alpha <- as.numeric(coef(fit_mh)["X_hat"])
+  alpha_se <- as.numeric(s_mh["X_hat", 2])
   M_hat <- fitted(fit_mh)
 
-  # ── Stage 3 (Cox / RMST): outcome ~ Z_hat + M_hat + W_hat_Z + W_hat_M ──
+  # ── Stage 3 (Cox / RMST): outcome ~ X_hat + M_hat + W_hat_X + W_hat_M ──
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d_os <- data.frame(Z_hat = Z_hat, M_hat = M_hat,
-                     W_hat_Z = W_hat_Z, W_hat_M = W_hat_M)
+  d_os <- data.frame(X_hat = X_hat, M_hat = M_hat,
+                     W_hat_X = W_hat_X, W_hat_M = W_hat_M)
   d_os <- .bind_covars(d_os, covars)
-  fml_os <- as.formula(paste0("y ~ Z_hat + M_hat + W_hat_Z + W_hat_M", cs))
+  fml_os <- as.formula(paste0("y ~ X_hat + M_hat + W_hat_X + W_hat_M", cs))
   os <- .fit_surv_outcome_stage(resp, d_os, fml_os, effect_scale)
   if (is.null(os)) return(NA_res)
 
@@ -702,14 +702,14 @@ fit_pgc_mediation2_surv <- function(time, event, Z, M, g, W1, W2, gm = NULL,
 #' COCA survival mediation estimator: NOT supported (returns NA)
 #'
 #' COCA mediation regresses the negative control W on the outcome Y in
-#' both stages (\code{W ~ M + Z}, \code{W ~ y + Z + M}), placing the
+#' both stages (\code{W ~ M + X}, \code{W ~ y + X + M}), placing the
 #' outcome on the right-hand side. This is structurally impossible when
 #' the outcome is a \code{survival::Surv} object. COCA mediation is
 #' therefore unsupported for survival outcomes and always returns NA.
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param w Numeric NC vector (length n).
 #' @param covars Optional data frame of covariates (n rows).
@@ -722,13 +722,13 @@ fit_pgc_mediation2_surv <- function(time, event, Z, M, g, W1, W2, gm = NULL,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-#' fit_coca_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M, dat$W[, 1])
+#' fit_coca_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M, dat$W[, 1])
 #' # all NA (COCA mediation unsupported for survival outcomes)
 #' }
-fit_coca_mediation_surv <- function(time, event, Z, M, w, covars = NULL, ...) {
+fit_coca_mediation_surv <- function(time, event, X, M, w, covars = NULL, ...) {
   out <- .surv_med_NA()
   attr(out, "reason") <- paste(
-    "COCA mediation regresses W on Y (W ~ y + Z + M), placing the outcome",
+    "COCA mediation regresses W on Y (W ~ y + X + M), placing the outcome",
     "on the RHS, which is impossible with a Surv object. COCA mediation",
     "is unsupported for survival outcomes."
   )

@@ -9,6 +9,6 @@
 \description{
 The gap between the unadjusted OLS estimate and the IV2SLS estimate
 reflects the total confounding bias. Averaged across features and
-scaled by the standard deviation of Z.
+scaled by the standard deviation of X.
 }
 \keyword{internal}

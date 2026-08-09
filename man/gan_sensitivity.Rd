@@ -13,7 +13,7 @@ gan_sensitivity(
   n_iter = 50,
   n_samples = 500,
   n_features = 20,
-  beta_Z = 0.1,
+  beta_X = 0.1,
   alpha_M = 0.5,
   beta_M = 0.3,
   effect_size = NULL,
@@ -43,7 +43,7 @@ gan_sensitivity(
 
 \item{n_features}{Features per replicate. Default 20.}
 
-\item{beta_Z, alpha_M, beta_M}{Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.}
+\item{beta_X, alpha_M, beta_M}{Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.}
 
 \item{effect_size}{Optional pure-direct total effect override (see
 \code{\link[=run_single_iteration]{run_single_iteration()}}).}

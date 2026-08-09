@@ -10,10 +10,10 @@
     phi = if (mediation) phi else 0,
     seed = seed)
   if (mediation) {
-    iconic_data(Z = dat$Z, Y = t(dat$Y), M = dat$M, W = t(dat$W),
+    iconic_data(X = dat$X, Y = t(dat$Y), M = dat$M, W = t(dat$W),
                 G = dat$G[, 1], Gm = dat$Gm, covariates = dat$synthetic_data)
   } else {
-    iconic_data(Z = dat$Z, Y = t(dat$Y), W = t(dat$W),
+    iconic_data(X = dat$X, Y = t(dat$Y), W = t(dat$W),
                 G = dat$G[, 1], covariates = dat$synthetic_data)
   }
 }
@@ -25,8 +25,11 @@
 test_that("iconic_estimate total-effect matches simulation pipeline", {
   set.seed(42)
   dat <- run_single_iteration(n_synthetic_samples = 100, n_features = 5, seed = 42)
-  idata <- iconic_data(Z = dat$Z, Y = t(dat$Y), W = t(dat$W),
-                       G = dat$G[, 1], covariates = dat$synthetic_data)
+  # scale = FALSE so idata is on the same (raw) scale as the reference
+  # simulation pipeline analyze_methods_robust(dat), which runs unscaled.
+  idata <- iconic_data(X = dat$X, Y = t(dat$Y), W = t(dat$W),
+                       G = dat$G[, 1], covariates = dat$synthetic_data,
+                       scale = FALSE)
   sim <- analyze_methods_robust(dat)
   real <- iconic_estimate(idata)
   for (m in unique(sim$method)) {
@@ -40,9 +43,9 @@ test_that("iconic_estimate mediation matches simulation pipeline", {
   set.seed(42)
   dat <- run_single_iteration(n_synthetic_samples = 100, n_features = 5,
                               mo_confounding = 0.8, phi = 0.8, seed = 42)
-  idata <- iconic_data(Z = dat$Z, Y = t(dat$Y), M = dat$M, W = t(dat$W),
+  idata <- iconic_data(X = dat$X, Y = t(dat$Y), M = dat$M, W = t(dat$W),
                        G = dat$G[, 1], Gm = dat$Gm,
-                       covariates = dat$synthetic_data)
+                       covariates = dat$synthetic_data, scale = FALSE)
   sim <- analyze_mediation_robust(dat)
   real <- iconic_estimate(idata)
   for (m in unique(sim$method)) {
@@ -88,7 +91,7 @@ test_that("iconic_diagnose returns eligibility table", {
 })
 
 test_that("iconic_diagnose bare data only UNADJ eligible", {
-  bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50))
+  bare <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50))
   diag <- iconic_diagnose(bare)
   elig <- diag$eligibility
   expect_true(elig$eligible[elig$estimator == "UNADJ"])
@@ -127,41 +130,61 @@ test_that("iconic_recommend returns ranking with tiers", {
   idata <- .make_test_data()
   diag <- iconic_diagnose(idata)
   est <- iconic_estimate(idata, diagnosis = diag)
-  rec <- iconic_recommend(idata, diagnosis = diag, estimate = est)
+  # auto_sensitivity = FALSE keeps this eligibility-ranking test fast and
+  # independent of the torch backend (no GAN auto-run).
+  rec <- iconic_recommend(idata, diagnosis = diag, estimate = est,
+                          auto_sensitivity = FALSE)
   expect_s3_class(rec, "iconic_recommendation")
-  expect_true(all(c("A", "B", "C", "D") %in% rec$ranking$tier))
   expect_true(!is.na(rec$recommended))
 })
 
 test_that("iconic_recommend bare data recommends UNADJ", {
-  bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50))
-  rec <- iconic_recommend(bare)
+  bare <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50))
+  rec <- iconic_recommend(bare, auto_sensitivity = FALSE)
   expect_equal(rec$recommended, "UNADJ")
-  expect_equal(rec$recommended_tier, "D")
 })
 
-test_that("iconic_recommend mediation recommends tier A", {
+test_that("iconic_recommend mediation recommends an eligible estimator", {
   idata <- .make_test_data()
   diag <- iconic_diagnose(idata)
   est <- iconic_estimate(idata, diagnosis = diag)
-  rec <- iconic_recommend(idata, diagnosis = diag, estimate = est)
-  expect_true(rec$recommended_tier %in% c("A"))
-  expect_true(rec$recommended %in% c("IV2SLS2", "PGC2Gm"))
+  rec <- iconic_recommend(idata, diagnosis = diag, estimate = est,
+                          auto_sensitivity = FALSE)
+  # no tier system: recommendation is the top eligible estimator
+  expect_true(rec$recommended %in% diag$eligibility$estimator[diag$eligibility$eligible])
 })
 
-test_that("iconic_recommend total-effect recommends tier B or higher", {
+test_that("iconic_recommend total-effect recommends an eligible estimator", {
   idata <- .make_test_data(mediation = FALSE)
   diag <- iconic_diagnose(idata)
   est <- iconic_estimate(idata, diagnosis = diag)
-  rec <- iconic_recommend(idata, diagnosis = diag, estimate = est)
-  expect_true(rec$recommended_tier %in% c("A", "B", "C"))
+  rec <- iconic_recommend(idata, diagnosis = diag, estimate = est,
+                          auto_sensitivity = FALSE)
+  expect_true(rec$recommended %in% diag$eligibility$estimator[diag$eligibility$eligible])
 })
 
 test_that("print.iconic_recommendation produces output", {
   idata <- .make_test_data()
-  rec <- iconic_recommend(idata)
+  rec <- iconic_recommend(idata, auto_sensitivity = FALSE)
   out <- capture.output(print(rec))
   expect_true(any(grepl("iconic_recommendation", out)))
+})
+
+test_that("iconic_recommend auto-runs sensitivity when not supplied", {
+  skip_if_not_installed("torch")
+  skip_if_not(check_torch_setup())
+  idata <- .make_test_data()
+  diag <- iconic_diagnose(idata)
+  # auto_sensitivity = TRUE (default) with a tiny grid: the recommendation
+  # should be robustness-based (robustness columns populated), not
+  # eligibility-only.
+  rec <- iconic_recommend(idata, diagnosis = diag,
+                          rho_G1_grid = c(0, 0.5), rho_G2_grid = c(0, 0.5),
+                          omega_1 = c(0.3, 1.0), omega_2 = c(0.3, 1.0),
+                          n_iter_sens = 2, gan_epochs = 5, n_cores = 1)
+  expect_s3_class(rec, "iconic_recommendation")
+  expect_true("robustness_NDE" %in% names(rec$ranking))
+  expect_true(!is.na(rec$recommended))
 })
 
 # ═══════════════════════════════════════════════════════════════
@@ -194,6 +217,7 @@ test_that("iconic_sensitivity PGC2Gm robust at origin", {
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = c(0),
                              rho_G2_grid = c(0),
+                             omega_1 = 0.7, omega_2 = 0.7,
                              n_iter = 10, n_features = 3)
   pgc2gm <- sens$surface[sens$surface$method == "PGC2Gm", ]
   expect_lt(abs(pgc2gm$NDE_bias), 0.1)
@@ -217,7 +241,7 @@ test_that("print.iconic_sensitivity produces output", {
 test_that("iconic_prospect returns strength surface and prospective", {
   skip_if_not_installed("torch")
   skip_if_not(check_torch_setup())
-  bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50),
+  bare <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50),
                       M = rnorm(50))
   result <- iconic_prospect(bare, gamma_G_grid = c(0.3, 0.6),
                             n_iter = 3, n_features = 3)
@@ -227,14 +251,14 @@ test_that("iconic_prospect returns strength surface and prospective", {
 })
 
 test_that("iconic_prospect rejects non-mediation data", {
-  bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50))
+  bare <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50))
   expect_error(iconic_prospect(bare), "mediation data")
 })
 
 test_that("iconic_prospect UNADJ bias exceeds IV2SLS2 bias", {
   skip_if_not_installed("torch")
   skip_if_not(check_torch_setup())
-  bare <- iconic_data(Z = rnorm(80), Y = matrix(rnorm(80 * 3), 3, 80),
+  bare <- iconic_data(X = rnorm(80), Y = matrix(rnorm(80 * 3), 3, 80),
                       M = rnorm(80))
   result <- iconic_prospect(bare, gamma_G_grid = c(0.6),
                             n_iter = 5, n_features = 3)
@@ -246,7 +270,7 @@ test_that("iconic_prospect UNADJ bias exceeds IV2SLS2 bias", {
 test_that("print.iconic_prospect produces output", {
   skip_if_not_installed("torch")
   skip_if_not(check_torch_setup())
-  bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50),
+  bare <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50),
                       M = rnorm(50))
   result <- iconic_prospect(bare, gamma_G_grid = c(0.6),
                             n_iter = 2, n_features = 3)
@@ -267,10 +291,10 @@ test_that("generate_toy_data is exported and works without ::: prefix", {
 
 test_that("generate_toy_data mediation data works with iconic_data (no W workaround)", {
   dat <- generate_toy_data(n = 100, n_features = 5, phi = 0.8,
-                           mo_confounding = 0.8, separate_U = TRUE,
+                           mo_confounding = 0.8,
                            omega_1 = 0.7, omega_2 = 0.7, seed = 42)
   # Pass only W1/W2 — iconic_data should derive W internally
-  idata <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
+  idata <- iconic_data(X = dat$X, Y = dat$Y, M = dat$M,
                        G = dat$G[, 1], Gm = dat$Gm,
                        W1 = dat$W1, W2 = dat$W2)
   expect_true(idata$has_nc)
@@ -283,10 +307,10 @@ test_that("generate_toy_data mediation data works with iconic_data (no W workaro
 
 test_that("generate_toy_data mediation data works with iconic_data (matrix G)", {
   dat <- generate_toy_data(n = 100, n_features = 5, phi = 0.8,
-                           mo_confounding = 0.8, separate_U = TRUE,
+                           mo_confounding = 0.8,
                            omega_1 = 0.7, omega_2 = 0.7, seed = 42)
   # Pass matrix G directly — iconic_data should extract first column
-  idata <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
+  idata <- iconic_data(X = dat$X, Y = dat$Y, M = dat$M,
                        G = dat$G, Gm = dat$Gm,
                        W1 = dat$W1, W2 = dat$W2)
   expect_true(idata$has_instrument)
@@ -304,7 +328,7 @@ test_that("gamma_G default 0.6 is backward-compatible", {
   set.seed(42)
   d2 <- run_single_iteration(n_synthetic_samples = 50, n_features = 3,
                              gamma_G = 0.6, seed = 42)
-  expect_identical(d1$Z, d2$Z)
+  expect_identical(d1$X, d2$X)
   expect_identical(d1$Y, d2$Y)
 })
 
@@ -317,9 +341,9 @@ test_that("gamma_G affects instrument strength", {
   ds <- run_single_iteration(n_synthetic_samples = 100, n_features = 3,
                              mo_confounding = 0.8, phi = 0.8,
                              gamma_G = 1.0, seed = 42)
-  iw <- iconic_data(Z = dw$Z, Y = t(dw$Y), M = dw$M, W = t(dw$W),
+  iw <- iconic_data(X = dw$X, Y = t(dw$Y), M = dw$M, W = t(dw$W),
                     G = dw$G[, 1], Gm = dw$Gm, covariates = dw$synthetic_data)
-  is_ <- iconic_data(Z = ds$Z, Y = t(ds$Y), M = ds$M, W = t(ds$W),
+  is_ <- iconic_data(X = ds$X, Y = t(ds$Y), M = ds$M, W = t(ds$W),
                      G = ds$G[, 1], Gm = ds$Gm, covariates = ds$synthetic_data)
   dw_diag <- iconic_diagnose(iw)
   ds_diag <- iconic_diagnose(is_)
@@ -360,7 +384,7 @@ test_that("iconic_sensitivity uses attached GAN from iconic_data", {
   idata <- .make_test_data()
   # Attach a GAN by training one (light)
   trained <- iconic:::.auto_train_gan(idata, epochs = 5)
-  idata2 <- iconic_data(Z = idata$Z, Y = idata$Y, M = idata$M,
+  idata2 <- iconic_data(X = idata$X, Y = idata$Y, M = idata$M,
                         W = idata$W, G = idata$G, Gm = idata$Gm,
                         covariates = idata$covariates,
                         trained_gan = trained)
@@ -391,9 +415,9 @@ test_that("iconic_sensitivity confounding=default is backward compatible", {
                              n_iter = 2, n_features = 3,
                              confounding = "default")
   expect_null(sens$inferred_confounding)
-  # Default omega values should be 0.7
-  expect_equal(sens$omega_1, 0.7)
-  expect_equal(sens$omega_2, 0.7)
+  # Default omega values are swept over c(0.3, 0.7, 1.0)
+  expect_equal(sens$omega_1, c(0.3, 0.7, 1.0))
+  expect_equal(sens$omega_2, c(0.3, 0.7, 1.0))
 })
 
 test_that("iconic_sensitivity confounding=inferred populates inferred_confounding", {
@@ -431,7 +455,7 @@ test_that("iconic_sensitivity confounding=manual uses provided values", {
 test_that("iconic_prospect reports texture_source field", {
   skip_if_not_installed("torch")
   skip_if_not(check_torch_setup())
-  bare <- iconic_data(Z = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50),
+  bare <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 3), 3, 50),
                       M = rnorm(50))
   result <- iconic_prospect(bare, gamma_G_grid = c(0.6),
                             n_iter = 2, n_features = 3,
@@ -461,7 +485,7 @@ test_that("iconic_data stores trained_gan slot", {
   skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   trained <- iconic:::.auto_train_gan(idata, epochs = 5)
-  idata2 <- iconic_data(Z = idata$Z, Y = idata$Y, M = idata$M,
+  idata2 <- iconic_data(X = idata$X, Y = idata$Y, M = idata$M,
                         W = idata$W, G = idata$G, Gm = idata$Gm,
                         covariates = idata$covariates,
                         trained_gan = trained)
@@ -473,7 +497,7 @@ test_that("iconic_data print reports GAN attachment", {
   skip_if_not(check_torch_setup())
   idata <- .make_test_data()
   trained <- iconic:::.auto_train_gan(idata, epochs = 5)
-  idata2 <- iconic_data(Z = idata$Z, Y = idata$Y, M = idata$M,
+  idata2 <- iconic_data(X = idata$X, Y = idata$Y, M = idata$M,
                         W = idata$W, G = idata$G, Gm = idata$Gm,
                         covariates = idata$covariates,
                         trained_gan = trained)

@@ -11,7 +11,9 @@
   rep_diag,
   n,
   mo_confounding,
-  phi
+  phi,
+  rho_surface = NULL,
+  bias_threshold = 0.1
 )
 }
 \description{

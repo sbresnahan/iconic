@@ -4,12 +4,12 @@
 \alias{fit_unadj_mediation}
 \title{UNADJ mediation estimator: naive Baron-Kenny style}
 \usage{
-fit_unadj_mediation(y, Z, M, covars = NULL)
+fit_unadj_mediation(y, X, M, covars = NULL)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
@@ -20,8 +20,8 @@ Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
 \code{NIE}, \code{NIE_se}, \code{NIE_p}.
 }
 \description{
-Stage 1: \code{M ~ Z} (estimate alpha_M).
-Stage 2: \code{Y ~ Z + M} (estimate NDE = beta_Z, beta_M).
+Stage 1: \code{M ~ X} (estimate alpha_M).
+Stage 2: \code{Y ~ X + M} (estimate NDE = beta_X, beta_M).
 NIE = alpha_M * beta_M.
 }
 \details{
@@ -32,6 +32,6 @@ reference floor, analogous to UNADJ in the total-effect setting.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-fit_unadj_mediation(dat$Y[, 1], dat$Z, dat$M)
+fit_unadj_mediation(dat$Y[, 1], dat$X, dat$M)
 }
 }

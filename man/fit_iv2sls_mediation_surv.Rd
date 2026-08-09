@@ -7,7 +7,7 @@
 fit_iv2sls_mediation_surv(
   time,
   event,
-  Z,
+  X,
   M,
   g,
   w,
@@ -22,11 +22,11 @@ fit_iv2sls_mediation_surv(
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
-\item{g}{Numeric instrument for Z (length n).}
+\item{g}{Numeric instrument for X (length n).}
 
 \item{w}{Numeric NC vector (length n) or matrix (n x q).}
 
@@ -42,13 +42,13 @@ fit_iv2sls_mediation_surv(
 Named list (same fields as \code{\link{fit_unadj_mediation_surv}}).
 }
 \description{
-Two-stage predictor substitution with a single instrument (G for Z, no
+Two-stage predictor substitution with a single instrument (G for X, no
 mediator instrument):
 \enumerate{
-\item OLS: \code{Z ~ g + W + covars} -> Z_hat (purge U1 from Z).
-\item OLS: \code{M ~ Z_hat + covars} -> alpha_M.
-\item Cox / RMST: \code{Surv(t,e) ~ Z_hat + M + W + covars} ->
-NDE (coef on Z_hat), beta_M (coef on M).
+\item OLS: \code{X ~ g + W + covars} -> X_hat (purge U1 from X).
+\item OLS: \code{M ~ X_hat + covars} -> alpha_M.
+\item Cox / RMST: \code{Surv(t,e) ~ X_hat + M + W + covars} ->
+NDE (coef on X_hat), beta_M (coef on M).
 }
 \code{NIE = alpha_M * beta_M}. Weak-instrument gate (partial F for G)
 applies to the OLS first stage. Unlike
@@ -61,7 +61,7 @@ confounding — it is included for parity with the continuous
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
+fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 dat$G[, 1], dat$W[, 1])
 }
 }

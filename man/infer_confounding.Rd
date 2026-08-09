@@ -4,7 +4,13 @@
 \alias{infer_confounding}
 \title{Infer confounding parameters from the user's data}
 \usage{
-infer_confounding(data, diagnosis = NULL, estimate = NULL, n_cores = 1)
+infer_confounding(
+  data,
+  diagnosis = NULL,
+  estimate = NULL,
+  n_cores = 1,
+  max_infer_tasks = 50
+)
 }
 \arguments{
 \item{data}{An \code{iconic_data} object.}
@@ -20,6 +26,14 @@ computed internally.}
 \item{n_cores}{Number of parallel workers for omega inference and
 k permutation. Default 1 (sequential). Uses
 \code{parallel::mclapply} on Unix and a PSOCK cluster on Windows.}
+
+\item{max_infer_tasks}{Cap on the number of mediators and of outcome
+features used when \code{estimate = NULL} and estimates must be computed
+internally. The confounding-strength gaps are averages across the
+mediator x feature grid, so a random subset of at most
+\code{max_infer_tasks} mediators and \code{max_infer_tasks} features
+gives an unbiased Monte Carlo estimate at much lower cost. Default 50.
+Panels smaller than the cap are used in full.}
 }
 \value{
 An \code{iconic_confounding} S3 object: a named list with
@@ -49,12 +63,12 @@ IV2SLS NIE and the IV2SLS2 NIE, averaged across features.
 Requires valid G + Gm (both F >= 10). Same circularity caveat.
 \item \strong{omega} (omega_1, omega_2): the square root of the
 R-squared from regressing each negative-control feature on the
-outcome residualized on Z + C, averaged across features.
+outcome residualized on X + C, averaged across features.
 Conflates NC coverage with confounder strength -- reported as a
 composite, not pure coverage.
 \item \strong{k}: the number of latent confounders, estimated via
 parallel analysis (Horn, 1965) on the correlation matrix of
-outcomes residualized on Z + C. Requires at least 5 outcome
+outcomes residualized on X + C. Requires at least 5 outcome
 features. Returns a point estimate and a bootstrap confidence
 interval.
 }
@@ -71,7 +85,7 @@ defaults are used (from the simulation calibration):
 \code{omega_1, omega_2} \tab 0.7 \tab NC coverage (simulation calibration) \cr
 \code{k} \tab 1 \tab Single-confounder assumption (typical mediation) \cr
 \code{phi} \tab 0.8 \tab Strong mediator instrument assumption \cr
-\code{separate_U} \tab TRUE \tab Path-specific confounders \cr
+\code{lambda_XM}, \code{lambda_MY} \tab shared \tab Per-path confounder loadings \cr
 }
 These defaults are reported with a warning so the user knows the
 value was not inferred from their data.
@@ -79,7 +93,7 @@ value was not inferred from their data.
 
 \examples{
 \donttest{
-data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
+data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 W = matrix(rnorm(100*10), 10, 100))
 diag <- iconic_diagnose(data)
@@ -87,4 +101,5 @@ est <- iconic_estimate(data, diagnosis = diag)
 conf <- infer_confounding(data, diagnosis = diag, estimate = est, n_cores = 2)
 print(conf)
 }
+
 }

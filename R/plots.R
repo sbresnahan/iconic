@@ -394,7 +394,7 @@ plot_estimate_distribution <- function(sim_result, methods = iconic_method_order
   .set_theme()
   boxplot(bp_data, col = iconic_method_colors[methods], border = "grey30",
           notch = FALSE, outline = FALSE, las = 1,
-          ylab = "Estimated Effect of Z on Y", main = title)
+          ylab = "Estimated Effect of X on Y", main = title)
   abline(h = true_total, lty = 2, col = "black", lwd = 2)
   abline(h = 0, col = "grey60", lty = 3)
   mtext(sprintf("Dashed = true total (%.2f)", true_total), side = 1, line = 4, cex = 0.8)
@@ -554,10 +554,10 @@ plot_sensitivity_heatmap <- function(sens, metric = "rmse", method = "IV2SLS",
 
   xs <- sort(unique(s$coverage))
   ys <- sort(unique(s$conf_strength))
-  Z <- matrix(NA_real_, length(xs), length(ys))
+  X <- matrix(NA_real_, length(xs), length(ys))
   for (i in seq_along(xs)) for (j in seq_along(ys)) {
     v <- s[[metric]][s$coverage == xs[i] & s$conf_strength == ys[j]]
-    if (length(v)) Z[i, j] <- v[1]
+    if (length(v)) X[i, j] <- v[1]
   }
 
   if (is.null(title))
@@ -565,13 +565,13 @@ plot_sensitivity_heatmap <- function(sens, metric = "rmse", method = "IV2SLS",
 
   pal <- grDevices::colorRampPalette(c("#2c7fb8", "#ffffbf", "#d7191c"))(64)
   .set_theme(mar = c(5, 5.5, 4, 5) + 0.1)
-  image(x = seq_along(xs), y = seq_along(ys), z = Z, col = pal, axes = FALSE,
+  image(x = seq_along(xs), y = seq_along(ys), z = X, col = pal, axes = FALSE,
         xlab = "Negative-control coverage", ylab = "Confounding strength",
         main = title)
   axis(1, at = seq_along(xs), labels = sprintf("%.2g", xs))
   axis(2, at = seq_along(ys), labels = sprintf("%.2g", ys))
   box(col = "grey70")
   for (i in seq_along(xs)) for (j in seq_along(ys))
-    if (is.finite(Z[i, j]))
-      text(i, j, sprintf("%.2f", Z[i, j]), cex = 0.8, col = "grey10")
+    if (is.finite(X[i, j]))
+      text(i, j, sprintf("%.2f", X[i, j]), cex = 0.8, col = "grey10")
 }

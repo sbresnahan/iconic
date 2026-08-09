@@ -44,12 +44,12 @@
 #' Requires valid G + Gm (both F >= 10). Same circularity caveat.
 #' \item \strong{omega} (omega_1, omega_2): the square root of the
 #' R-squared from regressing each negative-control feature on the
-#' outcome residualized on Z + C, averaged across features.
+#' outcome residualized on X + C, averaged across features.
 #' Conflates NC coverage with confounder strength -- reported as a
 #' composite, not pure coverage.
 #' \item \strong{k}: the number of latent confounders, estimated via
 #' parallel analysis (Horn, 1965) on the correlation matrix of
-#' outcomes residualized on Z + C. Requires at least 5 outcome
+#' outcomes residualized on X + C. Requires at least 5 outcome
 #' features. Returns a point estimate and a bootstrap confidence
 #' interval.
 #' }
@@ -75,7 +75,7 @@
 #' \code{omega_1, omega_2} \tab 0.7 \tab NC coverage (simulation calibration) \cr
 #' \code{k} \tab 1 \tab Single-confounder assumption (typical mediation) \cr
 #' \code{phi} \tab 0.8 \tab Strong mediator instrument assumption \cr
-#' \code{separate_U} \tab TRUE \tab Path-specific confounders \cr
+#' \code{lambda_XM}, \code{lambda_MY} \tab shared \tab Per-path confounder loadings \cr
 #' }
 #' These defaults are reported with a warning so the user knows the
 #' value was not inferred from their data.
@@ -91,7 +91,7 @@
 #'
 #' @examples
 #' \donttest{
-#' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 #' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 #' W = matrix(rnorm(100*10), 10, 100))
 #' diag <- iconic_diagnose(data)
@@ -99,8 +99,16 @@
 #' conf <- infer_confounding(data, diagnosis = diag, estimate = est, n_cores = 2)
 #' print(conf)
 #' }
+#'
+#' @param max_infer_tasks Cap on the number of mediators and of outcome
+#' features used when \code{estimate = NULL} and estimates must be computed
+#' internally. The confounding-strength gaps are averages across the
+#' mediator x feature grid, so a random subset of at most
+#' \code{max_infer_tasks} mediators and \code{max_infer_tasks} features
+#' gives an unbiased Monte Carlo estimate at much lower cost. Default 50.
+#' Panels smaller than the cap are used in full.
 infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
-                              n_cores = 1) {
+                              n_cores = 1, max_infer_tasks = 50) {
   if (!inherits(data, "iconic_data"))
     stop("data must be an iconic_data object from iconic_data().")
 
@@ -108,9 +116,18 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
   unavailable <- c("rho_G1", "rho_G2") # always unestimable
 
   # -- Compute estimates if not supplied --
+  # conf_strength (delta) and mo_confounding (delta_mo) are simple averages
+  # of per-cell estimator gaps across the mediator x feature grid, so a
+  # random subset of mediators/features gives an unbiased Monte Carlo
+  # estimate of the full-panel value at a fraction of the cost. Subset the
+  # grid to at most max_infer_tasks mediators and max_infer_tasks features
+  # before running iconic_estimate(); small panels are used in full.
+  inference_subset <- NULL
   if (is.null(estimate)) {
+    sub_data <- .subset_data_for_inference(data, max_infer_tasks)
+    inference_subset <- attr(sub_data, "inference_subset")
     estimate <- tryCatch(
-      iconic_estimate(data, diagnosis = diagnosis),
+      iconic_estimate(sub_data, diagnosis = diagnosis),
       error = function(e) NULL)
     if (is.null(estimate)) {
       warnings <- c(warnings,
@@ -159,6 +176,18 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
   if (!omega_2$available) unavailable <- c(unavailable, "omega_2")
   if (!k_inf$available) unavailable <- c(unavailable, "k")
 
+  # Annotate the gap-based parameters when they were estimated on a random
+  # subset of the mediator x feature grid (the estimate = NULL auto-run).
+  if (!is.null(inference_subset) && isTRUE(inference_subset$subsetted)) {
+    note <- sprintf("random subset (%d/%d mediators, %d/%d features)",
+                    inference_subset$n_mediators_used, inference_subset$n_mediators_total,
+                    inference_subset$n_features_used, inference_subset$n_features_total)
+    if (!is.null(conf_strength$method))
+      conf_strength$method <- paste0(conf_strength$method, "; ", note)
+    if (!is.null(mo_confounding$method))
+      mo_confounding$method <- paste0(mo_confounding$method, "; ", note)
+  }
+
   obj <- list(
     conf_strength = conf_strength,
     mo_confounding = mo_confounding,
@@ -166,7 +195,8 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
     omega_2 = omega_2,
     k = k_inf,
     unavailable = unavailable,
-    warnings = warnings
+    warnings = warnings,
+    inference_subset = inference_subset
   )
   class(obj) <- c("iconic_confounding", "list")
   obj
@@ -177,7 +207,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 #'
 #' The gap between the unadjusted OLS estimate and the IV2SLS estimate
 #' reflects the total confounding bias. Averaged across features and
-#' scaled by the standard deviation of Z.
+#' scaled by the standard deviation of X.
 #'
 #' @keywords internal
 .infer_conf_strength <- function(estimate, data, F_G, warnings) {
@@ -232,11 +262,11 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
     return(c(default, list(warnings = warnings)))
   }
 
-  # Gap = |UNADJ - IV2SLS|, averaged across features, scaled by sd(Z)
+  # Gap = |UNADJ - IV2SLS|, averaged across features, scaled by sd(X)
   gap <- mean(abs(unadj - iv2sls), na.rm = TRUE)
-  sd_Z <- sd(data$Z, na.rm = TRUE)
-  if (sd_Z == 0 || is.na(sd_Z)) sd_Z <- 1
-  delta_est <- min(gap / sd_Z, 1.5) # cap at 1.5 for stability
+  sd_X <- sd(data$X, na.rm = TRUE)
+  if (sd_X == 0 || is.na(sd_X)) sd_X <- 1
+  delta_est <- min(gap / sd_X, 1.5) # cap at 1.5 for stability
 
   warning_txt <- NULL
   if (delta_est < 0.1) {
@@ -324,7 +354,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 
 #' Infer omega (NC coverage) from W--Y residual R^2 (internal)
 #'
-#' Regresses each NC feature on the outcome residualized on Z + C and
+#' Regresses each NC feature on the outcome residualized on X + C and
 #' takes sqrt(R^2), averaged across features. This is a composite of
 #' coverage and confounder strength, not pure coverage.
 #'
@@ -349,17 +379,17 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 
   n <- data$n
   nf <- data$n_features
-  Z <- data$Z
+  X <- data$X
   cv <- data$covariates
   cnames <- if (!is.null(cv) && ncol(cv) > 0) names(cv) else character(0)
   cs <- .covar_str(cnames)
 
-  # Residualize each outcome feature on Z + C
+  # Residualize each outcome feature on X + C
   Y_resid <- matrix(NA_real_, nf, n)
   for (f in seq_len(nf)) {
     y <- data$Y[f, ]
-    d <- .bind_covars(data.frame(y = y, Z = Z), cv)
-    fit <- tryCatch(lm(as.formula(paste0("y ~ Z", cs)), data = d),
+    d <- .bind_covars(data.frame(y = y, X = X), cv)
+    fit <- tryCatch(lm(as.formula(paste0("y ~ X", cs)), data = d),
                     error = function(e) NULL)
     Y_resid[f, ] <- if (!is.null(fit)) residuals(fit) else y
   }
@@ -391,7 +421,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 
   list(
     estimate = as.numeric(omega_est),
-    method = "sqrt(R^2) of W on Y residualized on Z+C",
+    method = "sqrt(R^2) of W on Y residualized on X+C",
     assumption = "valid W (negative controls)",
     available = TRUE,
     warning = "composite: coverage x confounder strength, not pure coverage",
@@ -403,7 +433,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 #' Infer k (number of latent confounders) via parallel analysis (internal)
 #'
 #' Performs Horn's parallel analysis on the correlation matrix of
-#' outcomes residualized on Z + C. Returns a point estimate and a
+#' outcomes residualized on X + C. Returns a point estimate and a
 #' simple bootstrap confidence interval.
 #'
 #' @param data An iconic_data object.
@@ -424,17 +454,17 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 
   n <- data$n
   nf <- data$n_features
-  Z <- data$Z
+  X <- data$X
   cv <- data$covariates
   cnames <- if (!is.null(cv) && ncol(cv) > 0) names(cv) else character(0)
   cs <- .covar_str(cnames)
 
-  # Residualize each outcome feature on Z + C
+  # Residualize each outcome feature on X + C
   Y_resid <- matrix(NA_real_, n, nf)
   for (f in seq_len(nf)) {
     y <- data$Y[f, ]
-    d <- .bind_covars(data.frame(y = y, Z = Z), cv)
-    fit <- tryCatch(lm(as.formula(paste0("y ~ Z", cs)), data = d),
+    d <- .bind_covars(data.frame(y = y, X = X), cv)
+    fit <- tryCatch(lm(as.formula(paste0("y ~ X", cs)), data = d),
                     error = function(e) NULL)
     Y_resid[, f] <- if (!is.null(fit)) residuals(fit) else y
   }
@@ -522,4 +552,66 @@ print.iconic_confounding <- function(x, ...) {
   }
 
   invisible(x)
+}
+
+
+#' Subset an iconic_data object to a random panel for confounding inference
+#'
+#' Draws a random subset of mediators and (when more than one) outcome
+#' features, capping each at \code{max_infer_tasks}, and returns a thinned
+#' \code{iconic_data} object suitable for \code{iconic_estimate()}. Used to
+#' make the \code{estimate = NULL} auto-run in \code{infer_confounding()}
+#' fast on large panels: the confounding-strength gaps are averages across
+#' the mediator x feature grid, so a random subset is an unbiased Monte
+#' Carlo estimate of the full-panel value.
+#'
+#' @param data An \code{iconic_data} object.
+#' @param max_infer_tasks Cap on mediators and on features.
+#' @return A thinned \code{iconic_data} object with an
+#'   \code{inference_subset} attribute recording the subset sizes.
+#' @keywords internal
+.subset_data_for_inference <- function(data, max_infer_tasks = 50) {
+  nm_total <- if (!is.null(data$n_mediators)) data$n_mediators else 0L
+  nf_total <- if (!is.null(data$n_features)) data$n_features else 1L
+
+  n_m_use <- min(nm_total, max_infer_tasks)
+  n_f_use <- min(nf_total, max_infer_tasks)
+  subsetted <- (nm_total > max_infer_tasks) || (nf_total > max_infer_tasks)
+
+  # Nothing to subset: return the data unchanged.
+  if (!subsetted) {
+    attr(data, "inference_subset") <- list(
+      subsetted = FALSE,
+      n_mediators_used = nm_total, n_mediators_total = nm_total,
+      n_features_used = nf_total, n_features_total = nf_total)
+    return(data)
+  }
+
+  m_idx <- if (nm_total > 0) sort(sample(seq_len(nm_total), n_m_use)) else integer(0)
+  f_idx <- if (nf_total > 1) sort(sample(seq_len(nf_total), n_f_use)) else seq_len(nf_total)
+
+  out <- data
+  # Subset the mediator panel (mediators x samples) and its names.
+  if (!is.null(out$M) && length(m_idx) > 0) {
+    out$M <- out$M[m_idx, , drop = FALSE]
+    if (!is.null(out$mediator_names) && length(out$mediator_names) == nm_total)
+      out$mediator_names <- out$mediator_names[m_idx]
+    # Gm may be per-mediator (matrix with a row per mediator); subset to match.
+    if (!is.null(out$Gm) && is.matrix(out$Gm) && nrow(out$Gm) == nm_total)
+      out$Gm <- out$Gm[m_idx, , drop = FALSE]
+    out$n_mediators <- length(m_idx)
+  }
+  # Subset the outcome feature panel (features x samples) when multi-feature.
+  if (!is.null(out$Y) && is.matrix(out$Y) && nf_total > 1 && nrow(out$Y) == nf_total) {
+    out$Y <- out$Y[f_idx, , drop = FALSE]
+    if (!is.null(out$feature_names) && length(out$feature_names) == nf_total)
+      out$feature_names <- out$feature_names[f_idx]
+    out$n_features <- length(f_idx)
+  }
+
+  attr(out, "inference_subset") <- list(
+    subsetted = TRUE,
+    n_mediators_used = n_m_use, n_mediators_total = nm_total,
+    n_features_used = n_f_use, n_features_total = nf_total)
+  out
 }

@@ -8,7 +8,7 @@
   mat,
   exposure,
   covars,
-  residualize_on = c("ZC", "ZCW"),
+  residualize_on = c("XC", "XCW"),
   W_mat = NULL
 )
 }
@@ -19,8 +19,8 @@
 
 \item{covars}{A data frame of encoded covariates (n_samples rows).}
 
-\item{residualize_on}{Character: \code{"ZC"} (default, legacy) residualizes on
-exposure + covariates only; \code{"ZCW"} additionally
+\item{residualize_on}{Character: \code{"XC"} (default, legacy) residualizes on
+exposure + covariates only; \code{"XCW"} additionally
 residualizes on the negative-control bridge proxy Ŵ, obtained by
 regressing \code{W_mat} on exposure + covariates. This partials out the
 U-signature that W captures, reducing the double-counting of U's
@@ -30,7 +30,7 @@ over-partial if W is a weak proxy — recommended only when the
 completeness-capture test (§1) reports "strong".}
 
 \item{W_mat}{Optional \verb{features x samples} NC matrix used to construct
-the bridge proxy Ŵ when \code{residualize_on = "ZCW"}. Ignored otherwise.}
+the bridge proxy Ŵ when \code{residualize_on = "XCW"}. Ignored otherwise.}
 }
 \value{
 A p x p correlation matrix, or NULL.

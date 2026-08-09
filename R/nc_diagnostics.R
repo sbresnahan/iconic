@@ -6,7 +6,7 @@
 # (from run_single_iteration() or generate_toy_data()) and test the
 # two identifying assumptions that negative controls must satisfy:
 #
-# (A1) W _|_ Z | C -- controls are not affected by the exposure
+# (A1) W _|_ X | C -- controls are not affected by the exposure
 # (A2) W _|_ G | C -- controls are independent of the instrument
 #
 # plus the proximal-inference completeness condition:
@@ -18,22 +18,22 @@
 # instrument (tested by nc_independence_check_gm)
 #
 # In the simulation, A1, A2, and A2' hold by construction (W = f(U), and
-# U is independent of both Z's causal path, G, and Gm). These screens are
+# U is independent of both X's causal path, G, and Gm). These screens are
 # therefore most useful on REAL data, where they detect violations
 # (e.g. a control that is actually downstream of the exposure, or a
 # meQTL linking G or Gm to a methylation-based control).
 # ============================================================
 
 
-#' Screen negative controls for exposure dependence (W _|_ Z | C)
+#' Screen negative controls for exposure dependence (W _|_ X | C)
 #'
-#' Regresses each negative-control feature on the exposure Z (plus
-#' observed covariates C) and flags controls whose association with Z
+#' Regresses each negative-control feature on the exposure X (plus
+#' observed covariates C) and flags controls whose association with X
 #' survives Benjamini-Hochberg FDR control at the requested level.
 #'
-#' A control that is significantly associated with Z after adjusting
+#' A control that is significantly associated with X after adjusting
 #' for C violates the negative-control assumption (A1): it is either
-# downstream of the exposure or shares a cause of Z that is not in C.
+# downstream of the exposure or shares a cause of X that is not in C.
 #' Such controls should be dropped before running COCA / PGC.
 #'
 #' @section Assumption:
@@ -41,30 +41,30 @@
 #' **conditional on observed covariates C and the unmeasured confounder U**
 #' (U is unobserved). NC outcome proxies may cause or be caused by the
 #' outcome or instruments; the screen tests the observable marginal
-#' association with Z given C.
+#' association with X given C.
 #'
 #' @section Criterion:
 #' `criterion = "fdr"` (the legacy behavior) flags controls whose
-#' association with Z survives BH-FDR. `criterion = "magnitude"` flags
-#' controls by partial-correlation *size* (|partial_r(W,Z|C)| >
+#' association with X survives BH-FDR. `criterion = "magnitude"` flags
+#' controls by partial-correlation *size* (|partial_r(W,X|C)| >
 #' `magnitude_threshold`), which is less vulnerable to the "always
-#' significant via U" problem: because W shares U with Z by construction,
+#' significant via U" problem: because W shares U with X by construction,
 #' the FDR test can flag valid controls as violations purely from the
 #' intended confounder-sharing signal. `criterion = "both"` (default)
 #' requires a control to pass both branches to be deemed valid.
 #'
-#' Distinguishing "W downstream of Z" (a true A1 violation) from "W shares
-#' a cause with Z" (the intended NC behavior) remains an open problem
+#' Distinguishing "W downstream of X" (a true A1 violation) from "W shares
+#' a cause with X" (the intended NC behavior) remains an open problem
 #' without a clean test statistic. The `relative_effect` column
-#' (|partial_r(W,Z|C)| / |partial_r(W,U_proxy|C)|, when `u_proxy` is
-#' supplied) is exposed as a *diagnostic*: a control downstream of Z tends
-#' to have a larger W-Z association relative to its W-U association, but
+#' (|partial_r(W,X|C)| / |partial_r(W,U_proxy|C)|, when `u_proxy` is
+#' supplied) is exposed as a *diagnostic*: a control downstream of X tends
+#' to have a larger W-X association relative to its W-U association, but
 #' the separation is not always clean. Analysts should inspect
 #' `partial_r` and `relative_effect` together rather than relying on a
 #' single gate.
 #'
 #' @param dat Dataset list from [run_single_iteration()] or
-#' [generate_toy_data()], containing `W`, `Z`, and
+#' [generate_toy_data()], containing `W`, `X`, and
 #' `synthetic_data` (covariates).
 #' @param fdr_level Target false-discovery rate for BH correction.
 #' Default 0.10.
@@ -75,11 +75,11 @@
 #' Windows.
 #' @param criterion Which criterion to use: `"fdr"` (legacy),
 #' `"magnitude"`, or `"both"` (default).
-#' @param magnitude_threshold |partial_r(W,Z|C)| cutoff for the
+#' @param magnitude_threshold |partial_r(W,X|C)| cutoff for the
 #' magnitude branch. Default 0.10.
 #' @param u_proxy Optional outcome-derived proxy for U (e.g. the
 #' leading residualized-outcome principal component) used
-#' to compute `relative_effect` = |partial_r(W,Z|C)| /
+#' to compute `relative_effect` = |partial_r(W,X|C)| /
 #' |partial_r(W,U_proxy|C)|. When `NULL` (default),
 #' `relative_effect` is `NA` and only the FDR/magnitude
 #' branches are used.
@@ -101,39 +101,39 @@ nc_validity_screen <- function(dat, fdr_level = 0.10, alpha = 0.05,
                                u_proxy = NULL) {
   criterion <- match.arg(criterion)
   W <- dat$W
-  Z <- dat$Z
+  X <- dat$X
   cv <- dat$synthetic_data
   p <- ncol(W)
   n <- nrow(W)
   cnames <- if (!is.null(cv)) names(cv) else character(0)
   cs <- if (length(cnames)) paste0(" + ", paste(cnames, collapse = " + ")) else ""
 
-  # Residualize Z on covariates once (for the partial correlation).
-  Z_res <- if (!is.null(cv) && ncol(cv) > 0) {
-    zf <- tryCatch(lm(Z ~ ., data = cv), error = function(e) NULL)
-    if (is.null(zf)) Z else residuals(zf)
-  } else Z
+  # Residualize X on covariates once (for the partial correlation).
+  X_res <- if (!is.null(cv) && ncol(cv) > 0) {
+    zf <- tryCatch(lm(X ~ ., data = cv), error = function(e) NULL)
+    if (is.null(zf)) X else residuals(zf)
+  } else X
   df_res <- n - 1 - if (!is.null(cv)) ncol(cv) else 0
 
   # Per-control: p-value (FDR branch) and partial correlation (magnitude branch).
   res_list <- .parallel_lapply(seq_len(p), function(f) {
     w <- W[, f]
-    # FDR branch: p-value from w ~ Z + C
-    d <- if (!is.null(cv)) cbind(data.frame(w = w, Z = Z), cv) else
-           data.frame(w = w, Z = Z)
-    fit <- tryCatch(lm(as.formula(paste0("w ~ Z", cs)), data = d),
+    # FDR branch: p-value from w ~ X + C
+    d <- if (!is.null(cv)) cbind(data.frame(w = w, X = X), cv) else
+           data.frame(w = w, X = X)
+    fit <- tryCatch(lm(as.formula(paste0("w ~ X", cs)), data = d),
                     error = function(e) NULL)
     pv <- if (is.null(fit)) NA_real_ else {
       sm <- summary(fit)$coefficients
-      if (!"Z" %in% rownames(sm)) NA_real_ else as.numeric(sm["Z", 4])
+      if (!"X" %in% rownames(sm)) NA_real_ else as.numeric(sm["X", 4])
     }
-    # Magnitude branch: partial correlation of W with Z given C.
+    # Magnitude branch: partial correlation of W with X given C.
     w_res <- if (!is.null(cv) && ncol(cv) > 0) {
       wf <- tryCatch(lm(w ~ ., data = cv), error = function(e) NULL)
       if (is.null(wf)) w else residuals(wf)
     } else w
-    ok <- complete.cases(w_res, Z_res)
-    r <- if (sum(ok) < 5) NA_real_ else cor(w_res[ok], Z_res[ok])
+    ok <- complete.cases(w_res, X_res)
+    r <- if (sum(ok) < 5) NA_real_ else cor(w_res[ok], X_res[ok])
     # relative_effect vs u_proxy, if supplied.
     rel <- NA_real_
     if (!is.null(u_proxy)) {
@@ -169,9 +169,9 @@ nc_validity_screen <- function(dat, fdr_level = 0.10, alpha = 0.05,
     partial_r = partial_r,
     relative_effect = rel_eff,
     significant = sig,
-    verdict = ifelse(sig, "drop: associated with Z", "valid"),
-    verdict_fdr = ifelse(sig_fdr, "drop: associated with Z (FDR)", "valid (FDR)"),
-    verdict_magnitude= ifelse(sig_mag, "drop: associated with Z (magnitude)", "valid (magnitude)"),
+    verdict = ifelse(sig, "drop: associated with X", "valid"),
+    verdict_fdr = ifelse(sig_fdr, "drop: associated with X (FDR)", "valid (FDR)"),
+    verdict_magnitude= ifelse(sig_mag, "drop: associated with X (magnitude)", "valid (magnitude)"),
     stringsAsFactors = FALSE
   )
 }
@@ -396,7 +396,7 @@ nc_independence_check_gm <- function(dat, fdr_level = 0.10, n_cores = 1) {
 #' `capture` (output of [nc_completeness_capture()], or NULL),
 #' `completeness` (composite: "satisfied", "borderline",
 #' "under-identified", or "weak-capture"),
-#' `screen_Z` (A1 screen results, if run), `screen_G` (A2 screen
+#' `screen_X` (A1 screen results, if run), `screen_G` (A2 screen
 #' results, if run).
 #' @export
 #'
@@ -413,22 +413,22 @@ nc_completeness_check <- function(dat, n_valid_controls = NULL,
   # a vector (k = 1), or NULL. Defend against all three.
   k <- if (!is.null(dat$U)) {
     if (is.matrix(dat$U)) ncol(dat$U) else 1L
-  } else if (!is.null(dat$U_XM) || !is.null(dat$U_MY)) {
-    # separate_U = TRUE stores U_XM / U_MY; each is a single confounder.
+  } else if (!is.null(dat$conf_XM) || !is.null(dat$conf_MY)) {
+    # Path-specific loadings store conf_XM / conf_MY; each is a confounder composite.
     1L
   } else {
     1L
   }
 
-  screen_Z <- NULL
+  screen_X <- NULL
   screen_G <- NULL
 
   if (is.null(n_valid_controls)) {
-    screen_Z <- nc_validity_screen(dat, fdr_level = fdr_level, n_cores = n_cores)
+    screen_X <- nc_validity_screen(dat, fdr_level = fdr_level, n_cores = n_cores)
     screen_G <- nc_independence_check(dat, fdr_level = fdr_level, n_cores = n_cores)
-    valid_Z <- !screen_Z$significant
+    valid_X <- !screen_X$significant
     valid_G <- !screen_G$significant
-    valid_both <- valid_Z & valid_G
+    valid_both <- valid_X & valid_G
     n_valid <- sum(valid_both, na.rm = TRUE)
   } else {
     n_valid <- n_valid_controls
@@ -473,7 +473,7 @@ nc_completeness_check <- function(dat, n_valid_controls = NULL,
     dimensional = dimensional,
     capture = capture,
     completeness = completeness,
-    screen_Z = screen_Z,
+    screen_X = screen_X,
     screen_G = screen_G
   )
 }
@@ -623,5 +623,133 @@ nc_completeness_capture <- function(dat, outcome = "Y", n_perm = 1000,
     capture_verdict = verdict,
     null_distribution = null_dist,
     n_features = pY
+  )
+}
+
+
+#' Negative-control support/range check
+#'
+#' Diagnostic for whether the negative-control panel captures the full
+#' support of the confounder, or only part of it. Uses a confounder proxy
+#' \code{U_tilde = resid(X ~ G + C)} (the instrument-purged exposure
+#' residual, which carries the confounding signal) and asks how much of
+#' \code{U_tilde} the NC panel explains, and whether each individual NC
+#' covers a distinct share of that signal.
+#'
+#' A panel can pass the count-based completeness check
+#' (\code{dim(W_valid) >= k}) and the covariance-capture test while still
+#' covering only part of the confounder support — for example when every
+#' control loads on the same single confounder direction. This diagnostic
+#' reports the multivariate \code{R^2(U_tilde | W)} (how much of the
+#' confounder proxy the panel explains) and a per-NC \code{support_ratio}
+#' (the partial correlation of each control with \code{U_tilde} given the
+#' other controls), which flags controls that add no unique coverage.
+#'
+#' This is a diagnostic, not a gate: \code{U_tilde} is itself an imperfect
+#' proxy (it mixes the confounder with exposure noise), so the values are
+#' interpretable only comparatively across controls and panels.
+#'
+#' @param dat Dataset list from [run_single_iteration()],
+#' [generate_toy_data()], or the \code{.to_nc_dat()} bridge in
+#' [iconic_diagnose()], containing \code{W}, \code{X}, and
+#' \code{synthetic_data} (covariates). \code{G} is used when present.
+#' @param fdr_level FDR level for flagging controls whose unique
+#' contribution is indistinguishable from zero. Default 0.10.
+#'
+#' @return A list with:
+#' \code{R2_utilde_given_W} (multivariate R^2 of the confounder proxy on
+#' the full NC panel),
+#' \code{support} (data frame with per-NC \code{support_ratio} = partial
+#' correlation of the control with \code{U_tilde} given the other
+#' controls, \code{p_value}, and \code{adds_coverage} flag),
+#' \code{n_controls}, and \code{verdict} ("broad" when
+#' \code{R2_utilde_given_W >= 0.5}, "partial" when >= 0.2, else "narrow").
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
+#' nc_support_check(dat)
+#' }
+nc_support_check <- function(dat, fdr_level = 0.10) {
+  W <- dat$W
+  if (is.null(W)) stop("dat$W is not present.")
+  if (!is.matrix(W)) W <- as.matrix(W)
+  n <- nrow(W)
+  pW <- ncol(W)
+  X <- dat$X
+  if (is.null(X)) stop("dat$X is not present.")
+  cv <- dat$synthetic_data
+  G <- dat$G
+  if (!is.null(G) && is.matrix(G)) G <- as.numeric(G[, 1])
+
+  cnames <- if (!is.null(cv) && ncol(cv) > 0) names(cv) else character(0)
+  cs <- if (length(cnames)) paste0(" + ", paste(cnames, collapse = " + ")) else ""
+
+  # Confounder proxy: resid(X ~ G + C). Without an instrument, resid(X ~ C).
+  d_x <- data.frame(X = as.numeric(X))
+  if (!is.null(G)) d_x$G <- as.numeric(G)
+  if (!is.null(cv)) d_x <- cbind(d_x, cv)
+  rhs <- paste0(if (!is.null(G)) "G" else "1", cs)
+  fit_x <- tryCatch(lm(as.formula(paste0("X ~ ", rhs)), data = d_x),
+                    error = function(e) NULL)
+  u_tilde <- if (!is.null(fit_x)) residuals(fit_x) else as.numeric(scale(X))
+
+  # Multivariate R^2 of u_tilde on the full W panel (+ C)
+  d_full <- data.frame(u = u_tilde)
+  if (!is.null(cv)) d_full <- cbind(d_full, cv)
+  for (j in seq_len(pW)) d_full[[paste0("W", j)]] <- W[, j]
+  w_str <- paste0(" + ", paste0("W", seq_len(pW), collapse = " + "))
+  fit_full <- tryCatch(lm(as.formula(paste0("u ~ 1", cs, w_str)), data = d_full),
+                       error = function(e) NULL)
+  fit_base <- tryCatch(lm(as.formula(paste0("u ~ 1", cs)), data = d_full),
+                       error = function(e) NULL)
+  r2_of <- function(fit, y) {
+    if (is.null(fit)) return(NA_real_)
+    ss_res <- sum(residuals(fit)^2, na.rm = TRUE)
+    ss_tot <- sum((y - mean(y, na.rm = TRUE))^2, na.rm = TRUE)
+    if (ss_tot <= 0) return(NA_real_)
+    1 - ss_res / ss_tot
+  }
+  R2_full <- r2_of(fit_full, u_tilde)
+  R2_base <- r2_of(fit_base, u_tilde)
+  R2_utilde_W <- if (!is.na(R2_full) && !is.na(R2_base)) R2_full - R2_base else NA_real_
+
+  # Per-NC unique contribution: partial cor of W_j with u_tilde given W_-j + C.
+  # Computed as the drop in R^2 when control j is removed (unique R^2 share),
+  # signed by the marginal correlation.
+  support_rows <- lapply(seq_len(pW), function(j) {
+    others <- setdiff(seq_len(pW), j)
+    d_red <- data.frame(u = u_tilde)
+    if (!is.null(cv)) d_red <- cbind(d_red, cv)
+    for (jj in others) d_red[[paste0("W", jj)]] <- W[, jj]
+    w_red <- if (length(others)) paste0(" + ", paste0("W", others, collapse = " + ")) else ""
+    fit_red <- tryCatch(lm(as.formula(paste0("u ~ 1", cs, w_red)), data = d_red),
+                        error = function(e) NULL)
+    R2_red <- r2_of(fit_red, u_tilde)
+    unique_r2 <- if (!is.na(R2_full) && !is.na(R2_red)) max(R2_full - R2_red, 0) else NA_real_
+    # signed support ratio: sign by marginal cor, magnitude = sqrt(unique R2)
+    marg_cor <- stats::cor(W[, j], u_tilde, use = "pairwise.complete.obs")
+    sr <- sign(marg_cor) * sqrt(unique_r2)
+    # p-value for the added variable: F-test comparing reduced vs full
+    pval <- NA_real_
+    if (!is.null(fit_red) && !is.null(fit_full)) {
+      an <- tryCatch(stats::anova(fit_red, fit_full), error = function(e) NULL)
+      if (!is.null(an) && nrow(an) >= 2) pval <- an$`Pr(>F)`[2]
+    }
+    data.frame(control = j, support_ratio = sr, unique_R2 = unique_r2,
+               p_value = pval, stringsAsFactors = FALSE)
+  })
+  support <- do.call(rbind, support_rows)
+  support$p_adj <- stats::p.adjust(support$p_value, method = "BH")
+  support$adds_coverage <- !is.na(support$p_adj) & support$p_adj < fdr_level
+
+  verdict <- if (is.na(R2_utilde_W)) "unknown" else if (R2_utilde_W >= 0.5) "broad" else if (R2_utilde_W >= 0.2) "partial" else "narrow"
+
+  list(
+    R2_utilde_given_W = R2_utilde_W,
+    support = support,
+    n_controls = pW,
+    verdict = verdict
   )
 }

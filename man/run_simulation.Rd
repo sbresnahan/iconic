@@ -8,7 +8,7 @@ run_simulation(
   n_iter = 100,
   n_samples = 500,
   n_features = 20,
-  beta_Z = 0.1,
+  beta_X = 0.1,
   alpha_M = 0.5,
   beta_M = 0.3,
   conf_str = 0.8,
@@ -25,9 +25,9 @@ run_simulation(
 
 \item{n_features}{Number of outcome and negative-control features. Default 20.}
 
-\item{beta_Z}{Direct effect of Z on Y. Default 0.10.}
+\item{beta_X}{Direct effect of X on Y. Default 0.10.}
 
-\item{alpha_M}{Effect of Z on mediator. Default 0.50.}
+\item{alpha_M}{Effect of X on mediator. Default 0.50.}
 
 \item{beta_M}{Effect of mediator on Y. Default 0.30.}
 
@@ -50,7 +50,7 @@ Run repeated simulations for a single parameter configuration
 }
 \examples{
 \donttest{
-res <- run_simulation(n_iter = 50, beta_Z = 0.1, conf_str = 0.8)
+res <- run_simulation(n_iter = 50, beta_X = 0.1, conf_str = 0.8)
 res$summary
 }
 }

@@ -5,7 +5,7 @@
 \title{Construct a standardized data object for ICONIC model selection}
 \usage{
 iconic_data(
-  Z,
+  X,
   Y = NULL,
   M = NULL,
   G = NULL,
@@ -19,11 +19,13 @@ iconic_data(
   trained_gan = NULL,
   outcome_type = c("continuous", "survival"),
   surv_time = NULL,
-  surv_event = NULL
+  surv_event = NULL,
+  scale = TRUE,
+  Z = NULL
 )
 }
 \arguments{
-\item{Z}{Exposure: numeric vector (length n) or features x samples
+\item{X}{Exposure: numeric vector (length n) or features x samples
 matrix. If a matrix, column means are taken and scaled (one exposure
 per sample).}
 
@@ -45,12 +47,12 @@ for the corresponding mediator (e.g., per-isoform cis-eQTLs).}
 \item{W}{Optional negative-control panel: features x samples matrix.
 Single-panel NCs used for COCA, PGC.}
 
-\item{W1}{Optional path-specific NCs for the Z->M path: features x
-samples matrix. Captures U_XM. When W1/W2 are absent but W is present,
+\item{W1}{Optional path-specific NCs for the X->M path: features x
+samples matrix. Captures conf_XM. When W1/W2 are absent but W is present,
 W1 = W2 = W.}
 
 \item{W2}{Optional path-specific NCs for the M->Y path: features x
-samples matrix. Captures U_MY.}
+samples matrix. Captures conf_MY.}
 
 \item{covariates}{Optional data frame of sample-level covariates (n rows).
 Recognized columns \code{sex}, \code{GA}, \code{mother_ethnicity} are encoded; other
@@ -81,9 +83,18 @@ when \code{outcome_type = "survival"}; ignored otherwise.}
 \item{surv_event}{Numeric 0/1 event indicator (length n; 1 = event
 observed, 0 = censored). Required when
 \code{outcome_type = "survival"}; ignored otherwise.}
+
+\item{scale}{Logical: center and scale all continuous inputs (X, Y, M,
+G, Gm, W, W1, W2, and numeric covariates) to mean 0 / sd 1. Default
+\code{TRUE}. Scaling parameters are recorded in \code{$scaling} for
+back-transformation. Set \code{FALSE} to preserve the original scale.}
+
+\item{Z}{Defunct. Renamed to \code{X} in v0.9.8; passing a value errors
+with a message pointing to \code{X}. Retained in the signature only to
+catch and redirect old calls.}
 }
 \value{
-An \code{iconic_data} S3 object: a named list with \verb{$Z}, \verb{$Y}, \verb{$M},
+An \code{iconic_data} S3 object: a named list with \verb{$X}, \verb{$Y}, \verb{$M},
 \verb{$G}, \verb{$Gm}, \verb{$W}, \verb{$W1}, \verb{$W2}, \verb{$covariates}, \verb{$n}, \verb{$n_features},
 \verb{$n_mediators}, \verb{$has_instrument}, \verb{$has_mediator_instrument},
 \verb{$has_nc}, \verb{$has_path_nc}, \verb{$is_mediation}, \verb{$feature_names},
@@ -97,11 +108,11 @@ all downstream model selection functions consume.
 }
 \examples{
 # Total-effect only (no mediation)
-data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))
+data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))
 
 # Full mediation with instruments and NCs
 data <- iconic_data(
-Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
 M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 W = matrix(rnorm(100 * 10), 10, 100)
 )
@@ -109,7 +120,7 @@ print(data)
 
 # Survival outcome
 data <- iconic_data(
-Z = rnorm(100), outcome_type = "survival",
+X = rnorm(100), outcome_type = "survival",
 surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
 M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 W = matrix(rnorm(100 * 10), 10, 100)

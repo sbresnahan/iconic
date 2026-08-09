@@ -7,13 +7,13 @@
 # pseudo-observations (Graw et al. 2009), which restores a linear,
 # collapsible scale.
 #
-# First-stage regressions (Z ~ G + W, Z_resid ~ W) remain OLS: Z and
+# First-stage regressions (X ~ G + W, X_resid ~ W) remain OLS: X and
 # the NC panel are continuous, so the 2SPS (two-stage predictor
 # substitution) structure is identical to the continuous estimators.
 # Only the outcome stage changes.
 #
 # COCA is structurally incompatible with survival: it regresses W on Y
-# (W ~ y + Z), placing the outcome on the RHS — impossible with a Surv
+# (W ~ y + X), placing the outcome on the RHS — impossible with a Surv
 # object. fit_coca_surv() therefore returns NA with an informative
 # attribute, and is documented as unsupported for survival outcomes.
 # ============================================================
@@ -103,19 +103,19 @@
 
 #' UNADJ survival estimator: unadjusted Cox / RMST regression
 #'
-#' Regresses the survival outcome on the exposure Z (plus covariates)
+#' Regresses the survival outcome on the exposure X (plus covariates)
 #' with no instrument or negative-control adjustment. Bias reference.
 #'
 #' When \code{effect_scale = "loghr"} (default), fits a Cox
-#' proportional-hazards model and returns the log-hazard ratio for Z.
+#' proportional-hazards model and returns the log-hazard ratio for X.
 #' When \code{effect_scale = "rmst"}, regresses leave-one-out RMST
-#' pseudo-observations (Graw et al. 2009) on Z via OLS, returning an
+#' pseudo-observations (Graw et al. 2009) on X via OLS, returning an
 #' effect on the restricted-mean-survival-time (time) scale — a
 #' collapsible, linear alternative to the non-collapsible hazard ratio.
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param covars Optional data frame of covariates (n rows).
 #' @param effect_scale Character: \code{"loghr"} (Cox) or \code{"rmst"}
 #' (pseudo-observation OLS). Default \code{"loghr"}.
@@ -130,10 +130,10 @@
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-#' fit_unadj_surv(dat$surv_time, dat$surv_event, dat$Z)
-#' fit_unadj_surv(dat$surv_time, dat$surv_event, dat$Z, effect_scale = "rmst")
+#' fit_unadj_surv(dat$surv_time, dat$surv_event, dat$X)
+#' fit_unadj_surv(dat$surv_time, dat$surv_event, dat$X, effect_scale = "rmst")
 #' }
-fit_unadj_surv <- function(time, event, Z, covars = NULL,
+fit_unadj_surv <- function(time, event, X, covars = NULL,
                            effect_scale = c("loghr", "rmst"), tau = NULL) {
   effect_scale <- match.arg(effect_scale)
   NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
@@ -141,8 +141,8 @@ fit_unadj_surv <- function(time, event, Z, covars = NULL,
   cs <- .covar_str(cnames)
 
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d <- .bind_covars(data.frame(y = resp, Z = Z), covars)
-  fml <- as.formula(paste0("y ~ Z", cs))
+  d <- .bind_covars(data.frame(y = resp, X = X), covars)
+  fml <- as.formula(paste0("y ~ X", cs))
 
   fit <- if (effect_scale == "loghr") {
     tryCatch(survival::coxph(fml, data = d), error = function(e) NULL)
@@ -151,7 +151,7 @@ fit_unadj_surv <- function(time, event, Z, covars = NULL,
   }
   if (is.null(fit)) return(NA_result)
 
-  ex <- .extract_surv_coef(fit, "Z")
+  ex <- .extract_surv_coef(fit, "X")
   if (is.null(ex)) return(NA_result)
   list(beta = ex$b, se = ex$se, pvalue = ex$p)
 }
@@ -161,13 +161,13 @@ fit_unadj_surv <- function(time, event, Z, covars = NULL,
 
 #' DIRECT survival estimator: Cox / RMST with instrument and NC covariates
 #'
-#' Regresses the survival outcome on Z plus the genetic instrument G, the
+#' Regresses the survival outcome on X plus the genetic instrument G, the
 #' negative-control panel W, and covariates. Naive adjustment; does not
 #' correct for unmeasured confounding via a ratio or IV approach.
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param g Numeric instrument vector (length n).
 #' @param w Numeric NC vector (length n) or matrix (n x q).
 #' @param covars Optional data frame of covariates (n rows).
@@ -181,9 +181,9 @@ fit_unadj_surv <- function(time, event, Z, covars = NULL,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-#' fit_direct_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W[, 1])
+#' fit_direct_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W[, 1])
 #' }
-fit_direct_surv <- function(time, event, Z, g, w, covars = NULL,
+fit_direct_surv <- function(time, event, X, g, w, covars = NULL,
                             effect_scale = c("loghr", "rmst"), tau = NULL) {
   effect_scale <- match.arg(effect_scale)
   NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
@@ -192,10 +192,10 @@ fit_direct_surv <- function(time, event, Z, g, w, covars = NULL,
   we <- .expand_w(w)
 
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d <- data.frame(y = resp, Z = Z, g = g)
+  d <- data.frame(y = resp, X = X, g = g)
   d <- cbind(d, we$df)
   d <- .bind_covars(d, covars)
-  fml <- as.formula(paste0("y ~ Z + g + ", we$frag, cs))
+  fml <- as.formula(paste0("y ~ X + g + ", we$frag, cs))
 
   fit <- if (effect_scale == "loghr") {
     tryCatch(survival::coxph(fml, data = d), error = function(e) NULL)
@@ -204,7 +204,7 @@ fit_direct_surv <- function(time, event, Z, g, w, covars = NULL,
   }
   if (is.null(fit)) return(NA_result)
 
-  ex <- .extract_surv_coef(fit, "Z")
+  ex <- .extract_surv_coef(fit, "X")
   if (is.null(ex)) return(NA_result)
   list(beta = ex$b, se = ex$se, pvalue = ex$p)
 }
@@ -214,10 +214,10 @@ fit_direct_surv <- function(time, event, Z, g, w, covars = NULL,
 
 #' IV2SLS survival estimator: two-stage predictor substitution with Cox / RMST
 #'
-#' Two-stage predictor substitution (2SPS): the first stage regresses Z on
+#' Two-stage predictor substitution (2SPS): the first stage regresses X on
 #' the instrument G (plus W and covariates) via OLS, producing fitted
-#' \eqn{\hat Z}; the second stage regresses the survival outcome on
-#' \eqn{\hat Z} (plus W and covariates) via Cox (log-HR) or RMST
+#' \eqn{\hat X}; the second stage regresses the survival outcome on
+#' \eqn{\hat X} (plus W and covariates) via Cox (log-HR) or RMST
 #' pseudo-observation OLS.
 #'
 #' A weak-instrument check (partial F for the excluded instrument G,
@@ -226,7 +226,7 @@ fit_direct_surv <- function(time, event, Z, g, w, covars = NULL,
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param g Numeric instrument vector (length n).
 #' @param w Numeric NC vector (length n) or matrix (n x q).
 #' @param covars Optional data frame of covariates (n rows).
@@ -241,9 +241,9 @@ fit_direct_surv <- function(time, event, Z, g, w, covars = NULL,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-#' fit_iv2sls_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W[, 1])
+#' fit_iv2sls_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W[, 1])
 #' }
-fit_iv2sls_surv <- function(time, event, Z, g, w, covars = NULL, min_f = 10,
+fit_iv2sls_surv <- function(time, event, X, g, w, covars = NULL, min_f = 10,
                             effect_scale = c("loghr", "rmst"), tau = NULL) {
   effect_scale <- match.arg(effect_scale)
   NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
@@ -251,23 +251,23 @@ fit_iv2sls_surv <- function(time, event, Z, g, w, covars = NULL, min_f = 10,
   cs <- .covar_str(cnames)
   we <- .expand_w(w)
 
-  # ── First stage (OLS): Z ~ g + W + covars -> Z_hat ──
-  d_fs <- data.frame(Z = Z, g = g)
-  d_fs <- cbind(d_fs, we$df)
+  # ── First stage (OLS): X ~ g (+ W) + covars -> X_hat ──
+  d_fs <- data.frame(X = X, g = g)
+  d_fs <- .bind_covars(d_fs, we$df)
   d_fs <- .bind_covars(d_fs, covars)
-  fml_fs <- as.formula(paste0("Z ~ g + ", we$frag, cs))
+  fml_fs <- as.formula(paste0("X ~ g", .plus_frag(we$frag), cs))
   fs <- tryCatch(lm(fml_fs, data = d_fs), error = function(e) NULL)
   if (is.null(fs)) return(NA_result)
   Fst <- .partial_F(fs, "g")
   if (is.na(Fst) || Fst < min_f) return(NA_result)
-  Z_hat <- fitted(fs)
+  X_hat <- fitted(fs)
 
-  # ── Second stage (Cox / RMST): Surv(t,e) ~ Z_hat + W + covars ──
+  # ── Second stage (Cox / RMST): Surv(t,e) ~ X_hat (+ W) + covars ──
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d_os <- data.frame(y = resp, Z_hat = Z_hat)
-  d_os <- cbind(d_os, we$df)
+  d_os <- data.frame(y = resp, X_hat = X_hat)
+  d_os <- .bind_covars(d_os, we$df)
   d_os <- .bind_covars(d_os, covars)
-  fml_os <- as.formula(paste0("y ~ Z_hat + ", we$frag, cs))
+  fml_os <- as.formula(paste0("y ~ X_hat", .plus_frag(we$frag), cs))
 
   fit <- if (effect_scale == "loghr") {
     tryCatch(survival::coxph(fml_os, data = d_os), error = function(e) NULL)
@@ -276,7 +276,7 @@ fit_iv2sls_surv <- function(time, event, Z, g, w, covars = NULL, min_f = 10,
   }
   if (is.null(fit)) return(NA_result)
 
-  ex <- .extract_surv_coef(fit, "Z_hat")
+  ex <- .extract_surv_coef(fit, "X_hat")
   if (is.null(ex)) return(NA_result)
   list(beta = ex$b, se = ex$se, pvalue = ex$p)
 }
@@ -288,15 +288,15 @@ fit_iv2sls_surv <- function(time, event, Z, g, w, covars = NULL, min_f = 10,
 #'
 #' Three-step bridge-function estimator with a survival outcome stage:
 #' \enumerate{
-#' \item Residualise Z on G -> Z_resid (OLS).
-#' \item Bridge Z_resid on the FULL W matrix -> W_hat (OLS).
-#' \item Regress the survival outcome on Z + W_hat via Cox (log-HR) or
+#' \item Residualise X on G -> X_resid (OLS).
+#' \item Bridge X_resid on the FULL W matrix -> W_hat (OLS).
+#' \item Regress the survival outcome on X + W_hat via Cox (log-HR) or
 #' RMST pseudo-observation OLS.
 #' }
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param g Numeric instrument vector (length n).
 #' @param W Numeric NC matrix (n x q) or vector (length n).
 #' @param covars Optional data frame of covariates (n rows).
@@ -310,9 +310,9 @@ fit_iv2sls_surv <- function(time, event, Z, g, w, covars = NULL, min_f = 10,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-#' fit_pgc_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W)
+#' fit_pgc_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W)
 #' }
-fit_pgc_surv <- function(time, event, Z, g, W, covars = NULL,
+fit_pgc_surv <- function(time, event, X, g, W, covars = NULL,
                          effect_scale = c("loghr", "rmst"), tau = NULL) {
   effect_scale <- match.arg(effect_scale)
   NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
@@ -321,30 +321,30 @@ fit_pgc_surv <- function(time, event, Z, g, W, covars = NULL,
 
   if (!is.matrix(W)) W <- as.matrix(W)
 
-  # Step 1: residualise Z on G -> Z_resid (OLS)
-  d_r <- .bind_covars(data.frame(Zc = Z, g = g), covars)
+  # Step 1: residualise X on G -> X_resid (OLS)
+  d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
   fit_resid <- tryCatch(
-    lm(as.formula(paste0("Zc ~ g", cs)), data = d_r),
+    lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
     error = function(e) NULL
   )
   if (is.null(fit_resid)) return(NA_result)
-  Z_resid <- residuals(fit_resid)
+  X_resid <- residuals(fit_resid)
 
-  # Step 2: bridge Z_resid on the FULL W matrix -> W_hat (OLS)
-  d_b <- data.frame(Z_resid = Z_resid)
+  # Step 2: bridge X_resid on the FULL W matrix -> W_hat (OLS)
+  d_b <- data.frame(X_resid = X_resid)
   d_b <- cbind(d_b, as.data.frame(W))
   if (!is.null(covars)) d_b <- cbind(d_b, covars)
   w_names <- paste0("W", seq_len(ncol(W)))
   names(d_b)[2:(ncol(W) + 1)] <- w_names
-  fml_b <- as.formula(paste0("Z_resid ~ ", paste(w_names, collapse = " + "), cs))
+  fml_b <- as.formula(paste0("X_resid ~ ", paste(w_names, collapse = " + "), cs))
   fit_b <- tryCatch(lm(fml_b, data = d_b), error = function(e) NULL)
   if (is.null(fit_b)) return(NA_result)
   W_hat <- fitted(fit_b)
 
   # Step 3: survival outcome stage with W_hat as confounder proxy
   resp <- .make_surv_response(time, event, effect_scale, tau)
-  d_f <- .bind_covars(data.frame(y = resp, Z = Z, W_hat = W_hat), covars)
-  fml_f <- as.formula(paste0("y ~ Z + W_hat", cs))
+  d_f <- .bind_covars(data.frame(y = resp, X = X, W_hat = W_hat), covars)
+  fml_f <- as.formula(paste0("y ~ X + W_hat", cs))
 
   fit <- if (effect_scale == "loghr") {
     tryCatch(survival::coxph(fml_f, data = d_f), error = function(e) NULL)
@@ -353,7 +353,7 @@ fit_pgc_surv <- function(time, event, Z, g, W, covars = NULL,
   }
   if (is.null(fit)) return(NA_result)
 
-  ex <- .extract_surv_coef(fit, "Z")
+  ex <- .extract_surv_coef(fit, "X")
   if (is.null(ex)) return(NA_result)
   list(beta = ex$b, se = ex$se, pvalue = ex$p)
 }
@@ -364,8 +364,8 @@ fit_pgc_surv <- function(time, event, Z, g, W, covars = NULL,
 #' COCA survival estimator: NOT supported (returns NA)
 #'
 #' COCA (Correlated Outcome Control Approach) regresses the negative
-#' control W on the outcome Y (\code{W ~ y + Z}) and recovers the causal
-#' effect as a ratio \eqn{-\hat\beta_Z / \hat\beta_Y}. This places the
+#' control W on the outcome Y (\code{W ~ y + X}) and recovers the causal
+#' effect as a ratio \eqn{-\hat\beta_X / \hat\beta_Y}. This places the
 #' outcome on the right-hand side of the regression, which is
 #' structurally impossible when the outcome is a \code{survival::Surv}
 #' object (time-to-event). COCA is therefore unsupported for survival
@@ -373,7 +373,7 @@ fit_pgc_surv <- function(time, event, Z, g, W, covars = NULL,
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param w Numeric NC vector (length n).
 #' @param covars Optional data frame of covariates (n rows).
 #' @param ... Ignored (accepted for signature compatibility).
@@ -386,13 +386,13 @@ fit_pgc_surv <- function(time, event, Z, g, W, covars = NULL,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-#' fit_coca_surv(dat$surv_time, dat$surv_event, dat$Z, dat$W[, 1])
+#' fit_coca_surv(dat$surv_time, dat$surv_event, dat$X, dat$W[, 1])
 #' # $beta [1] NA (COCA unsupported for survival outcomes)
 #' }
-fit_coca_surv <- function(time, event, Z, w, covars = NULL, ...) {
+fit_coca_surv <- function(time, event, X, w, covars = NULL, ...) {
   out <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
   attr(out, "reason") <- paste(
-    "COCA regresses W on Y (W ~ y + Z), placing the outcome on the RHS,",
+    "COCA regresses W on Y (W ~ y + X), placing the outcome on the RHS,",
     "which is impossible with a Surv object. COCA is unsupported for",
     "survival outcomes."
   )

@@ -21,6 +21,7 @@ iconic_data(
   surv_time = NULL,
   surv_event = NULL,
   scale = TRUE,
+  recycle_lone_panel = FALSE,
   Z = NULL
 )
 }
@@ -88,6 +89,19 @@ observed, 0 = censored). Required when
 G, Gm, W, W1, W2, and numeric covariates) to mean 0 / sd 1. Default
 \code{TRUE}. Scaling parameters are recorded in \code{$scaling} for
 back-transformation. Set \code{FALSE} to preserve the original scale.}
+
+\item{recycle_lone_panel}{Logical: when exactly one of \code{W1} /
+\code{W2} is supplied (no pooled \code{W}), use that lone panel as BOTH
+path-specific bridges (\code{W1 = W2}), making the two-bridge estimators
+PGC2 / PGC2Gm eligible. Default \code{FALSE}: a lone panel is retained
+for IV2SLS2's path-specific augmentation and used to derive the pooled
+\code{W} (so DIRECT / COCA / PGC and the NC validity screens run), but
+\code{has_path_nc} stays \code{FALSE} and PGC2 / PGC2Gm remain
+ineligible. Set to \code{TRUE} only when the single panel is assumed
+complete for BOTH path confounder composites (the shared-panel special
+case); IV2SLS2 is the more defensible primary estimator when coverage of
+the other path's composite is in doubt. A warning is emitted when the
+recycle is activated.}
 
 \item{Z}{Defunct. Renamed to \code{X} in v0.9.8; passing a value errors
 with a message pointing to \code{X}. Retained in the signature only to

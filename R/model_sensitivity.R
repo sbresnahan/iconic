@@ -154,6 +154,16 @@
 #' (fixed defaults), \code{"inferred"} (data-calibrated via
 #' \code{\link{infer_confounding}()}), or \code{"manual"} (use
 #' explicitly supplied arguments). Default \code{"default"}.
+#' Alternatively, supply a precomputed \code{iconic_confounding} object
+#' from a prior \code{\link{infer_confounding}()} call to reuse it as-is
+#' (equivalent to \code{"inferred"} but skips recomputation). When
+#' \code{"inferred"} runs internally, the gap-based calibration uses
+#' \code{\link{infer_confounding}()}'s documented random subset of
+#' mediators/features (\code{max_infer_tasks}), not the full panel.
+#' Inferred scalars only fill in \code{mo_confounding} / \code{omega_1} /
+#' \code{omega_2} when those arguments are left at their defaults;
+#' explicitly supplied values (e.g. an omega sweep) always take
+#' precedence.
 #' @param gan_epochs Epochs for auto-trained GAN. Default 100.
 #' @param rho_G1_grid Values of rho_G1 (G correlation with conf_XM).
 #' Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.
@@ -254,7 +264,23 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     stop("iconic_sensitivity requires mediation data (supply M). ",
          "Use gan_sensitivity() for total-effect-only sensitivity.")
 
-  confounding <- match.arg(confounding)
+  # Capture which calibration arguments the user left at their defaults
+  # BEFORE any reassignment: inferred values may fill in defaults, but
+  # user-supplied vectors (e.g. an omega sweep) always take precedence.
+  omega_1_default <- missing(omega_1)
+  omega_2_default <- missing(omega_2)
+  mo_confounding_default <- missing(mo_confounding)
+
+  # `confounding` accepts a precomputed iconic_confounding object (from a
+  # prior infer_confounding() call) in addition to the character modes;
+  # supplying one reuses it as-is and skips any recomputation.
+  precomputed_conf <- NULL
+  if (inherits(confounding, "iconic_confounding")) {
+    precomputed_conf <- confounding
+    confounding <- "inferred"
+  } else {
+    confounding <- match.arg(confounding)
+  }
   effect_scale <- match.arg(effect_scale)
 
   # resolve outcome_type — inherit from data if not explicitly set.
@@ -271,16 +297,26 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
   # ── Resolve confounding parameters ──
   inferred_conf <- NULL
   if (confounding == "inferred") {
-    # Need estimates for the gap-based inference
-    est_for_inf <- iconic_estimate(data, diagnosis = diagnosis)
-    inferred_conf <- infer_confounding(data, diagnosis = diagnosis,
-                                       estimate = est_for_inf)
-    # Use inferred values where available; fall back to defaults otherwise
-    if (inferred_conf$mo_confounding$available)
+    if (!is.null(precomputed_conf)) {
+      # Reuse a caller-supplied infer_confounding() result as-is.
+      inferred_conf <- precomputed_conf
+    } else {
+      # estimate = NULL lets infer_confounding() use its documented random
+      # subset (max_infer_tasks mediators/features) for the gap-based
+      # calibration -- an unbiased Monte Carlo estimate at a fraction of the
+      # cost of running iconic_estimate() on the full mediator panel.
+      inferred_conf <- infer_confounding(data, diagnosis = diagnosis,
+                                         estimate = NULL,
+                                         n_cores = n_cores)
+    }
+    # Use inferred values where available, but ONLY to fill in arguments the
+    # user left at their defaults; explicit user-supplied values (e.g. an
+    # omega sweep) always take precedence over the inferred scalars.
+    if (mo_confounding_default && inferred_conf$mo_confounding$available)
       mo_confounding <- inferred_conf$mo_confounding$estimate
-    if (inferred_conf$omega_1$available)
+    if (omega_1_default && inferred_conf$omega_1$available)
       omega_1 <- inferred_conf$omega_1$estimate
-    if (inferred_conf$omega_2$available)
+    if (omega_2_default && inferred_conf$omega_2$available)
       omega_2 <- inferred_conf$omega_2$estimate
   }
   # "default" and "manual" use the explicitly supplied arguments as before

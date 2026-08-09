@@ -159,4 +159,10 @@ test_that("iconic_data retains a lone W2 panel for IV2SLS2", {
   expect_false(is.null(id_w2$W2))
   expect_true(is.null(id_w2$W1))
   expect_false(id_w2$has_path_nc)
+  # v0.9.9.1: the lone panel also derives the pooled W so the single-panel
+  # estimators (DIRECT/COCA/PGC) and the NC validity screens can run.
+  expect_true(id_w2$has_nc)
+  expect_false(is.null(id_w2$W))
+  expect_equal(id_w2$W, id_w2$W2)
+  expect_false(isTRUE(id_w2$recycled_lone_panel))
 })

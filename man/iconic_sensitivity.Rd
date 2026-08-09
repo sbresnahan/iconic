@@ -47,7 +47,17 @@ model is auto-trained from \code{data}.}
 \item{confounding}{Confounding parameter source: \code{"default"}
 (fixed defaults), \code{"inferred"} (data-calibrated via
 \code{\link{infer_confounding}()}), or \code{"manual"} (use
-explicitly supplied arguments). Default \code{"default"}.}
+explicitly supplied arguments). Default \code{"default"}.
+Alternatively, supply a precomputed \code{iconic_confounding} object
+from a prior \code{\link{infer_confounding}()} call to reuse it as-is
+(equivalent to \code{"inferred"} but skips recomputation). When
+\code{"inferred"} runs internally, the gap-based calibration uses
+\code{\link{infer_confounding}()}'s documented random subset of
+mediators/features (\code{max_infer_tasks}), not the full panel.
+Inferred scalars only fill in \code{mo_confounding} / \code{omega_1} /
+\code{omega_2} when those arguments are left at their defaults;
+explicitly supplied values (e.g. an omega sweep) always take
+precedence.}
 
 \item{gan_epochs}{Epochs for auto-trained GAN. Default 100.}
 

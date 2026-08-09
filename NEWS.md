@@ -1,3 +1,54 @@
+# iconic 0.9.9.1
+
+## Bug fixes
+
+- **Lone path-specific NC panel now derives the pooled `W`.** Supplying only
+  `W2` (or only `W1`) without a pooled `W` previously left `W` unset and
+  `has_nc = FALSE`, so the single-panel estimators (DIRECT, COCA, PGC) were
+  incorrectly ineligible and the NC validity / completeness screens were
+  skipped entirely. `iconic_data()` now derives `W` from the lone panel
+  (mirroring the existing `W1 + W2 -> W` derivation), so DIRECT / COCA / PGC
+  become eligible and the NC screens run. This applies to both continuous
+  and survival outcomes. `has_path_nc` still correctly remains `FALSE`, so
+  the two-bridge estimators (PGC2, PGC2Gm) stay gated unless the user opts
+  in (below).
+
+- **`iconic_sensitivity(confounding = "inferred")` no longer runs the full
+  mediator panel.** It previously called `iconic_estimate()` on every
+  mediator and passed the result to `infer_confounding()`, bypassing the
+  documented random-subset behaviour. It now lets `infer_confounding()` use
+  its `max_infer_tasks` random subset (default 50 mediators/features) for
+  the gap-based calibration — an unbiased Monte Carlo estimate at a fraction
+  of the cost.
+
+- **User-supplied `omega_1` / `omega_2` sweeps take precedence over inferred
+  values.** Under `confounding = "inferred"`, the inferred scalar omegas
+  previously overwrote user-supplied sweep vectors, collapsing the omega
+  facet of the degradation surface to a single point. Inferred values now
+  only fill in `omega_1` / `omega_2` / `mo_confounding` when those arguments
+  are left at their defaults; explicit values always win. Same fix applied
+  to `iconic_prospect()`.
+
+## New features
+
+- **`recycle_lone_panel` argument to `iconic_data()`.** When exactly one of
+  `W1` / `W2` is supplied (no pooled `W`), setting
+  `recycle_lone_panel = TRUE` uses that lone panel as BOTH path-specific
+  bridges (`W1 = W2`), making PGC2 / PGC2Gm eligible. This is the
+  shared-panel special case and assumes the single panel is complete for
+  BOTH path confounder composites; a warning is emitted, the
+  `recycled_lone_panel` flag is recorded on the object, and the
+  `iconic_diagnose()` eligibility table annotates PGC2 / PGC2Gm with
+  "(shared recycled panel)". Default `FALSE` keeps the previous gating
+  (IV2SLS2 remains the more defensible primary estimator when coverage of
+  the other path's composite is in doubt).
+
+- **`iconic_sensitivity()` accepts a precomputed `iconic_confounding`
+  object.** Passing the result of a prior `infer_confounding()` call as the
+  `confounding` argument reuses it as-is (equivalent to `"inferred"`) and
+  skips recomputation, avoiding redundant work when `infer_confounding()`
+  was already run separately.
+
 # iconic 0.9.9
 
 ## Breaking changes

@@ -193,6 +193,13 @@ iconic_prospect <- function(data,
   if (outcome_type == "continuous" && data$outcome_type == "survival")
     outcome_type <- "survival"
 
+  # Capture which calibration arguments the user left at their defaults
+  # BEFORE any reassignment: inferred values may fill in defaults, but
+  # user-supplied vectors (e.g. an omega sweep) always take precedence.
+  omega_1_default <- missing(omega_1)
+  omega_2_default <- missing(omega_2)
+  mo_confounding_default <- missing(mo_confounding)
+
   # explicit control over proceed-without-proxy behavior.
   # iconic_prospect is designed for the no-IV/no-NC case, so the default
   # (TRUE) is to proceed. allow_no_proxy = FALSE makes the user acknowledge
@@ -224,11 +231,14 @@ iconic_prospect <- function(data,
   if (confounding == "inferred") {
     inferred_conf <- infer_confounding(data, diagnosis = NULL,
                                        estimate = NULL)
-    if (inferred_conf$mo_confounding$available)
+    # Use inferred values where available, but ONLY to fill in arguments the
+    # user left at their defaults; explicit user-supplied values (e.g. an
+    # omega sweep) always take precedence over the inferred scalars.
+    if (mo_confounding_default && inferred_conf$mo_confounding$available)
       mo_confounding <- inferred_conf$mo_confounding$estimate
-    if (inferred_conf$omega_1$available)
+    if (omega_1_default && inferred_conf$omega_1$available)
       omega_1 <- inferred_conf$omega_1$estimate
-    if (inferred_conf$omega_2$available)
+    if (omega_2_default && inferred_conf$omega_2$available)
       omega_2 <- inferred_conf$omega_2$estimate
   }
 

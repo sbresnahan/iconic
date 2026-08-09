@@ -597,10 +597,16 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = NULL,
   reasons[6] <- if (eligible[6]) sprintf("G + Gm present%s, %s, %s", if (has_W) " (W augmentation)" else "", fmt_F_G(), fmt_F_Gm()) else
     if (!is_med) "requires mediation data (supply M)" else
     sprintf("requires G + Gm + F_G>=%s + F_Gm>=%s (%s, %s)", min_f, min_f, fmt_F_G(), fmt_F_Gm())
-  reasons[7] <- if (eligible[7]) sprintf("G + W1/W2 present, %s, completeness %s", fmt_F_G(), comp_status) else
+  # When PGC2/PGC2Gm are eligible only because a lone panel was recycled to
+  # both paths (recycle_lone_panel = TRUE in iconic_data), say so honestly:
+  # the two bridges then share one panel, which assumes that panel is
+  # complete for BOTH path confounder composites.
+  recycled_note <- if (isTRUE(data$recycled_lone_panel))
+    " (shared recycled panel)" else ""
+  reasons[7] <- if (eligible[7]) sprintf("G + W1/W2 present%s, %s, completeness %s", recycled_note, fmt_F_G(), comp_status) else
     if (!is_med) "requires mediation data (supply M)" else
     sprintf("requires G + W1/W2 + F_G>=%s + completeness (have W1/W2=%s, completeness: %s)", min_f, has_W1W2, comp_status)
-  reasons[8] <- if (eligible[8]) sprintf("G + Gm + W1/W2 present, %s, %s, completeness %s", fmt_F_G(), fmt_F_Gm(), comp_status) else
+  reasons[8] <- if (eligible[8]) sprintf("G + Gm + W1/W2 present%s, %s, %s, completeness %s", recycled_note, fmt_F_G(), fmt_F_Gm(), comp_status) else
     if (!is_med) "requires mediation data (supply M)" else
     sprintf("requires G + Gm + W1/W2 + F_G>=%s + F_Gm>=%s + completeness (have Gm=%s, W1/W2=%s, completeness: %s)", min_f, min_f, has_Gm, has_W1W2, comp_status)
 

@@ -58,6 +58,18 @@
 #' G, Gm, W, W1, W2, and numeric covariates) to mean 0 / sd 1. Default
 #' \code{TRUE}. Scaling parameters are recorded in \code{$scaling} for
 #' back-transformation. Set \code{FALSE} to preserve the original scale.
+#' @param recycle_lone_panel Logical: when exactly one of \code{W1} /
+#' \code{W2} is supplied (no pooled \code{W}), use that lone panel as BOTH
+#' path-specific bridges (\code{W1 = W2}), making the two-bridge estimators
+#' PGC2 / PGC2Gm eligible. Default \code{FALSE}: a lone panel is retained
+#' for IV2SLS2's path-specific augmentation and used to derive the pooled
+#' \code{W} (so DIRECT / COCA / PGC and the NC validity screens run), but
+#' \code{has_path_nc} stays \code{FALSE} and PGC2 / PGC2Gm remain
+#' ineligible. Set to \code{TRUE} only when the single panel is assumed
+#' complete for BOTH path confounder composites (the shared-panel special
+#' case); IV2SLS2 is the more defensible primary estimator when coverage of
+#' the other path's composite is in doubt. A warning is emitted when the
+#' recycle is activated.
 #' @param outcome_type Character: \code{"continuous"} (default,
 #' backward-compatible) or \code{"survival"}. When \code{"survival"},
 #' \code{Y} is not required; instead supply \code{surv_time} and
@@ -108,6 +120,7 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
                         outcome_type = c("continuous", "survival"),
                         surv_time = NULL, surv_event = NULL,
                         scale = TRUE,
+                        recycle_lone_panel = FALSE,
                         Z = NULL) {
   outcome_type <- match.arg(outcome_type)
 
@@ -274,6 +287,7 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
   # PGC2 / PGC2Gm, which need W1 AND W2. A lone W1 or W2 panel is still
   # retained (below) so that IV2SLS2 can use it for path-specific
   # augmentation of the corresponding stage(s).
+  recycled_lone_panel <- FALSE
   has_path_nc <- !is.null(W1) && !is.null(W2)
   if (!has_path_nc && has_nc) {
     # Backward-compatible: single-panel NCs used for both paths
@@ -311,9 +325,7 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     }
   } else if (!is.null(W1) || !is.null(W2)) {
     # Lone-panel case (exactly one of W1 / W2 supplied, no pooled W):
-    # retain the supplied panel for IV2SLS2's path-specific augmentation,
-    # but keep has_path_nc = FALSE so the two-bridge estimators
-    # (PGC2 / PGC2Gm) stay ineligible.
+    # retain the supplied panel for IV2SLS2's path-specific augmentation.
     if (!is.null(W1)) {
       W1 <- as.matrix(W1)
       if (nrow(W1) == n) W1 <- t(W1)
@@ -333,6 +345,39 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
         W2 <- sw2$x
         scaling$W2 <- list(center = sw2$center, scale = sw2$scale)
       }
+    }
+    # Derive the pooled single panel from the lone path-specific panel so
+    # the single-panel estimators (DIRECT, COCA, PGC) and the NC validity /
+    # completeness screens have a W matrix to work with. This mirrors the
+    # W1+W2 branch above, which derives W <- (W1 + W2) / 2.
+    if (!has_nc) {
+      W <- if (!is.null(W2)) W2 else W1
+      has_nc <- TRUE
+      scaling$W <- if (!is.null(W2)) scaling$W2 else scaling$W1
+    }
+    # Opt-in recycle: use the lone panel as BOTH path-specific bridges so
+    # the two-bridge estimators (PGC2 / PGC2Gm) become eligible. This is the
+    # "shared panel" special case (W1 = W2); it assumes the single panel is
+    # complete for BOTH path confounder composites. Off by default because
+    # IV2SLS2 is the more defensible primary estimator when coverage of the
+    # other path's composite is in doubt.
+    if (isTRUE(recycle_lone_panel) && !has_path_nc) {
+      lone_label <- if (is.null(W1)) "W2" else "W1"
+      if (is.null(W1)) {
+        W1 <- W2
+        scaling$W1 <- scaling$W2
+      } else {
+        W2 <- W1
+        scaling$W2 <- scaling$W1
+      }
+      has_path_nc <- TRUE
+      recycled_lone_panel <- TRUE
+      warning("recycle_lone_panel = TRUE: using the lone ", lone_label,
+              " panel as both the X->M (W1) and M->Y (W2) bridge. ",
+              "PGC2/PGC2Gm then assume one panel is complete for BOTH path ",
+              "confounder composites; IV2SLS2 is more defensible when ",
+              "coverage of the X->M composite is in doubt.",
+              call. = FALSE)
     }
   } else {
     W1 <- NULL
@@ -386,6 +431,7 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     has_mediator_instrument = has_mediator_instrument,
     has_nc = has_nc,
     has_path_nc = has_path_nc,
+    recycled_lone_panel = recycled_lone_panel,
     is_mediation = is_mediation,
     feature_names = feature_names,
     mediator_names = mediator_names,
@@ -507,7 +553,9 @@ print.iconic_data <- function(x, ...) {
   if (x$has_instrument) present <- c(present, "G (exposure instrument)")
   if (x$has_mediator_instrument) present <- c(present, "Gm (mediator instrument)")
   if (x$has_nc) present <- c(present, "W (negative controls)")
-  if (x$has_path_nc &&
+  if (isTRUE(x$recycled_lone_panel)) {
+    present <- c(present, "W1/W2 (lone panel recycled to both paths)")
+  } else if (x$has_path_nc &&
       !is.null(x$W1) && !identical(x$W1, x$W)) {
     present <- c(present, "W1/W2 (path-specific NCs)")
   } else if (!x$has_path_nc && (!is.null(x$W1) || !is.null(x$W2))) {

@@ -13,15 +13,18 @@ DIRECT: requires G + W
 COCA: requires W, A1 passed (at least some valid NCs); A2 NOT required
 IV2SLS: requires G, F_G >= min_f (W optional proximal augmentation)
 PGC: requires G, F_G >= min_f, completeness satisfied
-IV2SLS2: requires G + Gm, F_G >= min_f, F_Gm >= min_f (W optional proximal augmentation)
+IV2SLS2: requires G + Gm, F_G >= min_f, F_Gm >= min_f (optional path-specific NC augmentation via W1/W2)
 PGC2: requires G + W1 + W2, F_G >= min_f, path completeness
 PGC2Gm: requires G + Gm + W1 + W2, F_G >= min_f, path completeness
 }
 \details{
 The IV estimators (IV2SLS, IV2SLS2) are identified by the instrument(s)
-alone, following classic 2SLS; when a negative-control panel W is present it
+alone, following classic 2SLS; when a negative-control panel is present it
 is included as a proximal augmentation (adjustment covariate) to improve
-confounding control, but W is not required for eligibility. The proximal
+confounding control, but it is not required for eligibility. IV2SLS uses a
+single pooled W; IV2SLS2 uses optional path-specific panels (W1 in stage 1,
+W2 in stages 2-3) and falls back to plain 2-stage MR when they are absent
+or identical. The proximal
 bridge estimators (PGC, PGC2, PGC2Gm) and COCA/DIRECT retain their W
 requirement because the bridge/ratio is identified through W.
 

@@ -630,16 +630,40 @@ fit_iv2sls_mediation <- function(y, X, M, g, w, covars = NULL, min_f = 10) {
 #' instruments the exposure (X). The mediator set must be restricted to
 #' isoforms for which eQTLs have been identified.
 #'
-#' Strategy (sequential 2SLS, three OLS stages):
+#' Strategy (sequential 2SLS, three OLS stages), with optional
+#' \strong{path-specific} negative-control (NC) augmentation:
 #' \enumerate{
-#' \item \code{X ~ G + W + covars} -> X_hat (purge U1 from X).
+#' \item \code{X ~ G (+ W1) + covars} -> X_hat (purge U1 from X).
 #' Weak-IV check: partial F for G >= \code{min_f}.
-#' \item \code{M ~ X_hat + Gm + W + covars} -> M_hat, alpha_M = coef on X_hat.
+#' \item \code{M ~ X_hat + Gm (+ W2) + covars} -> M_hat, alpha_M = coef on X_hat.
 #' Weak-IV check: partial F for Gm >= \code{min_f}.
-#' \item \code{Y ~ X_hat + M_hat + W + covars} -> NDE = beta_X_hat, beta_M = coef on M_hat.
+#' \item \code{Y ~ X_hat + M_hat (+ W2) + covars} -> NDE = beta_X_hat, beta_M = coef on M_hat.
 #' }
 #'
 #' NIE = alpha_M * beta_M (delta-method SE).
+#'
+#' \strong{Path-specific NC augmentation (optional).} \code{W1} proxies the
+#' exposure-mediator confounder (U1, the X->M path) and is added to stage 1
+#' only; \code{W2} proxies the mediator-outcome confounder (U2, the M->Y
+#' path) and is added to stages 2 and 3. Either panel may be omitted: with
+#' \code{W1 = NULL} stage 1 is unaugmented, with \code{W2 = NULL} stages 2–3
+#' are unaugmented, and with both \code{NULL} the estimator reduces to plain
+#' two-instrument 2-stage MR. Conditioning on a \emph{pooled} panel
+#' \code{(W1 + W2) / 2} in all three stages is a collider under
+#' multi-confounder designs (the pooled panel is a common child of the
+#' independent confounders U1 and U2) and is therefore not supported: if
+#' \code{W1} and \code{W2} are identical they are treated as absent (pure
+#' MR). Pass the two path-specific panels separately to obtain the
+#' coverage-improves-accuracy behaviour.
+#'
+#' Path-specific augmentation is only defined when \code{W1} and \code{W2}
+#' proxy \emph{distinct} confounders. When the two panels are distinct-noise
+#' proxies of the \emph{same} latent composite (the single-confounder /
+#' shared-loading design), their column spaces are near-collinear and
+#' stage-1 \code{W1} would inject the shared M->Y confounder into
+#' \code{X_hat}. The estimator detects this (leading-PC correlation between
+#' the panels) and falls back to plain two-instrument 2-stage MR, exactly as
+#' for an identical pooled panel. Genuinely distinct panels are unaffected.
 #'
 #' Including X_hat in the M first-stage (stage 2) is essential: M
 #' structurally depends on X, so the X -> M path must be captured for
@@ -654,17 +678,26 @@ fit_iv2sls_mediation <- function(y, X, M, g, w, covars = NULL, min_f = 10) {
 #' estimators; the simulation benchmarks bias, not SE accuracy. A unit
 #' test cross-validates this estimator's NDE and beta_M against
 #' \code{AER::ivreg} on the just-identified system
-#' (\code{Y ~ X + M + W | G + Gm + W}).
+#' (\code{Y ~ X + M | G + Gm}, pure-MR form).
 #'
 #' @param y Numeric outcome vector (length n).
 #' @param X Numeric exposure vector (length n).
 #' @param M Numeric mediator vector (length n).
 #' @param g Numeric instrument for X (length n).
 #' @param gm Numeric instrument for M (length n).
-#' @param w Numeric negative-control vector (length n).
 #' @param covars Optional data frame of additional covariates (n rows).
 #' @param min_f Minimum acceptable partial F-statistic for each excluded
 #' instrument. Default 10.
+#' @param W1 Optional negative-control panel (vector length n or matrix
+#' n x q) proxying the exposure-mediator confounder (X->M path); added to
+#' stage 1 only. Default \code{NULL} (stage 1 unaugmented).
+#' @param W2 Optional negative-control panel (vector length n or matrix
+#' n x q) proxying the mediator-outcome confounder (M->Y path); added to
+#' stages 2 and 3. Default \code{NULL} (stages 2–3 unaugmented).
+#' @param w Defunct. The pooled single-panel argument was removed in
+#' v0.9.9 because conditioning on a pooled panel in all three stages opens
+#' a collider path under multi-confounder designs. Use \code{W1} and/or
+#' \code{W2} instead.
 #'
 #' @return Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
 #' \code{NIE}, \code{NIE_se}, \code{NIE_p}. Returns all-\code{NA} if
@@ -679,36 +712,70 @@ fit_iv2sls_mediation <- function(y, X, M, g, w, covars = NULL, min_f = 10) {
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
-#' phi = 0.8, seed = 1)
+#' phi = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
+#' omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 #' fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$Gm,
-#' dat$W[, 1])
+#' W1 = dat$W1, W2 = dat$W2)
 #' }
-fit_iv2sls_mediation2 <- function(y, X, M, g, gm, w, covars = NULL, min_f = 10) {
+fit_iv2sls_mediation2 <- function(y, X, M, g, gm, covars = NULL, min_f = 10,
+                                  W1 = NULL, W2 = NULL, w = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
                  alpha_M = NA_real_, alpha_se = NA_real_, beta_M = NA_real_, beta_M_se = NA_real_)
+
+  # Defunct-argument trap: the pooled single-panel `w` was removed in v0.9.9.
+  # Conditioning on a pooled panel in all three stages opens a collider path
+  # under multi-confounder designs; use path-specific W1 / W2 instead.
+  if (!is.null(w))
+    stop("argument `w` was removed in v0.9.9. IV2SLS2 now takes optional ",
+         "path-specific negative-control panels `W1` (stage 1, X->M path) ",
+         "and `W2` (stages 2-3, M->Y path); a pooled panel conditioned on in ",
+         "all three stages is a collider under multi-confounder designs. ",
+         "Use `W1 = ...` and/or `W2 = ...`, or omit both for plain 2-stage MR.",
+         call. = FALSE)
+
+  # Pooled guard: identical W1 and W2 panels are a pooled panel in disguise
+  # (a common child of the two confounders). Treat both as absent -> pure MR.
+  if (!is.null(W1) && !is.null(W2) && identical(W1, W2)) {
+    W1 <- NULL
+    W2 <- NULL
+  }
+
+  # Shared-composite guard (k=1 fallback): when W1 and W2 are distinct-noise
+  # panels of the SAME latent confounder composite (the single-confounder /
+  # shared-loading design), their column spaces are nearly collinear. There is
+  # then only ONE confounder; path-specific augmentation is undefined and
+  # stage-1 W1 would inject the shared M->Y confounder into X_hat. Fall back to
+  # plain 2-stage MR (drop both panels), exactly as for an identical pooled
+  # panel. Distinct-composite designs (W1 _|_ W2) are unaffected.
+  if (!is.null(W1) && !is.null(W2) && .w_panels_collinear(W1, W2)) {
+    W1 <- NULL
+    W2 <- NULL
+  }
+
   cnames <- if (!is.null(covars)) names(covars) else character(0)
   cs <- .covar_str(cnames)
-  we <- .expand_w(w)
+  we1 <- .expand_w(W1)   # stage 1 panel (X->M path)
+  we2 <- .expand_w(W2)   # stages 2-3 panel (M->Y path)
 
-  # ── Stage 1: X ~ G (+ W) + covars -> X_hat (purge U1 from X) ──
+  # ── Stage 1: X ~ G (+ W1) + covars -> X_hat (purge U1 from X) ──
   d_fs <- data.frame(X = X, g = g)
-  d_fs <- .bind_covars(d_fs, we$df)
+  d_fs <- .bind_covars(d_fs, we1$df)
   d_fs <- .bind_covars(d_fs, covars)
-  fs <- tryCatch(lm(as.formula(paste0("X ~ g", .plus_frag(we$frag), cs)), data = d_fs),
+  fs <- tryCatch(lm(as.formula(paste0("X ~ g", .plus_frag(we1$frag), cs)), data = d_fs),
                  error = function(e) NULL)
   if (is.null(fs)) return(NA_res)
   Fst_g <- .partial_F(fs, "g")
   if (is.na(Fst_g) || Fst_g < min_f) return(NA_res)
   X_hat <- fitted(fs)
 
-  # ── Stage 2: M ~ X_hat + Gm (+ W) + covars -> M_hat, alpha_M ──
+  # ── Stage 2: M ~ X_hat + Gm (+ W2) + covars -> M_hat, alpha_M ──
   # X_hat captures the X -> M path; Gm provides exogenous variation
   # that identifies M net of U1 confounding.
   d_ms <- data.frame(M = M, X_hat = X_hat, gm = gm)
-  d_ms <- .bind_covars(d_ms, we$df)
+  d_ms <- .bind_covars(d_ms, we2$df)
   d_ms <- .bind_covars(d_ms, covars)
-  ms <- tryCatch(lm(as.formula(paste0("M ~ X_hat + gm", .plus_frag(we$frag), cs)), data = d_ms),
+  ms <- tryCatch(lm(as.formula(paste0("M ~ X_hat + gm", .plus_frag(we2$frag), cs)), data = d_ms),
                  error = function(e) NULL)
   if (is.null(ms)) return(NA_res)
   Fst_gm <- .partial_F(ms, "gm")
@@ -720,11 +787,11 @@ fit_iv2sls_mediation2 <- function(y, X, M, g, gm, w, covars = NULL, min_f = 10) 
   alpha_se <- as.numeric(s_ms["X_hat", 2])
   M_hat <- fitted(ms)
 
-  # ── Stage 3: Y ~ X_hat + M_hat (+ W) + covars -> NDE, beta_M ──
+  # ── Stage 3: Y ~ X_hat + M_hat (+ W2) + covars -> NDE, beta_M ──
   d_os <- data.frame(y = y, X_hat = X_hat, M_hat = M_hat)
-  d_os <- .bind_covars(d_os, we$df)
+  d_os <- .bind_covars(d_os, we2$df)
   d_os <- .bind_covars(d_os, covars)
-  os <- tryCatch(lm(as.formula(paste0("y ~ X_hat + M_hat", .plus_frag(we$frag), cs)), data = d_os),
+  os <- tryCatch(lm(as.formula(paste0("y ~ X_hat + M_hat", .plus_frag(we2$frag), cs)), data = d_os),
                  error = function(e) NULL)
   if (is.null(os)) return(NA_res)
   s_os <- summary(os)$coefficients
@@ -1340,12 +1407,14 @@ fit_pgc_scalar_mediation <- function(y, X, M, g, w, covars = NULL) {
   }
   if ("IV2SLS2" %in% can_run) {
     rows[["IV2SLS2"]] <- .with_se("IV2SLS2",
-      fit_iv2sls_mediation2(y_f, X_f, M_f, g_f, gm_f, w_f, cv_f, min_f = min_f),
+      fit_iv2sls_mediation2(y_f, X_f, M_f, g_f, gm_f, covars = cv_f,
+                            min_f = min_f, W1 = W1_f, W2 = W2_f),
       function(idx) fit_iv2sls_mediation2(y_f[idx], X_f[idx], M_f[idx],
                                           g_f[idx], gm_f[idx],
-                                          w_f[idx, , drop = FALSE],
-                                          cv_f[idx, , drop = FALSE],
-                                          min_f = min_f))
+                                          covars = cv_f[idx, , drop = FALSE],
+                                          min_f = min_f,
+                                          W1 = if (is.null(W1_f)) NULL else W1_f[idx, , drop = FALSE],
+                                          W2 = if (is.null(W2_f)) NULL else W2_f[idx, , drop = FALSE]))
   }
   if ("PGC2" %in% can_run) {
     rows[["PGC2"]] <- .with_se("PGC2",

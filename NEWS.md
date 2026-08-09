@@ -1,3 +1,43 @@
+# iconic 0.9.9
+
+## Breaking changes
+
+- **IV2SLS2 negative-control augmentation is now path-specific (collider
+  fix).** `fit_iv2sls_mediation2()` and `fit_iv2sls_mediation2_surv()` no
+  longer take a single pooled negative-control panel `w`. The pooled panel
+  `scale((W1 + W2) / 2)` is a common child of the two independent
+  confounders (conf_XM and conf_MY) under multi-confounder designs, so
+  conditioning on it in all three 2SLS stages opened a collider path and
+  made the NDE bias *worse* as NC coverage increased. The estimators now
+  take optional path-specific panels:
+  - `W1` (proxies the exposure–mediator confounder, X->M path) is added to
+    stage 1 (`X ~ G + W1`) only;
+  - `W2` (proxies the mediator–outcome confounder, M->Y path) is added to
+    stages 2 and 3 (`M ~ X_hat + Gm + W2`, `Y ~ X_hat + M_hat + W2`).
+  Either panel may be omitted; with both `NULL` the estimator reduces to
+  plain two-instrument 2-stage MR. If `W1` and `W2` are identical they are
+  treated as absent (pure MR), because an identical panel is a pooled panel
+  in disguise. Passing the old `w` argument is a hard error redirecting to
+  `W1`/`W2`. With path-specific panels, higher NC coverage now *improves*
+  the NDE estimate.
+
+- **Shared-composite (single-confounder) fallback.** Path-specific
+  augmentation is only defined when `W1` and `W2` proxy *distinct*
+  confounders. When the two panels are distinct-noise proxies of the *same*
+  latent composite (the single-confounder / shared-loading design), their
+  column spaces are near-collinear; augmenting stage 1 with `W1` would then
+  inject the shared M->Y confounder into `X_hat` and bias the NDE. The
+  estimators detect this (leading-PC correlation between the panels) and
+  fall back to plain two-instrument 2-stage MR. Genuinely distinct panels
+  are unaffected.
+
+- **`iconic_data()` retains a lone path-specific panel.** Supplying only
+  `W2` (or only `W1`) without a pooled `W` previously dropped the panel
+  silently. A lone panel is now stored so IV2SLS2 can use it for
+  path-specific augmentation, while `has_path_nc` remains `FALSE` so the
+  two-bridge estimators (PGC2, PGC2Gm) — which require both panels — stay
+  ineligible.
+
 # iconic 0.9.8
 
 ## Breaking changes

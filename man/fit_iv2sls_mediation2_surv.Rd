@@ -11,9 +11,11 @@ fit_iv2sls_mediation2_surv(
   M,
   g,
   gm,
-  w,
   covars = NULL,
   min_f = 10,
+  W1 = NULL,
+  W2 = NULL,
+  w = NULL,
   effect_scale = c("loghr", "rmst"),
   tau = NULL
 )
@@ -31,11 +33,21 @@ fit_iv2sls_mediation2_surv(
 
 \item{gm}{Numeric instrument for M (length n).}
 
-\item{w}{Numeric NC vector (length n) or matrix (n x q).}
-
 \item{covars}{Optional data frame of covariates (n rows).}
 
 \item{min_f}{Minimum partial F for each excluded instrument. Default 10.}
+
+\item{W1}{Optional NC panel (vector length n or matrix n x q) proxying
+the exposure-mediator confounder (X->M path); added to stage 1 only.
+Default \code{NULL}.}
+
+\item{W2}{Optional NC panel (vector length n or matrix n x q) proxying
+the mediator-outcome confounder (M->Y path); added to stages 2 and 3.
+Default \code{NULL}.}
+
+\item{w}{Defunct. The pooled single-panel argument was removed in
+v0.9.9 (collider under multi-confounder designs). Use \code{W1} and/or
+\code{W2} instead.}
 
 \item{effect_scale}{Character: \code{"loghr"} or \code{"rmst"}.}
 
@@ -47,23 +59,38 @@ Returns all-NA if either first-stage partial F is below \code{min_f}.
 }
 \description{
 Two-stage Mendelian-randomization mediation with a survival outcome
-stage (2SPS):
+stage (2SPS), with optional \strong{path-specific} negative-control (NC)
+augmentation:
 \enumerate{
-\item OLS: \code{X ~ g + W + covars} -> X_hat (purge U1 from X).
-\item OLS: \code{M ~ X_hat + gm + W + covars} -> M_hat, alpha_M.
-\item Cox / RMST: \code{Surv(t,e) ~ X_hat + M_hat + W + covars} ->
+\item OLS: \code{X ~ g (+ W1) + covars} -> X_hat (purge U1 from X).
+\item OLS: \code{M ~ X_hat + gm (+ W2) + covars} -> M_hat, alpha_M.
+\item Cox / RMST: \code{Surv(t,e) ~ X_hat + M_hat (+ W2) + covars} ->
 NDE (coef on X_hat), beta_M (coef on M_hat).
 }
 \code{NIE = alpha_M * beta_M}. Weak-instrument gates (partial F for
 G and Gm) apply to the OLS first stages.
 }
+\details{
+\strong{Path-specific NC augmentation (optional).} \code{W1} proxies the
+exposure-mediator confounder (U1, X->M path) and is added to stage 1
+only; \code{W2} proxies the mediator-outcome confounder (U2, M->Y path)
+and is added to stages 2 and 3. Either panel may be omitted; with both
+\code{NULL} the estimator reduces to plain two-instrument 2-stage MR.
+Conditioning on a \emph{pooled} panel in all three stages is a collider
+under multi-confounder designs and is not supported: identical
+\code{W1}/\code{W2} are treated as absent (pure MR). When \code{W1} and
+\code{W2} are distinct-noise proxies of the \emph{same} latent composite
+(single-confounder design), their column spaces are near-collinear and
+the estimator likewise falls back to plain two-instrument 2-stage MR.
+}
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
-mo_confounding = 0.8, phi = 0.8, seed = 1)
+mo_confounding = 0.8, phi = 0.8, lambda_XM = c(1, 0),
+lambda_MY = c(0, 1), omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
-dat$G[, 1], dat$Gm, dat$W[, 1])
+dat$G[, 1], dat$Gm, W1 = dat$W1, W2 = dat$W2)
 }
 }
 \references{

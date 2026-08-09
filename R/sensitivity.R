@@ -46,7 +46,9 @@
       X = dat$X, outcome_type = "survival",
       surv_time = dat$surv_time, surv_event = dat$surv_event,
       M = dat$M, G = G_vec, Gm = Gm_vec,
-      W = t(dat$W))
+      W = t(dat$W),
+      W1 = if (!is.null(dat$W1)) t(dat$W1) else NULL,
+      W2 = if (!is.null(dat$W2)) t(dat$W2) else NULL)
   } else {
     sdat <- iconic_data(
       X = dat$X, outcome_type = "survival",

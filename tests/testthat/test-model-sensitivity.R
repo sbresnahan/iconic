@@ -156,7 +156,9 @@ test_that("iconic_sensitivity PGC2Gm robust at origin", {
   pgc2gm <- sens$surface[sens$surface$method == "PGC2Gm" &
                          sens$surface$rho_G1 == 0 &
                          sens$surface$rho_G2 == 0, ]
-  expect_lt(abs(pgc2gm$NDE_bias), 0.1)
+  # The origin is swept over the omega diagonal (one row per coverage), so
+  # NDE_bias is a vector; robustness must hold at every coverage level.
+  expect_lt(max(abs(pgc2gm$NDE_bias)), 0.1)
 })
 
 test_that("iconic_sensitivity IV2SLS2 robust at origin", {
@@ -170,7 +172,9 @@ test_that("iconic_sensitivity IV2SLS2 robust at origin", {
   iv2sls2 <- sens$surface[sens$surface$method == "IV2SLS2" &
                           sens$surface$rho_G1 == 0 &
                           sens$surface$rho_G2 == 0, ]
-  expect_lt(abs(iv2sls2$NDE_bias), 0.1)
+  # The origin is swept over the omega diagonal (one row per coverage), so
+  # NDE_bias is a vector; robustness must hold at every coverage level.
+  expect_lt(max(abs(iv2sls2$NDE_bias)), 0.1)
 })
 
 # ═══════════════════════════════════════════════════════════════

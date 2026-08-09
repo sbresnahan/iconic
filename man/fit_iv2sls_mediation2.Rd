@@ -4,7 +4,18 @@
 \alias{fit_iv2sls_mediation2}
 \title{IV2SLS2 mediation estimator: 2-stage MR with instruments for both X and M}
 \usage{
-fit_iv2sls_mediation2(y, X, M, g, gm, w, covars = NULL, min_f = 10)
+fit_iv2sls_mediation2(
+  y,
+  X,
+  M,
+  g,
+  gm,
+  covars = NULL,
+  min_f = 10,
+  W1 = NULL,
+  W2 = NULL,
+  w = NULL
+)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
@@ -17,12 +28,23 @@ fit_iv2sls_mediation2(y, X, M, g, gm, w, covars = NULL, min_f = 10)
 
 \item{gm}{Numeric instrument for M (length n).}
 
-\item{w}{Numeric negative-control vector (length n).}
-
 \item{covars}{Optional data frame of additional covariates (n rows).}
 
 \item{min_f}{Minimum acceptable partial F-statistic for each excluded
 instrument. Default 10.}
+
+\item{W1}{Optional negative-control panel (vector length n or matrix
+n x q) proxying the exposure-mediator confounder (X->M path); added to
+stage 1 only. Default \code{NULL} (stage 1 unaugmented).}
+
+\item{W2}{Optional negative-control panel (vector length n or matrix
+n x q) proxying the mediator-outcome confounder (M->Y path); added to
+stages 2 and 3. Default \code{NULL} (stages 2–3 unaugmented).}
+
+\item{w}{Defunct. The pooled single-panel argument was removed in
+v0.9.9 because conditioning on a pooled panel in all three stages opens
+a collider path under multi-confounder designs. Use \code{W1} and/or
+\code{W2} instead.}
 }
 \value{
 Named list: \code{NDE}, \code{NDE_se}, \code{NDE_p},
@@ -42,16 +64,40 @@ instrument placental isoform expression (M), while a PFAS-metabolism PRS
 instruments the exposure (X). The mediator set must be restricted to
 isoforms for which eQTLs have been identified.
 
-Strategy (sequential 2SLS, three OLS stages):
+Strategy (sequential 2SLS, three OLS stages), with optional
+\strong{path-specific} negative-control (NC) augmentation:
 \enumerate{
-\item \code{X ~ G + W + covars} -> X_hat (purge U1 from X).
+\item \code{X ~ G (+ W1) + covars} -> X_hat (purge U1 from X).
 Weak-IV check: partial F for G >= \code{min_f}.
-\item \code{M ~ X_hat + Gm + W + covars} -> M_hat, alpha_M = coef on X_hat.
+\item \code{M ~ X_hat + Gm (+ W2) + covars} -> M_hat, alpha_M = coef on X_hat.
 Weak-IV check: partial F for Gm >= \code{min_f}.
-\item \code{Y ~ X_hat + M_hat + W + covars} -> NDE = beta_X_hat, beta_M = coef on M_hat.
+\item \code{Y ~ X_hat + M_hat (+ W2) + covars} -> NDE = beta_X_hat, beta_M = coef on M_hat.
 }
 
 NIE = alpha_M * beta_M (delta-method SE).
+
+\strong{Path-specific NC augmentation (optional).} \code{W1} proxies the
+exposure-mediator confounder (U1, the X->M path) and is added to stage 1
+only; \code{W2} proxies the mediator-outcome confounder (U2, the M->Y
+path) and is added to stages 2 and 3. Either panel may be omitted: with
+\code{W1 = NULL} stage 1 is unaugmented, with \code{W2 = NULL} stages 2–3
+are unaugmented, and with both \code{NULL} the estimator reduces to plain
+two-instrument 2-stage MR. Conditioning on a \emph{pooled} panel
+\code{(W1 + W2) / 2} in all three stages is a collider under
+multi-confounder designs (the pooled panel is a common child of the
+independent confounders U1 and U2) and is therefore not supported: if
+\code{W1} and \code{W2} are identical they are treated as absent (pure
+MR). Pass the two path-specific panels separately to obtain the
+coverage-improves-accuracy behaviour.
+
+Path-specific augmentation is only defined when \code{W1} and \code{W2}
+proxy \emph{distinct} confounders. When the two panels are distinct-noise
+proxies of the \emph{same} latent composite (the single-confounder /
+shared-loading design), their column spaces are near-collinear and
+stage-1 \code{W1} would inject the shared M->Y confounder into
+\code{X_hat}. The estimator detects this (leading-PC correlation between
+the panels) and falls back to plain two-instrument 2-stage MR, exactly as
+for an identical pooled panel. Genuinely distinct panels are unaffected.
 
 Including X_hat in the M first-stage (stage 2) is essential: M
 structurally depends on X, so the X -> M path must be captured for
@@ -66,15 +112,16 @@ two-stage estimation of M_hat, consistent with the existing
 estimators; the simulation benchmarks bias, not SE accuracy. A unit
 test cross-validates this estimator's NDE and beta_M against
 \code{AER::ivreg} on the just-identified system
-(\code{Y ~ X + M + W | G + Gm + W}).
+(\code{Y ~ X + M | G + Gm}, pure-MR form).
 }
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
-phi = 0.8, seed = 1)
+phi = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
+omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$Gm,
-dat$W[, 1])
+W1 = dat$W1, W2 = dat$W2)
 }
 }
 \references{

@@ -186,7 +186,7 @@ test_that("fit_iv2sls_mediation_surv returns correct structure", {
 
 test_that("fit_iv2sls_mediation2_surv returns correct structure", {
   d <- .make_surv_data(n = 300, phi = 0.8)
-  r <- fit_iv2sls_mediation2_surv(d$time, d$event, d$X, d$M, d$G, d$Gm, t(d$W))
+  r <- fit_iv2sls_mediation2_surv(d$time, d$event, d$X, d$M, d$G, d$Gm)
   expect_true(all(c("NDE", "NIE", "alpha_M", "beta_M") %in% names(r)))
 })
 

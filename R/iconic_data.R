@@ -270,6 +270,10 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
   }
 
   ## --- W1, W2: path-specific NCs ---
+  # has_path_nc (both panels present) gates the two-bridge estimators
+  # PGC2 / PGC2Gm, which need W1 AND W2. A lone W1 or W2 panel is still
+  # retained (below) so that IV2SLS2 can use it for path-specific
+  # augmentation of the corresponding stage(s).
   has_path_nc <- !is.null(W1) && !is.null(W2)
   if (!has_path_nc && has_nc) {
     # Backward-compatible: single-panel NCs used for both paths
@@ -303,6 +307,31 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
         # W was supplied and already scaled; leave it
       } else {
         W <- if (identical(W1, W2)) W1 else (W1 + W2) / 2
+      }
+    }
+  } else if (!is.null(W1) || !is.null(W2)) {
+    # Lone-panel case (exactly one of W1 / W2 supplied, no pooled W):
+    # retain the supplied panel for IV2SLS2's path-specific augmentation,
+    # but keep has_path_nc = FALSE so the two-bridge estimators
+    # (PGC2 / PGC2Gm) stay ineligible.
+    if (!is.null(W1)) {
+      W1 <- as.matrix(W1)
+      if (nrow(W1) == n) W1 <- t(W1)
+      if (ncol(W1) != n) stop("W1 must have n samples.")
+      if (scale) {
+        sw1 <- .scale_mat(W1)
+        W1 <- sw1$x
+        scaling$W1 <- list(center = sw1$center, scale = sw1$scale)
+      }
+    }
+    if (!is.null(W2)) {
+      W2 <- as.matrix(W2)
+      if (nrow(W2) == n) W2 <- t(W2)
+      if (ncol(W2) != n) stop("W2 must have n samples.")
+      if (scale) {
+        sw2 <- .scale_mat(W2)
+        W2 <- sw2$x
+        scaling$W2 <- list(center = sw2$center, scale = sw2$scale)
       }
     }
   } else {
@@ -347,8 +376,8 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     G = if (has_instrument) G else NULL,
     Gm = if (has_mediator_instrument) Gm else NULL,
     W = if (has_nc) W else NULL,
-    W1 = if (has_path_nc) W1 else NULL,
-    W2 = if (has_path_nc) W2 else NULL,
+    W1 = if (!is.null(W1)) W1 else NULL,
+    W2 = if (!is.null(W2)) W2 else NULL,
     covariates = covariates,
     n = n,
     n_features = n_features,
@@ -479,8 +508,11 @@ print.iconic_data <- function(x, ...) {
   if (x$has_mediator_instrument) present <- c(present, "Gm (mediator instrument)")
   if (x$has_nc) present <- c(present, "W (negative controls)")
   if (x$has_path_nc &&
-      !is.null(x$W1) && !identical(x$W1, x$W))
+      !is.null(x$W1) && !identical(x$W1, x$W)) {
     present <- c(present, "W1/W2 (path-specific NCs)")
+  } else if (!x$has_path_nc && (!is.null(x$W1) || !is.null(x$W2))) {
+    present <- c(present, "W1/W2 (lone path-specific NC panel)")
+  }
 
   if (length(present)) {
     cat(" Available:", paste(present, collapse = ", "), "\n")

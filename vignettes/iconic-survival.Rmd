@@ -30,9 +30,10 @@ $M$ on $\hat{X} + G_m + W + C$, and constructing the bridge proxies
 $\hat{W}$ — involve only continuous variables ($X$, $M$, $W$) as responses,
 so they remain ordinary least squares regardless of the outcome type. Only
 the final outcome stage changes. (For the instrument-variable estimators
-`IV2SLS` / `IV2SLS2`, $W$ is an optional augmentation: when no negative
-controls are supplied, the first stages instrument on the genetic
-instrument(s) and covariates alone.)
+`IV2SLS` / `IV2SLS2`, the negative controls are an optional path-specific
+augmentation — `W1` for the exposure first stage, `W2` for the mediator and
+outcome stages: when no negative controls are supplied, the first stages
+instrument on the genetic instrument(s) and covariates alone.)
 
 # Two effect scales
 

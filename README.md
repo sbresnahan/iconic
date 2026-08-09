@@ -1,10 +1,10 @@
 # ICONIC
 
-<img src="man/figures/logo.png" align="right" width="259" height="300" alt="ICONIC logo" />
-
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![R-CMD-check](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/sbresnahan/iconic/graph/badge.svg)](https://app.codecov.io/gh/sbresnahan/iconic)
+
+<img src="man/figures/logo.png" align="right" width="259" height="300" alt="ICONIC logo" />
 
 ## About the Package
 

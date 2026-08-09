@@ -22,7 +22,7 @@
 #' the simulation driver (.analyze_feature) and the real-data driver
 #' (iconic_estimate).
 #'
-#' @param Z Numeric exposure vector (length n).
+#' @param X Numeric exposure vector (length n).
 #' @param y Numeric outcome vector (length n).
 #' @param g Numeric instrument vector (length n), or NULL.
 #' @param w Numeric NC vector (length n) or matrix (n x q), or NULL.
@@ -41,7 +41,7 @@
 #' @return Data frame: `feature`, `method`, `beta`, `se`, `pvalue`.
 #' Returns NULL if fewer than 20 complete cases.
 #' @keywords internal
-.estimate_total_feature <- function(Z, y, g = NULL, w = NULL, W_mat = NULL,
+.estimate_total_feature <- function(X, y, g = NULL, w = NULL, W_mat = NULL,
                                     W_avg = NULL, covars = NULL,
                                     methods = .methods_all,
                                     feature_idx = 1L, min_f = 10) {
@@ -57,20 +57,20 @@
   if ("UNADJ" %in% methods) can_run <- c(can_run, "UNADJ")
   if ("DIRECT" %in% methods && !is.null(g) && !is.null(w)) can_run <- c(can_run, "DIRECT")
   if ("COCA" %in% methods && !is.null(w)) can_run <- c(can_run, "COCA")
-  if ("IV2SLS" %in% methods && !is.null(g) && !is.null(w)) can_run <- c(can_run, "IV2SLS")
+  if ("IV2SLS" %in% methods && !is.null(g)) can_run <- c(can_run, "IV2SLS")
   if ("PGC" %in% methods && !is.null(g) && !is.null(W_mat)) can_run <- c(can_run, "PGC")
 
   if (!length(can_run)) return(NULL)
 
   # Complete cases across all needed variables
-  needed <- cbind(y, Z)
+  needed <- cbind(y, X)
   if (!is.null(g)) needed <- cbind(needed, g)
   if (!is.null(w)) needed <- cbind(needed, as.matrix(w))
   if (!is.null(covars) && ncol(covars) > 0) needed <- cbind(needed, covars)
   ok <- stats::complete.cases(needed)
   if (sum(ok) < 20) return(NULL)
 
-  Z_f <- Z[ok]
+  X_f <- X[ok]
   y_f <- y[ok]
   g_f <- if (!is.null(g)) g[ok] else NULL
   w_f <- if (!is.null(w)) as.matrix(w)[ok, , drop = FALSE] else NULL
@@ -82,26 +82,26 @@
 
   if ("UNADJ" %in% can_run) {
     r <- tryCatch({
-      fit <- lm(y_f ~ Z_f); sm <- summary(fit)$coefficients
-      list(beta = coef(fit)["Z_f"], se = sm["Z_f", 2], pvalue = sm["Z_f", 4])
+      fit <- lm(y_f ~ X_f); sm <- summary(fit)$coefficients
+      list(beta = coef(fit)["X_f"], se = sm["X_f", 2], pvalue = sm["X_f", 4])
     }, error = function(e) na)
     rows[["UNADJ"]] <- row("UNADJ", r)
   }
   if ("DIRECT" %in% can_run) {
-    r <- tryCatch(fit_direct(y_f, Z_f, g_f, w_f, cv_f), error = function(e) na)
+    r <- tryCatch(fit_direct(y_f, X_f, g_f, w_f, cv_f), error = function(e) na)
     rows[["DIRECT"]] <- row("DIRECT", r)
   }
   if ("COCA" %in% can_run) {
-    r <- tryCatch(fit_coca(y_f, Z_f, Wa_f, cv_f), error = function(e) na)
+    r <- tryCatch(fit_coca(y_f, X_f, Wa_f, cv_f), error = function(e) na)
     rows[["COCA"]] <- row("COCA", r)
   }
   if ("IV2SLS" %in% can_run) {
-    r <- tryCatch(fit_iv2sls(y_f, Z_f, g_f, w_f, cv_f, min_f = min_f),
+    r <- tryCatch(fit_iv2sls(y_f, X_f, g_f, w_f, cv_f, min_f = min_f),
                   error = function(e) na)
     rows[["IV2SLS"]] <- row("IV2SLS", r)
   }
   if ("PGC" %in% can_run) {
-    r <- tryCatch(fit_pgc(y_f, Z_f, g_f, W_mat_f, cv_f), error = function(e) na)
+    r <- tryCatch(fit_pgc(y_f, X_f, g_f, W_mat_f, cv_f), error = function(e) na)
     rows[["PGC"]] <- row("PGC", r)
   }
 
@@ -121,7 +121,7 @@
 #' @return Data frame of five rows (one per method) or `NULL` if too few cases.
 #' @keywords internal
 .analyze_feature <- function(dat, f, W_avg, W_valid = NULL) {
-  Z <- dat$Z
+  X <- dat$X
   cv <- dat$synthetic_data
   y <- dat$Y[, f]
   g <- if (!is.null(dat$G)) dat$G[, f] else NULL
@@ -131,7 +131,7 @@
   w <- W_mat # full matrix (NULL when no W)
 
   .estimate_total_feature(
-    Z = Z, y = y, g = g, w = w, W_mat = W_mat,
+    X = X, y = y, g = g, w = w, W_mat = W_mat,
     W_avg = W_avg, covars = cv,
     methods = .methods_all, feature_idx = f
   )

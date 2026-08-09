@@ -105,7 +105,7 @@ test_that("load_real_input_data returns NULL feature_texture without M", {
   Zm <- matrix(rnorm(5 * n), 5, n)
   Ym <- matrix(rnorm(1, n), 1, n)
   Wm <- matrix(rnorm(10 * n), 10, n)
-  inp <- load_real_input_data(Z_matrix = Zm, Y_matrix = Ym, W_matrix = Wm)
+  inp <- load_real_input_data(X_matrix = Zm, Y_matrix = Ym, W_matrix = Wm)
   expect_null(inp$feature_texture)
 })
 

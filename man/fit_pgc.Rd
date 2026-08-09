@@ -4,12 +4,12 @@
 \alias{fit_pgc}
 \title{PGC estimator: Proxy G-Component Correction (matrix bridge)}
 \usage{
-fit_pgc(y, Z, g, W, covars = NULL)
+fit_pgc(y, X, g, W, covars = NULL)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{g}{Numeric instrument vector (length n).}
 
@@ -26,14 +26,14 @@ Named list: \code{beta}, \code{se}, \code{pvalue}.
 \description{
 A three-step bridge-function estimator:
 \enumerate{
-\item Residualises Z on G to isolate the U-driven component Z_resid.
-\item Regresses Z_resid on the FULL W matrix to construct W_hat,
+\item Residualises X on G to isolate the U-driven component X_resid.
+\item Regresses X_resid on the FULL W matrix to construct W_hat,
 a proxy for unmeasured confounding. This step requires
 \code{ncol(W) >= k} (the proximal completeness condition):
 if W has fewer valid columns than confounders, the bridge
 cannot span the confounder subspace and the estimator is
 under-identified.
-\item Fits Y ~ Z + W_hat to absorb confounding bias.
+\item Fits Y ~ X + W_hat to absorb confounding bias.
 }
 }
 \details{
@@ -47,6 +47,6 @@ binding.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, seed = 1)
-fit_pgc(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W)
+fit_pgc(dat$Y[, 1], dat$X, dat$G[, 1], dat$W)
 }
 }

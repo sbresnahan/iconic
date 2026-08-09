@@ -4,12 +4,12 @@
 \alias{fit_coca}
 \title{COCA estimator: Negative-Control Outcome Correction via ratio}
 \usage{
-fit_coca(y, Z, w, covars = NULL, ratio_cap = 10, se_cap = 5)
+fit_coca(y, X, w, covars = NULL, ratio_cap = 10, se_cap = 5)
 }
 \arguments{
 \item{y}{Numeric primary outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{w}{Numeric negative-control outcome vector (length n).
 Recommended: pass \code{rowMeans(W_matrix)} for stability.}
@@ -28,18 +28,18 @@ unstable (near-zero \eqn{\hat\beta_Y} or extreme ratio).
 }
 \description{
 Implements the Correlated Outcome Control Approach (COCA). Fits
-\code{w ~ y + Z + covars} and recovers the causal effect as
-\eqn{\hat\beta = -\hat\beta_Z / \hat\beta_Y}. Standard errors are
+\code{w ~ y + X + covars} and recovers the causal effect as
+\eqn{\hat\beta = -\hat\beta_X / \hat\beta_Y}. Standard errors are
 obtained via the delta method.
 }
 \details{
 The negative-control W should be an outcome that shares the same
-unmeasured confounders as Y but has no direct causal path from Z.
+unmeasured confounders as Y but has no direct causal path from X.
 }
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, seed = 1)
-fit_coca(dat$Y[, 1], dat$Z, rowMeans(dat$W))
+fit_coca(dat$Y[, 1], dat$X, rowMeans(dat$W))
 }
 }

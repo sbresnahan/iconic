@@ -25,8 +25,9 @@ library(iconic)
 
 Before fitting any estimator, `iconic_diagnose()` examines your data and
 reports which of the eight ICONIC estimators are *eligible* — that is, which
-satisfy the assumptions they require to be valid. Diagnosis checks four
-things:
+satisfy the assumptions they require to be valid. These assumptions are
+not directly testable (the confounder $U$ is unobserved); diagnosis checks
+their empirically observable projections. Diagnosis checks four things:
 
 1. **Instrument strength.** The partial $F$-statistic for each genetic
    instrument ($G_1$ for the exposure, $G_m$ for the mediator) against the
@@ -49,11 +50,11 @@ controls, then run the diagnosis.
 ```{r diagnose-data}
 dat <- generate_toy_data(
   n = 100, n_features = 5, seed = 1,
-  phi = 0.8, separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7
+  phi = 0.8, omega_1 = 0.7, omega_2 = 0.7
 )
 
 idat <- iconic_data(
-  Z = dat$Z, Y = dat$Y, M = dat$M,
+  X = dat$X, Y = dat$Y, M = dat$M,
   G = dat$G, Gm = dat$Gm,
   W1 = dat$W1, W2 = dat$W2,
   covariates = dat$synthetic_data
@@ -86,19 +87,22 @@ $F$-statistic meets the threshold.
 diag$nc_validity
 ```
 
-The NC validity screen tests three assumptions for each negative-control
-feature:
+The NC validity screen tests the empirically observable projections of
+three identifying assumptions for each negative-control feature:
 
-- **A1**: $W$ associates with $Z$ given covariates (the NC must be
-  confounded in the same way as the outcome).
-- **A2**: $W$ is independent of $G_1$ given covariates (the NC must not be
-  an instrument itself).
-- **A2'**: $W$ associates with $Y$ given $Z$ and covariates (the NC must
-  share the confounding pathway to the outcome).
+- **A1**: $W \perp X \mid C, U$ (the NC is not affected by the exposure
+  once the confounder is accounted for). The screen tests the observable
+  projection: association of $W$ with $X$ given $C$.
+- **A2**: $W \perp G_1 \mid C, U$ (the NC is not an instrument itself).
+  The screen tests the observable projection: association of $W$ with
+  $G_1$ given $C$.
+- **A2'**: $W \perp G_m \mid C, U$ (the NC is not a mediator instrument).
+  The screen tests the observable projection: association of $W$ with
+  $G_m$ given $C$.
 
 Features that fail a screen are flagged, and the completeness count is
 reduced accordingly. The `COCA` estimator is exempt from the A2 screen
-because it calibrates through the $W \sim Y + Z$ ratio and does not require
+because it calibrates through the $W \sim Y + X$ ratio and does not require
 $W \perp G_1$.
 
 # Proceeding without instruments or controls
@@ -109,7 +113,7 @@ If you supply neither genetic instruments nor negative controls, only the
 
 ```{r diagnose-no-proxy, eval=FALSE}
 dat0 <- generate_toy_data(n = 100, n_features = 5, seed = 1)
-idat0 <- iconic_data(Z = dat0$Z, Y = dat0$Y, covariates = dat0$synthetic_data)
+idat0 <- iconic_data(X = dat0$X, Y = dat0$Y, covariates = dat0$synthetic_data)
 diag0 <- iconic_diagnose(idat0)
 ```
 

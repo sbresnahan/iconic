@@ -8,7 +8,7 @@ run_null_mediation_sim(
   n_iter = 200,
   n_samples = 500,
   n_features = 20,
-  beta_Z = 0.1,
+  beta_X = 0.1,
   conf_str = 0.8,
   w_signal = 0.7,
   mo_confounding = 0.8,
@@ -16,7 +16,8 @@ run_null_mediation_sim(
   rho_G1 = 0,
   rho_G2 = 0,
   rho_pop = 0,
-  separate_U = FALSE,
+  lambda_XM = NULL,
+  lambda_MY = NULL,
   omega_1 = NULL,
   omega_2 = NULL,
   feat_cor = 0,
@@ -32,7 +33,7 @@ run_null_mediation_sim(
 
 \item{n_features}{Features per replicate. Default 20.}
 
-\item{beta_Z}{Direct effect (NDE, still active under null NIE). Default 0.10.}
+\item{beta_X}{Direct effect (NDE, still active under null NIE). Default 0.10.}
 
 \item{conf_str}{Confounding strength delta. Default 0.80.}
 
@@ -43,17 +44,19 @@ run_null_mediation_sim(
 \item{phi}{Strength of the mediator instrument Gm -> M.
 0 = no mediator instrument. Default 0.}
 
-\item{rho_G1}{Correlation of G1 with U_XM. Default 0.}
+\item{rho_G1}{Correlation of G1 with conf_XM. Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY. Default 0.}
+\item{rho_G2}{Correlation of G2 with conf_MY. Default 0.}
 
 \item{rho_pop}{Shared population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders. Default FALSE.}
+\item{lambda_XM}{Optional per-path confounder loading vector (X->M path).}
 
-\item{omega_1}{Coverage of U_XM by W1. NULL = use w_signal.}
+\item{lambda_MY}{Optional per-path confounder loading vector (M->Y path).}
 
-\item{omega_2}{Coverage of U_MY by W2. NULL = use w_signal.}
+\item{omega_1}{Coverage of conf_XM by W1. NULL = use w_signal.}
+
+\item{omega_2}{Coverage of conf_MY by W2. NULL = use w_signal.}
 
 \item{feat_cor}{Within-module correlation for block-diagonal co-expression
 modules in Y and W. 0 = independent features. Default 0.}
@@ -70,7 +73,7 @@ and \code{raw} (full results).
 }
 \description{
 Sets \code{alpha_M = 0} and \code{beta_M = 0} (no true NIE) while
-keeping \code{beta_Z} active (NDE still present). Reports Type I
+keeping \code{beta_X} active (NDE still present). Reports Type I
 error for both NIE (should be 0 under the null) and NDE (should
 reflect power for the direct effect).
 }

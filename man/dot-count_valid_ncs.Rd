@@ -8,8 +8,8 @@
 }
 \description{
 Uses only the A2 (instrument-independence) screen as a hard gate,
-since A1 (W ~ Z | C) cannot distinguish "W downstream of Z" (true
-violation) from "W shares a cause with Z" (intended NC behavior).
+since A1 (W ~ X | C) cannot distinguish "W downstream of X" (true
+violation) from "W shares a cause with X" (intended NC behavior).
 A1 is reported but not used for eligibility.
 }
 \details{

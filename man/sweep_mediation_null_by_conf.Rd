@@ -15,7 +15,8 @@ sweep_mediation_null_by_conf(
   rho_G1 = 0,
   rho_G2 = 0,
   rho_pop = 0,
-  separate_U = FALSE,
+  lambda_XM = NULL,
+  lambda_MY = NULL,
   omega_1 = NULL,
   omega_2 = NULL,
   feat_cor = 0,
@@ -41,17 +42,19 @@ Default c(0.2, 0.4, 0.6, 0.8, 1.0).}
 \item{phi}{Strength of the mediator instrument Gm -> M.
 0 = no mediator instrument. Default 0.}
 
-\item{rho_G1}{Correlation of G1 with U_XM. Default 0.}
+\item{rho_G1}{Correlation of G1 with conf_XM. Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY. Default 0.}
+\item{rho_G2}{Correlation of G2 with conf_MY. Default 0.}
 
 \item{rho_pop}{Shared population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders. Default FALSE.}
+\item{lambda_XM}{Optional per-path confounder loading vector (X->M path).}
 
-\item{omega_1}{Coverage of U_XM by W1. NULL = use w_signal.}
+\item{lambda_MY}{Optional per-path confounder loading vector (M->Y path).}
 
-\item{omega_2}{Coverage of U_MY by W2. NULL = use w_signal.}
+\item{omega_1}{Coverage of conf_XM by W1. NULL = use w_signal.}
+
+\item{omega_2}{Coverage of conf_MY by W2. NULL = use w_signal.}
 
 \item{feat_cor}{Within-module feature correlation. Default 0.}
 

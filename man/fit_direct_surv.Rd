@@ -7,7 +7,7 @@
 fit_direct_surv(
   time,
   event,
-  Z,
+  X,
   g,
   w,
   covars = NULL,
@@ -20,7 +20,7 @@ fit_direct_surv(
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{g}{Numeric instrument vector (length n).}
 
@@ -36,7 +36,7 @@ fit_direct_surv(
 Named list: \code{beta}, \code{se}, \code{pvalue}.
 }
 \description{
-Regresses the survival outcome on Z plus the genetic instrument G, the
+Regresses the survival outcome on X plus the genetic instrument G, the
 negative-control panel W, and covariates. Naive adjustment; does not
 correct for unmeasured confounding via a ratio or IV approach.
 }
@@ -44,6 +44,6 @@ correct for unmeasured confounding via a ratio or IV approach.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-fit_direct_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W[, 1])
+fit_direct_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W[, 1])
 }
 }

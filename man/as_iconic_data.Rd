@@ -8,7 +8,7 @@ as_iconic_data(input, ...)
 }
 \arguments{
 \item{input}{Either a list returned by \code{\link[=load_real_input_data]{load_real_input_data()}}, or
-the exposure vector Z (when using named-argument form).}
+the exposure vector X (when using named-argument form).}
 
 \item{...}{Named arguments passed to \code{\link[=iconic_data]{iconic_data()}} when using
 the named-argument form. Ignored when \code{input} is a list.}
@@ -24,7 +24,7 @@ Can be called in two ways:
 \enumerate{
 \item With a list returned by \code{\link[=load_real_input_data]{load_real_input_data()}} (the original
 interface).
-\item With named arguments matching \code{\link[=iconic_data]{iconic_data()}} (Z, Y, M, G, Gm,
+\item With named arguments matching \code{\link[=iconic_data]{iconic_data()}} (X, Y, M, G, Gm,
 W, W1, W2, covariates, feature_names, mediator_names), which
 simply delegates to \code{\link[=iconic_data]{iconic_data()}}.
 }

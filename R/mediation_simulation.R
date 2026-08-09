@@ -14,7 +14,7 @@
 # instrument (Gm). When phi > 0, the 2-stage MR estimator (IV2SLS2) is
 # included in the results, and "phi" can be swept as a parameter.
 #
-# adds rho_G1, rho_G2, rho_pop, separate_U, omega_1, omega_2
+# adds rho_G1, rho_G2, rho_pop, lambda_XM, lambda_MY, omega_1, omega_2
 # parameters for the imperfect-independence DGP. When any is non-default,
 # the two-stage proximal estimators (PGC2, PGC2Gm) are included in the
 # results. rho_G1, rho_G2, rho_pop, omega_1, omega_2 can be swept.
@@ -33,7 +33,7 @@
 #' error for both NDE and NIE.
 #'
 #' When are non-default (rho_G1, rho_G2, rho_pop,
-#' separate_U, omega_1, omega_2), the two-stage proximal estimators (PGC2,
+#' lambda_XM, lambda_MY, omega_1, omega_2), the two-stage proximal estimators (PGC2,
 #' PGC2Gm) are also included.
 #'
 #' @param n_iter Number of simulation replicates. Default 100.
@@ -43,8 +43,8 @@
 #' each mediator has its own genetic instrument Gm and
 #' contributes additively to Y. Default 1 (single mediator,
 #' backward compatible).
-#' @param beta_Z Direct effect of Z on Y (true NDE). Default 0.10.
-#' @param alpha_M Effect of Z on mediator. Default 0.50.
+#' @param beta_X Direct effect of X on Y (true NDE). Default 0.10.
+#' @param alpha_M Effect of X on mediator. Default 0.50.
 #' @param beta_M Effect of mediator on Y (per-mediator true NIE = alpha_M * beta_M). Default 0.30.
 #' @param conf_str Confounding strength delta. Default 0.80.
 #' @param w_signal Proxy quality omega. Default 0.70.
@@ -53,12 +53,13 @@
 #' 0 = no mediator instrument (five estimators, backward
 #' compatible). > 0 = generates Gm and includes the
 #' 2-stage MR estimator (IV2SLS2). Default 0.
-#' @param rho_G1 Correlation of G1 with U_XM. Default 0.
-#' @param rho_G2 Correlation of G2 with U_MY. Default 0.
+#' @param rho_G1 Correlation of G1 with conf_XM. Default 0.
+#' @param rho_G2 Correlation of G2 with conf_MY. Default 0.
 #' @param rho_pop Shared population structure. Default 0.
-#' @param separate_U Draw separate confounders for Z->M and M->Y paths. Default FALSE.
-#' @param omega_1 Coverage of U_XM by W1. NULL = use w_signal.
-#' @param omega_2 Coverage of U_MY by W2. NULL = use w_signal.
+#' @param lambda_XM Optional per-path confounder loading vector (X->M path).
+#' @param lambda_MY Optional per-path confounder loading vector (M->Y path).
+#' @param omega_1 Coverage of conf_XM by W1. NULL = use w_signal.
+#' @param omega_2 Coverage of conf_MY by W2. NULL = use w_signal.
 #' @param feat_cor Within-module correlation for block-diagonal co-expression
 #' modules in Y and W. 0 = independent features. Default 0.
 #' @param base_seed Starting seed; replicate i uses base_seed + i. Default 100.
@@ -78,7 +79,7 @@ run_mediation_sim <- function(n_iter = 100,
                               n_samples = 500,
                               n_features = 20,
                               n_mediators = 1,
-                              beta_Z = 0.10,
+                              beta_X = 0.10,
                               alpha_M = 0.50,
                               beta_M = 0.30,
                               conf_str = 0.80,
@@ -88,24 +89,25 @@ run_mediation_sim <- function(n_iter = 100,
                               rho_G1 = 0,
                               rho_G2 = 0,
                               rho_pop = 0,
-                              separate_U = FALSE,
+                              lambda_XM = NULL,
+                              lambda_MY = NULL,
                               omega_1 = NULL,
                               omega_2 = NULL,
                               feat_cor = 0,
                               base_seed = 100,
                               n_cores = 1) {
 
-  true_NDE <- beta_Z
+  true_NDE <- beta_X
   true_NIE <- alpha_M * beta_M # per-mediator NIE
 
   worker <- function(i) {
     dat <- generate_toy_data(n = n_samples, n_features = n_features,
                              n_mediators = n_mediators,
-                             beta_Z = beta_Z, alpha_M = alpha_M,
+                             beta_X = beta_X, alpha_M = alpha_M,
                              beta_M = beta_M, conf_str = conf_str,
                              w_signal = w_signal, mo_confounding = mo_confounding,
                              phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
-                             rho_pop = rho_pop, separate_U = separate_U,
+                             rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
                              omega_1 = omega_1, omega_2 = omega_2,
                              feat_cor = feat_cor,
                              seed = base_seed + i)
@@ -124,12 +126,12 @@ run_mediation_sim <- function(n_iter = 100,
     true_NIE = true_NIE,
     params = list(n_iter = n_iter, n_samples = n_samples,
                     n_features = n_features, n_mediators = n_mediators,
-                    beta_Z = beta_Z,
+                    beta_X = beta_X,
                     alpha_M = alpha_M, beta_M = beta_M,
                     conf_str = conf_str, w_signal = w_signal,
                     mo_confounding = mo_confounding, phi = phi,
                     rho_G1 = rho_G1, rho_G2 = rho_G2,
-                    rho_pop = rho_pop, separate_U = separate_U,
+                    rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
                     omega_1 = omega_1, omega_2 = omega_2,
                     feat_cor = feat_cor)
   )
@@ -138,7 +140,7 @@ run_mediation_sim <- function(n_iter = 100,
 
 #' Sweep a single mediation simulation parameter across a grid
 #'
-#' @param param Parameter to vary: one of "beta_Z", "conf_str",
+#' @param param Parameter to vary: one of "beta_X", "conf_str",
 #' "w_signal", "alpha_M", "beta_M", "n_samples", "mo_confounding", "phi",
 #' "rho_G1", "rho_G2", "rho_pop", "omega_1", "omega_2",
 #' "feat_cor".
@@ -147,7 +149,7 @@ run_mediation_sim <- function(n_iter = 100,
 #' @param n_samples Observations per replicate. Default 500.
 #' @param n_features Features per replicate. Default 20.
 #' @param n_mediators Number of independent mediators. Default 1.
-#' @param beta_Z Baseline direct effect. Default 0.10.
+#' @param beta_X Baseline direct effect. Default 0.10.
 #' @param alpha_M Baseline mediator path. Default 0.50.
 #' @param beta_M Baseline mediator effect. Default 0.30.
 #' @param conf_str Baseline confounding strength. Default 0.80.
@@ -155,10 +157,11 @@ run_mediation_sim <- function(n_iter = 100,
 #' @param mo_confounding Baseline M-O confounding. Default 0.80.
 #' @param phi Baseline mediator-instrument strength.
 #' 0 = no mediator instrument. Default 0.
-#' @param rho_G1 Baseline G1-U_XM correlation. Default 0.
-#' @param rho_G2 Baseline G2-U_MY correlation. Default 0.
+#' @param rho_G1 Baseline G1-conf_XM correlation. Default 0.
+#' @param rho_G2 Baseline G2-conf_MY correlation. Default 0.
 #' @param rho_pop Baseline population structure. Default 0.
-#' @param separate_U Draw separate confounders. Default FALSE.
+#' @param lambda_XM Optional per-path confounder loading vector (X->M path).
+#' @param lambda_MY Optional per-path confounder loading vector (M->Y path).
 #' @param omega_1 Baseline W1 coverage. NULL = use w_signal.
 #' @param omega_2 Baseline W2 coverage. NULL = use w_signal.
 #' @param feat_cor Baseline within-module feature correlation. Default 0.
@@ -185,7 +188,7 @@ sweep_mediation_param <- function(param,
                                   n_samples = 500,
                                   n_features = 20,
                                   n_mediators = 1,
-                                  beta_Z = 0.10,
+                                  beta_X = 0.10,
                                   alpha_M = 0.50,
                                   beta_M = 0.30,
                                   conf_str = 0.80,
@@ -195,7 +198,8 @@ sweep_mediation_param <- function(param,
                                   rho_G1 = 0,
                                   rho_G2 = 0,
                                   rho_pop = 0,
-                                  separate_U = FALSE,
+                                  lambda_XM = NULL,
+                                  lambda_MY = NULL,
                                   omega_1 = NULL,
                                   omega_2 = NULL,
                                   feat_cor = 0,
@@ -204,7 +208,7 @@ sweep_mediation_param <- function(param,
                                   base_seed = 0,
                                   n_cores = 1) {
 
-  allowed <- c("beta_Z", "conf_str", "w_signal", "alpha_M", "beta_M",
+  allowed <- c("beta_X", "conf_str", "w_signal", "alpha_M", "beta_M",
                "n_samples", "mo_confounding", "phi",
                "rho_G1", "rho_G2", "rho_pop", "omega_1", "omega_2",
                "feat_cor")
@@ -213,11 +217,11 @@ sweep_mediation_param <- function(param,
   # Build base args using 'n' (the generate_toy_data parameter name)
   base_args <- list(n = n_samples, n_features = n_features,
                     n_mediators = n_mediators,
-                    beta_Z = beta_Z, alpha_M = alpha_M,
+                    beta_X = beta_X, alpha_M = alpha_M,
                     beta_M = beta_M, conf_str = conf_str, w_signal = w_signal,
                     mo_confounding = mo_confounding, phi = phi,
                     rho_G1 = rho_G1, rho_G2 = rho_G2, rho_pop = rho_pop,
-                    separate_U = separate_U, omega_1 = omega_1, omega_2 = omega_2,
+                    lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = omega_1, omega_2 = omega_2,
                     feat_cor = feat_cor,
                     u_strength = u_strength,
                     w_coverage_profile = w_coverage_profile)
@@ -236,7 +240,7 @@ sweep_mediation_param <- function(param,
       args[[param]] <- pval
     }
 
-    true_NDE <- args$beta_Z
+    true_NDE <- args$beta_X
     true_NIE <- args$alpha_M * args$beta_M # per-mediator NIE
 
     worker <- function(i) {
@@ -289,25 +293,26 @@ sweep_mediation_param <- function(param,
 #' Run null mediation simulations to estimate Type I error rates
 #'
 #' Sets \code{alpha_M = 0} and \code{beta_M = 0} (no true NIE) while
-#' keeping \code{beta_Z} active (NDE still present). Reports Type I
+#' keeping \code{beta_X} active (NDE still present). Reports Type I
 #' error for both NIE (should be 0 under the null) and NDE (should
 #' reflect power for the direct effect).
 #'
 #' @param n_iter Number of replicates. Default 200.
 #' @param n_samples Observations per replicate. Default 500.
 #' @param n_features Features per replicate. Default 20.
-#' @param beta_Z Direct effect (NDE, still active under null NIE). Default 0.10.
+#' @param beta_X Direct effect (NDE, still active under null NIE). Default 0.10.
 #' @param conf_str Confounding strength delta. Default 0.80.
 #' @param w_signal Proxy quality omega. Default 0.70.
 #' @param mo_confounding Strength of U1 -> M. Default 0.80.
 #' @param phi Strength of the mediator instrument Gm -> M.
 #' 0 = no mediator instrument. Default 0.
-#' @param rho_G1 Correlation of G1 with U_XM. Default 0.
-#' @param rho_G2 Correlation of G2 with U_MY. Default 0.
+#' @param rho_G1 Correlation of G1 with conf_XM. Default 0.
+#' @param rho_G2 Correlation of G2 with conf_MY. Default 0.
 #' @param rho_pop Shared population structure. Default 0.
-#' @param separate_U Draw separate confounders. Default FALSE.
-#' @param omega_1 Coverage of U_XM by W1. NULL = use w_signal.
-#' @param omega_2 Coverage of U_MY by W2. NULL = use w_signal.
+#' @param lambda_XM Optional per-path confounder loading vector (X->M path).
+#' @param lambda_MY Optional per-path confounder loading vector (M->Y path).
+#' @param omega_1 Coverage of conf_XM by W1. NULL = use w_signal.
+#' @param omega_2 Coverage of conf_MY by W2. NULL = use w_signal.
 #' @param feat_cor Within-module correlation for block-diagonal co-expression
 #' modules in Y and W. 0 = independent features. Default 0.
 #' @param base_seed Seed offset. Default 300.
@@ -320,7 +325,7 @@ sweep_mediation_param <- function(param,
 run_null_mediation_sim <- function(n_iter = 200,
                                    n_samples = 500,
                                    n_features = 20,
-                                   beta_Z = 0.10,
+                                   beta_X = 0.10,
                                    conf_str = 0.80,
                                    w_signal = 0.70,
                                    mo_confounding = 0.80,
@@ -328,7 +333,8 @@ run_null_mediation_sim <- function(n_iter = 200,
                                    rho_G1 = 0,
                                    rho_G2 = 0,
                                    rho_pop = 0,
-                                   separate_U = FALSE,
+                                   lambda_XM = NULL,
+                                   lambda_MY = NULL,
                                    omega_1 = NULL,
                                    omega_2 = NULL,
                                    feat_cor = 0,
@@ -338,11 +344,11 @@ run_null_mediation_sim <- function(n_iter = 200,
 
   worker <- function(i) {
     dat <- generate_toy_data(n = n_samples, n_features = n_features,
-                             beta_Z = beta_Z, alpha_M = 0, beta_M = 0,
+                             beta_X = beta_X, alpha_M = 0, beta_M = 0,
                              conf_str = conf_str, w_signal = w_signal,
                              mo_confounding = mo_confounding,
                              phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
-                             rho_pop = rho_pop, separate_U = separate_U,
+                             rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
                              omega_1 = omega_1, omega_2 = omega_2,
                              feat_cor = feat_cor,
                              seed = base_seed + i)
@@ -383,12 +389,13 @@ run_null_mediation_sim <- function(n_iter = 200,
 #' @param mo_confounding Strength of U1 -> M. Default 0.80.
 #' @param phi Strength of the mediator instrument Gm -> M.
 #' 0 = no mediator instrument. Default 0.
-#' @param rho_G1 Correlation of G1 with U_XM. Default 0.
-#' @param rho_G2 Correlation of G2 with U_MY. Default 0.
+#' @param rho_G1 Correlation of G1 with conf_XM. Default 0.
+#' @param rho_G2 Correlation of G2 with conf_MY. Default 0.
 #' @param rho_pop Shared population structure. Default 0.
-#' @param separate_U Draw separate confounders. Default FALSE.
-#' @param omega_1 Coverage of U_XM by W1. NULL = use w_signal.
-#' @param omega_2 Coverage of U_MY by W2. NULL = use w_signal.
+#' @param lambda_XM Optional per-path confounder loading vector (X->M path).
+#' @param lambda_MY Optional per-path confounder loading vector (M->Y path).
+#' @param omega_1 Coverage of conf_XM by W1. NULL = use w_signal.
+#' @param omega_2 Coverage of conf_MY by W2. NULL = use w_signal.
 #' @param feat_cor Within-module feature correlation. Default 0.
 #' @param base_seed Seed offset. Default 900.
 #' @param n_cores Parallel workers. Default 1.
@@ -411,7 +418,8 @@ sweep_mediation_null_by_conf <- function(conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),
                                          rho_G1 = 0,
                                          rho_G2 = 0,
                                          rho_pop = 0,
-                                         separate_U = FALSE,
+                                         lambda_XM = NULL,
+                                         lambda_MY = NULL,
                                          omega_1 = NULL,
                                          omega_2 = NULL,
                                          feat_cor = 0,
@@ -421,11 +429,11 @@ sweep_mediation_null_by_conf <- function(conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),
 
   # Determine methods from a pilot run (handles phi > 0 and cases)
   pilot <- generate_toy_data(n = n_samples, n_features = n_features,
-                             beta_Z = 0, alpha_M = 0, beta_M = 0,
+                             beta_X = 0, alpha_M = 0, beta_M = 0,
                              conf_str = conf_grid[1], w_signal = w_signal,
                              mo_confounding = mo_confounding,
                              phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
-                             rho_pop = rho_pop, separate_U = separate_U,
+                             rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
                              omega_1 = omega_1, omega_2 = omega_2,
                              feat_cor = feat_cor,
                              seed = base_seed)
@@ -438,11 +446,11 @@ sweep_mediation_null_by_conf <- function(conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),
 
     worker <- function(i) {
       dat <- generate_toy_data(n = n_samples, n_features = n_features,
-                               beta_Z = 0, alpha_M = 0, beta_M = 0,
+                               beta_X = 0, alpha_M = 0, beta_M = 0,
                                conf_str = cs, w_signal = w_signal,
                                mo_confounding = mo_confounding,
                                phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
-                               rho_pop = rho_pop, separate_U = separate_U,
+                               rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
                                omega_1 = omega_1, omega_2 = omega_2,
                                feat_cor = feat_cor,
                                seed = base_seed + ci * 1000L + i)

@@ -7,7 +7,7 @@
 fit_pgc_mediation2_surv(
   time,
   event,
-  Z,
+  X,
   M,
   g,
   W1,
@@ -24,13 +24,13 @@ fit_pgc_mediation2_surv(
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
-\item{g}{Numeric instrument for Z (length n).}
+\item{g}{Numeric instrument for X (length n).}
 
-\item{W1}{Numeric NC matrix (n x q) or vector for the Z->M path.}
+\item{W1}{Numeric NC matrix (n x q) or vector for the X->M path.}
 
 \item{W2}{Numeric NC matrix (n x q) or vector for the M->Y path.}
 
@@ -50,24 +50,24 @@ Returns all-NA if the first-stage partial F for G1 is below \code{min_f}.
 }
 \description{
 Two-stage proximal mediation with path-specific negative controls and
-a survival outcome stage. Stages 1-2 (Z bridge on W1, M bridge on W2,
-Z_hat / M_hat construction) are identical to \code{\link{fit_pgc_mediation2}}
+a survival outcome stage. Stages 1-2 (X bridge on W1, M bridge on W2,
+X_hat / M_hat construction) are identical to \code{\link{fit_pgc_mediation2}}
 and remain OLS. Only stage 3 switches to Cox (log-HR) or RMST
 pseudo-observation OLS:
-\code{Surv(t,e) ~ Z_hat + M_hat + W_hat_Z + W_hat_M + covars}.
+\code{Surv(t,e) ~ X_hat + M_hat + W_hat_X + W_hat_M + covars}.
 }
 \details{
 When \code{gm = NULL} (PGC2), stage 2 uses pure NC identification.
 When \code{gm} is supplied (PGC2Gm), the mediator instrument helps
-isolate U_MY before bridging W2.
+isolate conf_MY before bridging W2.
 }
 \examples{
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
 mo_confounding = 0.8, rho_G2 = 0.3,
-separate_U = TRUE, seed = 1)
-fit_pgc_mediation2_surv(dat$surv_time, dat$surv_event, dat$Z, dat$M,
+lambda_XM = c(1, 0), lambda_MY = c(0, 1), seed = 1)
+fit_pgc_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
 }
 }

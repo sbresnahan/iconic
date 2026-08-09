@@ -10,7 +10,7 @@ run_single_iteration(
   n_features = 20,
   n_confounders = 1,
   n_mediators = 1,
-  beta_Z = 0.1,
+  beta_X = 0.1,
   alpha_M = 0.5,
   beta_M = 0.3,
   effect_size = NULL,
@@ -26,10 +26,12 @@ run_single_iteration(
   rho_G1 = 0,
   rho_G2 = 0,
   rho_pop = 0,
-  separate_U = FALSE,
+  lambda_XM = NULL,
+  lambda_MY = NULL,
   omega_1 = NULL,
   omega_2 = NULL,
   feat_cor = 0,
+  separate_U = NULL,
   u_strength = NULL,
   w_coverage_profile = NULL,
   MMExp = 1,
@@ -59,18 +61,18 @@ covariates are used.}
 each mediator has its own genetic instrument Gm and contributes
 additively to Y. Default 1 (single mediator, backward compatible).}
 
-\item{beta_Z}{Direct effect of Z on Y (true NDE). Default 0.10.}
+\item{beta_X}{Direct effect of X on Y (true NDE). Default 0.10.}
 
-\item{alpha_M}{Effect of Z on the mediator M. Default 0.50.}
+\item{alpha_M}{Effect of X on the mediator M. Default 0.50.}
 
 \item{beta_M}{Effect of M on Y. Default 0.30.}
 
 \item{effect_size}{Optional shortcut: if non-\code{NULL}, sets a pure direct total
-effect (\code{beta_Z = effect_size}, \code{alpha_M = beta_M = 0}). Use \code{0} for null
+effect (\code{beta_X = effect_size}, \code{alpha_M = beta_M = 0}). Use \code{0} for null
 (Type I error) simulations. Default \code{NULL} (use the mediation parameters).}
 
 \item{conf_strength}{Overall confounding strength (analogue of \code{conf_str});
-scales the confounder loadings into Z and Y. Default 0.80.}
+scales the confounder loadings into X and Y. Default 0.80.}
 
 \item{coverage}{How well the negative controls span the confounder
 subspace, in \verb{[0, 1]} (passed to \code{nc_model}). Default 1.}
@@ -90,7 +92,7 @@ mediation estimators are benchmarked against.}
 \item{pleio}{Strength of a direct G -> Y path (horizontal pleiotropy),
 violating the exclusion restriction. 0 = no pleiotropy (valid instrument,
 original DGP). Default 0. When > 0, G affects Y directly in addition to
-through Z, allowing benchmarking of IV/2SLS under instrument invalidity.}
+through X, allowing benchmarking of IV/2SLS under instrument invalidity.}
 
 \item{phi}{Strength of the mediator instrument Gm -> M.
 0 = no mediator instrument (original DGP, no Gm generated). Default 0.
@@ -98,28 +100,36 @@ When > 0, a valid instrument for M is generated (independent of U and G,
 no direct path to Y), enabling point identification of NDE/NIE via
 \code{\link[=fit_iv2sls_mediation2]{fit_iv2sls_mediation2()}} even under M-O confounding.}
 
-\item{gamma_G}{Strength of the exposure instrument G -> Z. Default 0.6.}
+\item{gamma_G}{Strength of the exposure instrument G -> X. Default 0.6.}
 
-\item{rho_G1}{Correlation of G1 with U_XM (instrument exogeneity
+\item{rho_G1}{Correlation of G1 with conf_XM (instrument exogeneity
 violation). Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY (instrument exogeneity
+\item{rho_G2}{Correlation of G2 with conf_MY (instrument exogeneity
 violation). Default 0.}
 
 \item{rho_pop}{Shared population structure inducing G1-G2 correlation
 Default 0.}
 
-\item{separate_U}{If TRUE, draw separate confounders for the Z->M and M->Y
-paths. Default FALSE.}
+\item{lambda_XM}{Optional length-k loading vector giving each confounder's
+weight on the X->M backdoor path. NULL (default) = shared loadings.}
 
-\item{omega_1}{Coverage of U_XM by W1. NULL = use \code{coverage}.}
+\item{lambda_MY}{Optional length-k loading vector giving each confounder's
+weight on the M->Y backdoor path. NULL (default) = shared loadings.}
 
-\item{omega_2}{Coverage of U_MY by W2. NULL = use \code{coverage}.}
+\item{omega_1}{Coverage of conf_XM by W1. NULL = use \code{coverage}.}
+
+\item{omega_2}{Coverage of conf_MY by W2. NULL = use \code{coverage}.}
 
 \item{feat_cor}{Within-module feature correlation. When > 0 and
 the GAN does not provide feature_correlations, a block-diagonal
 correlation matrix is used for the NC and outcome noise. GAN-learned
 correlations take precedence. Default 0.}
+
+\item{separate_U}{Defunct. Removed in v0.9.8; passing a value errors with a
+message pointing to the replacement per-path loading vectors
+\code{lambda_XM} / \code{lambda_MY}. Retained in the signature only to
+catch and redirect old calls.}
 
 \item{u_strength}{Numeric vector: per-confounder strength
 profile (length k). Default NULL → rep(1, k) (equal strength, backward
@@ -127,7 +137,7 @@ compatible). Recycled to length k and normalized so the total confounding
 budget is unchanged.}
 
 \item{w_coverage_profile}{A list with optional \code{w1} and \code{w2}
-numeric vectors: per-control coverage of U_XM / U_MY
+numeric vectors: per-control coverage of conf_XM / conf_MY
 (length n_features). Default NULL → scalar omega applied uniformly.}
 
 \item{MMExp, MMOut, MMCon, MMCpG}{Per-pathway confounding multipliers (exposure,
@@ -146,14 +156,14 @@ When \code{"survival"}, the linear predictor is converted to
 \item{seed}{Optional RNG seed.}
 }
 \value{
-A named list matching \code{\link[=generate_toy_data]{generate_toy_data()}} — \code{Z}, \code{G} (n x
+A named list matching \code{\link[=generate_toy_data]{generate_toy_data()}} — \code{X}, \code{G} (n x
 n_features), \code{Y}, \code{W}, \code{U1}, \code{M}, \code{synthetic_data}, \code{true_total},
 \code{true_NDE}, \code{true_NIE} — plus \code{U} (full n x k confounder matrix),
 \code{genetic_instrument}, \code{successful_features}, \code{failed_features}, and
 \code{params}. When \code{phi > 0}, also includes \code{Gm} (numeric vector, length n,
 or \verb{n_mediators x n} matrix when \code{n_mediators > 1}).
 When any parameter is non-default, also includes \code{G1}, \code{G2},
-\code{W1}, \code{W2}, \code{U_XM}, \code{U_MY}, and (when \code{rho_pop > 0}) \code{P}.
+\code{W1}, \code{W2}, \code{conf_XM}, \code{conf_MY}, and (when \code{rho_pop > 0}) \code{P}.
 When \code{n_mediators > 1}, \code{M} is an \verb{n_mediators x n} matrix.
 }
 \description{

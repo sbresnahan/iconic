@@ -4,12 +4,12 @@
 \alias{fit_coca_mediation}
 \title{COCA mediation estimator: negative-control calibration of both stages}
 \usage{
-fit_coca_mediation(y, Z, M, w, covars = NULL, ratio_cap = 10)
+fit_coca_mediation(y, X, M, w, covars = NULL, ratio_cap = 10)
 }
 \arguments{
 \item{y}{Numeric primary outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
@@ -31,8 +31,8 @@ and outcome regressions, extending \code{\link{fit_coca}} to the
 mediation setting.
 }
 \details{
-Stage 1: \code{W ~ M + Z} -> calibrated alpha_M = -beta_Z / beta_M.
-Stage 2: \code{W ~ Y + Z + M} -> calibrated NDE = -beta_Z / beta_Y,
+Stage 1: \code{W ~ M + X} -> calibrated alpha_M = -beta_X / beta_M.
+Stage 2: \code{W ~ Y + X + M} -> calibrated NDE = -beta_X / beta_Y,
 calibrated beta_M = -beta_M / beta_Y.
 NIE = alpha_M * beta_M (both calibrated).
 }
@@ -40,6 +40,6 @@ NIE = alpha_M * beta_M (both calibrated).
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-fit_coca_mediation(dat$Y[, 1], dat$Z, dat$M, rowMeans(dat$W))
+fit_coca_mediation(dat$Y[, 1], dat$X, dat$M, rowMeans(dat$W))
 }
 }

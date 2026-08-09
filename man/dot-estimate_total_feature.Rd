@@ -5,7 +5,7 @@
 \title{Estimate total effect for a single feature with specified methods (internal)}
 \usage{
 .estimate_total_feature(
-  Z,
+  X,
   y,
   g = NULL,
   w = NULL,
@@ -18,7 +18,7 @@
 )
 }
 \arguments{
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{y}{Numeric outcome vector (length n).}
 

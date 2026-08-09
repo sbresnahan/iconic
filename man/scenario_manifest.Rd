@@ -12,7 +12,9 @@ scenario_manifest(
   phi_grid = NULL,
   rho_G1_grid = NULL,
   rho_G2_grid = NULL,
-  rho_pop_grid = NULL
+  rho_pop_grid = NULL,
+  omega_1_grid = NULL,
+  omega_2_grid = NULL
 )
 }
 \arguments{
@@ -31,12 +33,18 @@ confounding strength. Default NULL.}
 \item{phi_grid}{Swept values of the mediator-instrument strength
 \code{phi}. Default NULL.}
 
-\item{rho_G1_grid}{Swept values of the G1-U_XM correlation. Default NULL.}
+\item{rho_G1_grid}{Swept values of the G1-conf_XM correlation. Default NULL.}
 
-\item{rho_G2_grid}{Swept values of the G2-U_MY correlation. Default NULL.}
+\item{rho_G2_grid}{Swept values of the G2-conf_MY correlation. Default NULL.}
 
 \item{rho_pop_grid}{Swept values of the population-stratification
 correlation. Default NULL.}
+
+\item{omega_1_grid}{Swept values of \code{omega_1} (coverage of conf_XM by W1).
+Default NULL.}
+
+\item{omega_2_grid}{Swept values of \code{omega_2} (coverage of conf_MY by W2).
+Default NULL.}
 }
 \value{
 A named list with elements:
@@ -65,12 +73,12 @@ parameter ranges up front to orient the reader").
 \item a list returned by \code{\link[=generate_toy_data]{generate_toy_data()}}, in which case the
 estimands and fixed parameters are read from the object
 (\code{true_NDE}, \code{true_NIE}, \code{true_total}, \code{n}, \code{n_features},
-\code{n_mediators}, \code{separate_U}, \code{feat_cor}); or
+\code{n_mediators}, \code{lambda_XM}, \code{lambda_MY}, \code{feat_cor}); or
 \item a bare named list of DGP parameters
-(\code{beta_Z}, \code{alpha_M}, \code{beta_M}, \code{n_mediators}, \code{n},
-\code{n_features}, \code{separate_U}, \code{feat_cor}, ...), in which case
+(\code{beta_X}, \code{alpha_M}, \code{beta_M}, \code{n_mediators}, \code{n},
+\code{n_features}, \code{lambda_XM}, \code{lambda_MY}, \code{feat_cor}, ...), in which case
 the estimands are recomputed as
-\code{NDE = beta_Z}, \code{NIE = n_mediators * alpha_M * beta_M},
+\code{NDE = beta_X}, \code{NIE = n_mediators * alpha_M * beta_M},
 \code{total = NDE + NIE}.
 }
 
@@ -80,7 +88,7 @@ corresponding modifiable parameter is reported with its scalar value
 only (no range).
 }
 \examples{
-dat <- generate_toy_data(n = 200, phi = 0.8, separate_U = TRUE,
+dat <- generate_toy_data(n = 200, phi = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
 omega_1 = 0.7, omega_2 = 0.7, seed = 42)
 scenario_manifest(dat, conf_grid = c(0.3, 0.8),
 coverage_grid = c(0.3, 0.7, 1))

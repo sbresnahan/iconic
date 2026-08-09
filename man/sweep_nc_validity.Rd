@@ -23,7 +23,7 @@ sweep_nc_validity(
 
 \item{phi_val}{Mediator-instrument strength (for A2' panel).}
 
-\item{contam_grid}{Z->W contamination strength grid (A1).}
+\item{contam_grid}{X->W contamination strength grid (A1).}
 
 \item{meqtl_grid}{G->W (meQTL) strength grid (A2).}
 

@@ -30,6 +30,6 @@ negative controls, covariates) and subsets each by \code{idx} internally.
 This guarantees every resampled draw uses a synchronised bootstrap
 sample across all variables — critical for the instrumented estimators
 (IV2SLS, PGC, PGC2Gm) whose instruments and NC panels must be resampled
-in lockstep with y, Z, and M.
+in lockstep with y, X, and M.
 }
 \keyword{internal}

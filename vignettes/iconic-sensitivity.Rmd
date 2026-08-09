@@ -47,11 +47,11 @@ run the sensitivity sweep.
 ```{r sens-data}
 dat <- generate_toy_data(
   n = 200, n_features = 10, seed = 1,
-  phi = 0.8, separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7
+  phi = 0.8, omega_1 = 0.7, omega_2 = 0.7
 )
 
 idat <- iconic_data(
-  Z = dat$Z, Y = dat$Y, M = dat$M,
+  X = dat$X, Y = dat$Y, M = dat$M,
   G = dat$G, Gm = dat$Gm,
   W1 = dat$W1, W2 = dat$W2,
   covariates = dat$synthetic_data
@@ -61,7 +61,7 @@ idat <- iconic_data(
 ```{r sens-gan, eval=has_torch}
 # Train a texture model briefly and attach it to the iconic_data object.
 input <- load_real_input_data(
-  Z_matrix = matrix(dat$Z, nrow = 1),
+  X_matrix = matrix(dat$X, nrow = 1),
   Y_matrix = t(dat$Y), M_matrix = t(dat$M),
   W_matrix = t(dat$W), covariates_df = dat$synthetic_data
 )

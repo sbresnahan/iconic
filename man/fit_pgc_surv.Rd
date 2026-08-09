@@ -7,7 +7,7 @@
 fit_pgc_surv(
   time,
   event,
-  Z,
+  X,
   g,
   W,
   covars = NULL,
@@ -20,7 +20,7 @@ fit_pgc_surv(
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{g}{Numeric instrument vector (length n).}
 
@@ -38,9 +38,9 @@ Named list: \code{beta}, \code{se}, \code{pvalue}.
 \description{
 Three-step bridge-function estimator with a survival outcome stage:
 \enumerate{
-\item Residualise Z on G -> Z_resid (OLS).
-\item Bridge Z_resid on the FULL W matrix -> W_hat (OLS).
-\item Regress the survival outcome on Z + W_hat via Cox (log-HR) or
+\item Residualise X on G -> X_resid (OLS).
+\item Bridge X_resid on the FULL W matrix -> W_hat (OLS).
+\item Regress the survival outcome on X + W_hat via Cox (log-HR) or
 RMST pseudo-observation OLS.
 }
 }
@@ -48,6 +48,6 @@ RMST pseudo-observation OLS.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-fit_pgc_surv(dat$surv_time, dat$surv_event, dat$Z, dat$G[, 1], dat$W)
+fit_pgc_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W)
 }
 }

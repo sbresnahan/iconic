@@ -5,7 +5,7 @@
 \title{Sweep instrument strength}
 \usage{
 sweep_instrument_strength(
-  pi_GZ_grid = c(0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8),
+  pi_GX_grid = c(0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8),
   n_iter = 50,
   n = 200,
   k = 1,
@@ -16,7 +16,7 @@ sweep_instrument_strength(
 )
 }
 \arguments{
-\item{pi_GZ_grid}{Numeric vector of G->Z coefficients to sweep.}
+\item{pi_GX_grid}{Numeric vector of G->X coefficients to sweep.}
 
 \item{n_iter}{Number of replications per grid point.}
 
@@ -35,12 +35,12 @@ Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
 and a PSOCK cluster on Windows.}
 }
 \value{
-A data frame with columns \code{pi_GZ}, \code{arm},
+A data frame with columns \code{pi_GX}, \code{arm},
 \code{iter}, \code{partial_F}, \code{beta}, \code{se},
 \code{pvalue}, \code{rejected}.
 }
 \description{
-Runs a custom DGP that varies the G->Z coefficient (pi_GZ) and
+Runs a custom DGP that varies the G->X coefficient (pi_GX) and
 records IV2SLS performance binned by first-stage partial F.
 Uses \code{fit_iv2sls()} with \code{min_f = 0} (no weak-IV guard)
 so bias is visible across all instrument strengths.

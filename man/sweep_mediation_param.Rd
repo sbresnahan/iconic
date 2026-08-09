@@ -11,7 +11,7 @@ sweep_mediation_param(
   n_samples = 500,
   n_features = 20,
   n_mediators = 1,
-  beta_Z = 0.1,
+  beta_X = 0.1,
   alpha_M = 0.5,
   beta_M = 0.3,
   conf_str = 0.8,
@@ -21,7 +21,8 @@ sweep_mediation_param(
   rho_G1 = 0,
   rho_G2 = 0,
   rho_pop = 0,
-  separate_U = FALSE,
+  lambda_XM = NULL,
+  lambda_MY = NULL,
   omega_1 = NULL,
   omega_2 = NULL,
   feat_cor = 0,
@@ -32,7 +33,7 @@ sweep_mediation_param(
 )
 }
 \arguments{
-\item{param}{Parameter to vary: one of "beta_Z", "conf_str",
+\item{param}{Parameter to vary: one of "beta_X", "conf_str",
 "w_signal", "alpha_M", "beta_M", "n_samples", "mo_confounding", "phi",
 "rho_G1", "rho_G2", "rho_pop", "omega_1", "omega_2",
 "feat_cor".}
@@ -47,7 +48,7 @@ sweep_mediation_param(
 
 \item{n_mediators}{Number of independent mediators. Default 1.}
 
-\item{beta_Z}{Baseline direct effect. Default 0.10.}
+\item{beta_X}{Baseline direct effect. Default 0.10.}
 
 \item{alpha_M}{Baseline mediator path. Default 0.50.}
 
@@ -62,13 +63,15 @@ sweep_mediation_param(
 \item{phi}{Baseline mediator-instrument strength.
 0 = no mediator instrument. Default 0.}
 
-\item{rho_G1}{Baseline G1-U_XM correlation. Default 0.}
+\item{rho_G1}{Baseline G1-conf_XM correlation. Default 0.}
 
-\item{rho_G2}{Baseline G2-U_MY correlation. Default 0.}
+\item{rho_G2}{Baseline G2-conf_MY correlation. Default 0.}
 
 \item{rho_pop}{Baseline population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders. Default FALSE.}
+\item{lambda_XM}{Optional per-path confounder loading vector (X->M path).}
+
+\item{lambda_MY}{Optional per-path confounder loading vector (M->Y path).}
 
 \item{omega_1}{Baseline W1 coverage. NULL = use w_signal.}
 

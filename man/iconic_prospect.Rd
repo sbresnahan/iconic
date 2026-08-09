@@ -16,12 +16,17 @@ iconic_prospect(
   n_features = 10,
   mo_confounding = 0.8,
   phi = 0.8,
-  separate_U = TRUE,
+  lambda_XM = NULL,
+  lambda_MY = NULL,
   omega_1 = 0.7,
   omega_2 = 0.7,
+  rho_G1_grid = c(0, 0.1, 0.2, 0.3, 0.5),
+  rho_G2_grid = c(0, 0.1, 0.2, 0.3, 0.5),
+  omega_grid_rho = c(0.3, 0.7, 1),
+  run_rho_sweep = TRUE,
   bias_threshold = 0.1,
   base_seed = 500,
-  n_cores = 1,
+  verbose = FALSE,
   allow_no_proxy = TRUE,
   outcome_type = c("continuous", "survival"),
   effect_scale = c("loghr", "rmst"),
@@ -31,7 +36,7 @@ iconic_prospect(
 )
 }
 \arguments{
-\item{data}{An \code{iconic_data} object (must have Z and Y;
+\item{data}{An \code{iconic_data} object (must have X and Y;
 M is required for mediation prospect).}
 
 \item{trained_gan}{Optional \code{iconic_gan} from
@@ -57,18 +62,38 @@ Default 0.6 (matching the DGP default).}
 
 \item{phi}{Assumed mediator instrument strength. Default 0.8.}
 
-\item{separate_U}{Use separate confounders for Z->M and M->Y.
+\item{lambda_XM}{Optional per-path confounder loading vector (X->M path).}
+
+\item{lambda_MY}{Optional per-path confounder loading vector (M->Y path).
 Default TRUE.}
 
 \item{omega_1, omega_2}{Assumed NC coverage. Default 0.7.}
+
+\item{rho_G1_grid, rho_G2_grid}{Instrument-exogeneity violation values
+(correlation of each instrument with its path's confounder composite) to
+sweep in Phase 3 at the target instrument strength. Default
+\code{c(0, 0.1, 0.2, 0.3, 0.5)}, matching \code{\link{iconic_sensitivity}}.}
+
+\item{omega_grid_rho}{Negative-control coverage values swept jointly with
+the rho grid in Phase 3, on the diagonal (\code{omega_1 == omega_2}).
+Default \code{c(0.3, 0.7, 1.0)}, matching \code{\link{iconic_sensitivity}}.
+This is independent of the Phase 1 \code{omega_1}/\code{omega_2} sweep.}
+
+\item{run_rho_sweep}{Logical: run the Phase 3 robustness sweep
+(default \code{TRUE}). The sweep crosses instrument-exogeneity violations
+(rho) with negative-control coverage (omega) and feeds the resulting
+degradation surface into \code{\link{iconic_recommend}()} so the
+recommended estimator is chosen by robustness to both imperfect
+instruments and weakening controls, rather than by eligibility alone.
+Set \code{FALSE} to skip (faster, but the recommendation then falls back
+to a single-point / eligibility ranking).}
 
 \item{bias_threshold}{Tipping-point threshold. Default 0.10.}
 
 \item{base_seed}{Base RNG seed. Default 500.}
 
-\item{n_cores}{Number of parallel workers for simulation replicates.
-Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
-and a PSOCK cluster on Windows.}
+\item{verbose}{Logical: print progress messages during the sweep.
+Default \code{FALSE} (quiet).}
 
 \item{allow_no_proxy}{Logical: when \code{TRUE}
 (default), proceed with the prospective sweep even if the data
@@ -88,12 +113,15 @@ See \code{\link{generate_toy_data}}.}
 An \code{iconic_prospect} S3 object: a named list with
 \code{$strength_surface} (Phase 1: gamma_G x method estimates),
 \code{$prospective} (Phase 2: full simulation at target strength),
+\code{$rho_surface} (Phase 3: rho_G1 x rho_G2 exogeneity-robustness
+surface at the target strength; \code{NULL} when
+\code{run_rho_sweep = FALSE}),
 \code{$summary}, \code{$recommendation},
 \code{$texture_source}, and \code{$inferred_confounding} (when
 \code{confounding = "inferred"}).
 }
 \description{
-For users who have exposure (Z), mediator (M), and outcome (Y) but
+For users who have exposure (X), mediator (M), and outcome (Y) but
 no genetic instruments (G, Gm) or negative controls (W), this
 function simulates what estimates they could expect if they were to
 collect such data.
@@ -147,8 +175,11 @@ not a silent failure.
 \code{n_features} \tab 10 \tab Features per replicate \cr
 \code{mo_confounding} \tab 0.8 \tab Simulation calibration (delta_mo) \cr
 \code{phi} \tab 0.8 \tab Strong mediator instrument assumption \cr
-\code{separate_U} \tab TRUE \tab Path-specific confounders \cr
+\code{lambda_XM}, \code{lambda_MY} \tab shared \tab Per-path confounder loadings \cr
 \code{omega_1, omega_2} \tab 0.7 \tab NC coverage (simulation calibration) \cr
+\code{rho_G1_grid}, \code{rho_G2_grid} \tab c(0,0.1,0.2,0.3,0.5) \tab Phase 3 exogeneity sweep \cr
+\code{omega_grid_rho} \tab c(0.3,0.7,1.0) \tab Phase 3 NC-coverage sweep (diagonal) \cr
+\code{run_rho_sweep} \tab TRUE \tab Run Phase 3 robustness sweep \cr
 \code{bias_threshold} \tab 0.10 \tab Tipping-point threshold \cr
 \code{allow_no_proxy} \tab TRUE \tab Proceed in prospective setting \cr
 }
@@ -156,9 +187,9 @@ not a silent failure.
 
 \examples{
 \dontrun{
-data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
+data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 M = rnorm(100))
-result <- iconic_prospect(data, n_iter = 10, n_cores = 2)
+result <- iconic_prospect(data, n_iter = 10)
 print(result)
 }
 }

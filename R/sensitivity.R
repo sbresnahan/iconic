@@ -43,13 +43,13 @@
 
   if (is_mediation) {
     sdat <- iconic_data(
-      Z = dat$Z, outcome_type = "survival",
+      X = dat$X, outcome_type = "survival",
       surv_time = dat$surv_time, surv_event = dat$surv_event,
       M = dat$M, G = G_vec, Gm = Gm_vec,
       W = t(dat$W))
   } else {
     sdat <- iconic_data(
-      Z = dat$Z, outcome_type = "survival",
+      X = dat$X, outcome_type = "survival",
       surv_time = dat$surv_time, surv_event = dat$surv_event,
       G = G_vec, W = t(dat$W))
   }
@@ -71,7 +71,7 @@
 #' @param n_iter Replicates per scenario. Default 50.
 #' @param n_samples Samples per replicate. Default 500.
 #' @param n_features Features per replicate. Default 20.
-#' @param beta_Z,alpha_M,beta_M Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.
+#' @param beta_X,alpha_M,beta_M Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.
 #' @param effect_size Optional pure-direct total effect override (see
 #' [run_single_iteration()]).
 #' @param base_seed Base RNG seed. Default 700.
@@ -98,7 +98,7 @@ gan_sensitivity <- function(trained_gan = NULL,
                             n_iter = 50,
                             n_samples = 500,
                             n_features = 20,
-                            beta_Z = 0.10, alpha_M = 0.50, beta_M = 0.30,
+                            beta_X = 0.10, alpha_M = 0.50, beta_M = 0.30,
                             effect_size = NULL,
                             base_seed = 700,
                             n_cores = 1,
@@ -113,7 +113,7 @@ gan_sensitivity <- function(trained_gan = NULL,
   grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
                       k = k_grid, KEEP.OUT.ATTRS = FALSE)
 
-  true_total <- if (is.null(effect_size)) beta_Z + alpha_M * beta_M else effect_size
+  true_total <- if (is.null(effect_size)) beta_X + alpha_M * beta_M else effect_size
 
   smry <- lapply(seq_len(nrow(grid)), function(gi) {
     cs <- grid$conf_strength[gi]; cov <- grid$coverage[gi]; kk <- grid$k[gi]
@@ -121,7 +121,7 @@ gan_sensitivity <- function(trained_gan = NULL,
     worker <- function(i) {
       dat <- run_single_iteration(
         trained_gan, n_synthetic_samples = n_samples, n_features = n_features,
-        n_confounders = kk, beta_Z = beta_Z, alpha_M = alpha_M, beta_M = beta_M,
+        n_confounders = kk, beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
         effect_size = effect_size, conf_strength = cs, coverage = cov,
         nc_model = nc_model, seed = base_seed + gi * 1000L + i,
         outcome_type = outcome_type, surv_h0 = surv_h0,
@@ -302,17 +302,18 @@ nc_validity_check <- function(trained_gan = NULL,
 #' 0 = no mediator instrument (five estimators). > 0 =
 #' generates Gm and includes the 2-stage MR estimator
 #' (IV2SLS2). Default 0.
-#' @param rho_G1 Correlation of G1 with U_XM. Default 0.
-#' @param rho_G2 Correlation of G2 with U_MY. Default 0.
+#' @param rho_G1 Correlation of G1 with conf_XM. Default 0.
+#' @param rho_G2 Correlation of G2 with conf_MY. Default 0.
 #' @param rho_pop Shared population structure. Default 0.
-#' @param separate_U Draw separate confounders for Z->M and M->Y. Default FALSE.
-#' @param omega_1 Coverage of U_XM by W1. NULL = use `coverage`.
-#' @param omega_2 Coverage of U_MY by W2. NULL = use `coverage`.
+#' @param lambda_XM Optional per-path confounder loading vector (X->M path).
+#' @param lambda_MY Optional per-path confounder loading vector (M->Y path).
+#' @param omega_1 Coverage of conf_XM by W1. NULL = use `coverage`.
+#' @param omega_2 Coverage of conf_MY by W2. NULL = use `coverage`.
 #' @param nc_model Negative-control model (function or name). Default `"proxy"`.
 #' @param n_iter Replicates per scenario. Default 50.
 #' @param n_samples Samples per replicate. Default 500.
 #' @param n_features Features per replicate. Default 20.
-#' @param beta_Z,alpha_M,beta_M Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.
+#' @param beta_X,alpha_M,beta_M Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.
 #' @param base_seed Base RNG seed. Default 750.
 #' @param n_cores Parallel workers across replicates. Default 1.
 #' @param outcome_type \code{"continuous"} (default) or \code{"survival"}
@@ -346,14 +347,15 @@ gan_mediation_sensitivity <- function(trained_gan = NULL,
                                       rho_G1 = 0,
                                       rho_G2 = 0,
                                       rho_pop = 0,
-                                      separate_U = FALSE,
+                                      lambda_XM = NULL,
+                                      lambda_MY = NULL,
                                       omega_1 = NULL,
                                       omega_2 = NULL,
                                       nc_model = "proxy",
                                       n_iter = 50,
                                       n_samples = 500,
                                       n_features = 20,
-                                      beta_Z = 0.10, alpha_M = 0.50, beta_M = 0.30,
+                                      beta_X = 0.10, alpha_M = 0.50, beta_M = 0.30,
                                       base_seed = 750,
                                       n_cores = 1,
                                       outcome_type = c("continuous", "survival"),
@@ -367,7 +369,7 @@ gan_mediation_sensitivity <- function(trained_gan = NULL,
   grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
                       k = k_grid, KEEP.OUT.ATTRS = FALSE)
 
-  true_NDE <- beta_Z
+  true_NDE <- beta_X
   true_NIE <- alpha_M * beta_M
 
   smry <- lapply(seq_len(nrow(grid)), function(gi) {
@@ -376,11 +378,11 @@ gan_mediation_sensitivity <- function(trained_gan = NULL,
     worker <- function(i) {
       dat <- run_single_iteration(
         trained_gan, n_synthetic_samples = n_samples, n_features = n_features,
-        n_confounders = kk, beta_Z = beta_Z, alpha_M = alpha_M, beta_M = beta_M,
+        n_confounders = kk, beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
         conf_strength = cs, coverage = cov, nc_model = nc_model,
         mo_confounding = mo_confounding, phi = phi,
         rho_G1 = rho_G1, rho_G2 = rho_G2, rho_pop = rho_pop,
-        separate_U = separate_U, omega_1 = omega_1, omega_2 = omega_2,
+        lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = omega_1, omega_2 = omega_2,
         seed = base_seed + gi * 1000L + i,
         outcome_type = outcome_type, surv_h0 = surv_h0,
         surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
@@ -404,7 +406,8 @@ gan_mediation_sensitivity <- function(trained_gan = NULL,
     s$rho_G1 <- rho_G1
     s$rho_G2 <- rho_G2
     s$rho_pop <- rho_pop
-    s$separate_U <- separate_U
+    s$lambda_XM <- list(lambda_XM)
+    s$lambda_MY <- list(lambda_MY)
     s$true_NDE <- true_NDE
     s$true_NIE <- true_NIE
     s
@@ -412,16 +415,16 @@ gan_mediation_sensitivity <- function(trained_gan = NULL,
 
   summary <- do.call(rbind, smry)
   front <- c("conf_strength", "coverage", "k", "mo_confounding", "phi",
-               "rho_G1", "rho_G2", "rho_pop", "separate_U",
+               "rho_G1", "rho_G2", "rho_pop",
                "true_NDE", "true_NIE", "method")
   summary <- summary[, c(front, setdiff(names(summary), front))]
 
   # attach a scenario manifest so the manuscript
   # can render the truth + parameter ranges as an orientation table.
   manifest <- scenario_manifest(
-    list(beta_Z = beta_Z, alpha_M = alpha_M, beta_M = beta_M,
+    list(beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
          n_mediators = 1, n = n_samples, n_features = n_features,
-         separate_U = separate_U, feat_cor = 0,
+         lambda_XM = lambda_XM, lambda_MY = lambda_MY, feat_cor = 0,
          conf_str = NA, mo_confounding = mo_confounding, phi = phi,
          w_signal = NA, rho_G1 = rho_G1, rho_G2 = rho_G2,
          rho_pop = rho_pop),

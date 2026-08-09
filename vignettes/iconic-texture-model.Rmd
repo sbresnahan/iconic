@@ -71,7 +71,7 @@ Neither component learns the causal effect. The learned texture is injected
 into the same structural causal model as the benchmark mode, but drawn
 independently of the latent confounders $U$ so it cannot open a hidden
 backdoor. Because the generative model never models the joint of
-$(Z, M, Y)$ and only learns the nuisance texture, the ground-truth effect
+$(X, M, Y)$ and only learns the nuisance texture, the ground-truth effect
 is guaranteed by construction.
 
 # Training the texture model
@@ -90,11 +90,11 @@ We simulate a small panel and train the texture model briefly:
 ```{r texture-data}
 dat <- generate_toy_data(
   n = 100, n_features = 5, seed = 1,
-  phi = 0.8, separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7
+  phi = 0.8, omega_1 = 0.7, omega_2 = 0.7
 )
 
 idat <- iconic_data(
-  Z = dat$Z, Y = dat$Y, M = dat$M,
+  X = dat$X, Y = dat$Y, M = dat$M,
   G = dat$G, Gm = dat$Gm,
   W1 = dat$W1, W2 = dat$W2,
   covariates = dat$synthetic_data
@@ -103,7 +103,7 @@ idat <- iconic_data(
 
 ```{r texture-train, eval=has_torch}
 input <- load_real_input_data(
-  Z_matrix = matrix(dat$Z, nrow = 1),
+  X_matrix = matrix(dat$X, nrow = 1),
   Y_matrix = t(dat$Y), M_matrix = t(dat$M),
   W_matrix = t(dat$W), covariates_df = dat$synthetic_data
 )

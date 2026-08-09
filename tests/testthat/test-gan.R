@@ -15,19 +15,19 @@ test_that("train_gan_on_real_data errors without torch", {
 
 test_that("run_single_iteration matches the generate_toy_data contract", {
   dat <- run_single_iteration(NULL, n_synthetic_samples = 300, n_features = 8, seed = 1)
-  expect_true(all(c("Z", "G", "Y", "W", "U1", "M", "synthetic_data", "true_total") %in%
+  expect_true(all(c("X", "G", "Y", "W", "U1", "M", "synthetic_data", "true_total") %in%
                     names(dat)))
   expect_equal(dim(dat$Y), c(300, 8))
   expect_equal(dim(dat$W), c(300, 8))
   expect_equal(dim(dat$G), c(300, 8))
-  expect_length(dat$Z, 300)
+  expect_length(dat$X, 300)
   # single instrument replicated across columns
   expect_equal(dat$G[, 1], dat$G[, 8])
 })
 
 test_that("true_total is the closed-form causal effect and flows through the estimators", {
   dat <- run_single_iteration(NULL, n_synthetic_samples = 300, n_features = 5,
-                              beta_Z = 0.1, alpha_M = 0.5, beta_M = 0.3, seed = 2)
+                              beta_X = 0.1, alpha_M = 0.5, beta_M = 0.3, seed = 2)
   expect_equal(dat$true_total, 0.1 + 0.5 * 0.3)
 
   res <- analyze_methods_robust(dat)

@@ -21,8 +21,8 @@
 List: F_G, F_Gm, weak_G (logical), weak_Gm (logical).
 }
 \description{
-Computes partial F-statistics for G (in Z ~ G + W + covars) and
-Gm (in M ~ Z_hat + Gm + W + covars), matching the first-stage
+Computes partial F-statistics for G (in X ~ G + W + covars) and
+Gm (in M ~ X_hat + Gm + W + covars), matching the first-stage
 regressions used by fit_iv2sls() and fit_iv2sls_mediation2().
 }
 \keyword{internal}

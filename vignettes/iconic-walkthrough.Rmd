@@ -58,7 +58,7 @@ The workflow is six steps:
 6. **Prospect** for future studies with `iconic_prospect()`.
 
 We illustrate on a simulated mediation panel with a genetic instrument (`G`),
-an exposure (`Z`), a mediator panel (`M`), an outcome panel (`Y`), and a panel
+an exposure (`X`), a mediator panel (`M`), an outcome panel (`Y`), and a panel
 of negative controls (`W`).
 
 ```{r workflow-data}
@@ -66,9 +66,9 @@ set.seed(1)
 dat <- generate_toy_data(n = 200, n_features = 10, seed = 1)
 
 # Assemble an iconic_data object. Y and M are features x samples matrices;
-# Z is a length-n vector; G is an n x n_snps matrix; W is an n x n_ncs matrix.
+# X is a length-n vector; G is an n x n_snps matrix; W is an n x n_ncs matrix.
 idat <- iconic_data(
-  Z = dat$Z, Y = dat$Y, M = dat$M,
+  X = dat$X, Y = dat$Y, M = dat$M,
   G = dat$G, W = dat$W,
   covariates = dat$synthetic_data
 )
@@ -87,7 +87,10 @@ diag$eligibility
 
 Each estimator is marked eligible only when its required assumptions are
 met. For example, `IV2SLS` requires a valid instrument (F >= 10), while
-`PGC` additionally requires negative-control completeness.
+`PGC` additionally requires negative-control completeness. The
+instrument-variable estimators (`IV2SLS`, `IV2SLS2`) are identified by the
+instrument(s) alone, so they remain eligible even when no negative controls
+are supplied; `W`, when present, is used as an optional augmentation.
 
 # Step 2: Estimate
 
@@ -118,7 +121,7 @@ would train for more epochs on your own cohort with `train_gan_on_real_data()`
 ```{r workflow-gan, eval=has_torch}
 # Train a texture model once (few epochs for the vignette).
 input <- load_real_input_data(
-  Z_matrix = matrix(dat$Z, nrow = 1),
+  X_matrix = matrix(dat$X, nrow = 1),
   Y_matrix = t(dat$Y), M_matrix = t(dat$M),
   W_matrix = t(dat$W), covariates_df = dat$synthetic_data
 )
@@ -182,10 +185,10 @@ rec <- iconic_recommend(idat, diag, est, sens)
 rec
 ```
 
-The recommended estimator is the highest-tier eligible estimator with
-acceptable robustness across the sensitivity surface. The full ranking and
-the ineligible estimators (with reasons) are printed below the
-recommendation.
+The recommended estimator is the eligible estimator with the best
+per-estimand robustness across the sensitivity surface (NDE and NIE are
+ranked separately). The full ranking and the ineligible estimators (with
+reasons) are printed below the recommendation.
 
 # Step 6: Prospective analysis
 
@@ -219,7 +222,7 @@ sdat <- generate_toy_data(
 
 # For survival, pass surv_time + surv_event instead of Y.
 sdata <- iconic_data(
-  Z = sdat$Z,
+  X = sdat$X,
   surv_time = sdat$surv_time, surv_event = sdat$surv_event,
   G = sdat$G, W = sdat$W,
   outcome_type = "survival",
@@ -237,12 +240,12 @@ The full pipeline, end to end:
 ```r
 # 1. Standardize data (optionally attach a pre-trained GAN).
 dat <- generate_toy_data(n = 200, n_features = 10, seed = 1)
-idat <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
+idat <- iconic_data(X = dat$X, Y = dat$Y, M = dat$M,
                     G = dat$G, W = dat$W, covariates = dat$synthetic_data)
 
 # 2. Train a texture model once and attach it.
 input <- load_real_input_data(
-  Z_matrix = matrix(dat$Z, nrow = 1), Y_matrix = t(dat$Y),
+  X_matrix = matrix(dat$X, nrow = 1), Y_matrix = t(dat$Y),
   M_matrix = t(dat$M), W_matrix = t(dat$W),
   covariates_df = dat$synthetic_data
 )

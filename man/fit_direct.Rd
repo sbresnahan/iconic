@@ -4,12 +4,12 @@
 \alias{fit_direct}
 \title{DIRECT estimator: OLS with instrument and negative-control as covariates}
 \usage{
-fit_direct(y, Z, g, w, covars = NULL)
+fit_direct(y, X, g, w, covars = NULL)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n), assumed pre-scaled.}
+\item{X}{Numeric exposure vector (length n), assumed pre-scaled.}
 
 \item{g}{Numeric instrument vector (length n).}
 
@@ -23,7 +23,7 @@ separate covariates.}
 Named list: \code{beta}, \code{se}, \code{pvalue}.
 }
 \description{
-Regresses Y on Z plus the genetic instrument G, the negative-control W,
+Regresses Y on X plus the genetic instrument G, the negative-control W,
 and any additional covariates. This is a "naive" adjustment that uses
 whatever observables are available but does NOT correct for unmeasured
 confounding via a ratio or IV approach.
@@ -32,6 +32,6 @@ confounding via a ratio or IV approach.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, seed = 1)
-fit_direct(dat$Y[, 1], dat$Z, dat$G[, 1], dat$W[, 1])
+fit_direct(dat$Y[, 1], dat$X, dat$G[, 1], dat$W[, 1])
 }
 }

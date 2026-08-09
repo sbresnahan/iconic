@@ -14,7 +14,7 @@
 \item{n_cores}{Number of parallel workers for the NC-feature loop.}
 }
 \description{
-Regresses each NC feature on the outcome residualized on Z + C and
+Regresses each NC feature on the outcome residualized on X + C and
 takes sqrt(R^2), averaged across features. This is a composite of
 coverage and confounder strength, not pure coverage.
 }

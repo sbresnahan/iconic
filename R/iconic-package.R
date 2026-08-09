@@ -17,10 +17,10 @@ utils::globalVariables("self")
 # These are all data-frame column names used in aes() across the plotting
 # functions in figures.R and plots.R.
 utils::globalVariables(c(
-  ".data", "bias", "bias_sd", "completeness", "conf_str", "eligible",
-  "estimate", "estimator", "feat_cor", "gamma_G", "group", "k", "label",
-  "mean_F", "method", "n_valid", "NDE_bias", "NIE_type1", "partial_F",
-  "pgc_bias", "pleio", "rate", "recommended", "rejected", "rho_G1",
-  "rho_G2", "se", "t1e", "value", "winner", "x", "xg", "xint", "xvar",
-  "yint"
+  ".data", "bias", "bias_sd", "completeness", "conf_str", "coverage",
+  "eligible", "estimate", "estimand", "estimator", "feat_cor", "gamma_G", "group",
+  "k", "label", "mean_F", "method", "n_valid", "NDE_bias", "NIE_type1",
+  "partial_F", "pgc_bias", "pleio", "rate", "recommended", "rejected",
+  "rho_G1", "rho_G2", "se", "t1e", "value", "winner", "x", "xg", "xint",
+  "xvar", "yint"
 ))

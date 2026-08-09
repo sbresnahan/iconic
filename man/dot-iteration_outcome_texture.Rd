@@ -9,6 +9,6 @@
 \description{
 Returns a centred n-vector taken from the generator's outcome channel. It is
 added to every outcome feature to inject a realistic shared component, but is
-never fed into Z, so it cannot open a confounding backdoor.
+never fed into X, so it cannot open a confounding backdoor.
 }
 \keyword{internal}

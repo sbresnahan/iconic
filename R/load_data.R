@@ -20,7 +20,7 @@
 # Tokens the estimators reserve when they paste covariate names into
 # model formulas (see .covar_str in estimators.R). Covariates that
 # collide with these would silently corrupt a regression, so we rename.
-.reserved_covar_tokens <- c("y", "Z", "g", "w", "W_hat", "G_inst", "Z_resid", "Zc")
+.reserved_covar_tokens <- c("y", "X", "g", "w", "W_hat", "G_inst", "X_resid", "Xc")
 
 #' Load and standardise a real multi-omic dataset for GAN training
 #'
@@ -41,7 +41,7 @@
 #' If no matrices are supplied a small built-in example dataset is returned,
 #' so the pipeline can be exercised end-to-end without real data.
 #'
-#' @param Z_matrix Exposure panel, `features x samples` (e.g. maternal
+#' @param X_matrix Exposure panel, `features x samples` (e.g. maternal
 #' PFAS z-scores across probes). Column means become the per-sample exposure.
 #' @param Y_matrix Outcome, either a scalar vector of length `n_samples`
 #' (e.g. birth weight) or a `features x samples` matrix. When a vector, it
@@ -65,36 +65,45 @@
 #' if KS test passes at p > 0.05, otherwise empirical), \code{"empirical"}
 #' (always empirical CDF), or \code{"parametric"} (always best parametric
 #' fit by AIC). See [train_feature_texture()].
-#' @param residualize_on Character: \code{"ZC"} (default)
+#' @param residualize_on Character: \code{"XC"} (default)
 #' residualizes the Y/W correlation on exposure + covariates only;
-#' \code{"ZCW"} additionally residualizes on the W bridge proxy (PC1 of W),
+#' \code{"XCW"} additionally residualizes on the W bridge proxy (PC1 of W),
 #' reducing U-signature double-counting. Recommended only when the
 #' completeness-capture test reports "strong".
+#' @param Z_matrix Defunct. Renamed to \code{X_matrix} in v0.9.8; passing a
+#'   value errors with a message pointing to \code{X_matrix}. Retained in the
+#'   signature only to catch and redirect old calls.
 #'
 #' @return A list with `gan_training_data` (sample x variable data frame with
 #' exposure level, outcome level, mediator level, and encoded covariates),
-#' `original_matrices` (`Z`, `Y`, `M`, `W`), `covariates` (encoded frame),
+#' `original_matrices` (`X`, `Y`, `M`, `W`), `covariates` (encoded frame),
 #' `feature_correlations` (list with `Y`, `W` residual correlation matrices,
 #' or `NULL` for absent panels), `feature_texture` (an
 #' `iconic_feature_texture` object for the mediator panel, or `NULL` when
 #' no M matrix is supplied), `sample_names`, `feature_names`, `n_samples`,
 #' `n_features`.
 #' @export
-load_real_input_data <- function(Z_matrix = NULL,
+load_real_input_data <- function(X_matrix = NULL,
                                  Y_matrix = NULL,
                                  M_matrix = NULL,
                                  W_matrix = NULL,
                                  covariates_df = NULL,
                                  example = FALSE,
                                  marginal_method = "auto",
-                                 residualize_on = c("ZC", "ZCW")) {
+                                 residualize_on = c("XC", "XCW"),
+                                 Z_matrix = NULL) {
 
-  if (is.null(Z_matrix) && is.null(Y_matrix) && is.null(covariates_df))
+  # Deprecated-argument trap: renamed Z_matrix -> X_matrix in v0.9.8.
+  if (!is.null(Z_matrix))
+    stop("argument `Z_matrix` was renamed to `X_matrix` in v0.9.8; please use `X_matrix = ...`.",
+         call. = FALSE)
+
+  if (is.null(X_matrix) && is.null(Y_matrix) && is.null(covariates_df))
     example <- TRUE
 
   if (example) {
     ex <- .make_example_input()
-    Z_matrix <- ex$Z_matrix
+    X_matrix <- ex$X_matrix
     Y_matrix <- ex$Y_matrix
     M_matrix <- ex$M_matrix
     W_matrix <- ex$W_matrix
@@ -103,8 +112,8 @@ load_real_input_data <- function(Z_matrix = NULL,
 
   if (is.null(Y_matrix)) stop("Y_matrix (outcome) is required.")
   Y_matrix <- as.matrix(Y_matrix)
-  if (is.null(Z_matrix)) stop("Z_matrix (exposure panel) is required.")
-  Z_matrix <- as.matrix(Z_matrix)
+  if (is.null(X_matrix)) stop("X_matrix (exposure panel) is required.")
+  X_matrix <- as.matrix(X_matrix)
 
   # Y can be a scalar vector (1 x n) or a features x samples matrix.
   # When scalar (e.g. birth weight), n_features is determined by M or W.
@@ -118,8 +127,8 @@ load_real_input_data <- function(Z_matrix = NULL,
     n_features <- nrow(Y_matrix)
   }
 
-  if (ncol(Z_matrix) != n_samples)
-    stop("Z_matrix and Y_matrix must have the same number of samples (columns).")
+  if (ncol(X_matrix) != n_samples)
+    stop("X_matrix and Y_matrix must have the same number of samples (columns).")
   if (!is.null(M_matrix)) {
     M_matrix <- as.matrix(M_matrix)
     if (ncol(M_matrix) != n_samples)
@@ -141,7 +150,7 @@ load_real_input_data <- function(Z_matrix = NULL,
   # Per-sample summaries (mean across features), standardised. This is the
   # tabular signal the generator learns: exposure level, outcome level,
   # mediator level, and the encoded covariates, jointly, one row per sample.
-  pfas_z <- as.numeric(scale(colMeans(Z_matrix, na.rm = TRUE)))
+  pfas_z <- as.numeric(scale(colMeans(X_matrix, na.rm = TRUE)))
 
   # Y: scalar outcome (e.g. birth weight) — one value per sample.
   # When Y_matrix is 1 x n, take the single row; otherwise column means.
@@ -169,7 +178,7 @@ load_real_input_data <- function(Z_matrix = NULL,
   # Gaussian copula with flexible marginals (train_feature_texture()), which
   # captures both the marginal shapes and the cross-feature dependence —
   # replacing the residual-correlation-only approach for M.
-  # when residualize_on = "ZCW", the Y residual
+  # when residualize_on = "XCW", the Y residual
   # correlation additionally partials out the W bridge proxy Ŵ, reducing
   # the double-counting of U's cross-feature signature.
   feature_correlations <- list(
@@ -190,7 +199,7 @@ load_real_input_data <- function(Z_matrix = NULL,
 
   list(
     gan_training_data = gan_training_data,
-    original_matrices = list(Z = Z_matrix, Y = Y_matrix, M = M_matrix, W = W_matrix),
+    original_matrices = list(X = X_matrix, Y = Y_matrix, M = M_matrix, W = W_matrix),
     covariates = covars,
     feature_correlations = feature_correlations,
     feature_texture = feature_texture,
@@ -211,8 +220,8 @@ load_real_input_data <- function(Z_matrix = NULL,
 #' @param mat A `features x samples` numeric matrix.
 #' @param exposure A length-n_samples numeric vector (per-sample exposure).
 #' @param covars A data frame of encoded covariates (n_samples rows).
-#' @param residualize_on Character: `"ZC"` (default, legacy) residualizes on
-#' exposure + covariates only; `"ZCW"` additionally
+#' @param residualize_on Character: `"XC"` (default, legacy) residualizes on
+#' exposure + covariates only; `"XCW"` additionally
 #' residualizes on the negative-control bridge proxy Ŵ, obtained by
 #' regressing `W_mat` on exposure + covariates. This partials out the
 #' U-signature that W captures, reducing the double-counting of U's
@@ -221,11 +230,11 @@ load_real_input_data <- function(Z_matrix = NULL,
 #' over-partial if W is a weak proxy — recommended only when the
 #' completeness-capture test (§1) reports "strong".
 #' @param W_mat Optional `features x samples` NC matrix used to construct
-#' the bridge proxy Ŵ when `residualize_on = "ZCW"`. Ignored otherwise.
+#' the bridge proxy Ŵ when `residualize_on = "XCW"`. Ignored otherwise.
 #' @return A p x p correlation matrix, or NULL.
 #' @keywords internal
 .residual_correlation <- function(mat, exposure, covars,
-                                  residualize_on = c("ZC", "ZCW"),
+                                  residualize_on = c("XC", "XCW"),
                                   W_mat = NULL) {
   residualize_on <- match.arg(residualize_on)
   if (is.null(mat)) return(NULL)
@@ -236,15 +245,15 @@ load_real_input_data <- function(Z_matrix = NULL,
 
   # build the bridge proxy Ŵ from the W panel.
   # W captures U; residualizing Y on W's U-direction partials out the
-  # U-signature that Z alone misses, reducing double-counting. We use the
+  # U-signature that X alone misses, reducing double-counting. We use the
   # PC1 of the raw W panel (the dominant U-capturing direction). We do NOT
-  # residualize W on Z + C first, because Z already proxies U and would
+  # residualize W on X + C first, because X already proxies U and would
   # strip W's U-signal — defeating the purpose. The bridge is then
-  # included alongside Z + C in the Y residualization, so any U-variance
-  # W captures beyond what Z + C explain is partialled out.
+  # included alongside X + C in the Y residualization, so any U-variance
+  # W captures beyond what X + C explain is partialled out.
   # Only active when W_mat is supplied and residualize_on = "ZCW".
   bridge <- NULL
-  if (residualize_on == "ZCW" && !is.null(W_mat)) {
+  if (residualize_on == "XCW" && !is.null(W_mat)) {
     Wm <- as.matrix(W_mat)
     if (nrow(Wm) >= 2 && ncol(Wm) == n) {
       Wc <- t(Wm) # n x p
@@ -346,7 +355,7 @@ load_real_input_data <- function(Z_matrix = NULL,
 
 #' Build a small synthetic example input dataset (internal)
 #'
-#' Produces `features x samples` Z/M/W matrices, a scalar outcome vector Y
+#' Produces `features x samples` X/M/W matrices, a scalar outcome vector Y
 #' (birth weight), and a covariate frame with the recognised
 #' `sample_id`/`sex`/`GA`/`mother_ethnicity` columns, so the pipeline runs
 #' without user data. Not a benchmark DGP; just plumbing exercise data.
@@ -388,7 +397,7 @@ load_real_input_data <- function(Z_matrix = NULL,
   rownames(Wm) <- paste0("nc", seq_len(n_features))
 
   list(
-    Z_matrix = Zm, Y_matrix = Ym, M_matrix = Mm, W_matrix = Wm,
+    X_matrix = Zm, Y_matrix = Ym, M_matrix = Mm, W_matrix = Wm,
     covariates_df = data.frame(
       sample_id = paste0("S", seq_len(n_samples)),
       sex = ifelse(sex == 1, "Male", "Female"),

@@ -4,12 +4,12 @@
 \alias{fit_pgc_scalar}
 \title{PGC estimator: Proxy G-Component Correction (scalar bridge)}
 \usage{
-fit_pgc_scalar(y, Z, g, w, covars = NULL)
+fit_pgc_scalar(y, X, g, w, covars = NULL)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{g}{Numeric instrument vector (length n).}
 
@@ -41,6 +41,6 @@ or as an IV-equivalent benchmark.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, seed = 1)
-fit_pgc_scalar(dat$Y[, 1], dat$Z, dat$G[, 1], rowMeans(dat$W))
+fit_pgc_scalar(dat$Y[, 1], dat$X, dat$G[, 1], rowMeans(dat$W))
 }
 }

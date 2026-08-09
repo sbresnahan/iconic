@@ -1,3 +1,165 @@
+# iconic 0.9.8
+
+## Breaking changes
+
+- **`iconic_prospect()` is now sequential-only.** The `n_cores` argument
+  has been removed from `iconic_prospect()`; simulation replicates always
+  run sequentially. (Parallel replicate execution remains available in
+  `iconic_sensitivity()`, `iconic_estimate()`, `iconic_diagnose()`, and the
+  simulation drivers via their own `n_cores` arguments.)
+
+- **Quiet by default.** `iconic_prospect()`, `iconic_recommend()`, and
+  `iconic_sensitivity()` gain a `verbose` argument (default `FALSE`) that
+  gates all progress messages (grid-cell updates, replicate progress, and
+  completion banners). Set `verbose = TRUE` to restore the previous
+  behaviour.
+
+- **Exposure argument renamed `Z` -> `X` throughout.** The exposure is now
+  consistently `X` across the API (`iconic_data(X = ...)`), the structural
+  causal model, and all documentation, matching the manuscript's notation.
+  Passing the old `Z` argument to `iconic_data()` triggers a hard error with
+  an actionable message (`argument `Z` was renamed to `X`; please use
+  `X = ...`); there is no silent alias. Related internal names were renamed
+  consistently (e.g. the `sweep_instrument_strength()` parameter
+  `pi_GZ_grid` is now `pi_GX_grid`; the exposure coefficient is `beta_X`).
+
+- **`separate_U` removed.** The boolean `separate_U` toggle is replaced by a
+  general `k`-dimensional unmeasured-confounder space with per-path loading
+  vectors `lambda_XM` and `lambda_MY`. The two paths' confounder composites
+  are `conf_XM = U %*% lambda_XM` and `conf_MY = U %*% lambda_MY`; distinct
+  unit-vector loadings (e.g. `c(1,0)` / `c(0,1)` at `k = 2`) recover the old
+  `separate_U = TRUE` behaviour, while identical loadings recover
+  `separate_U = FALSE`. Supplying `separate_U` now errors with a pointer to
+  the loading-vector parameterization.
+
+## New features
+
+- **Path-specific negative controls and confounder loadings.**
+  `generate_toy_data()` / `run_single_iteration()` accept `n_confounders`
+  (dimension `k` of `U`), `lambda_XM` / `lambda_MY` (per-path loadings), and
+  path-specific negative-control panels `W1` / `W2` with independent coverage
+  `omega_1` / `omega_2`. The path-specific proximal estimators PGC2 and PGC2Gm
+  use `W1` for the `X -> M` bridge and `W2` for the `M -> Y` bridge.
+
+- **Negative-control coverage (`omega`) sweeps.** `iconic_sensitivity()` and
+  `iconic_prospect()` now sweep `omega_1` / `omega_2` (singly or on a grid) so
+  estimator performance can be mapped across NC-coverage scenarios, not just
+  at a single assumed coverage.
+
+- **`iconic_prospect()` Phase 3: joint exogeneity + coverage robustness
+  sweep.** The prospective analysis previously swept instrument strength
+  (`gamma_G`, Phase 1) and NC coverage (`omega`, Phase 1/2) but held the
+  instruments perfectly exogenous (`rho_G1 = rho_G2 = 0`). A new Phase 3
+  sweeps the instrument-exogeneity violations `rho_G1 x rho_G2` jointly with
+  NC coverage `omega` (on the diagonal, `omega_1 == omega_2`) at the target
+  instrument strength (new arguments `rho_G1_grid`, `rho_G2_grid`, both
+  defaulting to `c(0, 0.1, 0.2, 0.3, 0.5)`, `omega_grid_rho` defaulting to
+  `c(0.3, 0.7, 1.0)`, and `run_rho_sweep = TRUE` to toggle). The resulting
+  degradation surface is returned as `$rho_surface` and is passed to
+  `iconic_recommend()` as its `sensitivity` argument, so the recommended
+  estimator is chosen by robustness to both imperfect instruments and
+  weakening controls rather than by a single-point or eligibility-only
+  ranking.
+
+- **`iconic_prospect()` conditional recommendation by collection scenario.**
+  The prospective printout no longer reports a single "recommended estimator
+  if instruments collected" — which was internally contradictory when the top
+  estimator (e.g. COCA) does not use an instrument. A new
+  `$recommendation_by_scenario` table reports the best eligible estimator
+  under each collection scenario (G1 only / Gm only / G1+Gm / W only /
+  W1+W2 / G1+W / G1+Gm+W / G1+W1+W2 / full), mapping each scenario to the
+  estimators its data makes available and ranking those by robustness.
+
+- **`iconic_sensitivity()` sweeps NC coverage by default.** `omega_1` and
+  `omega_2` now default to `c(0.3, 0.7, 1.0)` (swept on the diagonal when
+  identical) instead of the fixed scalar `0.7`, so the degradation surface
+  spans both instrument-exogeneity and NC-coverage violations out of the box.
+
+- **`iconic_recommend()` auto-runs the sensitivity suite.** When
+  `sensitivity = NULL` and `auto_sensitivity = TRUE` (the default),
+  `iconic_recommend()` now calls `iconic_sensitivity()` internally so the
+  recommendation is robustness-based by default, not opt-in. The auto-run is
+  guarded by torch availability and falls back to eligibility-only ranking
+  (with a message) when the torch backend is unavailable or the run fails.
+  New arguments `auto_sensitivity`, `rho_G1_grid`, `rho_G2_grid`, `omega_1`,
+  `omega_2`, `n_iter_sens`, `gan_epochs`, and `n_cores` control the auto-run.
+
+- **Testability reframe and completeness in `iconic_diagnose()`.** The
+  negative-control assumptions are framed as empirically testable projections
+  (A1: `W _|_ X | C,U`; A2: `W _|_ G1 | C,U`; A2': `W _|_ Gm | C,U`) plus a
+  two-component completeness condition (A3: dimensional check `dim(W_valid)
+  >= k` combined with a covariance-capture test). The completeness assessment
+  is wired into the diagnosis and the per-estimator eligibility report.
+
+- **Total-effect output.** Estimation surfaces the total effect alongside the
+  NDE/NIE decomposition.
+
+## Bug fixes
+
+- **`iconic_prospect()` recommendation no longer crowns UNADJ by list
+  position.** Previously the prospective recommendation called
+  `iconic_recommend()` with no sensitivity surface and no estimates, so the
+  ranking fell back to an eligibility-only stable sort in which `UNADJ` —
+  first in the method list — was returned as "recommended" whenever all
+  estimators were eligible (the best-case simulated setting). This
+  contradicted the function's own Phase 2 bias numbers. Two changes fix it:
+  (1) Phase 3 now supplies a real degradation surface, so the recommendation
+  is robustness-based; (2) `iconic_recommend()`'s no-sensitivity fallback now
+  demotes the unconfoundedness-based estimators (`UNADJ`, `DIRECT`) below the
+  instrument/NC-based estimators instead of ranking by list position.
+
+- **`.extract_per_scenario()` robust to degenerate cells.** Per-scenario
+  extraction now skips grid cells in which every estimator returned a
+  non-finite bias/coverage metric (previously `which.min()` on an all-`NA`
+  distance vector returned `integer(0)`, and the `cbind()` of the cell
+  metadata with the length-0 result errored with "arguments imply differing
+  number of rows"). Within-cell normalization is now computed over finite
+  values only.
+
+- **`generate_toy_data()` DGP fix.** With path-specific loadings, the
+  non-covered portion of each negative control is now fresh noise rather than
+  the other path's confounder composite; previously `W1` was contaminated with
+  the `M -> Y` confounder, biasing the PGC purge.
+
+- **`plot_degradation_surface()` colour scales.** The shared colour limit was
+  inflated by a single divergent cell, washing out the informative bias range.
+  Each estimator panel now uses its own robust (95% quantile, floored) colour
+  cap with `scales::squish()` for outliers; the crossover panel preserves a
+  direct `|bias|` comparison.
+
+## Behaviour changes
+
+- **Recommendation tiers removed.** `iconic_recommend()` no longer assigns
+  estimators to recommendation tiers; it reports per-estimand robustness
+  scores (max `|bias|` and CI-coverage distance across the sensitivity grid)
+  and ranks on those.
+
+- **Instrument-variable estimators no longer require negative controls.**
+  `IV2SLS` (instrument `G`) and `IV2SLS2` (instruments `G` + `Gm`) are
+  identified by the instrument(s) alone — relevance, independence, and the
+  exclusion restriction — and do not need a negative-control panel `W`. They
+  are now eligible and run whenever the required instrument(s) are present,
+  with or without `W`; when `W` is supplied it is used as an optional
+  proximal augmentation (improving efficiency) rather than as a requirement.
+  The proximal bridge estimators (`PGC`, `PGC2`, `PGC2Gm`) and the
+  negative-control estimators (`COCA`, `DIRECT`) still require `W`. This
+  fixes the case where a dataset with instruments but no negative controls
+  was previously left with only `UNADJ`.
+
+- **`infer_confounding()` infers confounding strength on a random subset.**
+  When `estimate = NULL`, the confounding-strength (`delta`, the UNADJ–IV2SLS
+  gap) and mediator-outcome (`delta_mo`, the IV2SLS–IV2SLS2 gap) parameters
+  are averages across the mediator × feature grid. They are now estimated on
+  a random subset of at most `max_infer_tasks` mediators and
+  `max_infer_tasks` features (default 50) instead of the full panel — an
+  unbiased Monte Carlo estimate of the same quantity. This makes
+  `iconic_diagnose(k = NULL)`, `iconic_prospect()`, and
+  `iconic_sensitivity()` far faster on wide mediator panels (previously the
+  internal `iconic_estimate()` call fit every mediator × feature cell). The
+  subset sizes are recorded in the returned object as `$inference_subset` and
+  noted in the `conf_strength` / `mo_confounding` method strings. Panels
+  smaller than the cap are used in full (no behaviour change).
+
 # iconic 0.9.7
 
 ## Examples

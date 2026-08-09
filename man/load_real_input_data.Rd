@@ -5,18 +5,19 @@
 \title{Load and standardise a real multi-omic dataset for GAN training}
 \usage{
 load_real_input_data(
-  Z_matrix = NULL,
+  X_matrix = NULL,
   Y_matrix = NULL,
   M_matrix = NULL,
   W_matrix = NULL,
   covariates_df = NULL,
   example = FALSE,
   marginal_method = "auto",
-  residualize_on = c("ZC", "ZCW")
+  residualize_on = c("XC", "XCW"),
+  Z_matrix = NULL
 )
 }
 \arguments{
-\item{Z_matrix}{Exposure panel, \verb{features x samples} (e.g. maternal
+\item{X_matrix}{Exposure panel, \verb{features x samples} (e.g. maternal
 PFAS z-scores across probes). Column means become the per-sample exposure.}
 
 \item{Y_matrix}{Outcome, either a scalar vector of length \code{n_samples}
@@ -47,16 +48,20 @@ if KS test passes at p > 0.05, otherwise empirical), \code{"empirical"}
 (always empirical CDF), or \code{"parametric"} (always best parametric
 fit by AIC). See \code{\link[=train_feature_texture]{train_feature_texture()}}.}
 
-\item{residualize_on}{Character: \code{"ZC"} (default)
+\item{residualize_on}{Character: \code{"XC"} (default)
 residualizes the Y/W correlation on exposure + covariates only;
-\code{"ZCW"} additionally residualizes on the W bridge proxy (PC1 of W),
+\code{"XCW"} additionally residualizes on the W bridge proxy (PC1 of W),
 reducing U-signature double-counting. Recommended only when the
 completeness-capture test reports "strong".}
+
+\item{Z_matrix}{Defunct. Renamed to \code{X_matrix} in v0.9.8; passing a
+value errors with a message pointing to \code{X_matrix}. Retained in the
+signature only to catch and redirect old calls.}
 }
 \value{
 A list with \code{gan_training_data} (sample x variable data frame with
 exposure level, outcome level, mediator level, and encoded covariates),
-\code{original_matrices} (\code{Z}, \code{Y}, \code{M}, \code{W}), \code{covariates} (encoded frame),
+\code{original_matrices} (\code{X}, \code{Y}, \code{M}, \code{W}), \code{covariates} (encoded frame),
 \code{feature_correlations} (list with \code{Y}, \code{W} residual correlation matrices,
 or \code{NULL} for absent panels), \code{feature_texture} (an
 \code{iconic_feature_texture} object for the mediator panel, or \code{NULL} when

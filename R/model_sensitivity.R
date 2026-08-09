@@ -39,9 +39,9 @@
     stop("data must be an iconic_data object.")
 
   # Convert iconic_data → load_real_input_data format.
-  # Z is a length-n vector; load_real_input_data expects a features x
+  # X is a length-n vector; load_real_input_data expects a features x
   # samples matrix, so wrap it as 1 x n.
-  Z_mat <- matrix(data$Z, nrow = 1L, ncol = data$n)
+  X_mat <- matrix(data$X, nrow = 1L, ncol = data$n)
   Y_mat <- data$Y # already features x samples in iconic_data
 
   # Mediator panel: iconic_data stores M as features x samples (or NULL)
@@ -56,7 +56,7 @@
     data$covariates else NULL
 
   input <- load_real_input_data(
-    Z_matrix = Z_mat,
+    X_matrix = X_mat,
     Y_matrix = Y_mat,
     M_matrix = M_mat,
     W_matrix = W_mat,
@@ -155,9 +155,9 @@
 #' \code{\link{infer_confounding}()}), or \code{"manual"} (use
 #' explicitly supplied arguments). Default \code{"default"}.
 #' @param gan_epochs Epochs for auto-trained GAN. Default 100.
-#' @param rho_G1_grid Values of rho_G1 (G correlation with U_XM).
+#' @param rho_G1_grid Values of rho_G1 (G correlation with conf_XM).
 #' Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.
-#' @param rho_G2_grid Values of rho_G2 (Gm correlation with U_MY).
+#' @param rho_G2_grid Values of rho_G2 (Gm correlation with conf_MY).
 #' Default \code{c(0, 0.1, 0.2, 0.3, 0.5)}.
 #' @param n_iter Replicates per grid cell. Default 30.
 #' @param n_samples Samples per replicate. If NULL, uses \code{data$n}.
@@ -166,9 +166,15 @@
 #' from diagnosis (F_Gm) or defaults to 0.8.
 #' @param mo_confounding M-O confounding strength. Default 0.8.
 #' Used when \code{confounding = "default"} or \code{"manual"}.
-#' @param separate_U Use separate confounders for Z->M and M->Y paths.
-#' Default TRUE (matches).
-#' @param omega_1,omega_2 NC coverage of U_XM / U_MY. Default 0.7.
+#' @param lambda_XM Optional per-path confounder loading vector (X->M path).
+#'   NULL (default) = shared loadings.
+#' @param lambda_MY Optional per-path confounder loading vector (M->Y path).
+#'   NULL (default) = shared loadings.
+#' @param omega_1,omega_2 NC coverage of each path's confounder composite
+#'   (conf_XM / conf_MY). Default \code{c(0.3, 0.7, 1.0)}, swept jointly with
+#'   the rho grid. When the two vectors are identical (the default), the sweep
+#'   is taken on the diagonal (\code{omega_1 == omega_2}); supply distinct
+#'   vectors to cross the full \code{omega_1 x omega_2} grid.
 #' Used when \code{confounding = "default"} or \code{"manual"}.
 #' @param bias_threshold Absolute bias threshold for tipping-point
 #' annotation. Default 0.10.
@@ -176,6 +182,8 @@
 #' @param n_cores Number of parallel workers for simulation replicates.
 #' Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
 #' and a PSOCK cluster on Windows.
+#' @param verbose Logical: print progress messages during the sweep.
+#' Default \code{FALSE} (quiet).
 #' @param outcome_type \code{NULL} (inherit from \code{data}, default) or
 #' \code{"continuous"} / \code{"survival"}. When survival, the
 #' sensitivity sweep uses the Cox / RMST survival mediation drivers.
@@ -195,8 +203,8 @@
 #' \code{n_iter} \tab 30 \tab Replicates per grid cell \cr
 #' \code{n_features} \tab 10 \tab Features per replicate \cr
 #' \code{mo_confounding} \tab 0.8 \tab Simulation calibration (delta_mo) \cr
-#' \code{separate_U} \tab TRUE \tab Path-specific confounders \cr
-#' \code{omega_1, omega_2} \tab 0.7 \tab NC coverage (simulation calibration) \cr
+#' \code{lambda_XM}, \code{lambda_MY} \tab shared \tab Per-path confounder loadings \cr
+#' \code{omega_1, omega_2} \tab c(0.3,0.7,1.0) \tab NC coverage (swept on the diagonal) \cr
 #' \code{bias_threshold} \tab 0.10 \tab Tipping-point threshold \cr
 #' }
 #'
@@ -210,7 +218,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 #' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 #' W = matrix(rnorm(100*10), 10, 100))
 #' sens <- iconic_sensitivity(data, n_iter = 10)
@@ -227,11 +235,14 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
                                n_features = 10,
                                phi = NULL,
                                mo_confounding = 0.8,
-                               separate_U = TRUE,
-                               omega_1 = 0.7, omega_2 = 0.7,
+                               lambda_XM = NULL,
+                               lambda_MY = NULL,
+                               omega_1 = c(0.3, 0.7, 1.0),
+                               omega_2 = c(0.3, 0.7, 1.0),
                                bias_threshold = 0.10,
                                base_seed = 700,
                                n_cores = 1,
+                               verbose = FALSE,
                                outcome_type = NULL,
                                effect_scale = c("loghr", "rmst"),
                                surv_h0 = 0.1,
@@ -274,6 +285,14 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
   }
   # "default" and "manual" use the explicitly supplied arguments as before
 
+  # ── Build the omega sweep ──
+  # omega_1/omega_2 may be vectors; the sweep crosses rho_G1 x rho_G2 x
+  # omega_1 x omega_2. When confounding = "inferred" supplied a scalar
+  # omega, the sweep reduces to that single value.
+  omega_1_grid <- sort(unique(omega_1))
+  omega_2_grid <- sort(unique(omega_2))
+  omega_swept <- length(omega_1_grid) > 1 || length(omega_2_grid) > 1
+
   # Calibrate to user data
   if (is.null(n_samples)) n_samples <- data$n
   if (is.null(phi)) {
@@ -289,20 +308,29 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     }
   }
 
-  # Build the 2D sweep
+  # Build the sweep: rho_G1 x rho_G2 x omega_1 x omega_2. When the two omega
+  # vectors are identical (the default), sweep coverage on the diagonal
+  # (omega_1 == omega_2), matching the manuscript's degradation-surface
+  # design; distinct omega vectors cross the full omega_1 x omega_2 grid.
   grid <- expand.grid(rho_G1 = rho_G1_grid, rho_G2 = rho_G2_grid,
+                      omega_1 = omega_1_grid, omega_2 = omega_2_grid,
                       KEEP.OUT.ATTRS = FALSE)
+  if (identical(omega_1_grid, omega_2_grid) && omega_swept)
+    grid <- grid[grid$omega_1 == grid$omega_2, , drop = FALSE]
 
-  true_NDE <- 0.10 # beta_Z default
+  true_NDE <- 0.10 # beta_X default
   true_NIE <- 0.15 # alpha_M * beta_M default
 
   n_grid <- nrow(grid)
   smry <- lapply(seq_len(n_grid), function(gi) {
     r1 <- grid$rho_G1[gi]
     r2 <- grid$rho_G2[gi]
-    if (n_grid > 1)
+    o1 <- grid$omega_1[gi]
+    o2 <- grid$omega_2[gi]
+    if (n_grid > 1 && isTRUE(verbose))
       message("Sensitivity grid cell ", gi, "/", n_grid,
-              " (rho_G1=", r1, ", rho_G2=", r2, ")")
+              " (rho_G1=", r1, ", rho_G2=", r2,
+              if (omega_swept) paste0(", omega_1=", o1, ", omega_2=", o2) else "", ")")
 
     worker <- function(i) {
       dat <- run_single_iteration(
@@ -310,7 +338,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
         n_synthetic_samples = n_samples, n_features = n_features,
         mo_confounding = mo_confounding, phi = phi,
         rho_G1 = r1, rho_G2 = r2, rho_pop = 0,
-        separate_U = separate_U, omega_1 = omega_1, omega_2 = omega_2,
+        lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = o1, omega_2 = o2,
         seed = base_seed + gi * 1000L + i,
         outcome_type = outcome_type, surv_h0 = surv_h0,
         surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
@@ -326,10 +354,12 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 
     combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker,
                                                 n_cores = n_cores,
-                                                progress = " Replicates"))
+                                                progress = if (isTRUE(verbose)) " Replicates" else NULL))
     s <- summarise_mediation_results(combined, true_NDE, true_NIE)
     s$rho_G1 <- r1
     s$rho_G2 <- r2
+    s$omega_1 <- o1
+    s$omega_2 <- o2
     s
   })
 
@@ -341,7 +371,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
   surface$tipped <- surface$tipped_NDE | surface$tipped_NIE
 
   # Reorder columns
-  front <- c("rho_G1", "rho_G2", "method")
+  front <- c("rho_G1", "rho_G2", "omega_1", "omega_2", "method")
   surface <- surface[, c(front, setdiff(names(surface), front))]
 
   # Find tipping points: first rho_G2 (along each rho_G1 row) where a
@@ -362,24 +392,29 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     n_samples = n_samples,
     phi = phi,
     mo_confounding = mo_confounding,
-    omega_1 = omega_1,
-    omega_2 = omega_2,
+    omega_1 = omega_1_grid,
+    omega_2 = omega_2_grid,
+    omega_swept = omega_swept,
     texture_source = texture_source,
     inferred_confounding = inferred_conf,
     summary = summary_txt,
     # scenario manifest for reader orientation.
     manifest = scenario_manifest(
-      list(beta_Z = true_NDE, alpha_M = 0.50, beta_M = 0.30,
+      list(beta_X = true_NDE, alpha_M = 0.50, beta_M = 0.30,
            n_mediators = 1, n = n_samples, n_features = n_features,
-           separate_U = separate_U, feat_cor = 0,
+           lambda_XM = lambda_XM, lambda_MY = lambda_MY, feat_cor = 0,
            conf_str = NA, mo_confounding = mo_confounding, phi = phi,
-           w_signal = omega_1, rho_G1 = NA, rho_G2 = NA, rho_pop = NA),
+           w_signal = omega_1_grid[1], rho_G1 = NA, rho_G2 = NA, rho_pop = NA),
       rho_G1_grid = rho_G1_grid, rho_G2_grid = rho_G2_grid,
+      omega_1_grid = if (omega_swept) omega_1_grid else NULL,
+      omega_2_grid = if (omega_swept) omega_2_grid else NULL,
       mo_confounding_grid = if (length(unique(mo_confounding)) > 1) mo_confounding else NULL,
       phi_grid = if (length(unique(phi)) > 1) phi else NULL
     )
   )
   class(obj) <- "iconic_sensitivity"
+  if (isTRUE(verbose))
+    message("iconic_sensitivity complete. Call summary() or print() on the result for the full sensitivity summary.")
   obj
 }
 
@@ -401,6 +436,13 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 .find_tipping_points <- function(surface, rho_G1_grid, rho_G2_grid,
                                  threshold) {
   methods <- unique(surface$method)
+  # When omega is swept, restrict tipping-point detection to the first
+  # omega cell (the reference coverage) so the summary stays 2D.
+  if ("omega_1" %in% names(surface) && "omega_2" %in% names(surface)) {
+    o1_ref <- min(surface$omega_1, na.rm = TRUE)
+    o2_ref <- min(surface$omega_2, na.rm = TRUE)
+    surface <- surface[surface$omega_1 == o1_ref & surface$omega_2 == o2_ref, ]
+  }
   rows <- lapply(methods, function(m) {
     sub <- surface[surface$method == m, ]
     # Look along the rho_G1 = 0 edge (the "pure Gm violation" axis)
@@ -497,4 +539,16 @@ print.iconic_sensitivity <- function(x, ...) {
   if (!is.null(x$inferred_confounding))
     cat(" Confounding: inferred from data\n")
   invisible(x)
+}
+
+#' Summary method for iconic_sensitivity objects
+#'
+#' Prints the full sensitivity summary (same as \code{print()}).
+#' @param object An \code{iconic_sensitivity} object.
+#' @param ... Unused.
+#' @return Invisibly returns \code{object}.
+#' @export
+summary.iconic_sensitivity <- function(object, ...) {
+  print.iconic_sensitivity(object, ...)
+  invisible(object)
 }

@@ -20,6 +20,6 @@ A \code{patchwork} ggplot object.
 }
 \description{
 Produces a 4-panel figure sweeping the four empirical NC validity
-diagnostics. Panels: (A) A1 W perp Z|C, (B) A2 W perp G|C,
+diagnostics. Panels: (A) A1 W perp X|C, (B) A2 W perp G|C,
 (C) A3 dim(W_valid) >= k completeness grid, (D) A2' W perp Gm|C.
 }

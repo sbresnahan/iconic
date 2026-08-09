@@ -4,12 +4,12 @@
 \alias{fit_pgc_scalar_mediation}
 \title{PGC mediation estimator: bridge-function-adjusted natural effects (scalar bridge)}
 \usage{
-fit_pgc_scalar_mediation(y, Z, M, g, w, covars = NULL)
+fit_pgc_scalar_mediation(y, X, M, g, w, covars = NULL)
 }
 \arguments{
 \item{y}{Numeric outcome vector (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{M}{Numeric mediator vector (length n).}
 
@@ -36,6 +36,6 @@ completeness condition is of interest.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
-fit_pgc_scalar_mediation(dat$Y[, 1], dat$Z, dat$M, dat$G[, 1], rowMeans(dat$W))
+fit_pgc_scalar_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], rowMeans(dat$W))
 }
 }

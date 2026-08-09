@@ -79,14 +79,14 @@
 #'
 #' @examples
 #' set.seed(1)
-#' data <- iconic_data(Z = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
 #' G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' diag <- iconic_diagnose(data)
 #' est <- iconic_estimate(data, diagnosis = diag)
 #' head(est)
 #'
 #' # Survival outcome
-#' sdat <- iconic_data(Z = rnorm(100), outcome_type = "survival",
+#' sdat <- iconic_data(X = rnorm(100), outcome_type = "survival",
 #' surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
 #' G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' est <- iconic_estimate(sdat, effect_scale = "loghr")
@@ -161,15 +161,20 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 #' @return Character vector of method names.
 #' @keywords internal
 .auto_eligible_methods <- function(data) {
+  # IV estimators (IV2SLS, IV2SLS2) are identified by the instrument(s) alone;
+  # W is an optional proximal augmentation. Proximal bridge estimators (PGC,
+  # PGC2, PGC2Gm) and COCA/DIRECT require W.
   methods <- "UNADJ"
+  if (data$has_instrument)
+    methods <- c(methods, "IV2SLS")
   if (data$has_instrument && data$has_nc)
-    methods <- c(methods, "DIRECT", "IV2SLS")
+    methods <- c(methods, "DIRECT")
   if (data$has_nc)
     methods <- c(methods, "COCA")
   if (data$has_instrument && data$has_nc)
     methods <- c(methods, "PGC")
   if (data$is_mediation && data$has_instrument &&
-      data$has_mediator_instrument && data$has_nc)
+      data$has_mediator_instrument)
     methods <- c(methods, "IV2SLS2")
   if (data$is_mediation && data$has_instrument && data$has_path_nc)
     methods <- c(methods, "PGC2")
@@ -188,7 +193,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
                                    min_f = 10) {
   n <- data$n
   nf <- data$n_features
-  Z <- data$Z
+  X <- data$X
   cv <- data$covariates
   G <- data$G
   W <- data$W
@@ -203,7 +208,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
     # DIRECT, IV2SLS, and IV2SLS2 now use all NC features as covariates.
     w <- W_mat # full n x q matrix (NULL when no W)
     .estimate_total_feature(
-      Z = Z, y = y, g = G, w = w, W_mat = W_mat,
+      X = X, y = y, g = G, w = w, W_mat = W_mat,
       W_avg = W_avg, covars = cv,
       methods = methods, feature_idx = f, min_f = min_f
     )
@@ -237,7 +242,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
   n <- data$n
   nf <- data$n_features
   nm <- data$n_mediators
-  Z <- data$Z
+  X <- data$X
   cv <- data$covariates
   G <- data$G
   W <- data$W
@@ -268,7 +273,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
     w <- W_mat # full n x q matrix (NULL when no W)
 
     res <- .estimate_mediation_feature(
-      Z = Z, y = y, M_vec = M_vec, g = G, gm = gm,
+      X = X, y = y, M_vec = M_vec, g = G, gm = gm,
       w = w, W_mat = W_mat, W1_mat = W1_mat, W2_mat = W2_mat,
       W_avg = W_avg, covars = cv,
       methods = methods, feature_idx = f, min_f = min_f,
@@ -339,7 +344,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
                                         tau = NULL) {
   time <- data$surv_time
   event <- data$surv_event
-  Z <- data$Z
+  X <- data$X
   cv <- data$covariates
   G <- data$G
   W <- data$W
@@ -347,11 +352,11 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 
   run_one <- function(method) {
     r <- switch(method,
-      UNADJ = fit_unadj_surv(time, event, Z, cv, effect_scale, tau),
-      DIRECT = fit_direct_surv(time, event, Z, G, W_mat, cv, effect_scale, tau),
-      COCA = fit_coca_surv(time, event, Z, if (!is.null(W_mat)) W_mat[, 1] else NULL, cv),
-      IV2SLS = fit_iv2sls_surv(time, event, Z, G, W_mat, cv, min_f, effect_scale, tau),
-      PGC = fit_pgc_surv(time, event, Z, G, W_mat, cv, effect_scale, tau),
+      UNADJ = fit_unadj_surv(time, event, X, cv, effect_scale, tau),
+      DIRECT = fit_direct_surv(time, event, X, G, W_mat, cv, effect_scale, tau),
+      COCA = fit_coca_surv(time, event, X, if (!is.null(W_mat)) W_mat[, 1] else NULL, cv),
+      IV2SLS = fit_iv2sls_surv(time, event, X, G, W_mat, cv, min_f, effect_scale, tau),
+      PGC = fit_pgc_surv(time, event, X, G, W_mat, cv, effect_scale, tau),
       NULL
     )
     if (is.null(r)) return(NULL)
@@ -386,7 +391,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
   event <- data$surv_event
   n <- data$n
   nm <- data$n_mediators
-  Z <- data$Z
+  X <- data$X
   cv <- data$covariates
   G <- data$G
   W <- data$W
@@ -408,31 +413,37 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
     w2 <- W2_mat
 
     r <- switch(as.character(method),
-      UNADJ = fit_unadj_mediation_surv(time, event, Z, M_vec, cv,
+      UNADJ = fit_unadj_mediation_surv(time, event, X, M_vec, cv,
                                          effect_scale, tau),
-      DIRECT = fit_direct_mediation_surv(time, event, Z, M_vec, G, w, cv,
+      DIRECT = fit_direct_mediation_surv(time, event, X, M_vec, G, w, cv,
                                           effect_scale, tau),
-      COCA = fit_coca_mediation_surv(time, event, Z, M_vec,
+      COCA = fit_coca_mediation_surv(time, event, X, M_vec,
                                         if (!is.null(w)) w[, 1] else NULL, cv),
-      IV2SLS = fit_iv2sls_mediation_surv(time, event, Z, M_vec, G, w,
+      IV2SLS = fit_iv2sls_mediation_surv(time, event, X, M_vec, G, w,
                                           cv, min_f, effect_scale, tau),
-      IV2SLS2 = fit_iv2sls_mediation2_surv(time, event, Z, M_vec, G, gm, w,
+      IV2SLS2 = fit_iv2sls_mediation2_surv(time, event, X, M_vec, G, gm, w,
                                            cv, min_f, effect_scale, tau),
-      PGC = fit_pgc_mediation_surv(time, event, Z, M_vec, G, w,
+      PGC = fit_pgc_mediation_surv(time, event, X, M_vec, G, w,
                                        cv, min_f, effect_scale, tau),
-      PGC2 = fit_pgc_mediation2_surv(time, event, Z, M_vec, G, w1, w2,
+      PGC2 = fit_pgc_mediation2_surv(time, event, X, M_vec, G, w1, w2,
                                         gm = NULL, cv, min_f,
                                         effect_scale, tau),
-      PGC2Gm = fit_pgc_mediation2_surv(time, event, Z, M_vec, G, w1, w2,
+      PGC2Gm = fit_pgc_mediation2_surv(time, event, X, M_vec, G, w1, w2,
                                         gm = gm, cv, min_f,
                                         effect_scale, tau),
       NULL
     )
     if (is.null(r)) return(NULL)
+    TE <- if (!is.na(r$NDE) && !is.na(r$NIE)) r$NDE + r$NIE else NA_real_
+    TE_se <- if (!is.na(r$NDE_se) && !is.na(r$NIE_se))
+      sqrt(r$NDE_se^2 + r$NIE_se^2) else NA_real_
+    TE_p <- if (!is.na(TE) && !is.na(TE_se) && TE_se > 0)
+      2 * pnorm(-abs(TE / TE_se)) else NA_real_
     data.frame(
       feature = 1L, mediator = m, method = method,
       NDE = r$NDE, NDE_se = r$NDE_se, NDE_p = r$NDE_p,
       NIE = r$NIE, NIE_se = r$NIE_se, NIE_p = r$NIE_p,
+      TE = TE, TE_se = TE_se, TE_p = TE_p,
       alpha_M = r$alpha_M, alpha_se = r$alpha_se,
       beta_M = r$beta_M, beta_M_se = r$beta_M_se,
       stringsAsFactors = FALSE

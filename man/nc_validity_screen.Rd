@@ -2,7 +2,7 @@
 % Please edit documentation in R/nc_diagnostics.R
 \name{nc_validity_screen}
 \alias{nc_validity_screen}
-\title{Screen negative controls for exposure dependence (W \emph{|} Z | C)}
+\title{Screen negative controls for exposure dependence (W \emph{|} X | C)}
 \usage{
 nc_validity_screen(
   dat,
@@ -16,7 +16,7 @@ nc_validity_screen(
 }
 \arguments{
 \item{dat}{Dataset list from \code{\link[=run_single_iteration]{run_single_iteration()}} or
-\code{\link[=generate_toy_data]{generate_toy_data()}}, containing \code{W}, \code{Z}, and
+\code{\link[=generate_toy_data]{generate_toy_data()}}, containing \code{W}, \code{X}, and
 \code{synthetic_data} (covariates).}
 
 \item{fdr_level}{Target false-discovery rate for BH correction.
@@ -32,12 +32,12 @@ Windows.}
 \item{criterion}{Which criterion to use: \code{"fdr"} (legacy),
 \code{"magnitude"}, or \code{"both"} (default).}
 
-\item{magnitude_threshold}{|partial_r(W,Z|C)| cutoff for the
+\item{magnitude_threshold}{|partial_r(W,X|C)| cutoff for the
 magnitude branch. Default 0.10.}
 
 \item{u_proxy}{Optional outcome-derived proxy for U (e.g. the
 leading residualized-outcome principal component) used
-to compute \code{relative_effect} = |partial_r(W,Z|C)| /
+to compute \code{relative_effect} = |partial_r(W,X|C)| /
 |partial_r(W,U_proxy|C)|. When \code{NULL} (default),
 \code{relative_effect} is \code{NA} and only the FDR/magnitude
 branches are used.}
@@ -49,12 +49,12 @@ A data frame with one row per control feature:
 \code{verdict} (composite), \code{verdict_fdr}, \code{verdict_magnitude}.
 }
 \description{
-Regresses each negative-control feature on the exposure Z (plus
-observed covariates C) and flags controls whose association with Z
+Regresses each negative-control feature on the exposure X (plus
+observed covariates C) and flags controls whose association with X
 survives Benjamini-Hochberg FDR control at the requested level.
 }
 \details{
-A control that is significantly associated with Z after adjusting
+A control that is significantly associated with X after adjusting
 for C violates the negative-control assumption (A1): it is either
 Such controls should be dropped before running COCA / PGC.
 }
@@ -64,26 +64,26 @@ A1 states that negative-control outcomes are independent of the exposure
 \strong{conditional on observed covariates C and the unmeasured confounder U}
 (U is unobserved). NC outcome proxies may cause or be caused by the
 outcome or instruments; the screen tests the observable marginal
-association with Z given C.
+association with X given C.
 }
 
 \section{Criterion}{
 
 \code{criterion = "fdr"} (the legacy behavior) flags controls whose
-association with Z survives BH-FDR. \code{criterion = "magnitude"} flags
-controls by partial-correlation \emph{size} (|partial_r(W,Z|C)| >
+association with X survives BH-FDR. \code{criterion = "magnitude"} flags
+controls by partial-correlation \emph{size} (|partial_r(W,X|C)| >
 \code{magnitude_threshold}), which is less vulnerable to the "always
-significant via U" problem: because W shares U with Z by construction,
+significant via U" problem: because W shares U with X by construction,
 the FDR test can flag valid controls as violations purely from the
 intended confounder-sharing signal. \code{criterion = "both"} (default)
 requires a control to pass both branches to be deemed valid.
 
-Distinguishing "W downstream of Z" (a true A1 violation) from "W shares
-a cause with Z" (the intended NC behavior) remains an open problem
+Distinguishing "W downstream of X" (a true A1 violation) from "W shares
+a cause with X" (the intended NC behavior) remains an open problem
 without a clean test statistic. The \code{relative_effect} column
-(|partial_r(W,Z|C)| / |partial_r(W,U_proxy|C)|, when \code{u_proxy} is
-supplied) is exposed as a \emph{diagnostic}: a control downstream of Z tends
-to have a larger W-Z association relative to its W-U association, but
+(|partial_r(W,X|C)| / |partial_r(W,U_proxy|C)|, when \code{u_proxy} is
+supplied) is exposed as a \emph{diagnostic}: a control downstream of X tends
+to have a larger W-X association relative to its W-U association, but
 the separation is not always clean. Analysts should inspect
 \code{partial_r} and \code{relative_effect} together rather than relying on a
 single gate.

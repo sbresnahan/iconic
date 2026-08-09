@@ -9,7 +9,7 @@ run_mediation_sim(
   n_samples = 500,
   n_features = 20,
   n_mediators = 1,
-  beta_Z = 0.1,
+  beta_X = 0.1,
   alpha_M = 0.5,
   beta_M = 0.3,
   conf_str = 0.8,
@@ -19,7 +19,8 @@ run_mediation_sim(
   rho_G1 = 0,
   rho_G2 = 0,
   rho_pop = 0,
-  separate_U = FALSE,
+  lambda_XM = NULL,
+  lambda_MY = NULL,
   omega_1 = NULL,
   omega_2 = NULL,
   feat_cor = 0,
@@ -39,9 +40,9 @@ each mediator has its own genetic instrument Gm and
 contributes additively to Y. Default 1 (single mediator,
 backward compatible).}
 
-\item{beta_Z}{Direct effect of Z on Y (true NDE). Default 0.10.}
+\item{beta_X}{Direct effect of X on Y (true NDE). Default 0.10.}
 
-\item{alpha_M}{Effect of Z on mediator. Default 0.50.}
+\item{alpha_M}{Effect of X on mediator. Default 0.50.}
 
 \item{beta_M}{Effect of mediator on Y (per-mediator true NIE = alpha_M * beta_M). Default 0.30.}
 
@@ -56,17 +57,19 @@ backward compatible).}
 compatible). > 0 = generates Gm and includes the
 2-stage MR estimator (IV2SLS2). Default 0.}
 
-\item{rho_G1}{Correlation of G1 with U_XM. Default 0.}
+\item{rho_G1}{Correlation of G1 with conf_XM. Default 0.}
 
-\item{rho_G2}{Correlation of G2 with U_MY. Default 0.}
+\item{rho_G2}{Correlation of G2 with conf_MY. Default 0.}
 
 \item{rho_pop}{Shared population structure. Default 0.}
 
-\item{separate_U}{Draw separate confounders for Z->M and M->Y paths. Default FALSE.}
+\item{lambda_XM}{Optional per-path confounder loading vector (X->M path).}
 
-\item{omega_1}{Coverage of U_XM by W1. NULL = use w_signal.}
+\item{lambda_MY}{Optional per-path confounder loading vector (M->Y path).}
 
-\item{omega_2}{Coverage of U_MY by W2. NULL = use w_signal.}
+\item{omega_1}{Coverage of conf_XM by W1. NULL = use w_signal.}
+
+\item{omega_2}{Coverage of conf_MY by W2. NULL = use w_signal.}
 
 \item{feat_cor}{Within-module correlation for block-diagonal co-expression
 modules in Y and W. 0 = independent features. Default 0.}
@@ -88,7 +91,7 @@ error for both NDE and NIE.
 }
 \details{
 When are non-default (rho_G1, rho_G2, rho_pop,
-separate_U, omega_1, omega_2), the two-stage proximal estimators (PGC2,
+lambda_XM, lambda_MY, omega_1, omega_2), the two-stage proximal estimators (PGC2,
 PGC2Gm) are also included.
 }
 \examples{

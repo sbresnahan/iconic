@@ -4,14 +4,14 @@
 \alias{fit_coca_surv}
 \title{COCA survival estimator: NOT supported (returns NA)}
 \usage{
-fit_coca_surv(time, event, Z, w, covars = NULL, ...)
+fit_coca_surv(time, event, X, w, covars = NULL, ...)
 }
 \arguments{
 \item{time}{Numeric follow-up time vector (length n).}
 
 \item{event}{Numeric 0/1 event indicator (length n).}
 
-\item{Z}{Numeric exposure vector (length n).}
+\item{X}{Numeric exposure vector (length n).}
 
 \item{w}{Numeric NC vector (length n).}
 
@@ -25,8 +25,8 @@ informative \code{"reason"} attribute.
 }
 \description{
 COCA (Correlated Outcome Control Approach) regresses the negative
-control W on the outcome Y (\code{W ~ y + Z}) and recovers the causal
-effect as a ratio \eqn{-\hat\beta_Z / \hat\beta_Y}. This places the
+control W on the outcome Y (\code{W ~ y + X}) and recovers the causal
+effect as a ratio \eqn{-\hat\beta_X / \hat\beta_Y}. This places the
 outcome on the right-hand side of the regression, which is
 structurally impossible when the outcome is a \code{survival::Surv}
 object (time-to-event). COCA is therefore unsupported for survival
@@ -36,7 +36,7 @@ outcomes and always returns \code{list(beta=NA, se=NA, pvalue=NA)}.
 \donttest{
 set.seed(1)
 dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
-fit_coca_surv(dat$surv_time, dat$surv_event, dat$Z, dat$W[, 1])
+fit_coca_surv(dat$surv_time, dat$surv_event, dat$X, dat$W[, 1])
 # $beta [1] NA (COCA unsupported for survival outcomes)
 }
 }

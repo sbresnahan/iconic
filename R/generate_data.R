@@ -19,7 +19,7 @@
 # possible case for an instrument. adds parameters that let the
 # instruments be correlated with the confounders (rho_G1, rho_G2) via a
 # shared population-structure factor (rho_pop), draws separate
-# confounders for the Z->M and M->Y paths (separate_U), and generates
+# confounder loadings for the X->M and M->Y paths (lambda_XM/lambda_MY), and generates
 # path-specific negative controls W1 and W2 with independent coverage
 # (omega_1, omega_2). This sets up the "tipping point" simulation: as
 # instrument exogeneity is violated, IV2SLS2 degrades while the
@@ -38,7 +38,7 @@
 #' When \code{phi > 0}, a mediator-specific genetic instrument
 #' \code{Gm} is generated: \eqn{Gm \sim \mathcal{N}(0,1)}, independent of
 #' \code{G}, \code{U}, and all other variables, and the mediator equation
-#' becomes \eqn{M = \alpha_M Z + \delta_{mo} 0.5 U_1 + \phi Gm + \varepsilon_M}.
+#' becomes \eqn{M = \alpha_M X + \delta_{mo} 0.5 U_1 + \phi Gm + \varepsilon_M}.
 #' \code{Gm} is a valid instrument for \code{M}: it moves \code{M} but is
 #' independent of the confounders and has no direct path to \code{Y}. This
 #' enables the 2-stage MR mediation estimator (\code{\link{fit_iv2sls_mediation2}})
@@ -52,22 +52,22 @@
 #' violate this independence, modelling realistic genomic structure:
 #' \describe{
 #' \item{\code{rho_G1}}{Correlation of the exposure instrument G1 with the
-#' Z->M confounder U_XM (instrument exogeneity violation). Default 0.}
+#' X->M confounder conf_XM (instrument exogeneity violation). Default 0.}
 #' \item{\code{rho_G2}}{Correlation of the mediator instrument G2 with the
-#' M->Y confounder U_MY (instrument exogeneity violation). Default 0.}
+#' M->Y confounder conf_MY (instrument exogeneity violation). Default 0.}
 #' \item{\code{rho_pop}}{Shared population-structure factor P that induces
 #' correlation between G1 and G2 (linkage / stratification). Default 0.}
-#' \item{\code{separate_U}}{If \code{TRUE}, draw U_XM and U_MY as
-#' independent confounders for the Z->M and M->Y paths respectively.
-#' If \code{FALSE} (default), U_XM = U_MY = U1 (backward compatible).}
-#' \item{\code{omega_1}}{Coverage of U_XM by the path-specific negative
+#' \item{\code{lambda_XM}, \code{lambda_MY}}{Per-path confounder loading vectors; distinct values draw conf_XM and conf_MY as
+#' independent confounders for the X->M and M->Y paths respectively.
+#' If \code{FALSE} (default), conf_XM = conf_MY = U1 (backward compatible).}
+#' \item{\code{omega_1}}{Coverage of conf_XM by the path-specific negative
 #' controls W1. \code{NULL} (default) uses \code{w_signal}.}
-#' \item{\code{omega_2}}{Coverage of U_MY by the path-specific negative
+#' \item{\code{omega_2}}{Coverage of conf_MY by the path-specific negative
 #' controls W2. \code{NULL} (default) uses \code{w_signal}.}
 #' }
 #' When all are at their defaults, the DGP is identical
 #' to the default. When any is non-default, the output additionally includes
-#' \code{G1}, \code{G2}, \code{W1}, \code{W2}, \code{U_XM}, \code{U_MY},
+#' \code{G1}, \code{G2}, \code{W1}, \code{W2}, \code{conf_XM}, \code{conf_MY},
 #' and (when \code{rho_pop > 0}) \code{P}.
 #'
 #' @param n Sample size. Default 500.
@@ -77,8 +77,8 @@
 #' and contributes additively to Y. M and Gm are returned
 #' as \code{n_mediators x n} matrices. Default 1 (single
 #' mediator, backward compatible).
-#' @param beta_Z Direct effect of Z on Y (true NDE). Default 0.10.
-#' @param alpha_M Effect of Z on mediator M. Default 0.50.
+#' @param beta_X Direct effect of X on Y (true NDE). Default 0.10.
+#' @param alpha_M Effect of X on mediator M. Default 0.50.
 #' @param beta_M Effect of M on Y (per-mediator NIE = alpha_M * beta_M;
 #' total NIE = n_mediators * alpha_M * beta_M). Default 0.30.
 #' @param conf_str Confounding strength delta. Default 0.80.
@@ -93,27 +93,29 @@
 #' Default 0. When > 0, a valid instrument for M is generated,
 #' enabling point identification of NDE/NIE via
 #' \code{\link{fit_iv2sls_mediation2}}.
-#' @param gamma_G Strength of the exposure instrument G -> Z. Default 0.6.
-#' @param rho_G1 Correlation of G1 with U_XM. Default 0.
-#' @param rho_G2 Correlation of G2 with U_MY. Default 0.
+#' @param gamma_G Strength of the exposure instrument G -> X. Default 0.6.
+#' @param rho_G1 Correlation of G1 with conf_XM. Default 0.
+#' @param rho_G2 Correlation of G2 with conf_MY. Default 0.
 #' @param rho_pop Shared population structure inducing G1-G2 correlation
 #'   . Default 0.
-#' @param separate_U If TRUE, draw separate confounders U_XM and U_MY for
-#' the Z->M and M->Y paths. Default FALSE.
-#' @param omega_1 Coverage of U_XM by W1. NULL = use w_signal.
-#' @param omega_2 Coverage of U_MY by W2. NULL = use w_signal.
+#' @param lambda_XM Optional per-path loading vector for the X->M confounder
+#'   composite. NULL (default) = shared loadings.
+#' @param lambda_MY Optional per-path loading vector for the M->Y confounder
+#'   composite. NULL (default) = shared loadings.
+#' @param omega_1 Coverage of conf_XM by W1. NULL = use w_signal.
+#' @param omega_2 Coverage of conf_MY by W2. NULL = use w_signal.
 #' @param feat_cor Within-module feature correlation. When > 0,
 #' the idiosyncratic noise in the Y and W panels is drawn
 #' from a multivariate normal with a block-diagonal
 #' correlation matrix modelling co-expression modules.
 #' 0 = independent noise (backward compatible). Default 0.
 #' @param u_strength Numeric scalar: scales the single
-#' confounder's effect on Z, M, and Y. Default NULL → 1
+#' confounder's effect on X, M, and Y. Default NULL → 1
 #' (backward compatible). See \code{\link{run_single_iteration}}
 #' for the length-k vector version (multiple confounders).
 #' @param w_coverage_profile A list with optional \code{w1} and \code{w2}
 #' numeric vectors: per-control coverage
-#' of U_XM / U_MY. Default NULL → scalar omega applied
+#' of conf_XM / conf_MY. Default NULL → scalar omega applied
 #' uniformly (backward compatible).
 #' @param outcome_type \code{"continuous"} (default) or \code{"survival"}
 #'   When \code{"survival"}, the continuous
@@ -127,13 +129,20 @@
 #' @param surv_censor_rate Explicit censoring rate. Default NULL
 #' → solved from \code{surv_event_frac}.
 #' @param seed Optional integer RNG seed for reproducibility.
+#' @param separate_U Defunct. Removed in v0.9.8; passing a value errors with a
+#'   message pointing to the replacement per-path loading vectors
+#'   \code{lambda_XM} / \code{lambda_MY}. Retained in the signature only to
+#'   catch and redirect old calls.
+#' @param beta_Z Defunct. Renamed to \code{beta_X} in v0.9.8; passing a value
+#'   errors with a message pointing to \code{beta_X}. Retained in the
+#'   signature only to catch and redirect old calls.
 #'
-#' @return A named list with elements Z, G (n x n_features matrix), Y, W, U1, M,
+#' @return A named list with elements X, G (n x n_features matrix), Y, W, U1, M,
 #' synthetic_data, true_total, true_NDE, true_NIE. When \code{phi > 0}, also
 #' includes \code{Gm} (numeric vector, length n, or \code{n_mediators x n}
 #' matrix when \code{n_mediators > 1}). When any parameter
 #' is non-default, also includes \code{G1}, \code{G2}, \code{W1}, \code{W2},
-#' \code{U_XM}, \code{U_MY}, and (when \code{rho_pop > 0}) \code{P}.
+#' \code{conf_XM}, \code{conf_MY}, and (when \code{rho_pop > 0}) \code{P}.
 #' When \code{n_mediators > 1}, \code{M} is an \code{n_mediators x n} matrix.
 #' @export
 #'
@@ -143,15 +152,15 @@
 #'
 #' # Mediation with mediator instrument and path-specific NCs
 #' dat <- generate_toy_data(n = 200, n_features = 10, phi = 0.8,
-#' mo_confounding = 0.8, separate_U = TRUE,
+#' mo_confounding = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
 #' omega_1 = 0.7, omega_2 = 0.7, seed = 42)
-#' idata <- iconic_data(Z = dat$Z, Y = dat$Y, M = dat$M,
+#' idata <- iconic_data(X = dat$X, Y = dat$Y, M = dat$M,
 #' G = dat$G[, 1], Gm = dat$Gm,
 #' W1 = dat$W1, W2 = dat$W2)
 generate_toy_data <- function(n = 500,
                               n_features = 20,
                               n_mediators = 1,
-                              beta_Z = 0.10,
+                              beta_X = 0.10,
                               alpha_M = 0.50,
                               beta_M = 0.30,
                               conf_str = 0.80,
@@ -163,10 +172,12 @@ generate_toy_data <- function(n = 500,
                               rho_G1 = 0,
                               rho_G2 = 0,
                               rho_pop = 0,
-                              separate_U = FALSE,
+                              lambda_XM = NULL,
+                              lambda_MY = NULL,
                               omega_1 = NULL,
                               omega_2 = NULL,
                               feat_cor = 0,
+                              separate_U = NULL,
                               # per-confounder strength and
                               # per-control coverage for heterogeneous U/W.
                               u_strength = NULL,
@@ -181,13 +192,30 @@ generate_toy_data <- function(n = 500,
                               surv_h0 = 0.1,
                               surv_event_frac = 0.6,
                               surv_censor_rate = NULL,
-                              seed = NULL) {
+                              seed = NULL,
+                              beta_Z = NULL) {
   if (!is.null(seed)) set.seed(seed)
   outcome_type <- match.arg(outcome_type)
 
+  # Deprecated-argument trap: the exposure effect was renamed beta_Z -> beta_X
+  # in v0.9.8.
+  if (!is.null(beta_Z))
+    stop("argument `beta_Z` was renamed to `beta_X` in v0.9.8; please use `beta_X = ...`.",
+         call. = FALSE)
+
+  # Deprecated-argument trap: the separate_U toggle was removed in v0.9.8 and
+  # replaced by per-path confounder loadings lambda_XM / lambda_MY.
+  if (!is.null(separate_U))
+    stop("argument `separate_U` was removed in v0.9.8. Confounding is now ",
+         "specified by per-path loading vectors `lambda_XM` and `lambda_MY`. ",
+         "Shared loadings (the default) reproduce the old separate_U = FALSE; ",
+         "lambda_XM = c(1, 0), lambda_MY = c(0, 1) reproduce the old ",
+         "separate_U = TRUE.", call. = FALSE)
+
   # ── Determine whether the is active ──
   v05_active <- rho_G1 != 0 || rho_G2 != 0 || rho_pop != 0 ||
-                separate_U || !is.null(omega_1) || !is.null(omega_2)
+                !is.null(lambda_XM) || !is.null(lambda_MY) ||
+                !is.null(omega_1) || !is.null(omega_2)
 
   # u_strength scales the single confounder's effect.
   # generate_toy_data has k=1, so u_strength is a scalar (default 1).
@@ -203,35 +231,41 @@ generate_toy_data <- function(n = 500,
   }
 
   # ── Confounders ──
-  # single U1 confounds both paths.
-  # (separate_U = TRUE): U_XM confounds Z->M, U_MY confounds M->Y.
+  # generate_toy_data is the k=1 toy generator: two independent latent
+  # confounders U1 and U2 are drawn, and per-path scalar loadings select the
+  # confounder composite driving each backdoor path. Default (both lambda
+  # NULL) shares U1 across both paths (the old separate_U = FALSE). Setting
+  # lambda_XM = c(1, 0), lambda_MY = c(0, 1) over the (U1, U2) space recovers
+  # the old separate_U = TRUE (independent per-path confounders).
   U1 <- rnorm(n)
   U2 <- rnorm(n)
+  Umat <- cbind(U1, U2)
 
-  if (v05_active) {
-    if (separate_U) {
-      U_XM <- rnorm(n)
-      U_MY <- rnorm(n)
-    } else {
-      U_XM <- U1
-      U_MY <- U1
-    }
-  } else {
-    U_XM <- U1
-    U_MY <- U1
+  .resolve_lambda_toy <- function(lam) {
+    if (is.null(lam)) return(c(1, 0))  # shared: load on U1 only
+    lam <- rep_len(as.numeric(lam), 2)
+    nrm <- sqrt(sum(lam^2))
+    if (nrm == 0) stop("lambda vectors must have nonzero norm.", call. = FALSE)
+    lam / nrm
   }
+  lambda_XM <- .resolve_lambda_toy(lambda_XM)
+  lambda_MY <- .resolve_lambda_toy(lambda_MY)
+
+  # Per-path confounder composites (length-n).
+  conf_XM <- as.numeric(Umat %*% lambda_XM)
+  conf_MY <- as.numeric(Umat %*% lambda_MY)
 
   # ── Instruments ──
   # G ~ N(0,1), Gm ~ N(0,1), both pure noise.
-  # G1 = rho_G1*U_XM + rho_pop*P + sqrt(1-rho_G1^2-rho_pop^2)*N(0,1)
-  # G2 = rho_G2*U_MY + rho_pop*P + sqrt(1-rho_G2^2-rho_pop^2)*N(0,1)
+  # G1 = rho_G1*conf_XM + rho_pop*P + sqrt(1-rho_G1^2-rho_pop^2)*N(0,1)
+  # G2 = rho_G2*conf_MY + rho_pop*P + sqrt(1-rho_G2^2-rho_pop^2)*N(0,1)
   # The sqrt term keeps Var(G) = 1 when rho terms are within valid range.
   if (v05_active) {
     P <- rnorm(n) # shared population structure
 
     # Variance budget for G1: rho_G1^2 + rho_pop^2 must be <= 1
     resid_var_G1 <- max(1 - rho_G1^2 - rho_pop^2, 0)
-    G1 <- rho_G1 * U_XM + rho_pop * P + sqrt(resid_var_G1) * rnorm(n)
+    G1 <- rho_G1 * conf_XM + rho_pop * P + sqrt(resid_var_G1) * rnorm(n)
     G1 <- as.numeric(scale(G1))
 
     # G2 (mediator instrument): only generated when phi > 0
@@ -243,12 +277,12 @@ generate_toy_data <- function(n = 500,
       if (n_mediators > 1) {
         G2 <- matrix(NA_real_, n_mediators, n)
         for (mm in seq_len(n_mediators)) {
-          G2[mm, ] <- rho_G2 * U_MY + rho_pop * P +
+          G2[mm, ] <- rho_G2 * conf_MY + rho_pop * P +
                       sqrt(resid_var_G2) * rnorm(n)
           G2[mm, ] <- as.numeric(scale(G2[mm, ]))
         }
       } else {
-        G2 <- rho_G2 * U_MY + rho_pop * P + sqrt(resid_var_G2) * rnorm(n)
+        G2 <- rho_G2 * conf_MY + rho_pop * P + sqrt(resid_var_G2) * rnorm(n)
         G2 <- as.numeric(scale(G2))
       }
     } else {
@@ -275,23 +309,23 @@ generate_toy_data <- function(n = 500,
   }
 
   # ── Exposure ──
-  # Z = scale(0.6*G + conf_str*U_XM + eps)
-  # U_XM = U1 in backward-compatible mode.
+  # X = scale(0.6*G + conf_str*conf_XM + eps)
+  # conf_XM = U1 in backward-compatible mode.
   # u_str scales the confounder's effect.
-  Z_raw <- gamma_G * G + u_str * conf_str * U_XM + rnorm(n, 0, 0.5)
-  Z <- as.numeric(scale(Z_raw))
+  X_raw <- gamma_G * G + u_str * conf_str * conf_XM + rnorm(n, 0, 0.5)
+  X <- as.numeric(scale(X_raw))
 
   # ── Mediator ──
-  # M = alpha_M*Z + mo_confounding*0.5*U_MY + phi*G2 + eps
-  # U_MY = U1 in backward-compatible mode.
-  # u_str scales the M<-U_MY confounding.
+  # M = alpha_M*X + mo_confounding*0.5*conf_MY + phi*G2 + eps
+  # conf_MY = U1 in backward-compatible mode.
+  # u_str scales the M<-conf_MY confounding.
   # when n_mediators > 1, generate M as an n_mediators x n matrix,
   # each mediator with its own Gm instrument and independent noise.
   if (n_mediators > 1) {
     M <- matrix(NA_real_, n_mediators, n)
     for (mm in seq_len(n_mediators)) {
-      M[mm, ] <- alpha_M * Z
-      if (mo_confounding > 0) M[mm, ] <- M[mm, ] + u_str * mo_confounding * 0.5 * U_MY
+      M[mm, ] <- alpha_M * X
+      if (mo_confounding > 0) M[mm, ] <- M[mm, ] + u_str * mo_confounding * 0.5 * conf_MY
       if (phi > 0) {
         gm_mm <- if (is.matrix(Gm)) Gm[mm, ] else Gm
         M[mm, ] <- M[mm, ] + phi * gm_mm
@@ -299,15 +333,15 @@ generate_toy_data <- function(n = 500,
       M[mm, ] <- M[mm, ] + rnorm(n, 0, 0.05)
     }
   } else {
-    M <- alpha_M * Z
-    if (mo_confounding > 0) M <- M + u_str * mo_confounding * 0.5 * U_MY
+    M <- alpha_M * X
+    if (mo_confounding > 0) M <- M + u_str * mo_confounding * 0.5 * conf_MY
     if (phi > 0) M <- M + phi * Gm
     M <- M + rnorm(n, 0, 0.05)
   }
 
   # ── Negative controls ──
   # single W panel, W_f = w_signal*U1 + (1-w_signal)*U2 + eps.
-  # path-specific W1 (captures U_XM) and W2 (captures U_MY),
+  # path-specific W1 (captures conf_XM) and W2 (captures conf_MY),
   # with independent coverage omega_1, omega_2.
   # when feat_cor > 0, the idiosyncratic noise is drawn from a
   # multivariate normal with a block-diagonal correlation matrix
@@ -332,20 +366,27 @@ generate_toy_data <- function(n = 500,
       noise1 <- MASS::mvrnorm(n, rep(0, n_features), cor_mat * 0.3^2)
       noise2 <- MASS::mvrnorm(n, rep(0, n_features), cor_mat * 0.3^2)
       for (f in seq_len(n_features)) {
-        W1[, f] <- om1_vec[f] * U_XM + (1 - om1_vec[f]) * U2 + noise1[, f]
-        W2[, f] <- om2_vec[f] * U_MY + (1 - om2_vec[f]) * rnorm(n) + noise2[, f]
+        # The non-covered portion of each NC must be fresh noise, NOT the
+        # other path's confounder composite. With path-specific loadings
+        # (conf_XM = U1, conf_MY = U2), using U2 here would contaminate W1
+        # with the M->Y confounder and bias the PGC purge. (In the legacy
+        # separate_U DGP, U2 was independent of the fresh U_MY, so this was
+        # harmless; with the loading-vector model it is not.)
+        W1[, f] <- om1_vec[f] * conf_XM + (1 - om1_vec[f]) * rnorm(n) + noise1[, f]
+        W2[, f] <- om2_vec[f] * conf_MY + (1 - om2_vec[f]) * rnorm(n) + noise2[, f]
       }
     } else {
       for (f in seq_len(n_features)) {
-        W1[, f] <- om1_vec[f] * U_XM + (1 - om1_vec[f]) * U2 + rnorm(n, 0, 0.3)
-        W2[, f] <- om2_vec[f] * U_MY + (1 - om2_vec[f]) * rnorm(n) + rnorm(n, 0, 0.3)
+        W1[, f] <- om1_vec[f] * conf_XM + (1 - om1_vec[f]) * rnorm(n) + rnorm(n, 0, 0.3)
+        W2[, f] <- om2_vec[f] * conf_MY + (1 - om2_vec[f]) * rnorm(n) + rnorm(n, 0, 0.3)
       }
     }
     W1 <- scale(W1)
     W2 <- scale(W2)
-    # Combined W for backward-compatible estimators: average of W1 and W2
-    # (when separate_U = FALSE, W1 = W2 = W, so this is exact).
-    W <- if (separate_U) scale((W1 + W2) / 2) else W1
+    # Combined W for backward-compatible estimators. When the two paths share
+    # the same confounder composite (identical loadings), W1 = W2 = W exactly;
+    # otherwise average the two panels so W carries both path composites.
+    W <- if (identical(lambda_XM, lambda_MY)) W1 else scale((W1 + W2) / 2)
   } else {
     W <- matrix(NA_real_, n, n_features)
     if (!is.null(cor_mat)) {
@@ -362,8 +403,8 @@ generate_toy_data <- function(n = 500,
   }
 
   # ── Outcome ──
-  # Y_f = beta_M*M + beta_Z*Z + gamma_f*U_MY + pleio*G1 + eps
-  # U_MY = U1 in backward-compatible mode.
+  # Y_f = beta_M*M + beta_X*X + gamma_f*conf_MY + pleio*G1 + eps
+  # conf_MY = U1 in backward-compatible mode.
   # when feat_cor > 0, the idiosyncratic noise is drawn from a
   # multivariate normal with a block-diagonal correlation matrix,
   # so Y features are correlated conditional on U.
@@ -373,7 +414,7 @@ generate_toy_data <- function(n = 500,
   M_eff <- if (is.matrix(M)) colSums(M) else M
   for (f in seq_len(n_features)) {
     gamma_f <- runif(1, 0.4, 0.8) * conf_str
-    Y[, f] <- beta_M * M_eff + beta_Z * Z + u_str * gamma_f * U_MY + pleio * G
+    Y[, f] <- beta_M * M_eff + beta_X * X + u_str * gamma_f * conf_MY + pleio * G
   }
   if (!is.null(cor_mat)) {
     Y_noise <- MASS::mvrnorm(n, rep(0, n_features), cor_mat * 0.2^2)
@@ -385,7 +426,7 @@ generate_toy_data <- function(n = 500,
 
   # survival outcome — convert the linear predictor to time-to-event.
   # The first column of Y carries the causal signal (all columns share the
-  # same beta_Z/beta_M/M_eff; they differ only in the confounder loading and
+  # same beta_X/beta_M/M_eff; they differ only in the confounder loading and
   # noise, which are nuisance for the survival DGP). The resulting
   # surv_time / surv_event are scalar vectors; true_total / true_NDE /
   # true_NIE are on the Cox log-HR scale.
@@ -397,7 +438,7 @@ generate_toy_data <- function(n = 500,
   }
 
   out <- list(
-    Z = Z,
+    X = X,
     G = matrix(rep(G, n_features), n, n_features),
     Y = Y,
     W = W,
@@ -407,8 +448,8 @@ generate_toy_data <- function(n = 500,
       fetal_sex = rbinom(n, 1, 0.5),
       gestational_age = rnorm(n)
     ),
-    true_total = beta_Z + n_mediators * alpha_M * beta_M,
-    true_NDE = beta_Z,
+    true_total = beta_X + n_mediators * alpha_M * beta_M,
+    true_NDE = beta_X,
     true_NIE = n_mediators * alpha_M * beta_M
   )
   if (outcome_type == "survival") {
@@ -426,11 +467,12 @@ generate_toy_data <- function(n = 500,
   # object without requiring the caller to pass them again.
   out$dgp_params <- list(
     n = n, n_features = n_features, n_mediators = n_mediators,
-    beta_Z = beta_Z, alpha_M = alpha_M, beta_M = beta_M,
+    beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
     conf_str = conf_str, w_signal = w_signal,
     mo_confounding = mo_confounding, pleio = pleio, phi = phi,
     gamma_G = gamma_G, rho_G1 = rho_G1, rho_G2 = rho_G2,
-    rho_pop = rho_pop, separate_U = separate_U,
+    rho_pop = rho_pop,
+    lambda_XM = lambda_XM, lambda_MY = lambda_MY,
     omega_1 = omega_1, omega_2 = omega_2, feat_cor = feat_cor,
     u_strength = u_str,
     w_coverage_profile = wcp,
@@ -445,8 +487,8 @@ generate_toy_data <- function(n = 500,
     out$G2 <- G2
     out$W1 <- W1
     out$W2 <- W2
-    out$U_XM <- U_XM
-    out$U_MY <- U_MY
+    out$conf_XM <- conf_XM
+    out$conf_MY <- conf_MY
     if (rho_pop > 0) out$P <- P
   }
 
@@ -459,7 +501,7 @@ generate_toy_data <- function(n = 500,
 # split so the manuscript can render an orientation table preceding the
 # simulation results. Accepts either a `dat` list returned by
 # `generate_toy_data()` (estimands + fixed params read from the object)
-# or a bare parameter list (estimands recomputed from beta_Z/alpha_M/beta_M).
+# or a bare parameter list (estimands recomputed from beta_X/alpha_M/beta_M).
 
 #' Scenario manifest: truth and parameter ranges for a simulation
 #'
@@ -475,12 +517,12 @@ generate_toy_data <- function(n = 500,
 #' \item a list returned by [generate_toy_data()], in which case the
 #' estimands and fixed parameters are read from the object
 #' (`true_NDE`, `true_NIE`, `true_total`, `n`, `n_features`,
-#' `n_mediators`, `separate_U`, `feat_cor`); or
+#' `n_mediators`, `lambda_XM`, `lambda_MY`, `feat_cor`); or
 #' \item a bare named list of DGP parameters
-#' (`beta_Z`, `alpha_M`, `beta_M`, `n_mediators`, `n`,
-#' `n_features`, `separate_U`, `feat_cor`, ...), in which case
+#' (`beta_X`, `alpha_M`, `beta_M`, `n_mediators`, `n`,
+#' `n_features`, `lambda_XM`, `lambda_MY`, `feat_cor`, ...), in which case
 #' the estimands are recomputed as
-#' `NDE = beta_Z`, `NIE = n_mediators * alpha_M * beta_M`,
+#' `NDE = beta_X`, `NIE = n_mediators * alpha_M * beta_M`,
 #' `total = NDE + NIE`.
 #' }
 #'
@@ -499,10 +541,14 @@ generate_toy_data <- function(n = 500,
 #' confounding strength. Default NULL.
 #' @param phi_grid Swept values of the mediator-instrument strength
 #' `phi`. Default NULL.
-#' @param rho_G1_grid Swept values of the G1-U_XM correlation. Default NULL.
-#' @param rho_G2_grid Swept values of the G2-U_MY correlation. Default NULL.
+#' @param rho_G1_grid Swept values of the G1-conf_XM correlation. Default NULL.
+#' @param rho_G2_grid Swept values of the G2-conf_MY correlation. Default NULL.
 #' @param rho_pop_grid Swept values of the population-stratification
 #' correlation. Default NULL.
+#' @param omega_1_grid Swept values of `omega_1` (coverage of conf_XM by W1).
+#' Default NULL.
+#' @param omega_2_grid Swept values of `omega_2` (coverage of conf_MY by W2).
+#' Default NULL.
 #' @return A named list with elements:
 #' \describe{
 #' \item{`estimands`}{Named numeric vector: `NDE`, `NIE`, `total`.}
@@ -516,7 +562,7 @@ generate_toy_data <- function(n = 500,
 #' }
 #' @export
 #' @examples
-#' dat <- generate_toy_data(n = 200, phi = 0.8, separate_U = TRUE,
+#' dat <- generate_toy_data(n = 200, phi = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
 #' omega_1 = 0.7, omega_2 = 0.7, seed = 42)
 #' scenario_manifest(dat, conf_grid = c(0.3, 0.8),
 #' coverage_grid = c(0.3, 0.7, 1))
@@ -527,7 +573,9 @@ scenario_manifest <- function(dat_or_params,
                               phi_grid = NULL,
                               rho_G1_grid = NULL,
                               rho_G2_grid = NULL,
-                              rho_pop_grid = NULL) {
+                              rho_pop_grid = NULL,
+                              omega_1_grid = NULL,
+                              omega_2_grid = NULL) {
   p <- dat_or_params
 
   # Detect whether `p` is a generate_toy_data() output (has true_NDE) or a
@@ -541,7 +589,14 @@ scenario_manifest <- function(dat_or_params,
     n <- attr(p$Y, "n"); if (is.null(n)) n <- nrow(p$Y)
     nf <- ncol(p$Y)
     nm <- if (!is.null(p$n_mediators)) p$n_mediators else 1L
-    sepU <- !is.null(p$U_XM)
+    # Confounder structure: shared vs path-specific loadings.
+    dp0 <- p$dgp_params
+    if (!is.null(dp0) && !is.null(dp0$lambda_XM)) {
+      conf_struct <- if (identical(dp0$lambda_XM, dp0$lambda_MY))
+        "shared loadings" else "path-specific loadings"
+    } else {
+      conf_struct <- if (!is.null(p$conf_XM)) "path-specific loadings" else "shared loadings"
+    }
     # recover scalar modifiable params + feat_cor from dgp_params
     # when generate_toy_data() recorded them.
     dp <- p$dgp_params
@@ -558,16 +613,18 @@ scenario_manifest <- function(dat_or_params,
       cov_val <- NA_real_; rho1 <- NA_real_; rho2 <- NA_real_; rhop <- NA_real_
     }
   } else {
-    beta_Z <- if (!is.null(p$beta_Z)) p$beta_Z else 0.10
+    beta_X <- if (!is.null(p$beta_X)) p$beta_X else 0.10
     alpha_M <- if (!is.null(p$alpha_M)) p$alpha_M else 0.50
     beta_M <- if (!is.null(p$beta_M)) p$beta_M else 0.30
     nm <- if (!is.null(p$n_mediators)) p$n_mediators else 1L
-    nde <- beta_Z
+    nde <- beta_X
     nie <- nm * alpha_M * beta_M
     tot <- nde + nie
     n <- if (!is.null(p$n)) p$n else 500
     nf <- if (!is.null(p$n_features)) p$n_features else 20
-    sepU <- if (!is.null(p$separate_U)) p$separate_U else FALSE
+    conf_struct <- if (!is.null(p$lambda_XM) && !is.null(p$lambda_MY)) {
+      if (identical(p$lambda_XM, p$lambda_MY)) "shared loadings" else "path-specific loadings"
+    } else "shared loadings"
     fcor <- if (!is.null(p$feat_cor)) p$feat_cor else 0
     conf_val <- if (!is.null(p$conf_str)) p$conf_str else NA_real_
     mo_val <- if (!is.null(p$mo_confounding)) p$mo_confounding else NA_real_
@@ -587,19 +644,22 @@ scenario_manifest <- function(dat_or_params,
   mod <- data.frame(
     parameter = c("conf_str", "w_signal / omega",
                   "mo_confounding", "phi",
-                  "rho_G1", "rho_G2", "rho_pop"),
-    value = c(conf_val, cov_val, mo_val, phi_val, rho1, rho2, rhop),
+                  "rho_G1", "rho_G2", "rho_pop",
+                  "omega_1", "omega_2"),
+    value = c(conf_val, cov_val, mo_val, phi_val, rho1, rho2, rhop,
+              cov_val, cov_val),
     swept_range = c(fmt_range(conf_grid), fmt_range(coverage_grid),
                     fmt_range(mo_confounding_grid), fmt_range(phi_grid),
                     fmt_range(rho_G1_grid), fmt_range(rho_G2_grid),
-                    fmt_range(rho_pop_grid)),
+                    fmt_range(rho_pop_grid),
+                    fmt_range(omega_1_grid), fmt_range(omega_2_grid)),
     stringsAsFactors = FALSE
   )
 
   fixed <- data.frame(
     parameter = c("n", "n_features", "n_mediators",
-                  "separate_U", "feat_cor"),
-    value = c(n, nf, nm, sepU, fcor),
+                  "confounder_structure", "feat_cor"),
+    value = c(n, nf, nm, conf_struct, fcor),
     stringsAsFactors = FALSE
   )
 

@@ -22,7 +22,7 @@ the feature-level copula texture model. Each row is a feature
 (transcript), each column a sample. The draws preserve the marginal
 distributions and cross-feature correlation structure of the user's
 mediator panel. The texture is drawn independently of U and never fed
-into Z, so it cannot open a confounding backdoor.
+into X, so it cannot open a confounding backdoor.
 }
 \details{
 When no feature_texture is available (trained_gan is NULL or lacks

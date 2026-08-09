@@ -2,7 +2,7 @@
 # Converts a continuous linear predictor (the Y matrix that generate_toy_data
 # / run_single_iteration already build) into a time-to-event outcome via an
 # exponential proportional-hazards model with independent exponential
-# censoring. The log-hazard ratio for Z (and M) equals the coefficient in
+# censoring. The log-hazard ratio for X (and M) equals the coefficient in
 # the linear predictor, so true_total / true_NDE / true_NIE are valid on the
 # Cox log-HR scale.
 #

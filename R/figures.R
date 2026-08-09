@@ -280,10 +280,10 @@ plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
 #' \donttest{
 #' sweep <- sweep_mediation_param("feat_cor", c(0, 0.2, 0.5, 0.8),
 #' n_iter = 50, n_features = 10, mo_confounding = 0.8, phi = 0.8,
-#' separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7)
+#' omega_1 = 0.7, omega_2 = 0.7)
 #' null <- sweep_mediation_null_by_conf(c(0.8), n_iter = 50,
 #' n_features = 10, mo_confounding = 0.8, phi = 0.8,
-#' separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7, feat_cor = 0.5)
+#' omega_1 = 0.7, omega_2 = 0.7, feat_cor = 0.5)
 #' plot_feature_correlation_sweep(sweep, null)
 #' }
 plot_feature_correlation_sweep <- function(sweep_results,
@@ -419,6 +419,10 @@ plot_feature_correlation_sweep <- function(sweep_results,
 #' values.
 #' @param rho_G2_grid Numeric vector of mediator-instrument violation
 #' values.
+#' @param omega_facet Logical: when the sensitivity surface swept
+#' \code{omega_1} / \code{omega_2} (more than one distinct value), facet the
+#' rho_G1 x rho_G2 heatmaps by the omega cell. Default \code{TRUE}. Ignored
+#' when omega was not swept.
 #' @param file Optional file path to save the figure.
 #' @param width Figure width in inches.
 #' @param height Figure height in inches.
@@ -427,8 +431,25 @@ plot_feature_correlation_sweep <- function(sweep_results,
 plot_degradation_surface <- function(results,
                                       rho_G1_grid = c(0, 0.1, 0.2, 0.3, 0.5),
                                       rho_G2_grid = c(0, 0.1, 0.2, 0.3, 0.5),
+                                      omega_facet = TRUE,
                                       file = NULL, width = 15, height = 5.5) {
   .figures_check_deps()
+
+  # When omega is swept, facet on the omega cell. Use a single composite
+  # omega label (omega_1 x omega_2) as the facet dimension.
+  has_omega <- "omega_1" %in% names(results) && "omega_2" %in% names(results)
+  omega_swept <- has_omega &&
+    (length(unique(results$omega_1)) > 1 || length(unique(results$omega_2)) > 1)
+  do_facet <- omega_facet && omega_swept
+
+  if (do_facet) {
+    results$omega_cell <- sprintf("omega[1]==%.2g ~ omega[2]==%.2g",
+                                  results$omega_1, results$omega_2)
+    # order facets by omega_1 then omega_2
+    oc <- unique(results[, c("omega_1", "omega_2", "omega_cell")])
+    oc <- oc[order(oc$omega_1, oc$omega_2), ]
+    results$omega_cell <- factor(results$omega_cell, levels = oc$omega_cell)
+  }
 
   iv_df <- results[results$method == "IV2SLS2", ]
   pg_df <- results[results$method == "PGC2Gm", ]
@@ -437,15 +458,35 @@ plot_degradation_surface <- function(results,
   pg_df$rho_G1 <- factor(pg_df$rho_G1, levels = rho_G1_grid)
   pg_df$rho_G2 <- factor(pg_df$rho_G2, levels = rho_G2_grid)
 
-  bias_lim <- max(abs(results$NDE_bias), na.rm = TRUE)
+  # Per-estimator robust colour scales. The two estimators can have very
+  # different bias magnitudes (IV2SLS2 degrades under instrument violation
+  # while PGC2Gm stays near zero), so a single shared scale washes out the
+  # better-behaved estimator. Give each panel its own diverging scale capped
+  # at that estimator's 95% |bias| quantile (floored at 0.10 so a near-perfect
+  # estimator still shows its structure), squishing out-of-bounds cells to the
+  # extreme colour. The crossover map (panel C) compares |bias| directly, so
+  # the cross-estimator comparison is preserved there.
+  squish <- if (requireNamespace("scales", quietly = TRUE)) scales::squish else NULL
+  cap_for <- function(x) {
+    v <- abs(x[is.finite(x)])
+    if (length(v) == 0) return(0.25)
+    max(0.10, as.numeric(stats::quantile(v, 0.95, na.rm = TRUE)))
+  }
+  bias_lim_A <- cap_for(iv_df$NDE_bias)
+  bias_lim_B <- cap_for(pg_df$NDE_bias)
+
+  facet_layer <- if (do_facet)
+    ggplot2::facet_wrap(~ omega_cell, labeller = ggplot2::label_parsed, nrow = 1) else NULL
 
   pA <- ggplot2::ggplot(iv_df, ggplot2::aes(x = rho_G2, y = rho_G1, fill = NDE_bias)) +
     ggplot2::geom_tile(colour = "white", linewidth = 0.6) +
-    ggplot2::geom_text(ggplot2::aes(label = sprintf("%+.3f", NDE_bias)),
-                       size = 2.8, fontface = "bold", colour = "grey20") +
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%+.2f", NDE_bias)),
+                       size = 2.6, fontface = "bold", colour = "grey20") +
     ggplot2::scale_fill_gradient2(low = "#0279EE", mid = "white", high = "#FF9400",
-                                  midpoint = 0, limits = c(-bias_lim, bias_lim),
+                                  midpoint = 0, limits = c(-bias_lim_A, bias_lim_A),
+                                  oob = squish,
                                   name = "NDE\nbias") +
+    facet_layer +
     ggplot2::labs(x = expression(rho[G2]~" (mediator-instrument violation)"),
                   y = expression(rho[G1]~" (exposure-instrument violation)"),
                   title = "IV2SLS2 NDE bias", tag = "A") +
@@ -454,11 +495,13 @@ plot_degradation_surface <- function(results,
 
   pB <- ggplot2::ggplot(pg_df, ggplot2::aes(x = rho_G2, y = rho_G1, fill = NDE_bias)) +
     ggplot2::geom_tile(colour = "white", linewidth = 0.6) +
-    ggplot2::geom_text(ggplot2::aes(label = sprintf("%+.3f", NDE_bias)),
-                       size = 2.8, fontface = "bold", colour = "grey20") +
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%+.2f", NDE_bias)),
+                       size = 2.6, fontface = "bold", colour = "grey20") +
     ggplot2::scale_fill_gradient2(low = "#0279EE", mid = "white", high = "#FF9400",
-                                  midpoint = 0, limits = c(-bias_lim, bias_lim),
+                                  midpoint = 0, limits = c(-bias_lim_B, bias_lim_B),
+                                  oob = squish,
                                   name = "NDE\nbias") +
+    facet_layer +
     ggplot2::labs(x = expression(rho[G2]~" (mediator-instrument violation)"),
                   y = expression(rho[G1]~" (exposure-instrument violation)"),
                   title = "PGC2Gm NDE bias", tag = "B") +
@@ -471,23 +514,22 @@ plot_degradation_surface <- function(results,
     iv_abs = abs(iv_df$NDE_bias), pg_abs = abs(pg_df$NDE_bias),
     iv_nde = iv_df$NDE_bias, pg_nde = pg_df$NDE_bias
   )
+  if (do_facet) crossover_df$omega_cell <- iv_df$omega_cell
   crossover_df$winner <- ifelse(crossover_df$iv_abs <= crossover_df$pg_abs,
                                 "IV2SLS2", "PGC2Gm")
   crossover_df$iv_exceeds <- crossover_df$iv_abs > 0.10
   crossover_df$pg_exceeds <- crossover_df$pg_abs > 0.10
-  crossover_df$label <- paste0(
-    ifelse(crossover_df$winner == "IV2SLS2", "IV2", "PGC"),
-    ifelse(crossover_df$iv_exceeds & crossover_df$winner == "IV2SLS2", "!",
-           ifelse(crossover_df$pg_exceeds & crossover_df$winner == "PGC2Gm", "!", "")))
+  crossover_df$label <- ifelse(crossover_df$iv_exceeds | crossover_df$pg_exceeds, "!", "")
 
   winner_cols <- c("IV2SLS2" = "#0279EE", "PGC2Gm" = "#FD9BED")
 
   pC <- ggplot2::ggplot(crossover_df, ggplot2::aes(x = rho_G2, y = rho_G1, fill = winner)) +
     ggplot2::geom_tile(colour = "white", linewidth = 0.6) +
     ggplot2::geom_text(ggplot2::aes(label = label),
-                       size = 3.2, fontface = "bold", colour = "white") +
+                       size = 3.4, fontface = "bold", colour = "black") +
     ggplot2::scale_fill_manual(values = winner_cols, name = "Preferred\nestimator",
                                limits = c("IV2SLS2", "PGC2Gm")) +
+    facet_layer +
     ggplot2::labs(x = expression(rho[G2]~" (mediator-instrument violation)"),
                   y = expression(rho[G1]~" (exposure-instrument violation)"),
                   title = "Crossover: preferred estimator by |NDE bias|\n(! = preferred estimator exceeds |bias| = 0.10)",
@@ -501,6 +543,12 @@ plot_degradation_surface <- function(results,
       theme = ggplot2::theme(plot.title = ggplot2::element_text(
         face = "bold", size = 11, colour = "grey10", hjust = 0.5)))
 
+  # widen when faceting on omega
+  if (do_facet) {
+    n_facets <- length(unique(results$omega_cell))
+    width <- max(width, 5 * n_facets)
+    height <- max(height, 6.5)
+  }
   .save_figure(fig, file, width, height)
   fig
 }
@@ -518,7 +566,7 @@ plot_degradation_surface <- function(results,
 #' @param n_samples Number of synthetic samples per iteration.
 #' @param n_iter Number of replications per sweep point.
 #' @param phi_val Mediator-instrument strength (for A2' panel).
-#' @param contam_grid Z->W contamination strength grid (A1).
+#' @param contam_grid X->W contamination strength grid (A1).
 #' @param meqtl_grid G->W (meQTL) strength grid (A2).
 #' @param eqtl_grid Gm->W (eQTL) strength grid (A2').
 #' @param k_grid Number of confounders grid (A3).
@@ -540,7 +588,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
   message("Running NC validity sweeps (n_iter = ", n_iter, ", n = ", n_samples, ") ...")
   t0 <- Sys.time()
 
-  ## Panel A: A1 (W perp Z | C) — Z->W contamination
+  ## Panel A: A1 (W perp X | C) — X->W contamination
   message(" Panel A: nc_validity_screen (A1)")
   panel_a <- do.call(rbind, lapply(contam_grid, function(cs) {
     res_a <- .parallel_lapply(seq_len(n_iter), function(i) {
@@ -548,7 +596,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
                                   n_features = 10, n_confounders = 1,
                                   coverage = 0.7, seed = i)
       dat$W[, 6:10] <- matrix(rnorm(n_samples * 5), n_samples, 5)
-      dat$W[, 6:10] <- dat$W[, 6:10] + cs * dat$Z
+      dat$W[, 6:10] <- dat$W[, 6:10] + cs * dat$X
       s <- nc_validity_screen(dat)
       c(sum(s$significant[6:10]) / 5, sum(s$significant[1:5]) / 5)
     }, n_cores = n_cores, progress = " Panel A replicates")
@@ -588,7 +636,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
                                   n_features = 10, n_confounders = kk, seed = i,
                                   nc_params = list(mode = "distinct"))
       W_valid <- dat$W[, seq_len(nv), drop = FALSE]
-      res <- fit_pgc(dat$Y[, 1], dat$Z, dat$G[, 1], W_valid)
+      res <- fit_pgc(dat$Y[, 1], dat$X, dat$G[, 1], W_valid)
       res$beta - dat$true_total
     }, n_cores = n_cores, progress = " Panel C replicates"))
     # Generate a fresh dataset for the completeness check (the 'dat'
@@ -629,7 +677,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
 #' NC validity diagnostics figure
 #'
 #' Produces a 4-panel figure sweeping the four empirical NC validity
-#' diagnostics. Panels: (A) A1 W perp Z|C, (B) A2 W perp G|C,
+#' diagnostics. Panels: (A) A1 W perp X|C, (B) A2 W perp G|C,
 #' (C) A3 dim(W_valid) >= k completeness grid, (D) A2' W perp Gm|C.
 #'
 #' @param panels List returned by \code{sweep_nc_validity()}.
@@ -650,7 +698,7 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
   pa_df <- rbind(
     data.frame(x = panels$panel_a$contamination,
                rate = panels$panel_a$violated_mean, sd = panels$panel_a$violated_sd,
-               group = "Violated (injected Z\u2192W)"),
+               group = "Violated (injected X\u2192W)"),
     data.frame(x = panels$panel_a$contamination,
                rate = panels$panel_a$confounding_mean, sd = panels$panel_a$confounding_sd,
                group = "Confounder-sharing (expected)"))
@@ -663,15 +711,15 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
                         linewidth = 0.4) +
     ggplot2::scale_color_manual(values = c(
       "Confounder-sharing (expected)" = col_confounding,
-      "Violated (injected Z\u2192W)" = col_violated)) +
+      "Violated (injected X\u2192W)" = col_violated)) +
     ggplot2::scale_fill_manual(values = c(
       "Confounder-sharing (expected)" = col_confounding,
-      "Violated (injected Z\u2192W)" = col_violated)) +
+      "Violated (injected X\u2192W)" = col_violated)) +
     ggplot2::scale_y_continuous(limits = c(0, 1.05),
                                 labels = scales::percent_format(accuracy = 1)) +
-    ggplot2::labs(x = "Z\u2192W contamination strength",
+    ggplot2::labs(x = "X\u2192W contamination strength",
                   y = "Proportion flagged \"drop\"",
-                  title = "A1: W perp Z | C", color = NULL, fill = NULL) +
+                  title = "A1: W perp X | C", color = NULL, fill = NULL) +
     .figure_theme() +
     ggplot2::theme(legend.position = "bottom",
                    legend.text = ggplot2::element_text(size = 7.5)) +
@@ -797,7 +845,6 @@ plot_model_selection <- function(diagnosis, estimate, sensitivity, recommendatio
 
   # Panel A: Eligibility table
   elig <- diagnosis$eligibility
-  elig$tier <- c("D", "D", "B", "C", "B", "A", "B", "A")
   elig$label <- ifelse(elig$eligible, "Yes", "No")
   elig$estimator <- factor(elig$estimator, levels = method_order)
 
@@ -856,25 +903,48 @@ plot_model_selection <- function(diagnosis, estimate, sensitivity, recommendatio
     ggplot2::theme(panel.grid.major.x = ggplot2::element_line(
                      colour = "grey92", linewidth = 0.3))
 
-  # Panel C: Degradation surface heatmap
+  # Panel C: Degradation surface heatmap for the recommended estimator,
+  # faceted by negative-control coverage (omega) when omega was swept. This
+  # mirrors the Figure 3 layout: a rho_G1 x rho_G2 plane per omega cell.
   surf <- sensitivity$surface
-  surf_sub <- surf[surf$method %in% c("IV2SLS2", "PGC2Gm"), ]
+  rec_method <- recommendation$recommended
+  if (!rec_method %in% surf$method) rec_method <- "PGC2Gm"
+  surf_sub <- surf[surf$method == rec_method, ]
+
+  # Build the omega facet label when omega was swept (more than one distinct
+  # omega value). Use a single composite omega_1 x omega_2 label, ordered by
+  # omega_1 then omega_2, as in plot_degradation_surface().
+  has_omega <- "omega_1" %in% names(surf_sub) && "omega_2" %in% names(surf_sub)
+  omega_swept <- has_omega &&
+    (length(unique(surf_sub$omega_1)) > 1 || length(unique(surf_sub$omega_2)) > 1)
+  if (omega_swept) {
+    surf_sub$omega_cell <- sprintf("omega[1]==%.2g ~ omega[2]==%.2g",
+                                   surf_sub$omega_1, surf_sub$omega_2)
+    oc <- unique(surf_sub[, c("omega_1", "omega_2", "omega_cell")])
+    oc <- oc[order(oc$omega_1, oc$omega_2), ]
+    surf_sub$omega_cell <- factor(surf_sub$omega_cell, levels = oc$omega_cell)
+  }
+
   surf_sub$rho_G1 <- factor(surf_sub$rho_G1, levels = c(0, 0.1, 0.2, 0.3, 0.5))
   surf_sub$rho_G2 <- factor(surf_sub$rho_G2, levels = c(0, 0.1, 0.2, 0.3, 0.5))
-  surf_sub$method <- factor(surf_sub$method, levels = c("IV2SLS2", "PGC2Gm"))
   bias_lim <- max(abs(surf_sub$NDE_bias), na.rm = TRUE)
+
+  facet_layer <- if (omega_swept)
+    ggplot2::facet_wrap(~ omega_cell, labeller = ggplot2::label_parsed, nrow = 1) else NULL
 
   pC <- ggplot2::ggplot(surf_sub, ggplot2::aes(x = rho_G2, y = rho_G1, fill = NDE_bias)) +
     ggplot2::geom_tile(colour = "white", linewidth = 0.6) +
-    ggplot2::geom_text(ggplot2::aes(label = sprintf("%+.3f", NDE_bias)),
-                       size = 2.6, fontface = "bold", colour = "grey20") +
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%+.2f", NDE_bias)),
+                       size = 2.4, fontface = "bold", colour = "grey20") +
     ggplot2::scale_fill_gradient2(low = "#0279EE", mid = "white", high = "#FF9400",
                                   midpoint = 0, limits = c(-bias_lim, bias_lim),
                                   name = "NDE\nbias") +
-    ggplot2::facet_wrap(~ method, ncol = 2) +
+    facet_layer +
     ggplot2::labs(x = expression(rho[G2]~" (Gm violation)"),
                   y = expression(rho[G1]~" (G violation)"),
-                  title = "Degradation surface (iconic_sensitivity)", tag = "C") +
+                  title = sprintf("Degradation surface (iconic_sensitivity): %s",
+                                  rec_method),
+                  tag = "C") +
     .figure_theme() +
     ggplot2::theme(legend.position = "right")
 
@@ -987,16 +1057,48 @@ plot_prospective_analysis <- function(prospect, file = NULL,
     ggplot2::theme(panel.grid.major.x = ggplot2::element_line(
                      colour = "grey92", linewidth = 0.3))
 
-  fig <- (pA / pB) +
+  # Panel C: CI coverage vs instrument strength (NDE and NIE)
+  has_cov <- all(c("NDE_coverage", "NIE_coverage") %in% names(surf))
+  pC <- NULL
+  if (has_cov) {
+    cov_df <- rbind(
+      data.frame(gamma_G = surf_varying$gamma_G, method = surf_varying$method,
+                 estimand = "NDE", coverage = surf_varying$NDE_coverage),
+      data.frame(gamma_G = surf_varying$gamma_G, method = surf_varying$method,
+                 estimand = "NIE", coverage = surf_varying$NIE_coverage))
+    cov_df$estimand <- factor(cov_df$estimand, levels = c("NDE", "NIE"))
+    pC <- ggplot2::ggplot(cov_df, ggplot2::aes(x = gamma_G, y = coverage,
+                          colour = method, linetype = estimand)) +
+      ggplot2::geom_hline(yintercept = 0.95, colour = "grey50", linetype = "dashed",
+                          linewidth = 0.5) +
+      ggplot2::geom_line(linewidth = 0.8) +
+      ggplot2::geom_point(size = 2.2) +
+      ggplot2::scale_colour_manual(
+        values = method_cols[varying_methods],
+        labels = c("IV2SLS" = "2SLS", "IV2SLS2" = "2-stage MR",
+                   "PGC2Gm" = "NC-augmented"),
+        name = "Method") +
+      ggplot2::scale_linetype_discrete(name = "Estimand") +
+      ggplot2::scale_y_continuous(limits = c(0, 1)) +
+      ggplot2::labs(x = "Instrument strength (gamma_G)",
+                    y = "95% CI coverage",
+                    title = "Confidence-interval coverage vs instrument strength",
+                    tag = "C") +
+      .figure_theme()
+  }
+
+  fig <- if (!is.null(pC)) (pA / pB / pC) else (pA / pB)
+  fig <- fig +
     patchwork::plot_annotation(
       title = "Prospective analysis: what adding instruments would do to your estimates",
-      subtitle = paste0("Current data has Z, M, Y only. The unadjusted estimate is confounded;",
+      subtitle = paste0("Current data has X, M, Y only. The unadjusted estimate is confounded;",
                         "the identified estimators converge to the true effect as the instrument strengthens."),
       theme = ggplot2::theme(
         plot.title = ggplot2::element_text(face = "bold", size = 12,
                                            colour = "grey10", hjust = 0.5),
         plot.subtitle = ggplot2::element_text(size = 9, colour = "grey30", hjust = 0.5)))
 
+  if (!is.null(pC)) height <- max(height, 11)
   .save_figure(fig, file, width, height)
   fig
 }
@@ -1079,12 +1181,12 @@ plot_pleiotropy_sweep <- function(sensitivity, file = NULL,
 
 #' Sweep instrument strength
 #'
-#' Runs a custom DGP that varies the G->Z coefficient (pi_GZ) and
+#' Runs a custom DGP that varies the G->X coefficient (pi_GX) and
 #' records IV2SLS performance binned by first-stage partial F.
 #' Uses \code{fit_iv2sls()} with \code{min_f = 0} (no weak-IV guard)
 #' so bias is visible across all instrument strengths.
 #'
-#' @param pi_GZ_grid Numeric vector of G->Z coefficients to sweep.
+#' @param pi_GX_grid Numeric vector of G->X coefficients to sweep.
 #' @param n_iter Number of replications per grid point.
 #' @param n Sample size.
 #' @param k Number of confounders.
@@ -1094,11 +1196,11 @@ plot_pleiotropy_sweep <- function(sensitivity, file = NULL,
 #' @param n_cores Number of parallel workers for the replicate loops.
 #' Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
 #' and a PSOCK cluster on Windows.
-#' @return A data frame with columns \code{pi_GZ}, \code{arm},
+#' @return A data frame with columns \code{pi_GX}, \code{arm},
 #' \code{iter}, \code{partial_F}, \code{beta}, \code{se},
 #' \code{pvalue}, \code{rejected}.
 #' @export
-sweep_instrument_strength <- function(pi_GZ_grid = c(0.02, 0.05, 0.10, 0.15,
+sweep_instrument_strength <- function(pi_GX_grid = c(0.02, 0.05, 0.10, 0.15,
                                         0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80),
                                        n_iter = 50, n = 200, k = 1,
                                        conf_str = 0.8, tau = 0.25, coverage = 0.7,
@@ -1107,44 +1209,44 @@ sweep_instrument_strength <- function(pi_GZ_grid = c(0.02, 0.05, 0.10, 0.15,
   message("Running instrument-strength sweep...")
   results <- data.frame()
 
-  run_one <- function(pi_GZ, arm, seed) {
+  run_one <- function(pi_GX, arm, seed) {
     set.seed(seed)
     U <- matrix(rnorm(n * k), n, k)
     gi <- simulate_single_genetic_instrument(n, seed = seed)
     G <- gi$G
-    aZ <- conf_str * rep(1, k) / sqrt(k)
-    Z <- as.numeric(scale(pi_GZ * G + as.numeric(U %*% aZ) + rnorm(n, 0, 0.5)))
+    aX <- conf_str * rep(1, k) / sqrt(k)
+    X <- as.numeric(scale(pi_GX * G + as.numeric(U %*% aX) + rnorm(n, 0, 0.5)))
     gY <- conf_str * runif(k, 0.4, 0.8) / sqrt(k)
     exo_Y <- rnorm(n)
     effect <- if (arm == "alt") tau else 0
-    Y <- effect * Z + as.numeric(U %*% gY) + 0.4 * exo_Y + rnorm(n, 0, 0.2)
+    Y <- effect * X + as.numeric(U %*% gY) + 0.4 * exo_Y + rnorm(n, 0, 0.2)
     W <- coverage * U[, 1] + (1 - coverage) * rnorm(n) + rnorm(n, 0, 0.3)
     W <- as.numeric(scale(W))
-    list(Y = Y, Z = Z, G = G, W = W)
+    list(Y = Y, X = X, G = G, W = W)
   }
 
-  for (pi_GZ in pi_GZ_grid) {
+  for (pi_GX in pi_GX_grid) {
     arms <- c("alt", "null")
     task_grid <- expand.grid(arm = arms, iter = seq_len(n_iter),
                              KEEP.OUT.ATTRS = FALSE)
     rows <- .parallel_lapply(seq_len(nrow(task_grid)), function(ti) {
       arm <- task_grid$arm[ti]
       iter <- task_grid$iter[ti]
-      seed <- as.integer(10000 * pi_GZ + 100 * (arm == "null") + iter)
-      d <- run_one(pi_GZ, arm, seed)
-      fs <- lm(d$Z ~ d$G + d$W)
+      seed <- as.integer(10000 * pi_GX + 100 * (arm == "null") + iter)
+      d <- run_one(pi_GX, arm, seed)
+      fs <- lm(d$X ~ d$G + d$W)
       sm <- summary(fs)$coefficients
       partial_F <- as.numeric(sm["d$G", "t value"]^2)
-      iv <- fit_iv2sls(d$Y, d$Z, d$G, d$W, min_f = 0)
+      iv <- fit_iv2sls(d$Y, d$X, d$G, d$W, min_f = 0)
       data.frame(
-        pi_GZ = pi_GZ, arm = arm, iter = iter,
+        pi_GX = pi_GX, arm = arm, iter = iter,
         partial_F = partial_F, beta = iv$beta, se = iv$se,
         pvalue = iv$pvalue,
         rejected = !is.na(iv$pvalue) & iv$pvalue < 0.05)
-    }, n_cores = n_cores, progress = paste0(" pi_GZ=", pi_GZ))
+    }, n_cores = n_cores, progress = paste0(" pi_GX=", pi_GX))
     results <- rbind(results, do.call(rbind, rows))
-    cat(sprintf(" pi_GZ = %.2f done (mean F = %.1f)\n", pi_GZ,
-                mean(results$partial_F[results$pi_GZ == pi_GZ])))
+    cat(sprintf(" pi_GX = %.2f done (mean F = %.1f)\n", pi_GX,
+                mean(results$partial_F[results$pi_GX == pi_GX])))
   }
   results
 }
@@ -1168,14 +1270,14 @@ plot_instrument_strength_sweep <- function(results, tau = 0.25,
 
   alt <- results[results$arm == "alt", ]
   nul <- results[results$arm == "null", ]
-  lv <- sort(unique(results$pi_GZ))
+  lv <- sort(unique(results$pi_GX))
 
   plot_df <- data.frame(
-    pi_GZ = lv,
-    mean_F = vapply(lv, function(v) mean(results$partial_F[results$pi_GZ == v], na.rm = TRUE), numeric(1)),
-    bias = vapply(lv, function(v) mean(alt$beta[alt$pi_GZ == v], na.rm = TRUE) - tau, numeric(1)),
-    bias_sd = vapply(lv, function(v) sd(alt$beta[alt$pi_GZ == v]), numeric(1)),
-    t1e = vapply(lv, function(v) mean(nul$rejected[nul$pi_GZ == v], na.rm = TRUE), numeric(1)))
+    pi_GX = lv,
+    mean_F = vapply(lv, function(v) mean(results$partial_F[results$pi_GX == v], na.rm = TRUE), numeric(1)),
+    bias = vapply(lv, function(v) mean(alt$beta[alt$pi_GX == v], na.rm = TRUE) - tau, numeric(1)),
+    bias_sd = vapply(lv, function(v) sd(alt$beta[alt$pi_GX == v]), numeric(1)),
+    t1e = vapply(lv, function(v) mean(nul$rejected[nul$pi_GX == v], na.rm = TRUE), numeric(1)))
 
   pts_bias <- results[results$arm == "alt" & !is.na(results$beta), ]
   pts_bias$bias <- pts_bias$beta - tau
@@ -1227,61 +1329,53 @@ plot_instrument_strength_sweep <- function(results, tau = 0.25,
 }
 
 # ============================================================
-# NC configuration comparison
-# (path-specific vs single-W negative controls)
+# NC coverage comparison
+# (bias degradation as negative-control coverage drops)
 # ============================================================
 
-#' NC configuration comparison figure
+#' NC coverage comparison figure
 #'
-#' Produces a 4-panel figure comparing PGC2, PGC2Gm, and IV2SLS2
-#' under path-specific (separate_U = TRUE) vs single-W
-#' (separate_U = FALSE) negative-control configurations.
+#' Produces a 4-panel figure comparing PGC2, PGC2Gm, and IV2SLS2 as
+#' negative-control coverage of each path's confounder composite
+#' (omega_1, omega_2) drops. This is the coverage-axis analogue of the
+#' instrument-violation degradation surface: it shows how bias
+#' accumulates as the proxy panel captures less of the confounder.
 #'
-#' Panels: (A) NDE bias vs confounding strength, (B) NIE bias vs
-#' confounding strength, (C) NDE/NIE bias vs sample size,
-#' (D) NIE Type I error vs confounding strength.
+#' Panels: (A) NDE bias vs omega_1, (B) NIE bias vs omega_2,
+#' (C) NDE/NIE bias vs omega (both paths), (D) NIE Type I error vs
+#' omega_2.
 #'
-#' @param delta_true Summary from \code{sweep_mediation_param("conf_str", ...)}
-#' with \code{separate_U = TRUE}.
-#' @param delta_false Same with \code{separate_U = FALSE}.
-#' @param n_true Summary from \code{sweep_mediation_param("n_samples", ...)}
-#' with \code{separate_U = TRUE}.
-#' @param n_false Same with \code{separate_U = FALSE}.
-#' @param t1e_true Result of \code{sweep_mediation_null_by_conf(...)}
-#' with \code{separate_U = TRUE}.
-#' @param t1e_false Same with \code{separate_U = FALSE}.
+#' @param omega1_sweep Summary from
+#' \code{sweep_mediation_param("omega_1", ...)}: a list with
+#' \code{$summary} (columns \code{param_value}, \code{method},
+#' \code{NDE_bias}, \code{NIE_bias}).
+#' @param omega2_sweep Same, sweeping \code{omega_2}.
+#' @param t1e_omega2 Result of
+#' \code{sweep_mediation_null_by_conf(...)} run across an \code{omega_2}
+#' grid: a data frame with columns \code{omega_2}, \code{method},
+#' \code{NIE_type1}. If \code{NULL}, Panel D is omitted.
 #' @param file Optional file path to save the figure.
 #' @param width Figure width in inches.
 #' @param height Figure height in inches.
 #' @return A \code{patchwork} ggplot object.
 #' @export
-plot_nc_configuration_comparison <- function(delta_true, delta_false,
-                                              n_true, n_false,
-                                              t1e_true, t1e_false,
-                                              file = NULL, width = 10, height = 14) {
+plot_nc_coverage_comparison <- function(omega1_sweep, omega2_sweep,
+                                        t1e_omega2 = NULL,
+                                        file = NULL, width = 10, height = 12) {
   .figures_check_deps()
 
   focus_methods <- c("IV2SLS2", "PGC2", "PGC2Gm")
-  method_colors <- c(IV2SLS2 = "#27A062", PGC2 = "#75A025", PGC2Gm = "#FD9BED")
-
-  su_labels <- c(
-    "TRUE" = "separate_U = TRUE\n(path-specific W1, W2)",
-    "FALSE" = "separate_U = FALSE\n(single W, W1 = W2)")
+  method_colors <- c(IV2SLS2 = "#0279EE", PGC2 = "#75A025", PGC2Gm = "#FD9BED")
 
   base_theme <- .figure_theme() +
-    ggplot2::theme(strip.text = ggplot2::element_text(size = 9, face = "bold"),
-                   legend.position = "bottom")
+    ggplot2::theme(legend.position = "bottom")
 
-  # Helper: build a faceted line plot
   make_panel <- function(df, xlab, ylab, hline_val = NULL, yrange = NULL) {
-    df$separate_U <- factor(df$separate_U, levels = c("TRUE", "FALSE"),
-                            labels = su_labels)
     df$method <- factor(df$method, levels = focus_methods)
     p <- ggplot2::ggplot(df, ggplot2::aes(x = xvar, y = value,
                          color = method, group = method)) +
       ggplot2::geom_line(linewidth = 0.7) +
       ggplot2::geom_point(size = 2) +
-      ggplot2::facet_grid(~ separate_U) +
       ggplot2::scale_color_manual(values = method_colors, name = "Estimator") +
       ggplot2::labs(x = xlab, y = ylab) +
       base_theme
@@ -1293,63 +1387,60 @@ plot_nc_configuration_comparison <- function(delta_true, delta_false,
     p
   }
 
-  # Panel A: NDE bias vs delta
-  nde_delta <- rbind(
-    cbind(delta_true$summary, separate_U = "TRUE"),
-    cbind(delta_false$summary, separate_U = "FALSE"))
-  nde_delta <- nde_delta[nde_delta$method %in% focus_methods, ]
+  s1 <- omega1_sweep$summary
+  s1 <- s1[s1$method %in% focus_methods, ]
+  s2 <- omega2_sweep$summary
+  s2 <- s2[s2$method %in% focus_methods, ]
+
+  # Panel A: NDE bias vs omega_1
   pA <- make_panel(
-    data.frame(method = nde_delta$method, separate_U = nde_delta$separate_U,
-               value = nde_delta$NDE_bias, xvar = nde_delta$param_value),
-    xlab = "Confounding strength (delta)", ylab = "NDE bias", hline_val = 0)
+    data.frame(method = s1$method, value = s1$NDE_bias, xvar = s1$param_value),
+    xlab = "Coverage of X->M confounder (omega_1)", ylab = "NDE bias",
+    hline_val = 0)
 
-  # Panel B: NIE bias vs delta
-  nie_delta <- nde_delta
+  # Panel B: NIE bias vs omega_2
   pB <- make_panel(
-    data.frame(method = nie_delta$method, separate_U = nie_delta$separate_U,
-               value = nie_delta$NIE_bias, xvar = nie_delta$param_value),
-    xlab = "Confounding strength (delta)", ylab = "NIE bias", hline_val = 0)
+    data.frame(method = s2$method, value = s2$NIE_bias, xvar = s2$param_value),
+    xlab = "Coverage of M->Y confounder (omega_2)", ylab = "NIE bias",
+    hline_val = 0)
 
-  # Panel C: NDE & NIE bias vs n
-  bias_n <- rbind(
-    cbind(n_true$summary, separate_U = "TRUE"),
-    cbind(n_false$summary, separate_U = "FALSE"))
-  bias_n <- bias_n[bias_n$method %in% focus_methods, ]
-
-  nde_n <- data.frame(method = bias_n$method, separate_U = bias_n$separate_U,
-                      metric = "NDE bias", value = bias_n$NDE_bias,
-                      xvar = bias_n$param_value)
-  nie_n <- data.frame(method = bias_n$method, separate_U = bias_n$separate_U,
-                      metric = "NIE bias", value = bias_n$NIE_bias,
-                      xvar = bias_n$param_value)
-  bias_n_plot <- rbind(nde_n, nie_n)
-  bias_n_plot$separate_U <- factor(bias_n_plot$separate_U,
-                                   levels = c("TRUE", "FALSE"), labels = su_labels)
-  bias_n_plot$method <- factor(bias_n_plot$method, levels = focus_methods)
-  bias_n_plot$metric <- factor(bias_n_plot$metric, levels = c("NDE bias", "NIE bias"))
-
-  pC <- ggplot2::ggplot(bias_n_plot, ggplot2::aes(x = xvar, y = value,
+  # Panel C: NDE & NIE bias vs omega (both paths, from the omega_1 sweep
+  # when omega_1 = omega_2; otherwise uses each path's own sweep)
+  nde_c <- data.frame(method = s1$method, metric = "NDE bias",
+                      value = s1$NDE_bias, xvar = s1$param_value)
+  nie_c <- data.frame(method = s2$method, metric = "NIE bias",
+                      value = s2$NIE_bias, xvar = s2$param_value)
+  bias_c <- rbind(nde_c, nie_c)
+  bias_c$method <- factor(bias_c$method, levels = focus_methods)
+  bias_c$metric <- factor(bias_c$metric, levels = c("NDE bias", "NIE bias"))
+  pC <- ggplot2::ggplot(bias_c, ggplot2::aes(x = xvar, y = value,
                        color = method, group = method)) +
     ggplot2::geom_line(linewidth = 0.7) +
     ggplot2::geom_point(size = 2) +
-    ggplot2::facet_grid(metric ~ separate_U) +
+    ggplot2::facet_wrap(~ metric, ncol = 2, scales = "free_y") +
     ggplot2::scale_color_manual(values = method_colors, name = "Estimator") +
-    ggplot2::labs(x = "Sample size (n)", y = "Bias") +
+    ggplot2::labs(x = "Negative-control coverage (omega)", y = "Bias") +
     base_theme
 
-  # Panel D: NIE Type I error vs delta
-  t1e_df <- rbind(
-    cbind(t1e_true, separate_U = "TRUE"),
-    cbind(t1e_false, separate_U = "FALSE"))
-  t1e_df <- t1e_df[t1e_df$method %in% focus_methods, ]
-  pD <- make_panel(
-    data.frame(method = t1e_df$method, separate_U = t1e_df$separate_U,
-               value = t1e_df$NIE_type1, xvar = t1e_df$conf_str),
-    xlab = "Confounding strength (delta)", ylab = "NIE Type I error",
-    hline_val = 0.05, yrange = c(0, 1))
+  panels <- list(pA, pB, pC)
 
-  fig <- (pA / pB / pC / pD) +
-    patchwork::plot_layout(guides = "collect") &
+  # Panel D: NIE Type I error vs omega_2
+  if (!is.null(t1e_omega2)) {
+    t1e_df <- t1e_omega2[t1e_omega2$method %in% focus_methods, ]
+    xcol <- if ("omega_2" %in% names(t1e_df)) t1e_df$omega_2 else t1e_df$param_value
+    pD <- make_panel(
+      data.frame(method = t1e_df$method, value = t1e_df$NIE_type1, xvar = xcol),
+      xlab = "Coverage of M->Y confounder (omega_2)", ylab = "NIE Type I error",
+      hline_val = 0.05, yrange = c(0, 1))
+    panels <- c(panels, list(pD))
+  }
+
+  if (length(panels) == 4) {
+    fig <- (panels[[1]] / panels[[2]] / panels[[3]] / panels[[4]])
+  } else {
+    fig <- (panels[[1]] / panels[[2]] / panels[[3]])
+  }
+  fig <- fig + patchwork::plot_layout(guides = "collect") &
     ggplot2::theme(legend.position = "bottom")
 
   .save_figure(fig, file, width, height)

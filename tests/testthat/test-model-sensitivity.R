@@ -9,7 +9,7 @@
   dat <- run_single_iteration(
     n_synthetic_samples = n, n_features = n_features,
     mo_confounding = 0.8, phi = phi, seed = seed)
-  iconic_data(Z = dat$Z, Y = t(dat$Y), M = dat$M, W = t(dat$W),
+  iconic_data(X = dat$X, Y = t(dat$Y), M = dat$M, W = t(dat$W),
               G = dat$G[, 1], Gm = dat$Gm, covariates = dat$synthetic_data)
 }
 
@@ -48,7 +48,7 @@ test_that("iconic_sensitivity surface includes all 8 methods at origin", {
 
 test_that("iconic_sensitivity rejects non-mediation data", {
   idata <- .make_sens_data()
-  bare <- iconic_data(Z = idata$Z, Y = idata$Y, G = idata$G, W = idata$W)
+  bare <- iconic_data(X = idata$X, Y = idata$Y, G = idata$G, W = idata$W)
   expect_error(iconic_sensitivity(bare), "mediation data")
 })
 
@@ -62,8 +62,10 @@ test_that("iconic_sensitivity custom grid dimensions match", {
   idata <- .make_sens_data()
   r1 <- c(0, 0.1, 0.2, 0.3, 0.5)
   r2 <- c(0, 0.2, 0.5)
+  # Pin omega to a single value so the row count isolates the rho grid.
   sens <- iconic_sensitivity(idata,
                              rho_G1_grid = r1, rho_G2_grid = r2,
+                             omega_1 = 0.7, omega_2 = 0.7,
                              n_iter = 2, n_features = 3)
   expect_equal(length(unique(sens$surface$rho_G1)), length(r1))
   expect_equal(length(unique(sens$surface$rho_G2)), length(r2))
@@ -183,7 +185,7 @@ test_that("iconic_sensitivity bias values in same range as gan_mediation_sensiti
   common_args <- list(
     n_iter = 5, n_samples = 200, n_features = 5,
     mo_confounding = 0.8, phi = 0.8,
-    separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7
+    omega_1 = 0.7, omega_2 = 0.7
   )
   sens <- do.call(iconic_sensitivity, c(list(data = idata,
                                              rho_G1_grid = c(0, 0.3),
@@ -195,7 +197,7 @@ test_that("iconic_sensitivity bias values in same range as gan_mediation_sensiti
     conf_grid = 0.8, coverage_grid = 0.7, k_grid = 1,
     mo_confounding = 0.8, phi = 0.8,
     rho_G1 = 0.3, rho_G2 = 0.3,
-    separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7,
+    omega_1 = 0.7, omega_2 = 0.7,
     n_iter = 5, n_samples = 200, n_features = 5)
 
   # Compare NDE bias for IV2SLS2 and PGC2Gm at the same violation level

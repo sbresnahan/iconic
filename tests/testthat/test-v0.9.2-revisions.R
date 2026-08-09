@@ -10,7 +10,7 @@
 # - nc_completeness_capture() now returns capture_R2/capture_pvalue/
 # capture_verdict (not dimensional/capture/completeness).
 # - u_strength scaling is applied before scale(), so the residualized
-# Y-U correlation is not monotonic; the raw Z-U correlation is.
+# Y-U correlation is not monotonic; the raw X-U correlation is.
 # - Rd alias tests use system.file() only (relative paths break under
 # test_file()).
 
@@ -65,7 +65,7 @@ test_that("bootstrap_mediation_se returns finite SEs", {
   dat <- iconic::generate_toy_data(n = 200, n_features = 1, n_mediators = 1,
                                    phi = 0.8, seed = 1)
   est <- function(idx) {
-    iconic:::fit_unadj_mediation(dat$Y[idx, 1], dat$Z[idx], as.numeric(dat$M)[idx])
+    iconic:::fit_unadj_mediation(dat$Y[idx, 1], dat$X[idx], as.numeric(dat$M)[idx])
   }
   bs <- iconic:::bootstrap_mediation_se(est, n = 200, n_boot = 50)
   expect_true(is.finite(bs$NDE_boot_se))
@@ -81,7 +81,7 @@ test_that("bootstrap p-values are recomputed with bootstrap SE", {
   set.seed(1)
   dat <- iconic::generate_toy_data(n = 200, n_features = 1, n_mediators = 1,
                                    phi = 0.8, seed = 1)
-  idat <- iconic::iconic_data(Y = dat$Y, Z = dat$Z, M = dat$M,
+  idat <- iconic::iconic_data(Y = dat$Y, X = dat$X, M = dat$M,
                               G = dat$G, W = dat$W, covariates = dat$C)
   # Delta-method p-values
   res_delta <- iconic::iconic_estimate(idat, methods = "UNADJ",
@@ -117,7 +117,7 @@ test_that("scenario_manifest returns estimands + modifiable + fixed", {
 
 test_that("scenario_manifest recomputes from bare parameter list", {
   man <- iconic::scenario_manifest(
-    list(beta_Z = 0.2, alpha_M = 0.6, beta_M = 0.4, n_mediators = 2)
+    list(beta_X = 0.2, alpha_M = 0.6, beta_M = 0.4, n_mediators = 2)
   )
   expect_equal(man$estimands[["NDE"]], 0.2)
   expect_equal(man$estimands[["NIE"]], 2 * 0.6 * 0.4)
@@ -134,22 +134,22 @@ test_that("u_strength scales confounder effect", {
   set.seed(1)
   dat1 <- iconic::generate_toy_data(n = 300, n_features = 5, u_strength = 1, seed = 1)
   dat2 <- iconic::generate_toy_data(n = 300, n_features = 5, u_strength = 2, seed = 1)
-  # Stronger U -> stronger raw Z-U correlation. The scaling is applied to
-  # the raw Z before scale(), so the raw correlation is the right thing to
+  # Stronger U -> stronger raw X-U correlation. The scaling is applied to
+  # the raw X before scale(), so the raw correlation is the right thing to
   # test (the residualized Y-U correlation is not monotonic after scale()).
-  r1 <- cor(dat1$Z, dat1$U1)
-  r2 <- cor(dat2$Z, dat2$U1)
+  r1 <- cor(dat1$X, dat1$U1)
+  r2 <- cor(dat2$X, dat2$U1)
   expect_true(abs(r2) > abs(r1))
 })
 
 test_that("w_coverage_profile gives per-control coverage", {
   set.seed(1)
   dat <- iconic::generate_toy_data(n = 500, n_features = 10,
-                                  separate_U = TRUE, omega_1 = 0.7, omega_2 = 0.7,
+                                  omega_1 = 0.7, omega_2 = 0.7,
                                   w_coverage_profile = list(w2 = c(0.9, rep(0.2, 9))),
                                   seed = 1)
-  r2_1 <- summary(lm(dat$W2[, 1] ~ dat$U_MY))$r.squared
-  r2_2 <- summary(lm(dat$W2[, 2] ~ dat$U_MY))$r.squared
+  r2_1 <- summary(lm(dat$W2[, 1] ~ dat$conf_MY))$r.squared
+  r2_2 <- summary(lm(dat$W2[, 2] ~ dat$conf_MY))$r.squared
   expect_true(r2_1 > 0.8)
   expect_true(r2_2 < 0.25)
 })
@@ -196,7 +196,7 @@ test_that("iconic_prospect accepts allow_no_proxy", {
 })
 
 test_that("iconic_diagnose errors with allow_no_proxy=FALSE and no IV/NC", {
-  dat <- iconic::iconic_data(Z = rnorm(30), Y = matrix(rnorm(30 * 2), 30, 2),
+  dat <- iconic::iconic_data(X = rnorm(30), Y = matrix(rnorm(30 * 2), 30, 2),
                              M = rnorm(30), W = NULL, G = NULL, Gm = NULL)
   expect_error(iconic::iconic_diagnose(dat, allow_no_proxy = FALSE),
                "allow_no_proxy")

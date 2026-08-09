@@ -1,7 +1,7 @@
 Package: iconic
 Title: Causal Model Selection with Genetic Instruments and Negative
         Controls
-Version: 0.9.8
+Version: 0.9.9
 biocViews: Statistics, Genetics, MultipleComparison, Regression,
         Transcriptomics, RNASeq
 Author: Sean T. Bresnahan [aut, cre], Charis Xiong [aut]

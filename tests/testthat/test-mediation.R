@@ -206,7 +206,7 @@ test_that("fit_iv2sls_mediation2 returns named list with NDE/NIE", {
   dat <- iconic:::generate_toy_data(n = 500, n_features = 3,
                                     mo_confounding = 0.8, phi = 0.8, seed = 42)
   res <- fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M,
-                                dat$G[, 1], dat$Gm, dat$W[, 1])
+                                dat$G[, 1], dat$Gm)
   expect_named(res, c("NDE", "NDE_se", "NDE_p", "NIE", "NIE_se", "NIE_p", "alpha_M", "alpha_se", "beta_M", "beta_M_se"))
   expect_true(is.numeric(res$NDE))
   if (!is.na(res$NDE_p)) {
@@ -228,7 +228,7 @@ test_that("fit_iv2sls_mediation2 point-identifies NDE/NIE with strong instrument
     r1 <- fit_iv2sls_mediation(dat$Y[, 1], dat$X, dat$M,
                                dat$G[, 1], dat$W[, 1])
     r2 <- fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M,
-                                dat$G[, 1], dat$Gm, dat$W[, 1])
+                                dat$G[, 1], dat$Gm)
     nde_iv2[i] <- r1$NDE; nie_iv2[i] <- r1$NIE
     nde_iv2_2[i] <- r2$NDE; nie_iv2_2[i] <- r2$NIE
   }
@@ -253,7 +253,7 @@ test_that("fit_iv2sls_mediation2 returns NA when Gm is weak", {
   dat <- iconic:::generate_toy_data(n = 500, n_features = 1,
                                     mo_confounding = 0.8, phi = 0.001, seed = 42)
   res <- fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M,
-                                dat$G[, 1], dat$Gm, dat$W[, 1])
+                                dat$G[, 1], dat$Gm)
   expect_true(all(is.na(unlist(res))))
 })
 
@@ -262,14 +262,14 @@ test_that("fit_iv2sls_mediation2 cross-validates against AER::ivreg", {
   dat <- iconic:::generate_toy_data(n = 500, n_features = 1,
                                     mo_confounding = 0.8, phi = 0.8, seed = 42)
   y <- dat$Y[, 1]; X <- dat$X; M <- dat$M
-  g <- dat$G[, 1]; gm <- dat$Gm; w <- dat$W[, 1]
+  g <- dat$G[, 1]; gm <- dat$Gm
 
-  # Our sequential 2SLS estimator
-  res_seq <- fit_iv2sls_mediation2(y, X, M, g, gm, w)
+  # Our sequential 2SLS estimator (pure-MR form: no NC augmentation)
+  res_seq <- fit_iv2sls_mediation2(y, X, M, g, gm)
 
   # Canonical ivreg: just-identified system with 2 endogenous, 2 excluded instruments
-  d_iv <- data.frame(y = y, X = X, M = M, G_inst = g, Gm_inst = gm, w = w)
-  fit_iv <- AER::ivreg(y ~ X + M + w | G_inst + Gm_inst + w, data = d_iv)
+  d_iv <- data.frame(y = y, X = X, M = M, G_inst = g, Gm_inst = gm)
+  fit_iv <- AER::ivreg(y ~ X + M | G_inst + Gm_inst, data = d_iv)
 
   # NDE (coefficient on X) should match within tolerance
   nde_diff <- abs(res_seq$NDE - as.numeric(coef(fit_iv)["X"]))
@@ -280,9 +280,9 @@ test_that("fit_iv2sls_mediation2 cross-validates against AER::ivreg", {
 
   # beta_M (coefficient on M) should match within tolerance
   # Extract beta_M from the sequential estimator by re-running stage 3
-  fs <- lm(X ~ g + w); X_hat <- fitted(fs)
-  ms <- lm(M ~ X_hat + gm + w); M_hat <- fitted(ms)
-  os <- lm(y ~ X_hat + M_hat + w)
+  fs <- lm(X ~ g); X_hat <- fitted(fs)
+  ms <- lm(M ~ X_hat + gm); M_hat <- fitted(ms)
+  os <- lm(y ~ X_hat + M_hat)
   beta_M_seq <- as.numeric(coef(os)["M_hat"])
   beta_M_diff <- abs(beta_M_seq - as.numeric(coef(fit_iv)["M"]))
   expect_true(beta_M_diff < 0.02,
@@ -562,23 +562,29 @@ test_that("fit_pgc_mediation2 returns all-NA when g is weak (pure noise)", {
 
 # --- fit_pgc_mediation2: identification under imperfect independence ---
 
-test_that("fit_pgc_mediation2 with gm has lower bias than IV2SLS2 under rho_G2 > 0", {
+test_that("fit_pgc_mediation2 with gm has lower bias than unaugmented IV2SLS2 under rho_G2 > 0", {
   # The tipping-point result: as rho_G2 increases, IV2SLS2 degrades faster
   # than PGC2Gm because Gm-conf_MY correlation violates IV2SLS2's exogeneity.
+  # PGC2Gm's W2 bridge absorbs the Gm-conf_MY correlation that biases IV2SLS2.
+  # NOTE (v0.9.9): the comparison is against UNaugmented IV2SLS2 (no W1/W2).
+  # When IV2SLS2 is given the same path-specific W2, it ALSO absorbs the
+  # Gm-conf_MY correlation and the two estimators perform comparably -- the
+  # PGC2Gm advantage is specifically over the instrument-only (unaugmented)
+  # IV2SLS2 form.
   set.seed(777)
   n_rep <- 20
   nde_pgc2gm <- nde_iv2sls2 <- numeric(n_rep)
   for (i in seq_len(n_rep)) {
     dat <- iconic:::generate_toy_data(n = 500, n_features = 1,
                                       mo_confounding = 0.8, phi = 0.8,
-                                      rho_G1 = 0.3, rho_G2 = 0.3,
+                                      rho_G1 = 0.3, rho_G2 = 0.5,
                                       lambda_XM = c(1, 0), lambda_MY = c(0, 1),
                                       omega_1 = 0.7, omega_2 = 0.7,
                                       seed = 5000 + i)
     r_pgc <- fit_pgc_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G1,
                                  dat$W1, dat$W2, gm = dat$Gm)
     r_iv <- fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M,
-                                    dat$G[, 1], dat$Gm, dat$W[, 1])
+                                    dat$G[, 1], dat$Gm)  # unaugmented (pure MR)
     nde_pgc2gm[i] <- r_pgc$NDE
     nde_iv2sls2[i] <- r_iv$NDE
   }
@@ -587,7 +593,7 @@ test_that("fit_pgc_mediation2 with gm has lower bias than IV2SLS2 under rho_G2 >
   iv2sls2_bias <- abs(mean(nde_iv2sls2, na.rm = TRUE) - true_NDE)
   expect_true(pgc2gm_bias < iv2sls2_bias,
               info = paste("PGC2Gm NDE bias =", round(pgc2gm_bias, 4),
-                           "vs IV2SLS2 NDE bias =", round(iv2sls2_bias, 4)))
+                           "vs unaugmented IV2SLS2 NDE bias =", round(iv2sls2_bias, 4)))
 })
 
 test_that("fit_pgc_mediation2 with gm recovers NDE/NIE near rho_G2 = 0", {

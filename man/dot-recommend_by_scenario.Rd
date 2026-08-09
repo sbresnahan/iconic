@@ -23,7 +23,7 @@ that supply its required data:
 \item UNADJ: none (always available)
 \item COCA: W (negative controls only; no instrument)
 \item DIRECT, IV2SLS, PGC: G + W
-\item IV2SLS2: G + Gm + W
+\item IV2SLS2: G + Gm (optional path-specific W1/W2 augmentation)
 \item PGC2: G + W1 + W2
 \item PGC2Gm: G + Gm + W1 + W2
 }

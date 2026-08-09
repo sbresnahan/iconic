@@ -323,15 +323,28 @@ fit_iv2sls_mediation_surv <- function(time, event, X, M, g, w,
 #' IV2SLS2 survival mediation estimator: 2-stage MR with Cox / RMST outcome
 #'
 #' Two-stage Mendelian-randomization mediation with a survival outcome
-#' stage (2SPS):
+#' stage (2SPS), with optional \strong{path-specific} negative-control (NC)
+#' augmentation:
 #' \enumerate{
-#' \item OLS: \code{X ~ g + W + covars} -> X_hat (purge U1 from X).
-#' \item OLS: \code{M ~ X_hat + gm + W + covars} -> M_hat, alpha_M.
-#' \item Cox / RMST: \code{Surv(t,e) ~ X_hat + M_hat + W + covars} ->
+#' \item OLS: \code{X ~ g (+ W1) + covars} -> X_hat (purge U1 from X).
+#' \item OLS: \code{M ~ X_hat + gm (+ W2) + covars} -> M_hat, alpha_M.
+#' \item Cox / RMST: \code{Surv(t,e) ~ X_hat + M_hat (+ W2) + covars} ->
 #' NDE (coef on X_hat), beta_M (coef on M_hat).
 #' }
 #' \code{NIE = alpha_M * beta_M}. Weak-instrument gates (partial F for
 #' G and Gm) apply to the OLS first stages.
+#'
+#' \strong{Path-specific NC augmentation (optional).} \code{W1} proxies the
+#' exposure-mediator confounder (U1, X->M path) and is added to stage 1
+#' only; \code{W2} proxies the mediator-outcome confounder (U2, M->Y path)
+#' and is added to stages 2 and 3. Either panel may be omitted; with both
+#' \code{NULL} the estimator reduces to plain two-instrument 2-stage MR.
+#' Conditioning on a \emph{pooled} panel in all three stages is a collider
+#' under multi-confounder designs and is not supported: identical
+#' \code{W1}/\code{W2} are treated as absent (pure MR). When \code{W1} and
+#' \code{W2} are distinct-noise proxies of the \emph{same} latent composite
+#' (single-confounder design), their column spaces are near-collinear and
+#' the estimator likewise falls back to plain two-instrument 2-stage MR.
 #'
 #' @param time Numeric follow-up time vector (length n).
 #' @param event Numeric 0/1 event indicator (length n).
@@ -339,9 +352,17 @@ fit_iv2sls_mediation_surv <- function(time, event, X, M, g, w,
 #' @param M Numeric mediator vector (length n).
 #' @param g Numeric instrument for X (length n).
 #' @param gm Numeric instrument for M (length n).
-#' @param w Numeric NC vector (length n) or matrix (n x q).
 #' @param covars Optional data frame of covariates (n rows).
 #' @param min_f Minimum partial F for each excluded instrument. Default 10.
+#' @param W1 Optional NC panel (vector length n or matrix n x q) proxying
+#' the exposure-mediator confounder (X->M path); added to stage 1 only.
+#' Default \code{NULL}.
+#' @param W2 Optional NC panel (vector length n or matrix n x q) proxying
+#' the mediator-outcome confounder (M->Y path); added to stages 2 and 3.
+#' Default \code{NULL}.
+#' @param w Defunct. The pooled single-panel argument was removed in
+#' v0.9.9 (collider under multi-confounder designs). Use \code{W1} and/or
+#' \code{W2} instead.
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
 #' @param tau RMST horizon (rmst only).
 #'
@@ -357,36 +378,65 @@ fit_iv2sls_mediation_surv <- function(time, event, X, M, g, w,
 #' \donttest{
 #' set.seed(1)
 #' dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
-#' mo_confounding = 0.8, phi = 0.8, seed = 1)
+#' mo_confounding = 0.8, phi = 0.8, lambda_XM = c(1, 0),
+#' lambda_MY = c(0, 1), omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 #' fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
-#' dat$G[, 1], dat$Gm, dat$W[, 1])
+#' dat$G[, 1], dat$Gm, W1 = dat$W1, W2 = dat$W2)
 #' }
-fit_iv2sls_mediation2_surv <- function(time, event, X, M, g, gm, w,
+fit_iv2sls_mediation2_surv <- function(time, event, X, M, g, gm,
                                        covars = NULL, min_f = 10,
+                                       W1 = NULL, W2 = NULL, w = NULL,
                                        effect_scale = c("loghr", "rmst"),
                                        tau = NULL) {
   effect_scale <- match.arg(effect_scale)
   NA_res <- .surv_med_NA()
+
+  # Defunct-argument trap: the pooled single-panel `w` was removed in v0.9.9.
+  if (!is.null(w))
+    stop("argument `w` was removed in v0.9.9. IV2SLS2 now takes optional ",
+         "path-specific negative-control panels `W1` (stage 1, X->M path) ",
+         "and `W2` (stages 2-3, M->Y path); a pooled panel conditioned on in ",
+         "all three stages is a collider under multi-confounder designs. ",
+         "Use `W1 = ...` and/or `W2 = ...`, or omit both for plain 2-stage MR.",
+         call. = FALSE)
+
+  # Pooled guard: identical W1 and W2 panels are a pooled panel in disguise
+  # (a common child of the two confounders). Treat both as absent -> pure MR.
+  if (!is.null(W1) && !is.null(W2) && identical(W1, W2)) {
+    W1 <- NULL
+    W2 <- NULL
+  }
+
+  # Shared-composite guard (k=1 fallback): distinct-noise panels of the SAME
+  # latent composite (single-confounder design) are near-collinear; only one
+  # confounder exists, so path-specific augmentation is undefined. Fall back to
+  # plain 2-stage MR (drop both panels), as for an identical pooled panel.
+  if (!is.null(W1) && !is.null(W2) && .w_panels_collinear(W1, W2)) {
+    W1 <- NULL
+    W2 <- NULL
+  }
+
   cnames <- if (!is.null(covars)) names(covars) else character(0)
   cs <- .covar_str(cnames)
-  we <- .expand_w(w)
+  we1 <- .expand_w(W1)   # stage 1 panel (X->M path)
+  we2 <- .expand_w(W2)   # stages 2-3 panel (M->Y path)
 
-  # Stage 1 (OLS): X ~ g (+ W) + covars -> X_hat
+  # Stage 1 (OLS): X ~ g (+ W1) + covars -> X_hat
   d_fs <- data.frame(X = X, g = g)
-  d_fs <- .bind_covars(d_fs, we$df)
+  d_fs <- .bind_covars(d_fs, we1$df)
   d_fs <- .bind_covars(d_fs, covars)
-  fs <- tryCatch(lm(as.formula(paste0("X ~ g", .plus_frag(we$frag), cs)),
+  fs <- tryCatch(lm(as.formula(paste0("X ~ g", .plus_frag(we1$frag), cs)),
                     data = d_fs), error = function(e) NULL)
   if (is.null(fs)) return(NA_res)
   Fst_g <- .partial_F(fs, "g")
   if (is.na(Fst_g) || Fst_g < min_f) return(NA_res)
   X_hat <- fitted(fs)
 
-  # Stage 2 (OLS): M ~ X_hat + gm (+ W) + covars -> M_hat, alpha_M
+  # Stage 2 (OLS): M ~ X_hat + gm (+ W2) + covars -> M_hat, alpha_M
   d_ms <- data.frame(M = M, X_hat = X_hat, gm = gm)
-  d_ms <- .bind_covars(d_ms, we$df)
+  d_ms <- .bind_covars(d_ms, we2$df)
   d_ms <- .bind_covars(d_ms, covars)
-  ms <- tryCatch(lm(as.formula(paste0("M ~ X_hat + gm", .plus_frag(we$frag), cs)),
+  ms <- tryCatch(lm(as.formula(paste0("M ~ X_hat + gm", .plus_frag(we2$frag), cs)),
                     data = d_ms), error = function(e) NULL)
   if (is.null(ms)) return(NA_res)
   Fst_gm <- .partial_F(ms, "gm")
@@ -397,12 +447,12 @@ fit_iv2sls_mediation2_surv <- function(time, event, X, M, g, gm, w,
   alpha_se <- as.numeric(s_ms["X_hat", 2])
   M_hat <- fitted(ms)
 
-  # Stage 3 (Cox / RMST): outcome ~ X_hat + M_hat (+ W) + covars
+  # Stage 3 (Cox / RMST): outcome ~ X_hat + M_hat (+ W2) + covars
   resp <- .make_surv_response(time, event, effect_scale, tau)
   d_os <- data.frame(X_hat = X_hat, M_hat = M_hat)
-  d_os <- .bind_covars(d_os, we$df)
+  d_os <- .bind_covars(d_os, we2$df)
   d_os <- .bind_covars(d_os, covars)
-  fml_os <- as.formula(paste0("y ~ X_hat + M_hat", .plus_frag(we$frag), cs))
+  fml_os <- as.formula(paste0("y ~ X_hat + M_hat", .plus_frag(we2$frag), cs))
   os <- .fit_surv_outcome_stage(resp, d_os, fml_os, effect_scale)
   if (is.null(os)) return(NA_res)
 

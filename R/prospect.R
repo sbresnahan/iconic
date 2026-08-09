@@ -485,7 +485,7 @@ iconic_prospect <- function(data,
 #'   \item UNADJ: none (always available)
 #'   \item COCA: W (negative controls only; no instrument)
 #'   \item DIRECT, IV2SLS, PGC: G + W
-#'   \item IV2SLS2: G + Gm + W
+#'   \item IV2SLS2: G + Gm (optional path-specific W1/W2 augmentation)
 #'   \item PGC2: G + W1 + W2
 #'   \item PGC2Gm: G + Gm + W1 + W2
 #' }
@@ -503,9 +503,13 @@ iconic_prospect <- function(data,
   score <- if (has_rob) ranking$robustness_NDE else rep(NA_real_, nrow(ranking))
 
   # Scenario -> estimators it makes available. The IV estimators (IV2SLS,
-  # IV2SLS2) are identified by the instrument(s) alone (classic 2SLS); W is an
-  # optional proximal augmentation, not a requirement. The proximal bridge
-  # estimators (PGC, PGC2, PGC2Gm) and COCA/DIRECT require W.
+  # IV2SLS2) are identified by the instrument(s) alone (classic 2SLS); NC
+  # augmentation is optional, not a requirement. IV2SLS uses a single pooled
+  # W; IV2SLS2 uses optional path-specific panels (W1 in stage 1, W2 in
+  # stages 2-3) and runs plain 2-stage MR when they are absent or identical
+  # (so under a pooled-only "G1 + Gm + W" scenario IV2SLS2 is unaugmented).
+  # The proximal bridge estimators (PGC, PGC2, PGC2Gm) and COCA/DIRECT
+  # require W.
   scenarios <- list(
     "G1 only"                    = c("UNADJ", "IV2SLS"),
     "Gm only"                    = c("UNADJ"),

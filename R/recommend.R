@@ -17,7 +17,7 @@
   COCA = "valid NCs (A1), completeness (A2 not required)",
   IV2SLS = "valid G (F>=10), exclusion restriction",
   PGC = "valid G (F>=10), valid NCs (A2), completeness",
-  IV2SLS2 = "valid G + Gm (F>=10), exclusion for both, valid NCs",
+  IV2SLS2 = "valid G + Gm (F>=10), exclusion for both; optional path-specific NCs (W1/W2)",
   PGC2 = "valid G (F>=10), path-specific NCs (W1/W2), completeness",
   PGC2Gm = "valid G + Gm (F>=10), path-specific NCs (W1/W2), completeness"
 )

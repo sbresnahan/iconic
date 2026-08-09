@@ -65,6 +65,36 @@
        p = sm[term, 4])
 }
 
+# Detect whether two path-specific NC panels proxy the SAME latent confounder
+# composite (internal). Returns TRUE when the column spaces of W1 and W2 are
+# nearly collinear — i.e. each panel is a distinct-noise proxy of a shared
+# composite (the single-confounder / shared-loading design). In that case
+# augmenting stage 1 with W1 would inject the shared M->Y confounder into
+# X_hat and bias the NDE, so the caller drops W1. Distinct-composite designs
+# (W1 proxies conf_XM, W2 proxies an independent conf_MY) have near-orthogonal
+# column spaces and return FALSE.
+#
+# Criterion: the correlation between the first principal component of each
+# panel (the dominant confounder proxy each carries). Distinct-composite
+# designs give |cor| ~ 0 (independent confounders); shared-composite designs
+# give |cor| that rises with coverage. The statistic is noisy at low coverage
+# and small n, so the threshold errs toward the SAFE fallback: misclassifying
+# a shared composite as distinct injects NDE bias, whereas misclassifying a
+# distinct pair as shared only costs efficiency (plain MR stays unbiased).
+# 0.20 tips low-coverage shared draws into plain MR while almost never
+# misfiring on genuinely independent panels.
+.w_panels_collinear <- function(W1, W2, thresh = 0.20) {
+  if (is.null(W1) || is.null(W2)) return(FALSE)
+  W1 <- as.matrix(W1); W2 <- as.matrix(W2)
+  if (nrow(W1) != nrow(W2)) return(FALSE)
+  pc1 <- tryCatch(stats::prcomp(W1, center = TRUE, scale. = FALSE)$x[, 1],
+                  error = function(e) NULL)
+  pc2 <- tryCatch(stats::prcomp(W2, center = TRUE, scale. = FALSE)$x[, 1],
+                  error = function(e) NULL)
+  if (is.null(pc1) || is.null(pc2)) return(FALSE)
+  abs(stats::cor(pc1, pc2)) > thresh
+}
+
 # Partial F-statistic for an excluded instrument (internal)
 #
 # Computes the partial F for `term` in a first-stage regression, i.e. the

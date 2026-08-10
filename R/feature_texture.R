@@ -220,8 +220,8 @@
 #' produce realistic synthetic feature vectors that preserve the marginal
 #' shapes and correlation structure of the user's mediator panel.
 #'
-#' @param M_matrix Mediator panel, `features x samples` (e.g. placental
-#' transcript expression, one row per transcript, one column per sample).
+#' @param M_matrix Mediator panel, `features x samples` (e.g. gene or
+#' transcript expression, one row per feature, one column per sample).
 #' @param marginal_method Marginal fitting method: \code{"auto"} (default,
 #' uses parametric if KS test passes at p > 0.05, otherwise empirical),
 #' \code{"empirical"} (always use empirical CDF), or \code{"parametric"}

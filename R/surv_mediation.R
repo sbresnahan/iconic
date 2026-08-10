@@ -360,8 +360,8 @@ fit_iv2sls_mediation_surv <- function(time, event, X, M, g, w,
 #' @param W2 Optional NC panel (vector length n or matrix n x q) proxying
 #' the mediator-outcome confounder (M->Y path); added to stages 2 and 3.
 #' Default \code{NULL}.
-#' @param w Defunct. The pooled single-panel argument was removed in
-#' v0.9.9 (collider under multi-confounder designs). Use \code{W1} and/or
+#' @param w Defunct. The pooled single-panel argument was removed
+#' (collider under multi-confounder designs). Use \code{W1} and/or
 #' \code{W2} instead.
 #' @param effect_scale Character: \code{"loghr"} or \code{"rmst"}.
 #' @param tau RMST horizon (rmst only).
@@ -391,9 +391,9 @@ fit_iv2sls_mediation2_surv <- function(time, event, X, M, g, gm,
   effect_scale <- match.arg(effect_scale)
   NA_res <- .surv_med_NA()
 
-  # Defunct-argument trap: the pooled single-panel `w` was removed in v0.9.9.
+  # Defunct-argument trap: the pooled single-panel `w` was removed.
   if (!is.null(w))
-    stop("argument `w` was removed in v0.9.9. IV2SLS2 now takes optional ",
+    stop("argument `w` was removed. IV2SLS2 now takes optional ",
          "path-specific negative-control panels `W1` (stage 1, X->M path) ",
          "and `W2` (stages 2-3, M->Y path); a pooled panel conditioned on in ",
          "all three stages is a collider under multi-confounder designs. ",

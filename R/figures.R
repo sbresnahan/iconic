@@ -253,7 +253,7 @@ plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
 #'
 #' Produces a 3-panel figure showing how estimator performance changes as
 #' within-module feature correlation increases, modelling co-expression
-#' modules in placental transcript expression.
+#' modules in a correlated omics panel.
 #'
 #' Panel A: NDE and NIE bias vs feature correlation strength, faceted by
 #' estimand. Panel B: NDE and NIE RMSE vs feature correlation strength,

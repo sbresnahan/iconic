@@ -263,10 +263,10 @@ nc_independence_check <- function(dat, fdr_level = 0.10, n_cores = 1) {
 #' [nc_independence_check()]: just as the exposure instrument G must be
 #' independent of the negative controls, so must the mediator instrument Gm.
 #'
-#' In the placental eQTL motivating example, this screen tests whether the
-#' eQTL instrument (fetal genotype) is associated with the methylation-based
-#' negative controls -- a violation would indicate shared genomic structure
-#' between the eQTL SNPs and the control CpG sites.
+#' For a mediator cis-eQTL instrument, this screen tests whether the
+#' eQTL instrument is associated with the negative-control panel -- a
+#' violation would indicate shared genomic structure between the
+#' instrument SNPs and the control features.
 #'
 #' @param dat Dataset list from [run_single_iteration()] or
 #' [generate_toy_data()], containing `Gm`, `W`, and

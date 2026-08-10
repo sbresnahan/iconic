@@ -45,8 +45,8 @@ Default \code{NULL}.}
 the mediator-outcome confounder (M->Y path); added to stages 2 and 3.
 Default \code{NULL}.}
 
-\item{w}{Defunct. The pooled single-panel argument was removed in
-v0.9.9 (collider under multi-confounder designs). Use \code{W1} and/or
+\item{w}{Defunct. The pooled single-panel argument was removed
+(collider under multi-confounder designs). Use \code{W1} and/or
 \code{W2} instead.}
 
 \item{effect_scale}{Character: \code{"loghr"} or \code{"rmst"}.}

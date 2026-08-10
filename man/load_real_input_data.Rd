@@ -17,14 +17,15 @@ load_real_input_data(
 )
 }
 \arguments{
-\item{X_matrix}{Exposure panel, \verb{features x samples} (e.g. maternal
-PFAS z-scores across probes). Column means become the per-sample exposure.}
+\item{X_matrix}{Exposure panel, \verb{features x samples} (e.g. an exposure
+or molecular score across probes). Column means become the per-sample exposure.}
 
 \item{Y_matrix}{Outcome, either a scalar vector of length \code{n_samples}
-(e.g. birth weight) or a \verb{features x samples} matrix. When a vector, it
-defines \code{n_samples}; when a matrix, \code{n_samples} and \code{n_features}.}
+(e.g. a clinical or molecular trait) or a \verb{features x samples} matrix.
+When a vector, it defines \code{n_samples}; when a matrix, \code{n_samples} and
+\code{n_features}.}
 
-\item{M_matrix}{Mediator panel, \verb{features x samples} (e.g. placental
+\item{M_matrix}{Mediator panel, \verb{features x samples} (e.g. gene or
 transcript expression). When supplied, its per-sample summary is added to
 the GAN training frame (so the generator learns the mediator's marginal
 distribution) and its residual correlation matrix is computed and stored.}
@@ -54,7 +55,7 @@ residualizes the Y/W correlation on exposure + covariates only;
 reducing U-signature double-counting. Recommended only when the
 completeness-capture test reports "strong".}
 
-\item{Z_matrix}{Defunct. Renamed to \code{X_matrix} in v0.9.8; passing a
+\item{Z_matrix}{Defunct. Renamed to \code{X_matrix}; passing a
 value errors with a message pointing to \code{X_matrix}. Retained in the
 signature only to catch and redirect old calls.}
 }

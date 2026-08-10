@@ -41,12 +41,13 @@
 #' If no matrices are supplied a small built-in example dataset is returned,
 #' so the pipeline can be exercised end-to-end without real data.
 #'
-#' @param X_matrix Exposure panel, `features x samples` (e.g. maternal
-#' PFAS z-scores across probes). Column means become the per-sample exposure.
+#' @param X_matrix Exposure panel, `features x samples` (e.g. an exposure
+#' or molecular score across probes). Column means become the per-sample exposure.
 #' @param Y_matrix Outcome, either a scalar vector of length `n_samples`
-#' (e.g. birth weight) or a `features x samples` matrix. When a vector, it
-#' defines `n_samples`; when a matrix, `n_samples` and `n_features`.
-#' @param M_matrix Mediator panel, `features x samples` (e.g. placental
+#' (e.g. a clinical or molecular trait) or a `features x samples` matrix.
+#' When a vector, it defines `n_samples`; when a matrix, `n_samples` and
+#' `n_features`.
+#' @param M_matrix Mediator panel, `features x samples` (e.g. gene or
 #' transcript expression). When supplied, its per-sample summary is added to
 #' the GAN training frame (so the generator learns the mediator's marginal
 #' distribution) and its residual correlation matrix is computed and stored.
@@ -70,7 +71,7 @@
 #' \code{"XCW"} additionally residualizes on the W bridge proxy (PC1 of W),
 #' reducing U-signature double-counting. Recommended only when the
 #' completeness-capture test reports "strong".
-#' @param Z_matrix Defunct. Renamed to \code{X_matrix} in v0.9.8; passing a
+#' @param Z_matrix Defunct. Renamed to \code{X_matrix}; passing a
 #'   value errors with a message pointing to \code{X_matrix}. Retained in the
 #'   signature only to catch and redirect old calls.
 #'
@@ -93,9 +94,9 @@ load_real_input_data <- function(X_matrix = NULL,
                                  residualize_on = c("XC", "XCW"),
                                  Z_matrix = NULL) {
 
-  # Deprecated-argument trap: renamed Z_matrix -> X_matrix in v0.9.8.
+  # Deprecated-argument trap: renamed Z_matrix -> X_matrix.
   if (!is.null(Z_matrix))
-    stop("argument `Z_matrix` was renamed to `X_matrix` in v0.9.8; please use `X_matrix = ...`.",
+    stop("argument `Z_matrix` was renamed to `X_matrix`; please use `X_matrix = ...`.",
          call. = FALSE)
 
   if (is.null(X_matrix) && is.null(Y_matrix) && is.null(covariates_df))
@@ -116,7 +117,7 @@ load_real_input_data <- function(X_matrix = NULL,
   X_matrix <- as.matrix(X_matrix)
 
   # Y can be a scalar vector (1 x n) or a features x samples matrix.
-  # When scalar (e.g. birth weight), n_features is determined by M or W.
+  # When scalar (e.g. a clinical trait), n_features is determined by M or W.
   if (nrow(Y_matrix) == 1) {
     n_samples <- ncol(Y_matrix)
     n_features <- if (!is.null(M_matrix)) nrow(as.matrix(M_matrix))
@@ -152,13 +153,13 @@ load_real_input_data <- function(X_matrix = NULL,
   # mediator level, and the encoded covariates, jointly, one row per sample.
   pfas_z <- as.numeric(scale(colMeans(X_matrix, na.rm = TRUE)))
 
-  # Y: scalar outcome (e.g. birth weight) — one value per sample.
+  # Y: scalar outcome (e.g. a clinical trait) — one value per sample.
   # When Y_matrix is 1 x n, take the single row; otherwise column means.
   outcome_vec <- if (nrow(Y_matrix) == 1) as.numeric(Y_matrix[1, ])
                   else as.numeric(scale(colMeans(Y_matrix, na.rm = TRUE)))
   outcome_vec <- as.numeric(scale(outcome_vec))
 
-  # M: mediator panel (e.g. placental transcript expression) — per-sample
+  # M: mediator panel (e.g. gene or transcript expression) — per-sample
   # mean added to the GAN training frame so the generator learns the
   # mediator's marginal distribution, not just its correlation structure.
   mediator_vec <- if (!is.null(M_matrix))
@@ -355,8 +356,8 @@ load_real_input_data <- function(X_matrix = NULL,
 
 #' Build a small synthetic example input dataset (internal)
 #'
-#' Produces `features x samples` X/M/W matrices, a scalar outcome vector Y
-#' (birth weight), and a covariate frame with the recognised
+#' Produces `features x samples` X/M/W matrices, a scalar outcome vector Y,
+#' and a covariate frame with the recognised
 #' `sample_id`/`sex`/`GA`/`mother_ethnicity` columns, so the pipeline runs
 #' without user data. Not a benchmark DGP; just plumbing exercise data.
 #' @keywords internal
@@ -374,7 +375,7 @@ load_real_input_data <- function(X_matrix = NULL,
 
   Zm <- matrix(rnorm(n_features * n_samples), n_features, n_samples) +
         matrix(rep(0.8 * U, each = n_features), n_features, n_samples)
-  # Y: scalar outcome (birth weight) — confounder + sex + noise
+  # Y: scalar outcome — confounder + sex + noise
   Ym <- matrix(3000 + 200 * U + 100 * sex + rnorm(n_samples, 0, 300),
                nrow = 1, ncol = n_samples)
   # Mediator panel: shared confounder + co-expression module noise

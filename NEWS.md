@@ -1,3 +1,35 @@
+# iconic 0.9.9.2
+
+## New features
+
+- **Data-driven composite recommendation in `iconic_recommend()`.** The
+  headline recommendation is now a single data-driven composite rather than
+  the NDE-only ranking. For each estimator the composite is the
+  *worst-estimand* robustness (`min(score_NDE, score_NIE)`), so an estimator
+  is only as trustworthy as its weakest estimand, multiplied by a *confidence
+  factor* derived from the graded diagnostic verdict for the assumptions that
+  estimator depends on. Bridge-dependent estimators (DIRECT, COCA, PGC, PGC2,
+  PGC2Gm) are discounted when path completeness is borderline or weak-capture;
+  instrument-only estimators (IV2SLS, IV2SLS2) are not. Structurally naive
+  estimators (UNADJ, DIRECT) are demoted below eligible instrument/NC
+  estimators. The discount is exposed via the new `completeness_penalty`
+  argument (default `c(satisfied = 1.0, borderline = 0.7, "weak-capture" =
+  0.5, "under-identified" = 0)`), and the ranking gains `composite`,
+  `confidence_mult`, and `final_score` columns. Per-estimand recommendations
+  are retained as `$recommended_NDE` and `$recommended_NIE`.
+
+- **`min_f` / `g_threshold` / `gm_threshold` pass-through.** When
+  `diagnosis` is `NULL`, `iconic_recommend()` now runs `iconic_diagnose()`
+  with the caller's thresholds instead of silently using the defaults, so a
+  non-default `min_f` is honoured.
+
+## Bug fixes
+
+- **Threshold-aware requirement labels.** The rationale text previously
+  hardcoded `F>=10` regardless of the instrument-strength gate actually
+  applied. Labels now interpolate the `min_f` stored in the diagnosis (or the
+  `min_f` argument), so the printed requirement matches the gate.
+
 # iconic 0.9.9.1
 
 ## Bug fixes

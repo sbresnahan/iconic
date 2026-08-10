@@ -1,7 +1,7 @@
 Package: iconic
 Title: Causal Model Selection with Genetic Instruments and Negative
         Controls
-Version: 0.9.9.1
+Version: 0.9.9.2
 biocViews: Statistics, Genetics, MultipleComparison, Regression,
         Transcriptomics, RNASeq
 Author: Sean T. Bresnahan [aut, cre], Charis Xiong [aut]
@@ -44,4 +44,4 @@ URL: https://github.com/sbresnahan/iconic
 BugReports: https://github.com/sbresnahan/iconic/issues
 Config/roxygen2/version: 8.1.0
 NeedsCompilation: no
-Packaged: 2026-08-09 22:59:04 UTC; root
+Packaged: 2026-08-10 01:28:59 UTC; root

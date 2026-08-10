@@ -10,6 +10,11 @@ iconic_recommend(
   estimate = NULL,
   sensitivity = NULL,
   criterion = c("combined", "minimax_bias", "ci_coverage"),
+  completeness_penalty = c(satisfied = 1, borderline = 0.7, `weak-capture` = 0.5,
+    `under-identified` = 0),
+  min_f = 10,
+  g_threshold = NULL,
+  gm_threshold = NULL,
   auto_sensitivity = TRUE,
   rho_G1_grid = c(0, 0.1, 0.2, 0.3, 0.5),
   rho_G2_grid = c(0, 0.1, 0.2, 0.3, 0.5),
@@ -46,6 +51,24 @@ is ranked. \code{"combined"} blends bias and CI coverage;
 \code{sensitivity} is supplied, also populates \code{$per_scenario}
 (best estimator at the origin vs at violation cells).}
 
+\item{completeness_penalty}{Named numeric vector with values in
+\eqn{[0, 1]} mapping the
+graded completeness verdict to a confidence multiplier applied to
+bridge-dependent estimators (DIRECT, COCA, PGC, PGC2, PGC2Gm). Default
+\code{c(satisfied = 1.0, borderline = 0.7, "weak-capture" = 0.5,
+"under-identified" = 0)}. Instrument-only estimators (IV2SLS, IV2SLS2)
+are not discounted. Override to sensitivity-check the discount.}
+
+\item{min_f}{Instrument-strength gate (first-stage F threshold) used when
+\code{diagnosis} is \code{NULL} and \code{iconic_diagnose()} is run
+internally. Default 10. Also used for the requirement labels when the
+supplied \code{diagnosis} predates the stored \code{min_f} field.}
+
+\item{g_threshold, gm_threshold}{Optional instrument-selection thresholds
+passed to \code{\link{iconic_diagnose}()} when \code{diagnosis} is
+\code{NULL}. Default \code{NULL} (use the \code{iconic_diagnose}
+defaults).}
+
 \item{auto_sensitivity}{Logical: when \code{TRUE} (default) and
 \code{sensitivity = NULL}, run \code{\link{iconic_sensitivity}()}
 internally to obtain the robustness surface. Requires the torch backend;
@@ -71,10 +94,12 @@ Default \code{c(0.3, 0.7, 1.0)}, swept on the diagonal
 \value{
 An \code{iconic_recommendation} S3 object: a named list with
 \code{$ranking} (data frame: estimator, eligible, rank, per-estimand
-robustness scores, rationale), \code{$recommended} (top estimator for
-NDE), \code{$recommended_NIE} (top estimator for NIE, when it
-differs), \code{$per_scenario} (when \code{sensitivity} is supplied),
-and \code{$summary}.
+robustness scores, \code{composite}, \code{confidence_mult},
+\code{final_score}, rationale), \code{$recommended} (top eligible,
+non-naive estimator by the data-driven composite score),
+\code{$recommended_NDE} and \code{$recommended_NIE} (top estimator per
+estimand), \code{$per_scenario} (when \code{sensitivity} is supplied),
+\code{$completeness_penalty}, and \code{$summary}.
 }
 \description{
 Ranks all eligible estimators directly on per-estimand robustness

@@ -37,7 +37,7 @@ A \code{patchwork} ggplot object.
 \description{
 Produces a 3-panel figure showing how estimator performance changes as
 within-module feature correlation increases, modelling co-expression
-modules in placental transcript expression.
+modules in a correlated omics panel.
 }
 \details{
 Panel A: NDE and NIE bias vs feature correlation strength, faceted by

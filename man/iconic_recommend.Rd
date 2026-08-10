@@ -104,10 +104,9 @@ estimand), \code{$per_scenario} (when \code{sensitivity} is supplied),
 \description{
 Ranks all eligible estimators directly on per-estimand robustness
 (NDE and NIE separately) from a sensitivity analysis. Returns the
-top-ranked estimator with a transparent rationale. There is no tier
-system: every estimator is ranked on its measured robustness to
-assumption violations, not on an a priori identification-strength
-class.
+top-ranked estimator with a transparent rationale. Every estimator is
+ranked on its measured robustness to assumption violations, not on an
+a priori identification-strength class.
 }
 \details{
 When \code{sensitivity} is supplied (from

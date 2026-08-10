@@ -103,7 +103,7 @@ case); IV2SLS2 is the more defensible primary estimator when coverage of
 the other path's composite is in doubt. A warning is emitted when the
 recycle is activated.}
 
-\item{Z}{Defunct. Renamed to \code{X} in v0.9.8; passing a value errors
+\item{Z}{Defunct. Renamed to \code{X}; passing a value errors
 with a message pointing to \code{X}. Retained in the signature only to
 catch and redirect old calls.}
 }

@@ -35,10 +35,10 @@ effects that violate the mediator-instrument-independence assumption
 independent of the negative controls, so must the mediator instrument Gm.
 }
 \details{
-In the placental eQTL motivating example, this screen tests whether the
-eQTL instrument (fetal genotype) is associated with the methylation-based
-negative controls -- a violation would indicate shared genomic structure
-between the eQTL SNPs and the control CpG sites.
+For a mediator cis-eQTL instrument, this screen tests whether the
+eQTL instrument is associated with the negative-control panel -- a
+violation would indicate shared genomic structure between the
+instrument SNPs and the control features.
 }
 \examples{
 dat <- run_single_iteration(n_features = 10, phi = 0.8, seed = 1)

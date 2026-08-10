@@ -126,7 +126,7 @@ the GAN does not provide feature_correlations, a block-diagonal
 correlation matrix is used for the NC and outcome noise. GAN-learned
 correlations take precedence. Default 0.}
 
-\item{separate_U}{Defunct. Removed in v0.9.8; passing a value errors with a
+\item{separate_U}{Defunct. Passing a value errors with a
 message pointing to the replacement per-path loading vectors
 \code{lambda_XM} / \code{lambda_MY}. Retained in the signature only to
 catch and redirect old calls.}

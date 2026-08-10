@@ -1,4 +1,4 @@
-# Acceptance tests for the IV2SLS2 path-specific negative-control fix (v0.9.9).
+# Acceptance tests for the IV2SLS2 path-specific negative-control design.
 #
 # Background: IV2SLS2 previously conditioned on the POOLED NC panel W in all
 # three 2SLS stages. Under multi-confounder designs (k >= 2, distinct path
@@ -84,7 +84,7 @@ test_that("IV2SLS2 defunct pooled `w` argument errors with redirect", {
   expect_error(
     fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$Gm,
                           w = dat$W[, 1]),
-    "removed in v0.9.9")
+    "argument `w` was removed")
 })
 
 test_that("IV2SLS2 NIE Type I error near nominal under the null", {
@@ -143,7 +143,7 @@ test_that("IV2SLS2 survival defunct pooled `w` argument errors", {
   expect_error(
     fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
                                dat$G[, 1], dat$Gm, w = dat$W[, 1]),
-    "removed in v0.9.9")
+    "argument `w` was removed")
 })
 
 test_that("iconic_data retains a lone W2 panel for IV2SLS2", {
@@ -159,7 +159,7 @@ test_that("iconic_data retains a lone W2 panel for IV2SLS2", {
   expect_false(is.null(id_w2$W2))
   expect_true(is.null(id_w2$W1))
   expect_false(id_w2$has_path_nc)
-  # v0.9.9.1: the lone panel also derives the pooled W so the single-panel
+  # The lone panel also derives the pooled W so the single-panel
   # estimators (DIRECT/COCA/PGC) and the NC validity screens can run.
   expect_true(id_w2$has_nc)
   expect_false(is.null(id_w2$W))

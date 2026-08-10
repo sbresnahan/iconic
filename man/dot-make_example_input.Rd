@@ -7,8 +7,8 @@
 .make_example_input(n_samples = 200, n_features = 30, seed = 1)
 }
 \description{
-Produces \verb{features x samples} X/M/W matrices, a scalar outcome vector Y
-(birth weight), and a covariate frame with the recognised
+Produces \verb{features x samples} X/M/W matrices, a scalar outcome vector Y,
+and a covariate frame with the recognised
 \code{sample_id}/\code{sex}/\code{GA}/\code{mother_ethnicity} columns, so the pipeline runs
 without user data. Not a benchmark DGP; just plumbing exercise data.
 }

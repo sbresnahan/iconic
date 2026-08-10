@@ -1,3 +1,15 @@
+# iconic 0.9.9.3
+
+## Documentation and housekeeping
+
+- **Documentation cleanup.** Removed version-control/changelog language from
+  roxygen help pages, comments, and defunct-argument error messages (the
+  defunct-argument traps for `w`, `Z`, `Z_matrix`, `beta_Z`, and `separate_U`
+  are retained and still error informatively). Generalized case-study-specific
+  motivating examples in the help pages to domain-neutral omics language.
+  Clarified the `iconic_recommend()` documentation to describe the composite
+  robustness rule directly. No functional or API changes.
+
 # iconic 0.9.9.2
 
 ## New features

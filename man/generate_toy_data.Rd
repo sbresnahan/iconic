@@ -96,8 +96,8 @@ from a multivariate normal with a block-diagonal
 correlation matrix modelling co-expression modules.
 0 = independent noise (backward compatible). Default 0.}
 
-\item{separate_U}{Defunct. Removed in v0.9.8; passing a value errors with a
-message pointing to the replacement per-path loading vectors
+\item{separate_U}{Defunct. Passing a value errors with a message pointing
+to the replacement per-path loading vectors
 \code{lambda_XM} / \code{lambda_MY}. Retained in the signature only to
 catch and redirect old calls.}
 
@@ -128,7 +128,7 @@ internally from this.}
 
 \item{seed}{Optional integer RNG seed for reproducibility.}
 
-\item{beta_Z}{Defunct. Renamed to \code{beta_X} in v0.9.8; passing a value
+\item{beta_Z}{Defunct. Renamed to \code{beta_X}; passing a value
 errors with a message pointing to \code{beta_X}. Retained in the
 signature only to catch and redirect old calls.}
 }

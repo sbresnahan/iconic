@@ -7,8 +7,8 @@
 # original DGP is preserved exactly (backward compatible).
 #
 # the phi parameter (default 0) adds a mediator-specific
-# genetic instrument Gm (e.g. an eQTL from fetal genotype -> placental
-# isoform expression). When phi > 0, Gm affects M but is independent
+# genetic instrument Gm (e.g. a cis-eQTL for a mediator transcript).
+# When phi > 0, Gm affects M but is independent
 # of U and has no direct path to Y, making the 2-stage MR mediation
 # estimator (fit_iv2sls_mediation2) point-identified under M-O
 # confounding. When phi = 0 (default), no Gm is generated and the
@@ -129,11 +129,11 @@
 #' @param surv_censor_rate Explicit censoring rate. Default NULL
 #' → solved from \code{surv_event_frac}.
 #' @param seed Optional integer RNG seed for reproducibility.
-#' @param separate_U Defunct. Removed in v0.9.8; passing a value errors with a
-#'   message pointing to the replacement per-path loading vectors
+#' @param separate_U Defunct. Passing a value errors with a message pointing
+#'   to the replacement per-path loading vectors
 #'   \code{lambda_XM} / \code{lambda_MY}. Retained in the signature only to
 #'   catch and redirect old calls.
-#' @param beta_Z Defunct. Renamed to \code{beta_X} in v0.9.8; passing a value
+#' @param beta_Z Defunct. Renamed to \code{beta_X}; passing a value
 #'   errors with a message pointing to \code{beta_X}. Retained in the
 #'   signature only to catch and redirect old calls.
 #'
@@ -197,16 +197,15 @@ generate_toy_data <- function(n = 500,
   if (!is.null(seed)) set.seed(seed)
   outcome_type <- match.arg(outcome_type)
 
-  # Deprecated-argument trap: the exposure effect was renamed beta_Z -> beta_X
-  # in v0.9.8.
+  # Deprecated-argument trap: the exposure effect was renamed beta_Z -> beta_X.
   if (!is.null(beta_Z))
-    stop("argument `beta_Z` was renamed to `beta_X` in v0.9.8; please use `beta_X = ...`.",
+    stop("argument `beta_Z` was renamed to `beta_X`; please use `beta_X = ...`.",
          call. = FALSE)
 
-  # Deprecated-argument trap: the separate_U toggle was removed in v0.9.8 and
+  # Deprecated-argument trap: the separate_U toggle was removed and
   # replaced by per-path confounder loadings lambda_XM / lambda_MY.
   if (!is.null(separate_U))
-    stop("argument `separate_U` was removed in v0.9.8. Confounding is now ",
+    stop("argument `separate_U` was removed. Confounding is now ",
          "specified by per-path loading vectors `lambda_XM` and `lambda_MY`. ",
          "Shared loadings (the default) reproduce the old separate_U = FALSE; ",
          "lambda_XM = c(1, 0), lambda_MY = c(0, 1) reproduce the old ",

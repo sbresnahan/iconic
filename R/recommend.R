@@ -6,16 +6,15 @@
 # from a sensitivity analysis: the worst-estimand (min of NDE and NIE)
 # robustness, discounted by a confidence multiplier derived from the graded
 # diagnostic verdict for the assumptions each estimator depends on. Returns
-# a transparent recommendation with rationale. No tier system: every
-# estimator is ranked on its measured robustness, not on an a priori
-# identification-strength class.
+# a transparent recommendation with rationale. Every estimator is ranked on
+# its measured robustness, not on an a priori identification-strength class.
 # ============================================================
 
 # What each estimator requires (for rationale). Threshold-aware: the
 # instrument-strength label interpolates the actual min_f used in the
 # diagnosis rather than a hardcoded value, so the rationale matches the
 # gate that was actually applied.
-# COCA requirement updated to reflect A2 exemption.
+# COCA requires valid negative controls (A1) but not completeness (A2).
 .estimator_requirements <- function(min_f = 10) {
   f <- sprintf("F>=%s", min_f)
   c(
@@ -35,10 +34,9 @@
 #'
 #' Ranks all eligible estimators directly on per-estimand robustness
 #' (NDE and NIE separately) from a sensitivity analysis. Returns the
-#' top-ranked estimator with a transparent rationale. There is no tier
-#' system: every estimator is ranked on its measured robustness to
-#' assumption violations, not on an a priori identification-strength
-#' class.
+#' top-ranked estimator with a transparent rationale. Every estimator is
+#' ranked on its measured robustness to assumption violations, not on an
+#' a priori identification-strength class.
 #'
 #' When \code{sensitivity} is supplied (from
 #' \code{\link{iconic_sensitivity}()}), eligible estimators are ranked by

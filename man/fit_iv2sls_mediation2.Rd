@@ -41,8 +41,8 @@ stage 1 only. Default \code{NULL} (stage 1 unaugmented).}
 n x q) proxying the mediator-outcome confounder (M->Y path); added to
 stages 2 and 3. Default \code{NULL} (stages 2–3 unaugmented).}
 
-\item{w}{Defunct. The pooled single-panel argument was removed in
-v0.9.9 because conditioning on a pooled panel in all three stages opens
+\item{w}{Defunct. The pooled single-panel argument was removed
+because conditioning on a pooled panel in all three stages opens
 a collider path under multi-confounder designs. Use \code{W1} and/or
 \code{W2} instead.}
 }
@@ -59,10 +59,11 @@ under mediator-outcome (M-O) confounding, resolving the identification
 failure that limits the single-instrument estimators.
 }
 \details{
-The motivating example is placental eQTLs: fetal-genotype-derived eQTLs
-instrument placental isoform expression (M), while a PFAS-metabolism PRS
+The motivating design uses two distinct genetic instruments: a
+mediator instrument (e.g. a cis-eQTL) instruments the mediator (M),
+while a separate exposure instrument (e.g. a polygenic score)
 instruments the exposure (X). The mediator set must be restricted to
-isoforms for which eQTLs have been identified.
+features for which a mediator instrument is available.
 
 Strategy (sequential 2SLS, three OLS stages), with optional
 \strong{path-specific} negative-control (NC) augmentation:

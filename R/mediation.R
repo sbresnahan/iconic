@@ -625,10 +625,11 @@ fit_iv2sls_mediation <- function(y, X, M, g, w, covars = NULL, min_f = 10) {
 #' under mediator-outcome (M-O) confounding, resolving the identification
 #' failure that limits the single-instrument estimators.
 #'
-#' The motivating example is placental eQTLs: fetal-genotype-derived eQTLs
-#' instrument placental isoform expression (M), while a PFAS-metabolism PRS
+#' The motivating design uses two distinct genetic instruments: a
+#' mediator instrument (e.g. a cis-eQTL) instruments the mediator (M),
+#' while a separate exposure instrument (e.g. a polygenic score)
 #' instruments the exposure (X). The mediator set must be restricted to
-#' isoforms for which eQTLs have been identified.
+#' features for which a mediator instrument is available.
 #'
 #' Strategy (sequential 2SLS, three OLS stages), with optional
 #' \strong{path-specific} negative-control (NC) augmentation:
@@ -694,8 +695,8 @@ fit_iv2sls_mediation <- function(y, X, M, g, w, covars = NULL, min_f = 10) {
 #' @param W2 Optional negative-control panel (vector length n or matrix
 #' n x q) proxying the mediator-outcome confounder (M->Y path); added to
 #' stages 2 and 3. Default \code{NULL} (stages 2–3 unaugmented).
-#' @param w Defunct. The pooled single-panel argument was removed in
-#' v0.9.9 because conditioning on a pooled panel in all three stages opens
+#' @param w Defunct. The pooled single-panel argument was removed
+#' because conditioning on a pooled panel in all three stages opens
 #' a collider path under multi-confounder designs. Use \code{W1} and/or
 #' \code{W2} instead.
 #'
@@ -723,11 +724,11 @@ fit_iv2sls_mediation2 <- function(y, X, M, g, gm, covars = NULL, min_f = 10,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
                  alpha_M = NA_real_, alpha_se = NA_real_, beta_M = NA_real_, beta_M_se = NA_real_)
 
-  # Defunct-argument trap: the pooled single-panel `w` was removed in v0.9.9.
+  # Defunct-argument trap: the pooled single-panel `w` was removed.
   # Conditioning on a pooled panel in all three stages opens a collider path
   # under multi-confounder designs; use path-specific W1 / W2 instead.
   if (!is.null(w))
-    stop("argument `w` was removed in v0.9.9. IV2SLS2 now takes optional ",
+    stop("argument `w` was removed. IV2SLS2 now takes optional ",
          "path-specific negative-control panels `W1` (stage 1, X->M path) ",
          "and `W2` (stages 2-3, M->Y path); a pooled panel conditioned on in ",
          "all three stages is a collider under multi-confounder designs. ",

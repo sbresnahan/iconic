@@ -81,7 +81,7 @@
 #' @param surv_event Numeric 0/1 event indicator (length n; 1 = event
 #' observed, 0 = censored). Required when
 #' \code{outcome_type = "survival"}; ignored otherwise.
-#' @param Z Defunct. Renamed to \code{X} in v0.9.8; passing a value errors
+#' @param Z Defunct. Renamed to \code{X}; passing a value errors
 #'   with a message pointing to \code{X}. Retained in the signature only to
 #'   catch and redirect old calls.
 #'
@@ -124,9 +124,9 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
                         Z = NULL) {
   outcome_type <- match.arg(outcome_type)
 
-  ## Deprecated-argument trap: the exposure was renamed Z -> X in v0.9.8.
+  ## Deprecated-argument trap: the exposure was renamed Z -> X.
   if (!is.null(Z))
-    stop("argument `Z` was renamed to `X` in v0.9.8; please use `X = ...`.",
+    stop("argument `Z` was renamed to `X`; please use `X = ...`.",
          call. = FALSE)
 
   # Scaling helper: center and scale a numeric vector, recording the

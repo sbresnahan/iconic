@@ -7,8 +7,8 @@
 train_feature_texture(M_matrix, marginal_method = "auto")
 }
 \arguments{
-\item{M_matrix}{Mediator panel, \verb{features x samples} (e.g. placental
-transcript expression, one row per transcript, one column per sample).}
+\item{M_matrix}{Mediator panel, \verb{features x samples} (e.g. gene or
+transcript expression, one row per feature, one column per sample).}
 
 \item{marginal_method}{Marginal fitting method: \code{"auto"} (default,
 uses parametric if KS test passes at p > 0.05, otherwise empirical),

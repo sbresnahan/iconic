@@ -155,11 +155,11 @@ install.packages("torch")
 library(iconic)
 set.seed(1)
 
-# Simulated mediation panel: exposure Z, mediator M, outcome Y,
+# Simulated mediation panel: exposure X, mediator M, outcome Y,
 # genetic instrument G, negative controls W.
 dat <- generate_toy_data(n = 200, n_features = 10, seed = 1)
 idat <- iconic_data(
-  Z = dat$Z, Y = dat$Y, M = dat$M,
+  X = dat$X, Y = dat$Y, M = dat$M,
   G = dat$G, W = dat$W, covariates = dat$synthetic_data
 )
 
@@ -171,7 +171,7 @@ est <- iconic_estimate(idat)
 
 # 3. Train a texture model once and attach it (reused downstream).
 input <- load_real_input_data(
-  Z_matrix = matrix(dat$Z, nrow = 1), Y_matrix = t(dat$Y),
+  X_matrix = matrix(dat$X, nrow = 1), Y_matrix = t(dat$Y),
   M_matrix = t(dat$M), W_matrix = t(dat$W),
   covariates_df = dat$synthetic_data
 )

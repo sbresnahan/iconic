@@ -216,6 +216,11 @@ pros <- iconic_prospect(idat, confounding = "inferred")
 
 - **ICONIC Walkthrough**: `vignette("iconic-walkthrough")` — the full
   model-selection workflow end to end.
+- **Building Instruments and Negative Controls**:
+  `vignette("iconic-instruments")` — constructing exposure instruments
+  (GWAS QC, LDpred2, PGS panels), mediator instruments (cis-eQTLs,
+  elastic-net prediction), and negative-control panels, plus
+  SummarizedExperiment interop.
 - **Diagnosing Estimator Eligibility**: `vignette("iconic-diagnose")` —
   instrument strength, negative-control validity screens, completeness,
   and the eligibility table.

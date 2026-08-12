@@ -37,9 +37,7 @@ The negative-control W should be an outcome that shares the same
 unmeasured confounders as Y but has no direct causal path from X.
 }
 \examples{
-\donttest{
 set.seed(1)
-dat <- iconic:::generate_toy_data(n = 200, seed = 1)
+dat <- generate_toy_data(n = 200, seed = 1)
 fit_coca(dat$Y[, 1], dat$X, rowMeans(dat$W))
-}
 }

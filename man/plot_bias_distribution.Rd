@@ -19,3 +19,7 @@ A \code{ggplot} object showing the distribution of bias estimates by method.
 \description{
 Baseline bias distribution (single-setting hero plot)
 }
+\examples{
+sim <- run_simulation(n_iter = 2, n_samples = 100, n_features = 5)
+plot_bias_distribution(sim)
+}

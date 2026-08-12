@@ -88,3 +88,7 @@ control panels.
 If no matrices are supplied a small built-in example dataset is returned,
 so the pipeline can be exercised end-to-end without real data.
 }
+\examples{
+dat <- load_real_input_data(example = TRUE)
+names(dat)
+}

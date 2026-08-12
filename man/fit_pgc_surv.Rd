@@ -45,9 +45,7 @@ RMST pseudo-observation OLS.
 }
 }
 \examples{
-\donttest{
 set.seed(1)
-dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_pgc_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W)
-}
 }

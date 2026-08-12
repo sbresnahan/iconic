@@ -17,3 +17,11 @@ Invisibly returns \code{x} (the \code{iconic_gan} object); called for its side e
 \description{
 Print method for iconic_gan objects
 }
+\examples{
+if (check_torch_setup()) {
+  dat <- load_real_input_data(example = TRUE)
+  gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
+    verbose = FALSE)
+  print(gan)
+}
+}

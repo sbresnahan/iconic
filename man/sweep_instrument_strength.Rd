@@ -45,3 +45,7 @@ records IV2SLS performance binned by first-stage partial F.
 Uses \code{fit_iv2sls()} with \code{min_f = 0} (no weak-IV guard)
 so bias is visible across all instrument strengths.
 }
+\examples{
+res <- sweep_instrument_strength(pi_GX_grid = c(0.05, 0.2), n_iter = 2)
+head(res)
+}

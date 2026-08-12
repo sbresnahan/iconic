@@ -179,6 +179,10 @@ run_methods <- function(dat, n_features = ncol(dat$Y), W_valid = NULL,
 #'
 #' @return Data frame: `feature`, `method`, `beta`, `se`, `pvalue`, `significant`.
 #' @export
+#' @examples
+#' dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
+#'   n_features = 5, n_confounders = 1, seed = 1)
+#' analyze_methods_robust(dat)
 analyze_methods_robust <- function(iteration_data, test_features = NULL,
                                    alpha = 0.05, debug = FALSE, n_cores = 1) {
   feats <- if (is.null(test_features)) seq_len(ncol(iteration_data$Y)) else test_features
@@ -202,6 +206,10 @@ analyze_methods_robust <- function(iteration_data, test_features = NULL,
 #' @param n_cores Number of workers. Default 1.
 #' @return Data frame: `feature`, `method`, `beta`, `se`, `pvalue`, `significant`.
 #' @export
+#' @examples
+#' dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
+#'   n_features = 5, n_confounders = 1, seed = 1)
+#' analyze_methods_parallel(dat, n_cores = 1)
 analyze_methods_parallel <- function(iteration_data, test_features = NULL,
                                      alpha = 0.05, debug = FALSE, n_cores = 1) {
   feats <- if (is.null(test_features)) seq_len(ncol(iteration_data$Y)) else test_features

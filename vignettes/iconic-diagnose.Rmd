@@ -3,9 +3,10 @@ title: "Diagnosing Estimator Eligibility"
 author: "Sean T. Bresnahan and Charis Xiong"
 date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette:
+  BiocStyle::html_document:
     toc: true
     toc_depth: 3
+    toc_float: true
 vignette: >
   %\VignetteIndexEntry{Diagnosing Estimator Eligibility}
   %\VignetteEngine{knitr::rmarkdown}
@@ -20,6 +21,28 @@ knitr::opts_chunk$set(
 set.seed(1)
 library(iconic)
 ```
+
+# Introduction
+
+This vignette explains how `iconic` decides which causal estimators are eligible for a given dataset. Eligibility is diagnosed from the data themselves: instrument strength, negative-control validity and completeness, and the availability of mediation data each gate a different subset of the eight estimators.
+
+# Installation
+
+`iconic` is being submitted to Bioconductor. Once accepted, install the
+release version with:
+
+```{r install-bioc, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("iconic")
+```
+
+The development version is available from GitHub:
+
+```{r install-github, eval=FALSE}
+BiocManager::install("sbresnahan/iconic")
+```
+
 
 # What diagnosis checks
 
@@ -127,3 +150,9 @@ met before proceeding.
   model-selection workflow.
 - **Function reference**: `?iconic_diagnose` for all arguments, including
   `min_f`, `fdr_level`, and the per-estimator NC screens.
+
+# Session information
+
+```{r sessionInfo}
+sessionInfo()
+```

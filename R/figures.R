@@ -207,6 +207,19 @@
 #' @param height Figure height in inches.
 #' @return A \code{patchwork} ggplot object.
 #' @export
+#' @examples
+#' # Toy inputs standing in for sweep_param()/sweep_mediation_param() output
+#' methods <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
+#'   "IV2SLS2", "PGC2", "PGC2Gm")
+#' it <- expand.grid(method = methods, pval = c(0.5, 0.8), rep = 1:3)
+#' it$bias <- rnorm(nrow(it), 0, 0.05)
+#' it$NDE_bias <- rnorm(nrow(it), 0, 0.05)
+#' it$NIE_bias <- rnorm(nrow(it), 0, 0.05)
+#' panel <- list(iter_bias = it)
+#' panel_d <- expand.grid(method = methods, conf_str = c(0.5, 0.8))
+#' panel_d$NIE_type1 <- runif(nrow(panel_d), 0, 0.1)
+#' plot_estimator_benchmark(panel, panel, panel, panel_d,
+#'   conf_grid = c(0.5, 0.8), n_grid = c(0.5, 0.8))
 plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
                                       conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),
                                       n_grid = c(100, 200, 500, 1000),
@@ -277,15 +290,17 @@ plot_estimator_benchmark <- function(panel_a, panel_b, panel_c, panel_d,
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' sweep <- sweep_mediation_param("feat_cor", c(0, 0.2, 0.5, 0.8),
-#' n_iter = 50, n_features = 10, mo_confounding = 0.8, phi = 0.8,
-#' omega_1 = 0.7, omega_2 = 0.7)
-#' null <- sweep_mediation_null_by_conf(c(0.8), n_iter = 50,
-#' n_features = 10, mo_confounding = 0.8, phi = 0.8,
-#' omega_1 = 0.7, omega_2 = 0.7, feat_cor = 0.5)
+#' # Toy inputs standing in for sweep_mediation_param("feat_cor", ...) output
+#' sweep <- list(summary = expand.grid(param_value = c(0, 0.5),
+#'   method = c("UNADJ", "IV2SLS2", "PGC2Gm")))
+#' sweep$summary$NDE_bias <- rnorm(nrow(sweep$summary), 0, 0.05)
+#' sweep$summary$NIE_bias <- rnorm(nrow(sweep$summary), 0, 0.05)
+#' sweep$summary$NDE_rmse <- runif(nrow(sweep$summary), 0.05, 0.15)
+#' sweep$summary$NIE_rmse <- runif(nrow(sweep$summary), 0.05, 0.15)
+#' null <- expand.grid(feat_cor = c(0, 0.5),
+#'   method = c("UNADJ", "IV2SLS2", "PGC2Gm"))
+#' null$NIE_type1 <- runif(nrow(null), 0, 0.1)
 #' plot_feature_correlation_sweep(sweep, null)
-#' }
 plot_feature_correlation_sweep <- function(sweep_results,
                                            null_results = NULL,
                                            file = NULL,
@@ -428,6 +443,13 @@ plot_feature_correlation_sweep <- function(sweep_results,
 #' @param height Figure height in inches.
 #' @return A \code{patchwork} ggplot object.
 #' @export
+#' @examples
+#' results <- expand.grid(rho_G1 = c(0, 0.2), rho_G2 = c(0, 0.2),
+#'   method = c("IV2SLS2", "PGC2Gm"))
+#' results$NDE_bias <- rnorm(nrow(results), 0, 0.05)
+#' results$NIE_bias <- rnorm(nrow(results), 0, 0.05)
+#' plot_degradation_surface(results, rho_G1_grid = c(0, 0.2),
+#'   rho_G2_grid = c(0, 0.2))
 plot_degradation_surface <- function(results,
                                       rho_G1_grid = c(0, 0.1, 0.2, 0.3, 0.5),
                                       rho_G2_grid = c(0, 0.1, 0.2, 0.3, 0.5),
@@ -577,6 +599,13 @@ plot_degradation_surface <- function(results,
 #' @return A list with elements \code{panel_a}, \code{panel_b},
 #' \code{panel_c}, \code{panel_d} (data frames).
 #' @export
+#' @examples
+#' \donttest{
+#' panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
+#'   n_valid_grid = 1, contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
+#'   eqtl_grid = c(0, 0.1))
+#' panels$panel_a
+#' }
 sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
                                contam_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
                                meqtl_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
@@ -598,7 +627,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       dat$W[, 6:10] <- matrix(rnorm(n_samples * 5), n_samples, 5)
       dat$W[, 6:10] <- dat$W[, 6:10] + cs * dat$X
       s <- nc_validity_screen(dat)
-      c(sum(s$significant[6:10]) / 5, sum(s$significant[1:5]) / 5)
+      c(sum(s$significant[seq.int(6, 10)]) / 5, sum(s$significant[seq_len(5)]) / 5)
     }, n_cores = n_cores, progress = " Panel A replicates")
     det_violated <- vapply(res_a, function(x) x[1], numeric(1))
     det_confounding <- vapply(res_a, function(x) x[2], numeric(1))
@@ -614,9 +643,9 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
     res_b <- .parallel_lapply(seq_len(n_iter), function(i) {
       dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
                                   n_features = 10, n_confounders = 1, seed = i)
-      dat$W[, 1:5] <- dat$W[, 1:5] + ms * dat$G[, 1]
+      dat$W[, seq_len(5)] <- dat$W[, seq_len(5)] + ms * dat$G[, 1]
       s <- nc_independence_check(dat)
-      c(sum(s$significant[1:5]) / 5, sum(s$significant[6:10]) / 5)
+      c(sum(s$significant[seq_len(5)]) / 5, sum(s$significant[seq.int(6, 10)]) / 5)
     }, n_cores = n_cores, progress = " Panel B replicates")
     det_violated <- vapply(res_b, function(x) x[1], numeric(1))
     det_clean <- vapply(res_b, function(x) x[2], numeric(1))
@@ -658,9 +687,9 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
                                   n_features = 10, n_confounders = 1,
                                   phi = phi_val, seed = i)
-      dat$W[, 1:5] <- dat$W[, 1:5] + es * dat$Gm
+      dat$W[, seq_len(5)] <- dat$W[, seq_len(5)] + es * dat$Gm
       s <- nc_independence_check_gm(dat)
-      c(sum(s$significant[1:5]) / 5, sum(s$significant[6:10]) / 5)
+      c(sum(s$significant[seq_len(5)]) / 5, sum(s$significant[seq.int(6, 10)]) / 5)
     }, n_cores = n_cores, progress = " Panel D replicates")
     det_violated <- vapply(res_d, function(x) x[1], numeric(1))
     det_clean <- vapply(res_d, function(x) x[2], numeric(1))
@@ -686,6 +715,23 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
 #' @param height Figure height in inches.
 #' @return A \code{patchwork} ggplot object.
 #' @export
+#' @examples
+#' # Toy panels standing in for sweep_nc_validity() output
+#' panels <- list(
+#'   panel_a = data.frame(contamination = c(0, 0.1),
+#'     violated_mean = c(0.1, 0.3), violated_sd = 0.05,
+#'     confounding_mean = c(0.1, 0.12), confounding_sd = 0.05),
+#'   panel_b = data.frame(meqtl = c(0, 0.1),
+#'     violated_mean = c(0.1, 0.3), violated_sd = 0.05,
+#'     clean_mean = c(0.1, 0.12), clean_sd = 0.05),
+#'   panel_c = expand.grid(n_valid = 1:2, k = 1:2),
+#'   panel_d = data.frame(eqtl = c(0, 0.1),
+#'     violated_mean = c(0.1, 0.3), violated_sd = 0.05,
+#'     clean_mean = c(0.1, 0.12), clean_sd = 0.05))
+#' panels$panel_c$pgc_bias <- c(0.05, 0.20, 0.08, 0.25)
+#' panels$panel_c$completeness <- c("satisfied", "under-identified",
+#'   "satisfied", "under-identified")
+#' plot_nc_validity_diagnostics(panels)
 plot_nc_validity_diagnostics <- function(panels, file = NULL,
                                           width = 8, height = 6) {
   .figures_check_deps()
@@ -836,6 +882,19 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
 #' @param height Figure height in inches.
 #' @return A \code{patchwork} ggplot object.
 #' @export
+#' @examples
+#' if (check_torch_setup()) {
+#'   data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'     M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+#'     W = matrix(rnorm(100 * 10), 10, 100))
+#'   diag <- iconic_diagnose(data)
+#'   est <- iconic_estimate(data, diagnosis = diag)
+#'   sens <- iconic_sensitivity(data, n_iter = 2, gan_epochs = 5,
+#'     rho_G1_grid = c(0, 0.2), rho_G2_grid = c(0, 0.2))
+#'   rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
+#'     sensitivity = sens, auto_sensitivity = FALSE)
+#'   plot_model_selection(diag, est, sens, rec)
+#' }
 plot_model_selection <- function(diagnosis, estimate, sensitivity, recommendation,
                                   file = NULL, width = 12, height = 14) {
   .figures_check_deps()
@@ -979,6 +1038,14 @@ plot_model_selection <- function(diagnosis, estimate, sensitivity, recommendatio
 #' @param height Figure height in inches.
 #' @return A \code{patchwork} ggplot object.
 #' @export
+#' @examples
+#' if (check_torch_setup()) {
+#'   data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'     M = rnorm(100))
+#'   pros <- iconic_prospect(data, n_iter = 2, gan_epochs = 5,
+#'     gamma_G_grid = c(0.4, 0.8), run_rho_sweep = FALSE)
+#'   plot_prospective_analysis(pros)
+#' }
 plot_prospective_analysis <- function(prospect, file = NULL,
                                        width = 12, height = 8) {
   .figures_check_deps()
@@ -1118,6 +1185,10 @@ plot_prospective_analysis <- function(prospect, file = NULL,
 #' @param height Figure height in inches.
 #' @return A \code{ggplot} object.
 #' @export
+#' @examples
+#' sens <- gan_pleiotropy_sensitivity(NULL, pleio_grid = c(0, 0.1),
+#'   conf_grid = 0.8, n_iter = 2, n_samples = 100, n_features = 5)
+#' plot_pleiotropy_sweep(sens)
 plot_pleiotropy_sweep <- function(sensitivity, file = NULL,
                                    width = 10, height = 5.5) {
   .figures_check_deps()
@@ -1200,6 +1271,9 @@ plot_pleiotropy_sweep <- function(sensitivity, file = NULL,
 #' \code{iter}, \code{partial_F}, \code{beta}, \code{se},
 #' \code{pvalue}, \code{rejected}.
 #' @export
+#' @examples
+#' res <- sweep_instrument_strength(pi_GX_grid = c(0.05, 0.2), n_iter = 2)
+#' head(res)
 sweep_instrument_strength <- function(pi_GX_grid = c(0.02, 0.05, 0.10, 0.15,
                                         0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80),
                                        n_iter = 50, n = 200, k = 1,
@@ -1210,7 +1284,7 @@ sweep_instrument_strength <- function(pi_GX_grid = c(0.02, 0.05, 0.10, 0.15,
   results <- data.frame()
 
   run_one <- function(pi_GX, arm, seed) {
-    set.seed(seed)
+    withr::local_seed(seed)
     U <- matrix(rnorm(n * k), n, k)
     gi <- simulate_single_genetic_instrument(n, seed = seed)
     G <- gi$G
@@ -1245,8 +1319,8 @@ sweep_instrument_strength <- function(pi_GX_grid = c(0.02, 0.05, 0.10, 0.15,
         rejected = !is.na(iv$pvalue) & iv$pvalue < 0.05)
     }, n_cores = n_cores, progress = paste0(" pi_GX=", pi_GX))
     results <- rbind(results, do.call(rbind, rows))
-    cat(sprintf(" pi_GX = %.2f done (mean F = %.1f)\n", pi_GX,
-                mean(results$partial_F[results$pi_GX == pi_GX])))
+    message(sprintf(" pi_GX = %.2f done (mean F = %.1f)", pi_GX,
+                    mean(results$partial_F[results$pi_GX == pi_GX])))
   }
   results
 }
@@ -1264,6 +1338,9 @@ sweep_instrument_strength <- function(pi_GX_grid = c(0.02, 0.05, 0.10, 0.15,
 #' @param height Figure height in inches.
 #' @return A \code{patchwork} ggplot object.
 #' @export
+#' @examples
+#' res <- sweep_instrument_strength(pi_GX_grid = c(0.05, 0.2), n_iter = 2)
+#' plot_instrument_strength_sweep(res)
 plot_instrument_strength_sweep <- function(results, tau = 0.25,
                                             file = NULL, width = 10, height = 4.5) {
   .figures_check_deps()
@@ -1359,6 +1436,16 @@ plot_instrument_strength_sweep <- function(results, tau = 0.25,
 #' @param height Figure height in inches.
 #' @return A \code{patchwork} ggplot object.
 #' @export
+#' @examples
+#' # Toy sweeps standing in for sweep_mediation_param("omega_1"/"omega_2", ...)
+#' mk <- function() {
+#'   s <- expand.grid(param_value = c(0.3, 0.7),
+#'     method = c("IV2SLS2", "PGC2", "PGC2Gm"))
+#'   s$NDE_bias <- rnorm(nrow(s), 0, 0.05)
+#'   s$NIE_bias <- rnorm(nrow(s), 0, 0.05)
+#'   list(summary = s)
+#' }
+#' plot_nc_coverage_comparison(mk(), mk())
 plot_nc_coverage_comparison <- function(omega1_sweep, omega2_sweep,
                                         t1e_omega2 = NULL,
                                         file = NULL, width = 10, height = 12) {

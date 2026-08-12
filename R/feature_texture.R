@@ -235,11 +235,9 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' M <- matrix(rnorm(30 * 200), 30, 200) # 30 transcripts, 200 samples
 #' ft <- train_feature_texture(M)
 #' draws <- sample_feature_texture(ft, 100) # 30 x 100 synthetic draws
-#' }
 train_feature_texture <- function(M_matrix, marginal_method = "auto") {
   M_matrix <- as.matrix(M_matrix)
   p <- nrow(M_matrix)
@@ -349,11 +347,9 @@ train_feature_texture <- function(M_matrix, marginal_method = "auto") {
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' M <- matrix(rnorm(30 * 200), 30, 200) # 30 transcripts, 200 samples
 #' ft <- train_feature_texture(M)
 #' draws <- sample_feature_texture(ft, 500, n_features = 20)
-#' }
 sample_feature_texture <- function(feature_texture, n_samples, n_features = NULL) {
   stopifnot(inherits(feature_texture, "iconic_feature_texture"))
 
@@ -404,6 +400,9 @@ sample_feature_texture <- function(feature_texture, n_samples, n_features = NULL
 #' @param ... Unused.
 #' @return Invisibly returns `x` (the `iconic_feature_texture` object); called for its side effect of printing a human-readable summary.
 #' @export
+#' @examples
+#' ft <- train_feature_texture(matrix(rnorm(20 * 100), 20, 100))
+#' print(ft)
 print.iconic_feature_texture <- function(x, ...) {
   cat("<iconic_feature_texture>\n")
   cat(" features :", x$n_features, "\n")

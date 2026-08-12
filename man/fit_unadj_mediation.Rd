@@ -29,9 +29,7 @@ Does not adjust for unmeasured confounding. Provided as a bias
 reference floor, analogous to UNADJ in the total-effect setting.
 }
 \examples{
-\donttest{
 set.seed(1)
-dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
+dat <- generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
 fit_unadj_mediation(dat$Y[, 1], dat$X, dat$M)
-}
 }

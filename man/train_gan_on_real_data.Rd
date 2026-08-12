@@ -72,12 +72,12 @@ feature vectors that preserve the marginal distributions and
 cross-feature correlation structure of the user's mediator panel.
 }
 \examples{
-\dontrun{
-dat <- load_real_input_data(example = TRUE)
-gan <- train_gan_on_real_data(dat$gan_training_data,
-feature_correlations = dat$feature_correlations,
-feature_texture = dat$feature_texture,
-epochs = 50)
-head(sample_texture(gan, 5))
+if (check_torch_setup()) {
+  dat <- load_real_input_data(example = TRUE)
+  gan <- train_gan_on_real_data(dat$gan_training_data,
+    feature_correlations = dat$feature_correlations,
+    feature_texture = dat$feature_texture,
+    epochs = 5, verbose = FALSE)
+  head(sample_texture(gan, 5))
 }
 }

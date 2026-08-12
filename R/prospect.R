@@ -148,11 +148,12 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-#' M = rnorm(100))
-#' result <- iconic_prospect(data, n_iter = 10)
-#' print(result)
+#' if (check_torch_setup()) {
+#'   data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'     M = rnorm(100))
+#'   result <- iconic_prospect(data, n_iter = 2, gan_epochs = 5,
+#'     gamma_G_grid = c(0.4, 0.8), run_rho_sweep = FALSE)
+#'   print(result)
 #' }
 iconic_prospect <- function(data,
                             trained_gan = NULL,
@@ -216,7 +217,7 @@ iconic_prospect <- function(data,
     message("No instruments or negative controls supplied: running the ",
             "prospective sweep (simulating what estimates you could expect ",
             "if you collected such data). Set allow_no_proxy = FALSE to ",
-            "suppress this message.")
+            "silence this note.")
   }
 
   confounding <- match.arg(confounding)
@@ -275,10 +276,11 @@ iconic_prospect <- function(data,
     gg <- grid$gamma_G[gi]
     o1 <- grid$omega_1[gi]
     o2 <- grid$omega_2[gi]
-    if (n_grid > 1 && isTRUE(verbose))
-      message("Phase 1: gamma_G=", gg,
-              if (omega_swept) paste0(", omega_1=", o1, ", omega_2=", o2) else "",
+    if (n_grid > 1 && isTRUE(verbose)) {
+      omega_txt <- if (omega_swept) paste0(", omega_1=", o1, ", omega_2=", o2) else ""
+      message("Phase 1: gamma_G=", gg, omega_txt,
               " (", gi, "/", n_grid, ")")
+    }
     worker <- function(i) {
       dat <- run_single_iteration(
         trained_gan = gan,
@@ -556,6 +558,7 @@ iconic_prospect <- function(data,
 
 #' Build prospect summary (internal)
 #' @keywords internal
+#' @noRd
 .build_prospect_summary <- function(strength_surface, prospective,
                                     target_gamma_G, rep_diag, n,
                                     mo_confounding, phi,
@@ -660,6 +663,14 @@ iconic_prospect <- function(data,
 #' @param ... Unused.
 #' @return Invisibly returns `x` (the `iconic_prospect` object); called for its side effect of printing a human-readable summary.
 #' @export
+#' @examples
+#' if (check_torch_setup()) {
+#'   data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'     M = rnorm(100))
+#'   result <- iconic_prospect(data, n_iter = 2, gan_epochs = 5,
+#'     gamma_G_grid = c(0.4, 0.8), run_rho_sweep = FALSE)
+#'   print(result)
+#' }
 print.iconic_prospect <- function(x, ...) {
   cat("<iconic_prospect>\n")
   cat(x$summary, "\n")
@@ -688,6 +699,14 @@ print.iconic_prospect <- function(x, ...) {
 #' @param ... Unused.
 #' @return Invisibly returns \code{object}.
 #' @export
+#' @examples
+#' if (check_torch_setup()) {
+#'   data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'     M = rnorm(100))
+#'   result <- iconic_prospect(data, n_iter = 2, gan_epochs = 5,
+#'     gamma_G_grid = c(0.4, 0.8), run_rho_sweep = FALSE)
+#'   summary(result)
+#' }
 summary.iconic_prospect <- function(object, ...) {
   print.iconic_prospect(object, ...)
   invisible(object)

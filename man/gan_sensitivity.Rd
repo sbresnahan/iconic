@@ -77,3 +77,8 @@ For each scenario in the grid, generates \code{n_iter} synthetic datasets with
 estimator, and summarises bias / RMSE / power. This is the multi-confounder,
 negative-control-aware generalisation of the package's parameter sweeps.
 }
+\examples{
+sens <- gan_sensitivity(NULL, conf_grid = 0.8, coverage_grid = 0.7,
+  n_iter = 2, n_samples = 100, n_features = 5)
+head(sens$summary)
+}

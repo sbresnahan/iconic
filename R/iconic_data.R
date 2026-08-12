@@ -453,6 +453,7 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
 #' required fields present.
 #' @param obj An iconic_data list (pre-class assignment).
 #' @keywords internal
+#' @noRd
 validate_iconic_data <- function(obj) {
   n <- obj$n
   if (n < 20)
@@ -472,21 +473,26 @@ validate_iconic_data <- function(obj) {
 }
 
 
-#' Convert a load_real_input_data result (or named components) to iconic_data
+#' Convert external data containers to iconic_data
 #'
-#' Bridges the GAN-training data interface to the estimation interface.
-#' Can be called in two ways:
+#' S3 generic bridging other data interfaces to the estimation
+#' interface. Methods:
 #'
-#' 1. With a list returned by [load_real_input_data()] (the original
-#' interface).
-#' 2. With named arguments matching [iconic_data()] (X, Y, M, G, Gm,
-#' W, W1, W2, covariates, feature_names, mediator_names), which
-#' simply delegates to [iconic_data()].
+#' * `default`: a list returned by [load_real_input_data()], an
+#'   existing `iconic_data` object (returned as-is), or the exposure
+#'   vector `X` with named arguments matching [iconic_data()] (Y, M,
+#'   G, Gm, W, W1, W2, covariates, feature_names, mediator_names),
+#'   which delegates to [iconic_data()].
+#' * `SummarizedExperiment`: extracts the outcome panel from an assay
+#'   and sample-level fields (exposure, instruments, negative
+#'   controls, covariates) from `colData`. Requires the
+#'   SummarizedExperiment package (listed under `Suggests`).
 #'
-#' @param input Either a list returned by [load_real_input_data()], or
-#' the exposure vector X (when using named-argument form).
+#' @param input An object to convert: a list returned by
+#' [load_real_input_data()], an `iconic_data` object, an exposure
+#' vector (named-argument form), or a SummarizedExperiment.
 #' @param ... Named arguments passed to [iconic_data()] when using
-#' the named-argument form. Ignored when \code{input} is a list.
+#' the named-argument form, or to the method.
 #'
 #' @return An `iconic_data` S3 object.
 #' @export
@@ -502,6 +508,13 @@ validate_iconic_data <- function(obj) {
 #' G = rnorm(100), Gm = rnorm(100),
 #' W = matrix(rnorm(100*10), 10, 100))
 as_iconic_data <- function(input, ...) {
+  UseMethod("as_iconic_data")
+}
+
+
+#' @rdname as_iconic_data
+#' @export
+as_iconic_data.default <- function(input, ...) {
   dots <- list(...)
 
   # Passthrough: if input is already an iconic_data object, return as-is
@@ -530,12 +543,133 @@ as_iconic_data <- function(input, ...) {
 }
 
 
+#' @rdname as_iconic_data
+#' @param assay Name or index of the assay of `input` holding the
+#' outcome panel (features x samples). Default `1`. Set to `NULL` for
+#' survival outcomes (when `surv_time`/`surv_event` are colData
+#' columns and no continuous outcome panel is used).
+#' @param mediator_assay Optional name or index of an assay holding
+#' the mediator panel (mediators x samples).
+#' @param exposure Character: name of the `colData` column holding the
+#' exposure X.
+#' @param instrument Optional character: name of the `colData` column
+#' holding the exposure instrument G (e.g. a polygenic score).
+#' @param mediator_instrument Optional character vector of `colData`
+#' column names holding the mediator instrument(s) Gm (one column per
+#' mediator).
+#' @param negative_controls Optional character vector of `colData`
+#' column names forming the negative-control panel W.
+#' @param covariates Optional character vector of `colData` column
+#' names to carry through as covariates.
+#' @param surv_time,surv_event Optional character: names of `colData`
+#' columns holding follow-up time and the 0/1 event indicator; set
+#' together with `outcome_type = "survival"`.
+#' @param outcome_type `\"continuous\"` (default) or
+#' `\"survival\"`.
+#' @method as_iconic_data SummarizedExperiment
+#' @export
+#'
+#' @examples
+#' if (requireNamespace("SummarizedExperiment", quietly = TRUE)) {
+#'   se <- SummarizedExperiment::SummarizedExperiment(
+#'     assays = list(expr = matrix(rnorm(20 * 60), 20, 60,
+#'                                 dimnames = list(paste0("gene", 1:20),
+#'                                                 paste0("S", 1:60)))),
+#'     colData = S4Vectors::DataFrame(
+#'       bmi = rnorm(60), prs = rnorm(60),
+#'       nc1 = rnorm(60), nc2 = rnorm(60), age = rnorm(60))
+#'   )
+#'   data <- as_iconic_data(se, assay = "expr", exposure = "bmi",
+#'                          instrument = "prs",
+#'                          negative_controls = c("nc1", "nc2"),
+#'                          covariates = "age")
+#'   print(data)
+#' }
+as_iconic_data.SummarizedExperiment <- function(input, assay = 1,
+                                                mediator_assay = NULL,
+                                                exposure,
+                                                instrument = NULL,
+                                                mediator_instrument = NULL,
+                                                negative_controls = NULL,
+                                                covariates = NULL,
+                                                surv_time = NULL,
+                                                surv_event = NULL,
+                                                outcome_type = c("continuous", "survival"),
+                                                ...) {
+  if (!requireNamespace("SummarizedExperiment", quietly = TRUE))
+    stop("The SummarizedExperiment method requires the ",
+         "SummarizedExperiment package. Install with: ",
+         "BiocManager::install('SummarizedExperiment')")
+  outcome_type <- match.arg(outcome_type)
+  cd <- SummarizedExperiment::colData(input)
+  cd_names <- colnames(cd)
+
+  get_col <- function(name, label) {
+    if (!name %in% cd_names)
+      stop(label, " column '", name, "' not found in colData. ",
+           "Available: ", paste(cd_names, collapse = ", "))
+    v <- cd[[name]]
+    if (inherits(v, c("DataFrame", "DFrame")) && ncol(v) == 1) v <- v[[1]]
+    as.numeric(v)
+  }
+
+  X <- get_col(exposure, "exposure")
+
+  Y <- NULL
+  if (outcome_type == "continuous") {
+    if (is.null(assay))
+      stop("assay = NULL is only valid with outcome_type = 'survival'.")
+    Y <- as.matrix(SummarizedExperiment::assay(input, assay))
+  }
+
+  M <- NULL
+  if (!is.null(mediator_assay))
+    M <- as.matrix(SummarizedExperiment::assay(input, mediator_assay))
+
+  G <- if (!is.null(instrument)) get_col(instrument, "instrument") else NULL
+
+  Gm <- NULL
+  if (!is.null(mediator_instrument)) {
+    gm_cols <- vapply(mediator_instrument, get_col, numeric(length(X)),
+                      label = "mediator_instrument")
+    Gm <- t(gm_cols)   # mediators x samples
+    rownames(Gm) <- mediator_instrument
+  }
+
+  W <- NULL
+  if (!is.null(negative_controls)) {
+    w_cols <- vapply(negative_controls, get_col, numeric(length(X)),
+                     label = "negative_controls")
+    W <- t(w_cols)     # NCs x samples
+    rownames(W) <- negative_controls
+  }
+
+  cv <- NULL
+  if (!is.null(covariates))
+    cv <- as.data.frame(cd[, covariates, drop = FALSE])
+
+  st <- if (!is.null(surv_time)) get_col(surv_time, "surv_time") else NULL
+  se <- if (!is.null(surv_event)) get_col(surv_event, "surv_event") else NULL
+
+  iconic_data(X = X, Y = Y, M = M, G = G, Gm = Gm, W = W,
+              covariates = cv,
+              feature_names = if (!is.null(Y)) rownames(Y),
+              mediator_names = if (!is.null(M)) rownames(M),
+              outcome_type = outcome_type,
+              surv_time = st, surv_event = se, ...)
+}
+
+
 #' Print method for iconic_data objects
 #'
 #' @param x An `iconic_data` object.
 #' @param ... Unused.
 #' @return Invisibly returns `x` (the `iconic_data` object); called for its side effect of printing a human-readable summary.
 #' @export
+#' @examples
+#' data <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 5), 5, 50),
+#'   G = rnorm(50), W = matrix(rnorm(50 * 5), 5, 50))
+#' print(data)
 print.iconic_data <- function(x, ...) {
   if (x$outcome_type == "survival") {
     n_events <- sum(x$surv_event)

@@ -3,9 +3,10 @@ title: "Survival Outcomes"
 author: "Sean T. Bresnahan and Charis Xiong"
 date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette:
+  BiocStyle::html_document:
     toc: true
     toc_depth: 3
+    toc_float: true
 vignette: >
   %\VignetteIndexEntry{Survival Outcomes}
   %\VignetteEngine{knitr::rmarkdown}
@@ -20,6 +21,28 @@ knitr::opts_chunk$set(
 set.seed(1)
 library(iconic)
 ```
+
+# Introduction
+
+This vignette covers time-to-event outcomes. `iconic` supports Cox proportional-hazards and restricted-mean-survival-time (RMST) effect scales for all instrument- and negative-control-based estimators.
+
+# Installation
+
+`iconic` is being submitted to Bioconductor. Once accepted, install the
+release version with:
+
+```{r install-bioc, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("iconic")
+```
+
+The development version is available from GitHub:
+
+```{r install-github, eval=FALSE}
+BiocManager::install("sbresnahan/iconic")
+```
+
 
 # Time-to-event outcomes in ICONIC
 
@@ -125,3 +148,9 @@ criteria as for continuous outcomes.
 - **Function reference**: `?iconic_estimate` for the `effect_scale`
   argument and `?generate_toy_data` for the survival DGP parameters
   (`surv_h0`, `surv_event_frac`, `surv_censor_rate`).
+
+# Session information
+
+```{r sessionInfo}
+sessionInfo()
+```

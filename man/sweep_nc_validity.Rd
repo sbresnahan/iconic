@@ -46,3 +46,11 @@ Runs simulation sweeps for the four empirical NC validity
 diagnostics (A1, A2, A2', A3) and returns data frames ready for
 plotting with \code{plot_nc_validity_diagnostics()}.
 }
+\examples{
+\donttest{
+panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
+  n_valid_grid = 1, contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
+  eqtl_grid = c(0, 0.1))
+panels$panel_a
+}
+}

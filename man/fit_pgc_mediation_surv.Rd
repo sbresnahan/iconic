@@ -60,10 +60,8 @@ bridges, this estimator uses a single combined W panel and is
 appropriate when separate conf_XM / conf_MY confounders are not assumed.
 }
 \examples{
-\donttest{
 set.seed(1)
-dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 dat$G[, 1], dat$W)
-}
 }

@@ -1,0 +1,181 @@
+url: https://seantbresnahan.com/iconic/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left:  [reference, articles, news]
+    right: [search, github]
+  components:
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Vignettes
+      menu:
+      - text: ICONIC walkthrough
+        href: articles/iconic-walkthrough.html
+      - text: Diagnosing estimator eligibility
+        href: articles/iconic-diagnose.html
+      - text: Sensitivity analysis & confounding inference
+        href: articles/iconic-sensitivity.html
+      - text: The generative texture model
+        href: articles/iconic-texture-model.html
+      - text: Survival outcomes
+        href: articles/iconic-survival.html
+      - text: Building instruments & negative controls
+        href: articles/iconic-instruments.html
+    news:
+      text: News
+      href: news/index.html
+
+reference:
+- title: Data input & containers
+  desc: >
+    Standardise exposure, outcome, mediator, instrument, and
+    negative-control data into the object used across the package, and
+    simulate ground-truth panels.
+  contents:
+  - iconic_data
+  - as_iconic_data
+  - load_real_input_data
+  - generate_toy_data
+  - simulate_single_genetic_instrument
+
+- title: Exposure instruments
+  desc: >
+    Build and validate a genetic instrument for the exposure from GWAS
+    summary statistics or a published polygenic-score panel.
+  contents:
+  - qc_gwas_sumstats
+  - build_prs_ldpred2
+  - score_pgs_panel
+  - check_instrument_strength
+
+- title: Mediator instruments
+  desc: >
+    Call cis-eQTLs and train genetically-predicted expression instruments
+    for the mediator panel.
+  contents:
+  - call_cis_eqtls
+  - build_mediator_instruments
+
+- title: Negative controls
+  desc: >
+    Construct negative-control panels and run the validity, independence,
+    support, and completeness diagnostics.
+  contents:
+  - beta_to_m
+  - residualize_matrix
+  - build_w_pcs
+  - apply_fusion_weights
+  - nc_proxy
+  - nc_cpg
+  - list_nc_models
+  - nc_validity_check
+  - nc_validity_screen
+  - nc_independence_check
+  - nc_independence_check_gm
+  - nc_support_check
+  - nc_completeness_check
+  - nc_completeness_capture
+
+- title: Core workflow
+  desc: >
+    The end-to-end model-selection pipeline: diagnose eligibility, estimate
+    effects, stress-test robustness, and recommend an estimator.
+  contents:
+  - iconic_diagnose
+  - iconic_estimate
+  - iconic_sensitivity
+  - iconic_recommend
+  - iconic_prospect
+  - infer_confounding
+  - recommend_estimator
+
+- title: Estimators (low-level)
+  desc: >
+    Individual NDE/NIE estimators. Most users call these through
+    iconic_estimate() rather than directly.
+  contents:
+  - starts_with("fit_")
+
+- title: Sensitivity & robustness analysis
+  desc: >
+    Generative-model stress tests of instrument exogeneity and pleiotropy,
+    and p-value combination helpers.
+  contents:
+  - gan_sensitivity
+  - gan_mediation_sensitivity
+  - gan_pleiotropy_sensitivity
+  - composite_p_value
+
+- title: Simulation & sweeps
+  desc: >
+    Simulation drivers and parameter-sweep machinery used for estimator
+    validation and benchmarking.
+  contents:
+  - run_simulation
+  - run_single_iteration
+  - run_mediation_sim
+  - run_null_sim
+  - run_null_mediation_sim
+  - starts_with("sweep_")
+  - analyze_methods_robust
+  - analyze_methods_parallel
+  - analyze_mediation_robust
+  - scenario_manifest
+
+- title: Generative texture model
+  desc: >
+    Train and sample from the hybrid GAN + Gaussian-copula texture model
+    that calibrates synthetic data to a cohort.
+  contents:
+  - train_gan_on_real_data
+  - train_feature_texture
+  - sample_texture
+  - sample_feature_texture
+  - check_torch_setup
+
+- title: Plotting
+  desc: Visualization functions for diagnostics, sensitivity, and results.
+  contents:
+  - starts_with("plot_")
+
+- title: Data constants
+  desc: Package data constants for estimator display (colours and ordering).
+  contents:
+  - iconic_method_colors
+  - iconic_method_order
+
+- title: S3 print & summary methods
+  desc: Print and summary methods for the result objects returned above.
+  contents:
+  - print.iconic_confounding
+  - print.iconic_data
+  - print.iconic_diagnosis
+  - print.iconic_feature_texture
+  - print.iconic_gan
+  - print.iconic_prospect
+  - print.iconic_recommendation
+  - print.iconic_sensitivity
+  - summary.iconic_diagnosis
+  - summary.iconic_prospect
+  - summary.iconic_recommendation
+  - summary.iconic_sensitivity
+
+articles:
+- title: Get started
+  desc: Start here for the end-to-end workflow.
+  contents:
+  - iconic-walkthrough
+- title: Core concepts
+  contents:
+  - iconic-diagnose
+  - iconic-sensitivity
+  - iconic-texture-model
+  - iconic-survival
+- title: Data preparation
+  contents:
+  - iconic-instruments

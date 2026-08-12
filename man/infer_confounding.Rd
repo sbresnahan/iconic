@@ -92,14 +92,13 @@ value was not inferred from their data.
 }
 
 \examples{
-\donttest{
 data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 W = matrix(rnorm(100*10), 10, 100))
 diag <- iconic_diagnose(data)
 est <- iconic_estimate(data, diagnosis = diag)
-conf <- infer_confounding(data, diagnosis = diag, estimate = est, n_cores = 2)
+conf <- infer_confounding(data, diagnosis = diag, estimate = est,
+                          max_infer_tasks = 5)
 print(conf)
-}
 
 }

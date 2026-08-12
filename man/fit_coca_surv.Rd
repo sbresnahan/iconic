@@ -33,10 +33,8 @@ object (time-to-event). COCA is therefore unsupported for survival
 outcomes and always returns \code{list(beta=NA, se=NA, pvalue=NA)}.
 }
 \examples{
-\donttest{
 set.seed(1)
-dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_coca_surv(dat$surv_time, dat$surv_event, dat$X, dat$W[, 1])
 # $beta [1] NA (COCA unsupported for survival outcomes)
-}
 }

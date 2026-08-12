@@ -189,6 +189,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 #'
 #' Loops over outcome features, calling .estimate_total_feature().
 #' @keywords internal
+#' @noRd
 .estimate_total_driver <- function(data, methods, alpha, n_cores = 1,
                                    min_f = 10) {
   n <- data$n
@@ -217,7 +218,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
   # mclapply swallows errors as try-error objects; surface the first one.
   err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
   if (length(err_idx)) {
-    stop("Estimation failed for task ", err_idx[1], ". Underlying error:\n",
+    stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
          conditionMessage(attr(results[[err_idx[1]]], "condition")))
   }
 
@@ -236,6 +237,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 #' Loops over mediators x outcome features, calling
 #' .estimate_mediation_feature().
 #' @keywords internal
+#' @noRd
 .estimate_mediation_driver <- function(data, methods, alpha, n_cores = 1,
                                        min_f = 10, se_method = "delta",
                                        n_boot = 500) {
@@ -291,7 +293,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
   # instead of producing a confusing downstream error.
   err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
   if (length(err_idx)) {
-    stop("Estimation failed for task ", err_idx[1], ". Underlying error:\n",
+    stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
          conditionMessage(attr(results[[err_idx[1]]], "condition")))
   }
 
@@ -339,6 +341,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 #' outcome. Returns a data frame with the same columns as
 #' \code{.estimate_total_driver}.
 #' @keywords internal
+#' @noRd
 .estimate_total_surv_driver <- function(data, methods, alpha, n_cores = 1,
                                         min_f = 10, effect_scale = "loghr",
                                         tau = NULL) {
@@ -381,6 +384,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 #' each. Returns a data frame with the same columns as
 #' \code{.estimate_mediation_driver}.
 #' @keywords internal
+#' @noRd
 .estimate_mediation_surv_driver <- function(data, methods, alpha,
                                             n_cores = 1, min_f = 10,
                                             se_method = "delta",
@@ -462,7 +466,7 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 
   err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
   if (length(err_idx)) {
-    stop("Estimation failed for task ", err_idx[1], ". Underlying error:\n",
+    stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
          conditionMessage(attr(results[[err_idx[1]]], "condition")))
   }
 

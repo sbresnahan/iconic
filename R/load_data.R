@@ -84,6 +84,9 @@
 #' no M matrix is supplied), `sample_names`, `feature_names`, `n_samples`,
 #' `n_features`.
 #' @export
+#' @examples
+#' dat <- load_real_input_data(example = TRUE)
+#' names(dat)
 load_real_input_data <- function(X_matrix = NULL,
                                  Y_matrix = NULL,
                                  M_matrix = NULL,
@@ -309,6 +312,7 @@ load_real_input_data <- function(X_matrix = NULL,
 #' encodes `mother_ethnicity`, drops `sample_id`, and renames any column whose
 #' name collides with an estimator-reserved token.
 #' @keywords internal
+#' @noRd
 .encode_covariates <- function(covariates_df, n_samples, sample_names) {
   if (is.null(covariates_df) || !ncol(as.data.frame(covariates_df)))
     return(data.frame(row.names = seq_len(n_samples))[, 0, drop = FALSE])
@@ -361,8 +365,9 @@ load_real_input_data <- function(X_matrix = NULL,
 #' `sample_id`/`sex`/`GA`/`mother_ethnicity` columns, so the pipeline runs
 #' without user data. Not a benchmark DGP; just plumbing exercise data.
 #' @keywords internal
+#' @noRd
 .make_example_input <- function(n_samples = 200, n_features = 30, seed = 1) {
-  set.seed(seed)
+  withr::local_seed(seed)
   U <- rnorm(n_samples) # shared confounder
   sex <- rbinom(n_samples, 1, 0.5)
   GA <- rnorm(n_samples, 39, 1.5)

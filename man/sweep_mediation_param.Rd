@@ -99,7 +99,7 @@ A list with \code{summary} (data frame) and \code{iter_bias}
 Sweep a single mediation simulation parameter across a grid
 }
 \examples{
-\donttest{
-res <- sweep_mediation_param("conf_str", c(0.2, 0.5, 0.8, 1.0), n_iter = 50)
-}
+res <- sweep_mediation_param("conf_str", c(0.2, 0.8), n_iter = 3,
+                             n_samples = 100)
+res$summary
 }

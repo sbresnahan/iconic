@@ -22,3 +22,8 @@ Ranks methods by RMSE within each scenario, and identifies an overall pick
 that is robust across scenarios (smallest worst-case RMSE). UNADJ is excluded
 from recommendations (it is a bias reference).
 }
+\examples{
+sens <- gan_sensitivity(NULL, conf_grid = 0.8, coverage_grid = 0.7,
+  n_iter = 2, n_samples = 100, n_features = 5)
+recommend_estimator(sens)
+}

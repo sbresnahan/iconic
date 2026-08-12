@@ -76,8 +76,6 @@ negligible (strong/weak). When the dimensional component passes but
 capture is negligible, the verdict is "weak-capture".
 }
 \examples{
-\dontrun{
 dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
-nc_completeness_check(dat)
-}
+nc_completeness_check(dat, n_perm = 50)
 }

@@ -26,3 +26,8 @@ Invisibly returns \code{NULL}; called for the side effect of plotting absolute b
 \description{
 Plot absolute bias vs a swept parameter
 }
+\examples{
+sweep <- sweep_param("conf_str", c(0.5, 0.8), n_iter = 2,
+  n_samples = 100, n_features = 5)
+plot_bias(sweep$summary)
+}

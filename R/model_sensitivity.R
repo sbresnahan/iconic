@@ -227,12 +227,13 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-#' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-#' W = matrix(rnorm(100*10), 10, 100))
-#' sens <- iconic_sensitivity(data, n_iter = 10)
-#' print(sens)
+#' if (check_torch_setup()) {
+#'   data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'     M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+#'     W = matrix(rnorm(100 * 10), 10, 100))
+#'   sens <- iconic_sensitivity(data, n_iter = 2, gan_epochs = 5,
+#'     rho_G1_grid = c(0, 0.2), rho_G2_grid = c(0, 0.2))
+#'   print(sens)
 #' }
 iconic_sensitivity <- function(data, diagnosis = NULL,
                                trained_gan = NULL,
@@ -363,10 +364,11 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     r2 <- grid$rho_G2[gi]
     o1 <- grid$omega_1[gi]
     o2 <- grid$omega_2[gi]
-    if (n_grid > 1 && isTRUE(verbose))
+    if (n_grid > 1 && isTRUE(verbose)) {
+      omega_txt <- if (omega_swept) paste0(", omega_1=", o1, ", omega_2=", o2) else ""
       message("Sensitivity grid cell ", gi, "/", n_grid,
-              " (rho_G1=", r1, ", rho_G2=", r2,
-              if (omega_swept) paste0(", omega_1=", o1, ", omega_2=", o2) else "", ")")
+              " (rho_G1=", r1, ", rho_G2=", r2, omega_txt, ")")
+    }
 
     worker <- function(i) {
       dat <- run_single_iteration(
@@ -457,6 +459,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 
 #' Safe max of absolute values, returning NA when all values are NA/NaN (internal)
 #' @keywords internal
+#' @noRd
 .safe_max_abs <- function(x) {
   x <- abs(x[is.finite(x)])
   if (length(x) == 0) NA_real_ else max(x)
@@ -469,6 +472,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 #' at which the estimator's assumptions are violated enough to produce
 #' materially biased estimates.
 #' @keywords internal
+#' @noRd
 .find_tipping_points <- function(surface, rho_G1_grid, rho_G2_grid,
                                  threshold) {
   methods <- unique(surface$method)
@@ -524,6 +528,7 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 
 #' Build sensitivity summary (internal)
 #' @keywords internal
+#' @noRd
 .build_sensitivity_summary <- function(surface, tipping, threshold, n_iter) {
   lines <- character(0)
   lines <- c(lines,
@@ -567,6 +572,15 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
 #' @param ... Unused.
 #' @return Invisibly returns `x` (the `iconic_sensitivity` object); called for its side effect of printing a human-readable summary.
 #' @export
+#' @examples
+#' if (check_torch_setup()) {
+#'   data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'     M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+#'     W = matrix(rnorm(100 * 10), 10, 100))
+#'   sens <- iconic_sensitivity(data, n_iter = 2, gan_epochs = 5,
+#'     rho_G1_grid = c(0, 0.2), rho_G2_grid = c(0, 0.2))
+#'   print(sens)
+#' }
 print.iconic_sensitivity <- function(x, ...) {
   cat("<iconic_sensitivity>\n")
   cat(x$summary, "\n")
@@ -584,6 +598,15 @@ print.iconic_sensitivity <- function(x, ...) {
 #' @param ... Unused.
 #' @return Invisibly returns \code{object}.
 #' @export
+#' @examples
+#' if (check_torch_setup()) {
+#'   data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'     M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+#'     W = matrix(rnorm(100 * 10), 10, 100))
+#'   sens <- iconic_sensitivity(data, n_iter = 2, gan_epochs = 5,
+#'     rho_G1_grid = c(0, 0.2), rho_G2_grid = c(0, 0.2))
+#'   summary(sens)
+#' }
 summary.iconic_sensitivity <- function(object, ...) {
   print.iconic_sensitivity(object, ...)
   invisible(object)

@@ -95,8 +95,7 @@ lambda_XM, lambda_MY, omega_1, omega_2), the two-stage proximal estimators (PGC2
 PGC2Gm) are also included.
 }
 \examples{
-\donttest{
-res <- run_mediation_sim(n_iter = 50, mo_confounding = 0.8)
+res <- run_mediation_sim(n_iter = 3, n_samples = 100,
+                         mo_confounding = 0.8)
 res$summary
-}
 }

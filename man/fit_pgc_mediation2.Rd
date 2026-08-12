@@ -84,9 +84,8 @@ PGC-2's bridge absorbs conf_MY regardless of the instrument violation. The
 tipping-point simulation maps where PGC-2 bias crosses below IV2SLS2 bias.
 }
 \examples{
-\donttest{
 set.seed(1)
-dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
+dat <- generate_toy_data(n = 500, mo_confounding = 0.8,
 rho_G2 = 0.3, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
 omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 # Without mediator instrument (pure NC identification)
@@ -94,7 +93,6 @@ fit_pgc_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G1, dat$W1, dat$W2)
 # With (possibly imperfect) mediator instrument
 fit_pgc_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G1, dat$W1, dat$W2,
 gm = dat$Gm)
-}
 }
 \references{
 Miao, W., Geng, Z., & Tchetgen Tchetgen, E. (2018). Identifying causal

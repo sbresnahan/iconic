@@ -17,3 +17,10 @@ Invisibly returns \code{x} (the \code{iconic_confounding} object); called for it
 \description{
 Print method for iconic_confounding objects
 }
+\examples{
+set.seed(1)
+data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+  G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+cf <- infer_confounding(data, max_infer_tasks = 5)
+print(cf)
+}

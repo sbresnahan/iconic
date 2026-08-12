@@ -3,9 +3,10 @@ title: "Sensitivity Analysis and Confounding Inference"
 author: "Sean T. Bresnahan and Charis Xiong"
 date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette:
+  BiocStyle::html_document:
     toc: true
     toc_depth: 3
+    toc_float: true
 vignette: >
   %\VignetteIndexEntry{Sensitivity Analysis and Confounding Inference}
   %\VignetteEngine{knitr::rmarkdown}
@@ -21,6 +22,28 @@ set.seed(1)
 library(iconic)
 has_torch <- check_torch_setup()
 ```
+
+# Introduction
+
+This vignette shows how `iconic` stress-tests a causal estimate by replaying the analysis on synthetic data that preserve the observed feature texture while sweeping the strength of unmeasured confounding and instrument exogeneity violations.
+
+# Installation
+
+`iconic` is being submitted to Bioconductor. Once accepted, install the
+release version with:
+
+```{r install-bioc, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("iconic")
+```
+
+The development version is available from GitHub:
+
+```{r install-github, eval=FALSE}
+BiocManager::install("sbresnahan/iconic")
+```
+
 
 # What sensitivity analysis does
 
@@ -136,3 +159,9 @@ assumptions.
   GAN + copula texture model is trained and why it matters for sensitivity.
 - **Function reference**: `?iconic_sensitivity` for the full argument list,
   including the $\rho_{G1} \times \rho_{G2}$ grid and the `n_iter` control.
+
+# Session information
+
+```{r sessionInfo}
+sessionInfo()
+```

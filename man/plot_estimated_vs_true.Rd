@@ -23,3 +23,8 @@ Invisibly returns \code{NULL}; called for the side effect of plotting estimated 
 \description{
 Plot estimated effect vs true effect
 }
+\examples{
+sweep <- sweep_param("beta_X", c(0.1, 0.3), n_iter = 2,
+  n_samples = 100, n_features = 5)
+plot_estimated_vs_true(sweep$summary)
+}

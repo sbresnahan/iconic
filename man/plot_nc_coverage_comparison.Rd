@@ -47,3 +47,14 @@ Panels: (A) NDE bias vs omega_1, (B) NIE bias vs omega_2,
 (C) NDE/NIE bias vs omega (both paths), (D) NIE Type I error vs
 omega_2.
 }
+\examples{
+# Toy sweeps standing in for sweep_mediation_param("omega_1"/"omega_2", ...)
+mk <- function() {
+  s <- expand.grid(param_value = c(0.3, 0.7),
+    method = c("IV2SLS2", "PGC2", "PGC2Gm"))
+  s$NDE_bias <- rnorm(nrow(s), 0, 0.05)
+  s$NIE_bias <- rnorm(nrow(s), 0, 0.05)
+  list(summary = s)
+}
+plot_nc_coverage_comparison(mk(), mk())
+}

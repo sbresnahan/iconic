@@ -1,0 +1,294 @@
+---
+title: "Genetic Instruments and Negative Controls from External Data"
+author: "Sean T. Bresnahan and Charis Xiong"
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+vignette: >
+  %\VignetteIndexEntry{Genetic Instruments and Negative Controls from External Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 7, fig.height = 4.5, comment = "#>"
+)
+set.seed(1)
+library(iconic)
+```
+
+# Introduction
+
+`iconic` identifies natural direct and indirect effects (NDE/NIE) in
+observational omics data by combining *genetic instruments* (for the
+exposure and, optionally, the mediator) with *negative controls* that proxy
+the unmeasured confounders. In practice these inputs come from external
+resources: GWAS summary statistics for exposure instruments, cis-eQTL
+scans or transcriptome-wide association study (TWAS) weights for mediator
+instruments, and high-dimensional omics panels (for example DNA
+methylation) for negative-control construction.
+
+This vignette demonstrates the helper functions that bridge those external
+resources into an `iconic_data` object:
+
+* `qc_gwas_sumstats()`, `build_prs_ldpred2()`, `score_pgs_panel()`, and
+  `check_instrument_strength()` for exposure instruments;
+* `call_cis_eqtls()` and `build_mediator_instruments()` for mediator
+  instruments;
+* `beta_to_m()`, `residualize_matrix()`, `build_w_pcs()`, and
+  `apply_fusion_weights()` for negative-control panel construction;
+* `as_iconic_data()` for importing a `SummarizedExperiment` directly.
+
+All examples use small simulated inputs so the vignette builds quickly; on
+real data the same calls apply unchanged.
+
+# Installation
+
+`iconic` is being submitted to Bioconductor. Once accepted, install the
+release version with:
+
+```{r install-bioc, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("iconic")
+```
+
+The development version is available from GitHub:
+
+```{r install-github, eval=FALSE}
+BiocManager::install("sbresnahan/iconic")
+```
+
+# Exposure instruments from GWAS summary statistics
+
+## Quality-control the summary statistics
+
+`qc_gwas_sumstats()` standardises the column names of a GWAS summary
+statistics table (recognising common aliases such as
+`chromosome`/`base_pair_location`/`effect_allele`), and applies the usual
+filters: missing values, extreme effect sizes, strand-ambiguous A/T and C/G
+variants, and the standard-deviation-ratio check that compares the implied
+phenotypic variance of each variant against the bulk distribution.
+
+```{r qc-sumstats}
+ss <- data.frame(
+  chromosome = 1, base_pair_location = 1000 + 0:9 * 1000L,
+  effect_allele = rep(c("A", "C"), 5), other_allele = rep(c("G", "T"), 5),
+  beta = rnorm(10, 0, 0.05), standard_error = 0.01,
+  effect_allele_frequency = runif(10, 0.1, 0.5)
+)
+out <- qc_gwas_sumstats(ss, n_eff = 50000)
+out$qc
+```
+
+## Build a polygenic score with LDpred2
+
+When the `bigsnpr` package is available, `build_prs_ldpred2()` matches the
+summary statistics to an LD reference panel, runs LDpred2-auto (with a
+moment-estimator fallback for the heritability), filters out
+non-convergent chains, and can optionally score a target genotype panel.
+
+```{r ldpred2, eval=requireNamespace("bigsnpr", quietly = TRUE)}
+# Tiny fake genotype panel standing in for an LD reference
+# (snp_fake genotypes are all-missing mocks; fill with random dosages)
+fake <- bigsnpr::snp_fake(100, 500)
+fake$genotypes[] <- rbinom(100 * 500, 2, 0.3)
+fake$map$chromosome <- 1L
+fake$map$physical.pos <- sort(sample(1:1e6, 500))
+ss <- data.frame(
+  chr = fake$map$chromosome, pos = fake$map$physical.pos,
+  a0 = fake$map$allele2, a1 = fake$map$allele1,
+  beta = rnorm(500, 0, 0.05), beta_se = 0.02, n_eff = 20000
+)
+prs <- build_prs_ldpred2(ss, ld_ref = fake, n_chains = 3,
+                         burn_in = 50, num_iter = 50, verbose = FALSE)
+str(prs$beta)
+```
+
+On real data the chain-convergence filter and the sd-ratio QC do the heavy
+lifting; on this tiny fake panel the warning about non-convergent chains is
+expected.
+
+## Score a panel of pre-computed weights
+
+If you already have effect weights (for example from the PGS Catalog or a
+published score), `score_pgs_panel()` applies them to a dosage matrix
+directly, matching variants by `chr:pos:ref:alt` key with automatic
+strand-flip handling.
+
+```{r score-panel}
+dos <- matrix(rbinom(4 * 50, 2, 0.3), nrow = 4,
+              dimnames = list(c("1:100:A:G", "1:200:C:T",
+                                "1:300:G:A", "2:400:T:C"),
+                              paste0("S", 1:50)))
+wts <- data.frame(chr = c(1, 1, 2), pos = c(100, 300, 400),
+                  a1 = c("A", "G", "T"), a0 = c("G", "A", "C"),
+                  weight = c(0.1, -0.2, 0.05))
+out <- score_pgs_panel(wts, dos)
+head(out$score)
+```
+
+## Verify instrument strength
+
+Whatever the source of the instrument, check the first-stage partial
+F-statistic before relying on it. The conventional rule of thumb is
+F >= 10.
+
+```{r instrument-strength}
+n <- 300
+G <- rnorm(n)
+X <- 0.3 * G + rnorm(n)
+pcs <- matrix(rnorm(n * 3), n, 3, dimnames = list(NULL, paste0("PC", 1:3)))
+check_instrument_strength(G, X, covariates = pcs)
+```
+
+# Mediator instruments
+
+## Scan for cis-eQTLs
+
+`call_cis_eqtls()` residualises expression and genotypes on covariates
+(FWL) and runs a per-gene cis scan with Benjamini-Hochberg correction
+within gene.
+
+```{r cis-eqtls}
+n <- 80
+dos <- matrix(rbinom(200 * n, 2, 0.3), nrow = 200,
+              dimnames = list(paste0("1:", 1:200, ":A:G"), NULL))
+expr <- matrix(rnorm(20 * n), nrow = 20,
+               dimnames = list(paste0("Gene", 1:20), NULL))
+expr[1, ] <- expr[1, ] + 0.5 * dos[5, ]   # one true cis-eQTL
+gp <- data.frame(gene = paste0("Gene", 1:20), chr = "1",
+                 tss = seq(1, 191, by = 10))
+sp <- data.frame(snp = rownames(dos), chr = "1", pos = 1:200)
+hits <- call_cis_eqtls(expr, dos, gp, sp)
+head(hits$best)
+```
+
+## Build a genetically predicted mediator (GReX-style)
+
+`build_mediator_instruments()` fits an elastic-net cis-prediction model per
+gene (via `glmnet`), keeps genes whose cross-validated out-of-fold
+prediction passes quality gates, and returns the predicted mediator matrix
+`Gm` in the genes x samples orientation expected by `iconic_data()`.
+
+```{r mediator-instruments, eval=requireNamespace("glmnet", quietly = TRUE)}
+set.seed(42)
+n <- 150; p <- 80
+dos <- matrix(rbinom(p * n, 2, 0.3), nrow = p,
+              dimnames = list(paste0("1:", 1:p, ":A:G"),
+                              paste0("S", 1:n)))
+expr <- matrix(rnorm(4 * n), nrow = 4,
+               dimnames = list(paste0("Gene", 1:4), paste0("S", 1:n)))
+expr[1, ] <- expr[1, ] + 0.9 * scale(dos[5, ]) + 0.9 * scale(dos[15, ])
+gp <- data.frame(gene = paste0("Gene", 1:4), chr = "1",
+                 tss = c(5, 25, 45, 65))
+sp <- data.frame(snp = rownames(dos), chr = "1", pos = 1:p)
+fit <- build_mediator_instruments(expr, dos, gp, sp, seed = 1)
+fit$qc
+```
+
+Only Gene1, which carries the two planted cis-eQTLs, passes the
+cross-validation gates.
+
+# Negative controls from high-dimensional panels
+
+## Methylation beta to M-values
+
+Methylation beta values are heteroscedastic at the extremes;
+`beta_to_m()` applies the logit transform with clipping.
+
+```{r beta-to-m}
+b <- matrix(runif(200, 0.01, 0.99), nrow = 20,
+            dimnames = list(paste0("cg", 1:20), paste0("S", 1:10)))
+m <- beta_to_m(b)
+range(m)
+```
+
+## Residualise on covariates
+
+Before extracting negative-control factors, remove technical covariates
+(for example batch) from the panel.
+
+```{r residualize}
+x <- matrix(rnorm(100 * 40), nrow = 100,
+            dimnames = list(paste0("f", 1:100), paste0("S", 1:40)))
+batch <- factor(rep(c("A", "B"), each = 20))
+cv <- model.matrix(~ batch)[, -1, drop = FALSE]
+xr <- residualize_matrix(x, cv)
+cor(as.numeric(xr[1, ]), as.numeric(cv))
+```
+
+## Extract negative-control factors with PCA
+
+`build_w_pcs()` computes the top principal components of the (residualised)
+panel — the `W` matrix used by the proximal and COCA estimators.
+
+```{r build-w}
+x <- matrix(rnorm(500 * 60), nrow = 500,
+            dimnames = list(paste0("f", 1:500), paste0("S", 1:60)))
+w <- build_w_pcs(x, n_pcs = 5)
+dim(w$W)
+w$variance_explained
+```
+
+## Apply FUSION-style TWAS weights
+
+Pre-computed transcriptomic weights (FUSION `.wgt.RDat` files, or an
+in-memory list with the same structure) can be applied to a dosage panel to
+build a genetically predicted expression panel, which can itself serve as a
+negative-control or mediator-instrument panel.
+
+```{r fusion-weights}
+dos <- matrix(rbinom(10 * 50, 2, 0.3), nrow = 10,
+              dimnames = list(paste0("rs", 1:10), paste0("S", 1:50)))
+mk_wgt <- function(snps, w) {
+  list(wgt.matrix = matrix(w, ncol = 1, dimnames = list(NULL, "enet")),
+       snps = data.frame(V2 = snps),
+       cv.performance = matrix(0.2, nrow = 1,
+                               dimnames = list("rsq", "enet")))
+}
+wlist <- list(GeneA = mk_wgt(paste0("rs", 1:5), rep(0.1, 5)),
+              GeneB = mk_wgt(paste0("rs", 6:10), rep(-0.2, 5)))
+pos <- data.frame(ID = c("GeneA", "GeneB"), WGT = c("a.wgt.RDat", "b.wgt.RDat"))
+out <- apply_fusion_weights(dos, pos = pos, weights = wlist)
+dim(out$predicted)
+```
+
+# Importing a SummarizedExperiment
+
+For Bioconductor-native workflows, `as_iconic_data()` dispatches on
+`SummarizedExperiment`: the primary assay becomes the outcome panel `Y`, an
+optional second assay becomes the mediator panel `M`, and `colData`
+columns supply the exposure, instruments, negative controls, covariates,
+and survival endpoints.
+
+```{r summarized-experiment, eval=requireNamespace("SummarizedExperiment", quietly = TRUE)}
+se <- SummarizedExperiment::SummarizedExperiment(
+  assays = list(expr = matrix(rnorm(20 * 60), 20, 60,
+                              dimnames = list(paste0("gene", 1:20),
+                                              paste0("S", 1:60)))),
+  colData = S4Vectors::DataFrame(
+    bmi = rnorm(60), prs = rnorm(60),
+    nc1 = rnorm(60), nc2 = rnorm(60), age = rnorm(60))
+)
+data <- as_iconic_data(se, assay = "expr", exposure = "bmi",
+                       instrument = "prs",
+                       negative_controls = c("nc1", "nc2"),
+                       covariates = "age")
+print(data)
+```
+
+From here the standard workflow applies: `iconic_diagnose()`,
+`iconic_estimate()`, and the sensitivity machinery described in
+`vignette("iconic-walkthrough")`.
+
+# Session information
+
+```{r sessionInfo}
+sessionInfo()
+```

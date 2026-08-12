@@ -90,15 +90,14 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 #' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 #' W = matrix(rnorm(100*10), 10, 100))
 #' diag <- iconic_diagnose(data)
 #' est <- iconic_estimate(data, diagnosis = diag)
-#' conf <- infer_confounding(data, diagnosis = diag, estimate = est, n_cores = 2)
+#' conf <- infer_confounding(data, diagnosis = diag, estimate = est,
+#'                           max_infer_tasks = 5)
 #' print(conf)
-#' }
 #'
 #' @param max_infer_tasks Cap on the number of mediators and of outcome
 #' features used when \code{estimate = NULL} and estimates must be computed
@@ -210,6 +209,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 #' scaled by the standard deviation of X.
 #'
 #' @keywords internal
+#' @noRd
 .infer_conf_strength <- function(estimate, data, F_G, warnings) {
   default <- list(
     estimate = 0.8, method = "default (no inference)",
@@ -292,6 +292,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 #' mediator-outcome confounding. Averaged across features.
 #'
 #' @keywords internal
+#' @noRd
 .infer_mo_confounding <- function(estimate, data, F_G, F_Gm, warnings) {
   default <- list(
     estimate = 0.8, method = "default (no inference)",
@@ -362,6 +363,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 #' @param path 1 for omega_1 (W1), 2 for omega_2 (W2).
 #' @param n_cores Number of parallel workers for the NC-feature loop.
 #' @keywords internal
+#' @noRd
 .infer_omega <- function(data, path = 1, warnings, n_cores = 1) {
   default <- list(
     estimate = 0.7, method = "default (no inference)",
@@ -439,6 +441,7 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 #' @param data An iconic_data object.
 #' @param n_cores Number of parallel workers for the permutation loop.
 #' @keywords internal
+#' @noRd
 .infer_k <- function(data, warnings, n_cores = 1) {
   default <- list(
     estimate = 1L, ci = c(1L, 2L), method = "default (no inference)",
@@ -517,6 +520,12 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
 #' @param ... Unused.
 #' @return Invisibly returns `x` (the `iconic_confounding` object); called for its side effect of printing a human-readable summary.
 #' @export
+#' @examples
+#' set.seed(1)
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'   G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#' cf <- infer_confounding(data, max_infer_tasks = 5)
+#' print(cf)
 print.iconic_confounding <- function(x, ...) {
   cat("<iconic_confounding>\n")
 

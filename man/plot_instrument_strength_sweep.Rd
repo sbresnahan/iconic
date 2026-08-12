@@ -31,3 +31,7 @@ Produces a 2-panel figure showing IV2SLS bias and Type I error
 as a function of first-stage partial F-statistic, with the
 conventional weak-instrument threshold (F = 10) marked.
 }
+\examples{
+res <- sweep_instrument_strength(pi_GX_grid = c(0.05, 0.2), n_iter = 2)
+plot_instrument_strength_sweep(res)
+}

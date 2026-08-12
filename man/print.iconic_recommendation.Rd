@@ -17,3 +17,12 @@ Invisibly returns \code{x} (the \code{iconic_recommendation} object); called for
 \description{
 Print method for iconic_recommendation objects
 }
+\examples{
+data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+  G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+diag <- iconic_diagnose(data)
+est <- iconic_estimate(data, diagnosis = diag)
+rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
+  auto_sensitivity = FALSE)
+print(rec)
+}

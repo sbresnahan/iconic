@@ -24,3 +24,7 @@ Draws one standardised genetic instrument for the exposure, as an additive
 score over \code{n_snps} biallelic SNPs (dosages \code{Binomial(2, maf)}). Mirrors the
 single-instrument (PRS) design used throughout the SCENIC framework.
 }
+\examples{
+g <- simulate_single_genetic_instrument(100, n_snps = 10, seed = 1)
+length(g$G)
+}

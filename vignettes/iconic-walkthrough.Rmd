@@ -3,9 +3,10 @@ title: "ICONIC: Causal Model Selection with Genetic Instruments and Negative Con
 author: "Sean T. Bresnahan and Charis Xiong"
 date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette:
+  BiocStyle::html_document:
     toc: true
     toc_depth: 3
+    toc_float: true
 vignette: >
   %\VignetteIndexEntry{ICONIC Walkthrough}
   %\VignetteEngine{knitr::rmarkdown}
@@ -23,6 +24,28 @@ set.seed(1)
 library(iconic)
 has_torch <- check_torch_setup()
 ```
+
+# Introduction
+
+This vignette walks through the complete `iconic` workflow on a simulated dataset: assembling an `iconic_data` object, diagnosing estimator eligibility, estimating natural direct and indirect effects, stress-testing the result, and planning a prospective study.
+
+# Installation
+
+`iconic` is being submitted to Bioconductor. Once accepted, install the
+release version with:
+
+```{r install-bioc, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("iconic")
+```
+
+The development version is available from GitHub:
+
+```{r install-github, eval=FALSE}
+BiocManager::install("sbresnahan/iconic")
+```
+
 
 # What this package is for
 

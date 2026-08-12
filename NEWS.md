@@ -1,3 +1,57 @@
+# iconic 0.99.0
+
+## New features
+
+- **Exposure-instrument helpers** (`R/instruments_exposure.R`): a
+  GWAS-to-instrument workflow distilled from the case-study scripts.
+  `qc_gwas_sumstats()` standardises and QC-filters GWAS summary statistics
+  (column aliases, missing/invalid rows, IQR-based extreme-beta filter,
+  ambiguous-strand removal, SD-ratio check); `build_prs_ldpred2()` fits
+  LDpred2-auto weights from summary statistics plus an LD reference and
+  scores a target panel; `score_pgs_panel()` applies a published
+  per-variant weight panel (e.g. PGS Catalog) to a dosage matrix with
+  automatic allele-flip handling; `check_instrument_strength()` computes
+  the first-stage partial F / partial R2 and flags weak instruments.
+
+- **Mediator-instrument helpers** (`R/instruments_mediator.R`):
+  `call_cis_eqtls()` calls cis-eQTLs for a gene panel from genotype and
+  expression matrices; `build_mediator_instruments()` trains per-gene
+  elastic-net cis instruments and returns the genetically predicted
+  mediator panel (`Gm`) with QC.
+
+- **Negative-control helpers** (`R/negative_controls.R`): `beta_to_m()`
+  logit-transforms methylation beta values with clipping;
+  `residualize_matrix()` residualises a feature matrix on covariates
+  (chunked); `build_w_pcs()` builds a negative-control panel of principal
+  components; `apply_fusion_weights()` applies FUSION/TWAS weights to a
+  dosage matrix.
+
+- **SummarizedExperiment interop**: `as_iconic_data()` is now an S3 generic
+  with a `SummarizedExperiment` method that pulls the outcome panel from an
+  assay and sample-level fields (exposure, instruments, negative controls,
+  covariates, survival endpoints) from `colData`, in addition to the
+  existing `iconic_data` / `load_real_input_data` paths.
+
+- **New vignette**: `vignette("iconic-instruments")` walks through the
+  instrument-construction and negative-control workflow end to end.
+
+## Bioconductor submission preparation
+
+- Version bumped to 0.99.0; `biocViews` added (StatisticalMethod, Genetics,
+  MultipleComparison, Regression, Transcriptomics, RNASeq, Survival);
+  `BiocStyle` used for all vignettes, each gaining Introduction,
+  Installation, and Session information sections.
+- `withr` moved to Imports; `bigsnpr`, `bigstatsr`, `glmnet`, `irlba`,
+  `SummarizedExperiment`, `S4Vectors`, and `BiocStyle` listed under
+  Suggests and used conditionally.
+- Code hygiene for CRAN/BiocCheck: `set.seed()` replaced with
+  `withr::local_seed()`, `cat()` with `message()`, `seq_len()`-style
+  indexing, and signaler calls no longer use `paste()` or message keywords.
+- Every exported function now has a runnable `@examples` block and a
+  documented `@return`; `\dontrun{}` removed (torch-dependent examples are
+  guarded by `check_torch_setup()`) and `\donttest{}` minimised.
+- Added testthat coverage for all new functions.
+
 # iconic 0.9.9.3
 
 ## Documentation and housekeeping

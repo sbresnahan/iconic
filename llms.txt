@@ -1,0 +1,662 @@
+# ICONIC
+
+[![Project Status:
+Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![R-CMD-check](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sbresnahan/iconic/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/sbresnahan/iconic/graph/badge.svg)](https://app.codecov.io/gh/sbresnahan/iconic)
+
+## About the Package
+
+![ICONIC logo](reference/figures/logo.png)
+
+The R package `iconic` provides a model selection workflow for causal
+inference with genetic instruments and negative controls in
+observational omics data. It fits eight estimators of the natural direct
+and indirect effects (NDE / NIE), diagnoses which are valid for the
+user’s data, stress-tests them against confounding and pleiotropy
+violations, and recommends the one most likely to be unbiased.
+
+The motivating application is estimating the causal effect of an
+exposure (e.g. gestational diabetes mellitus) on a panel of molecular
+outcomes (e.g. placental transcriptome), but the package is applicable
+to any observational study with a genetic instrument, negative controls,
+and a mediator and/or outcome panel. A hybrid generative texture model
+(a torch GAN for sample-level structure and a Gaussian copula for the
+mediator panel) lets the sensitivity analysis mirror the marginal and
+joint structure of the user’s cohort. Time-to-event outcomes are
+supported on the Cox log-hazard-ratio and restricted-mean-survival-time
+scales.
+
+See the package vignettes for a quickstart guide, an overview of each
+functional area, and worked examples.
+
+We welcome your feedback and questions:
+
+- Email <seantbresnahan3@gmail.com> for general questions
+
+## Estimators
+
+`iconic` implements eight estimators of the total effect and its
+decomposition into the natural direct and indirect effects. Each
+estimator requires different identifying assumptions;
+[`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md)
+checks which are met for your data.
+
+### Total-effect estimators
+
+- **UNADJ** (confounded reference): ordinary regression of the outcome
+  on the exposure and covariates. No identifying assumption; biased by
+  unmeasured confounding. Serves as the bias reference.
+- **DIRECT**: regression of the outcome on the exposure, instrument,
+  negative controls, and covariates. Uses all observables but does not
+  remove unmeasured confounding; structurally biased.
+- **COCA** (Control Outcome Calibration Approach): regresses the
+  negative controls on the outcome and exposure, then recovers the
+  effect as the ratio of the two coefficients. Efficient when the
+  negative controls are strong proxies of the confounder; unstable when
+  the outcome coefficient is near zero. Incompatible with survival
+  outcomes.
+- **IV2SLS** (two-stage least squares): instruments the exposure with
+  the genetic instrument in the first stage, then regresses the outcome
+  on the fitted exposure. Requires a valid instrument (independent of
+  the confounder, first-stage F-statistic at least 10).
+- **PGC** (proximal g-computation): three-stage estimator that builds a
+  bridge proxy from the negative controls and includes it in the outcome
+  regression. Requires negative-control completeness (enough valid
+  controls to cover the latent confounders).
+
+### Mediation-specific estimators
+
+These estimators decompose the total effect into the NDE (direct path)
+and NIE (indirect path through the mediator) and require either a
+mediator instrument or path-specific negative controls.
+
+- **IV2SLS2** (two-stage MR): three sequential two-stage least squares
+  stages instrumenting both the exposure (with the exposure instrument)
+  and the mediator (with the mediator instrument). Requires both
+  instruments valid with first-stage F-statistic at least 10.
+- **PGC2** (two-stage proximal mediation): builds path-specific bridge
+  proxies from path-specific negative controls — one for the
+  exposure-mediator confounder and one for the mediator-outcome
+  confounder. Requires completeness at both stages.
+- **PGC2Gm** (negative-control-augmented): combines the first bridge
+  with a mediator-instrumented mediator. Requires both path-specific
+  negative controls and a mediator instrument; residual bias from a
+  confounder-correlated mediator instrument is smaller than IV2SLS2 but
+  nonzero.
+
+### Supported data types and functionalities
+
+|                              | UNADJ | DIRECT | COCA | IV2SLS | PGC | IV2SLS2 | PGC2 | PGC2Gm |
+|------------------------------|:-----:|:------:|:----:|:------:|:---:|:-------:|:----:|:------:|
+| Continuous outcome           |   X   |   X    |  X   |   X    |  X  |    X    |  X   |   X    |
+| Survival outcome             |   X   |   X    |      |   X    |  X  |    X    |  X   |   X    |
+| Total effect                 |   X   |   X    |  X   |   X    |  X  |    X    |  X   |   X    |
+| Mediation (NDE + NIE)        |   X   |   X    |  X   |   X    |  X  |    X    |  X   |   X    |
+| Requires exposure instrument |       |        |      |   X    |     |    X    |      |        |
+| Requires mediator instrument |       |        |      |        |     |    X    |      |   X    |
+| Requires negative controls   |       |   X    |  X   |        |  X  |         |  X   |   X    |
+| Requires completeness        |       |        |      |        |  X  |         |  X   |   X    |
+
+## Benchmark simulation mode
+
+[`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)
+implements a structural data-generating process with parametric Gaussian
+noise and no learned texture. The ground truth (NDE, NIE, confounding
+strength, instrument strength, NC coverage) is a closed-form function of
+the parameters, making it suitable for estimator validation under
+controlled confounding scenarios.
+
+![Diagram of the benchmark simulation mode: two latent confounders open
+the exposure-mediator and mediator-outcome backdoor paths, with the
+exposure, mediator, and outcome generated from the structural causal
+model under parametric Gaussian
+noise.](reference/figures/iconic_benchmark_simulation_mode.png)
+
+Diagram of the benchmark simulation mode: two latent confounders open
+the exposure-mediator and mediator-outcome backdoor paths, with the
+exposure, mediator, and outcome generated from the structural causal
+model under parametric Gaussian noise.
+
+**Benchmark simulation mode: the structural synthetic-data generator
+(`generate_toy_data`).** Two latent confounders are drawn independently
+— one opening the backdoor path from exposure to mediator, the other
+opening the backdoor path from mediator to outcome. The exposure,
+mediator, and outcome are generated from the structural causal model
+with parametric Gaussian noise at every stage. Genetic instruments for
+the exposure and mediator are drawn from a standard normal, and the
+path-specific negative controls are generated as coverage-weighted
+functions of the confounders plus noise. All ground-truth quantities are
+fixed, tunable parameters.
+
+## Generative texture pipeline
+
+For sensitivity and prospective analyses, ICONIC trains a hybrid
+generative texture model on the user’s own data so that the synthetic
+data mirror the marginal and joint structure of the user’s cohort. The
+model combines a sample-level GAN (for mixed continuous and categorical
+covariate structure) with a feature-level Gaussian copula (for the
+mediator panel’s marginals and cross-feature dependence). Neither
+component learns the causal effect; the ground truth is imposed by the
+structural skeleton and guaranteed by construction.
+
+![Diagram of the generative texture pipeline: a sample-level GAN and a
+feature-level Gaussian copula are trained on the user’s data, injected
+into the structural causal model, and used to draw a synthetic dataset
+with realistic texture and known ground
+truth.](reference/figures/ICONIC_generative_texture.png)
+
+Diagram of the generative texture pipeline: a sample-level GAN and a
+feature-level Gaussian copula are trained on the user’s data, injected
+into the structural causal model, and used to draw a synthetic dataset
+with realistic texture and known ground truth.
+
+**Data-calibrated simulation mode: the hybrid GAN-plus-copula generative
+texture pipeline.** (1) Texture learning: a sample-level GAN and a
+feature-level Gaussian copula are trained independently on the user’s
+data. (2) Structural skeleton: the learned texture is injected into the
+structural causal model, drawn independently of the latent confounders.
+(3) Synthetic dataset: the result is a synthetic dataset with realistic
+data texture and known ground truth.
+
+## Installation
+
+`iconic` is being submitted to Bioconductor. Once accepted, install the
+release with:
+
+``` r
+
+# install.packages("BiocManager")
+BiocManager::install("iconic")
+```
+
+The development version is available from GitHub:
+
+``` r
+
+# install.packages("remotes")
+remotes::install_github("sbresnahan/iconic")
+
+# The generative texture model (GAN) requires torch:
+install.packages("torch")
+```
+
+## Quick start
+
+``` r
+
+library(iconic)
+set.seed(1)
+
+# Simulated mediation panel: exposure X, mediator M, outcome Y,
+# genetic instrument G, negative controls W.
+dat <- generate_toy_data(n = 200, n_features = 10, seed = 1)
+idat <- iconic_data(
+  X = dat$X, Y = dat$Y, M = dat$M,
+  G = dat$G, W = dat$W, covariates = dat$synthetic_data
+)
+
+# 1. Diagnose which estimators are eligible.
+diag <- iconic_diagnose(idat)
+
+# 2. Estimate NDE/NIE with all eligible estimators.
+est <- iconic_estimate(idat)
+
+# 3. Train a texture model once and attach it (reused downstream).
+input <- load_real_input_data(
+  X_matrix = matrix(dat$X, nrow = 1), Y_matrix = t(dat$Y),
+  M_matrix = t(dat$M), W_matrix = t(dat$W),
+  covariates_df = dat$synthetic_data
+)
+idat$trained_gan <- train_gan_on_real_data(
+  input$gan_training_data,
+  feature_correlations = input$feature_correlations,
+  feature_texture = input$feature_texture,
+  epochs = 100, seed = 1
+)
+
+# 4. Stress-test robustness (reuses the attached GAN).
+sens <- iconic_sensitivity(idat, confounding = "inferred")
+
+# 5. Recommend a single estimator.
+rec <- iconic_recommend(idat, diag, est, sens)
+
+# 6. Prospect for future studies (reuses the attached GAN).
+pros <- iconic_prospect(idat, confounding = "inferred")
+```
+
+## Key functions
+
+| Function | Purpose |
+|----|----|
+| [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md) | Standardize exposure, outcome, mediator, instruments, and negative controls into one object. |
+| [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md) | Report instrument strength, negative-control validity (A1, A2, A2’), completeness, and estimator eligibility. |
+| [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md) | Fit all eligible estimators; return per-feature NDE, NIE, SE, p-value. |
+| [`train_gan_on_real_data()`](https://seantbresnahan.com/iconic/reference/train_gan_on_real_data.md) | Train a hybrid GAN + copula texture model from your data. |
+| [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md) | Sweep instrument exogeneity; report bias degradation and tipping points. |
+| [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md) | Estimate confounding strength, NC coverage, and latent confounder count from the data. |
+| [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md) | Combine eligibility, estimates, and robustness into a ranked recommendation. |
+| [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md) | Sweep instrument strength to plan future studies. |
+| [`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md) | Simulate a mediation panel with known ground truth. |
+
+## Vignettes
+
+- **ICONIC Walkthrough**:
+  [`vignette("iconic-walkthrough")`](https://seantbresnahan.com/iconic/articles/iconic-walkthrough.md)
+  — the full model-selection workflow end to end.
+- **Building Instruments and Negative Controls**:
+  [`vignette("iconic-instruments")`](https://seantbresnahan.com/iconic/articles/iconic-instruments.md)
+  — constructing exposure instruments (GWAS QC, LDpred2, PGS panels),
+  mediator instruments (cis-eQTLs, elastic-net prediction), and
+  negative-control panels, plus SummarizedExperiment interop.
+- **Diagnosing Estimator Eligibility**:
+  [`vignette("iconic-diagnose")`](https://seantbresnahan.com/iconic/articles/iconic-diagnose.md)
+  — instrument strength, negative-control validity screens,
+  completeness, and the eligibility table.
+- **Sensitivity Analysis and Confounding Inference**:
+  [`vignette("iconic-sensitivity")`](https://seantbresnahan.com/iconic/articles/iconic-sensitivity.md)
+  — sweeping instrument exogeneity, tipping points, and inferring
+  confounding parameters from data.
+- **The Generative Texture Model**:
+  [`vignette("iconic-texture-model")`](https://seantbresnahan.com/iconic/articles/iconic-texture-model.md)
+  — the hybrid GAN + copula architecture, training, and when to use each
+  simulation mode.
+- **Survival Outcomes**:
+  [`vignette("iconic-survival")`](https://seantbresnahan.com/iconic/articles/iconic-survival.md)
+  — Cox log-HR and RMST effect scales, COCA incompatibility, and the
+  2SPS architecture.
+
+## Citation
+
+Cite the accompanying manuscript (in preparation):
+
+> Bresnahan ST, Xiong C, et al. ICONIC: an R package for
+> negative-control and genetic-instrument causal inference and mediation
+> diagnostics in observational omics studies.
+
+## License
+
+MIT (c) Sean T. Bresnahan and Charis Xiong.
+
+# Package index
+
+## Data input & containers
+
+Standardise exposure, outcome, mediator, instrument, and
+negative-control data into the object used across the package, and
+simulate ground-truth panels.
+
+- [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  : Construct a standardized data object for ICONIC model selection
+- [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
+  : Convert external data containers to iconic_data
+- [`load_real_input_data()`](https://seantbresnahan.com/iconic/reference/load_real_input_data.md)
+  : Load and standardise a real multi-omic dataset for GAN training
+- [`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)
+  : Generate one synthetic dataset (internal)
+- [`simulate_single_genetic_instrument()`](https://seantbresnahan.com/iconic/reference/simulate_single_genetic_instrument.md)
+  : Simulate a single genetic instrument
+
+## Exposure instruments
+
+Build and validate a genetic instrument for the exposure from GWAS
+summary statistics or a published polygenic-score panel.
+
+- [`qc_gwas_sumstats()`](https://seantbresnahan.com/iconic/reference/qc_gwas_sumstats.md)
+  : Standardize and QC GWAS summary statistics
+- [`build_prs_ldpred2()`](https://seantbresnahan.com/iconic/reference/build_prs_ldpred2.md)
+  : Build an exposure polygenic score with LDpred2-auto
+- [`score_pgs_panel()`](https://seantbresnahan.com/iconic/reference/score_pgs_panel.md)
+  : Score a published polygenic-score panel on a dosage matrix
+- [`check_instrument_strength()`](https://seantbresnahan.com/iconic/reference/check_instrument_strength.md)
+  : Check first-stage instrument strength (partial F)
+
+## Mediator instruments
+
+Call cis-eQTLs and train genetically-predicted expression instruments
+for the mediator panel.
+
+- [`call_cis_eqtls()`](https://seantbresnahan.com/iconic/reference/call_cis_eqtls.md)
+  : Scan for cis-eQTLs of each gene
+- [`build_mediator_instruments()`](https://seantbresnahan.com/iconic/reference/build_mediator_instruments.md)
+  : Build mediator instruments via per-gene elastic net
+
+## Negative controls
+
+Construct negative-control panels and run the validity, independence,
+support, and completeness diagnostics.
+
+- [`beta_to_m()`](https://seantbresnahan.com/iconic/reference/beta_to_m.md)
+  : Convert methylation beta values to M-values
+
+- [`residualize_matrix()`](https://seantbresnahan.com/iconic/reference/residualize_matrix.md)
+  : Residualize a feature matrix on covariates
+
+- [`build_w_pcs()`](https://seantbresnahan.com/iconic/reference/build_w_pcs.md)
+  : Build a negative-control panel from principal components
+
+- [`apply_fusion_weights()`](https://seantbresnahan.com/iconic/reference/apply_fusion_weights.md)
+  : Apply FUSION/TWAS eQTL weights to a dosage matrix
+
+- [`nc_proxy()`](https://seantbresnahan.com/iconic/reference/nc_proxy.md)
+  : Direct-proxy negative-control model
+
+- [`nc_cpg()`](https://seantbresnahan.com/iconic/reference/nc_cpg.md) :
+  CpG-predicted-expression negative-control model (SCENIC case)
+
+- [`list_nc_models()`](https://seantbresnahan.com/iconic/reference/list_nc_models.md)
+  : List the built-in negative-control models
+
+- [`nc_validity_check()`](https://seantbresnahan.com/iconic/reference/nc_validity_check.md)
+  : Check negative-control validity across confounding scenarios
+
+- [`nc_validity_screen()`](https://seantbresnahan.com/iconic/reference/nc_validity_screen.md)
+  :
+
+  Screen negative controls for exposure dependence (W *\|* X \| C)
+
+- [`nc_independence_check()`](https://seantbresnahan.com/iconic/reference/nc_independence_check.md)
+  :
+
+  Test instrument-independence of negative controls (W *\|* G \| C)
+
+- [`nc_independence_check_gm()`](https://seantbresnahan.com/iconic/reference/nc_independence_check_gm.md)
+  :
+
+  Test mediator-instrument independence of negative controls (W *\|* Gm
+  \| C)
+
+- [`nc_support_check()`](https://seantbresnahan.com/iconic/reference/nc_support_check.md)
+  : Negative-control support/range check
+
+- [`nc_completeness_check()`](https://seantbresnahan.com/iconic/reference/nc_completeness_check.md)
+  : Check negative-control completeness (dimensional +
+  covariance-capture)
+
+- [`nc_completeness_capture()`](https://seantbresnahan.com/iconic/reference/nc_completeness_capture.md)
+  : Covariance-capture completeness test
+
+## Core workflow
+
+The end-to-end model-selection pipeline: diagnose eligibility, estimate
+effects, stress-test robustness, and recommend an estimator.
+
+- [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md)
+  : Diagnose data and determine estimator eligibility
+- [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md)
+  : Fit all eligible estimators on real data
+- [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  : Sensitivity (degradation) surface and effect-decomposition bias
+  sweep
+- [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)
+  : Recommend the best causal estimator for the user's data
+- [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  : Prospective bias-reduction analysis for data without instruments or
+  negative controls
+- [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md)
+  : Infer confounding parameters from the user's data
+- [`recommend_estimator()`](https://seantbresnahan.com/iconic/reference/recommend_estimator.md)
+  : Recommend the preferred estimator from a sensitivity sweep
+
+## Estimators (low-level)
+
+Individual NDE/NIE estimators. Most users call these through
+iconic_estimate() rather than directly.
+
+- [`fit_coca()`](https://seantbresnahan.com/iconic/reference/fit_coca.md)
+  : COCA estimator: Negative-Control Outcome Correction via ratio
+- [`fit_coca_mediation()`](https://seantbresnahan.com/iconic/reference/fit_coca_mediation.md)
+  : COCA mediation estimator: negative-control calibration of both
+  stages
+- [`fit_coca_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_coca_mediation_surv.md)
+  : COCA survival mediation estimator: NOT supported (returns NA)
+- [`fit_coca_surv()`](https://seantbresnahan.com/iconic/reference/fit_coca_surv.md)
+  : COCA survival estimator: NOT supported (returns NA)
+- [`fit_direct()`](https://seantbresnahan.com/iconic/reference/fit_direct.md)
+  : DIRECT estimator: OLS with instrument and negative-control as
+  covariates
+- [`fit_direct_mediation()`](https://seantbresnahan.com/iconic/reference/fit_direct_mediation.md)
+  : DIRECT mediation estimator: OLS with instrument and NC as covariates
+- [`fit_direct_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_direct_mediation_surv.md)
+  : DIRECT survival mediation estimator: Cox / RMST with G and W
+  covariates
+- [`fit_direct_surv()`](https://seantbresnahan.com/iconic/reference/fit_direct_surv.md)
+  : DIRECT survival estimator: Cox / RMST with instrument and NC
+  covariates
+- [`fit_iv2sls()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls.md)
+  : IV2SLS estimator: Two-Stage Least Squares with genetic instrument
+- [`fit_iv2sls_mediation()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation.md)
+  : IV2SLS mediation estimator: instrumented exposure in both stages
+- [`fit_iv2sls_mediation2()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2.md)
+  : IV2SLS2 mediation estimator: 2-stage MR with instruments for both X
+  and M
+- [`fit_iv2sls_mediation2_surv()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2_surv.md)
+  : IV2SLS2 survival mediation estimator: 2-stage MR with Cox / RMST
+  outcome
+- [`fit_iv2sls_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation_surv.md)
+  : IV2SLS survival mediation estimator: single-instrument 2SPS with Cox
+  / RMST
+- [`fit_iv2sls_surv()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_surv.md)
+  : IV2SLS survival estimator: two-stage predictor substitution with Cox
+  / RMST
+- [`fit_pgc()`](https://seantbresnahan.com/iconic/reference/fit_pgc.md)
+  : PGC estimator: Proxy G-Component Correction (matrix bridge)
+- [`fit_pgc_mediation()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation.md)
+  : PGC mediation estimator: bridge-function-adjusted natural effects
+  (matrix bridge)
+- [`fit_pgc_mediation2()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2.md)
+  : PGC-2 mediation estimator: two-stage proximal mediation with
+  path-specific bridges
+- [`fit_pgc_mediation2_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2_surv.md)
+  : PGC2 / PGC2Gm survival mediation estimator: path-specific bridges
+  with Cox / RMST
+- [`fit_pgc_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation_surv.md)
+  : PGC survival mediation estimator: single-panel bridge with Cox /
+  RMST
+- [`fit_pgc_scalar()`](https://seantbresnahan.com/iconic/reference/fit_pgc_scalar.md)
+  : PGC estimator: Proxy G-Component Correction (scalar bridge)
+- [`fit_pgc_scalar_mediation()`](https://seantbresnahan.com/iconic/reference/fit_pgc_scalar_mediation.md)
+  : PGC mediation estimator: bridge-function-adjusted natural effects
+  (scalar bridge)
+- [`fit_pgc_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_surv.md)
+  : PGC survival estimator: proxy G-component correction with Cox / RMST
+- [`fit_unadj_mediation()`](https://seantbresnahan.com/iconic/reference/fit_unadj_mediation.md)
+  : UNADJ mediation estimator: naive Baron-Kenny style
+- [`fit_unadj_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_unadj_mediation_surv.md)
+  : UNADJ survival mediation estimator: naive Baron-Kenny with Cox /
+  RMST
+- [`fit_unadj_surv()`](https://seantbresnahan.com/iconic/reference/fit_unadj_surv.md)
+  : UNADJ survival estimator: unadjusted Cox / RMST regression
+
+## Sensitivity & robustness analysis
+
+Generative-model stress tests of instrument exogeneity and pleiotropy,
+and p-value combination helpers.
+
+- [`gan_sensitivity()`](https://seantbresnahan.com/iconic/reference/gan_sensitivity.md)
+  : Benchmark estimators across confounding scenarios on synthetic data
+- [`gan_mediation_sensitivity()`](https://seantbresnahan.com/iconic/reference/gan_mediation_sensitivity.md)
+  : Benchmark mediation estimators across confounding scenarios
+- [`gan_pleiotropy_sensitivity()`](https://seantbresnahan.com/iconic/reference/gan_pleiotropy_sensitivity.md)
+  : Benchmark estimators across pleiotropy and confounding scenarios
+- [`composite_p_value()`](https://seantbresnahan.com/iconic/reference/composite_p_value.md)
+  : Composite null hypothesis test p-value
+
+## Simulation & sweeps
+
+Simulation drivers and parameter-sweep machinery used for estimator
+validation and benchmarking.
+
+- [`run_simulation()`](https://seantbresnahan.com/iconic/reference/run_simulation.md)
+  : Run repeated simulations for a single parameter configuration
+
+- [`run_single_iteration()`](https://seantbresnahan.com/iconic/reference/run_single_iteration.md)
+  : Generate one synthetic dataset under the generalised SCM
+
+- [`run_mediation_sim()`](https://seantbresnahan.com/iconic/reference/run_mediation_sim.md)
+  : Run repeated mediation simulations for a single parameter
+  configuration
+
+- [`run_null_sim()`](https://seantbresnahan.com/iconic/reference/run_null_sim.md)
+  : Run null simulations to estimate Type I error rates
+
+- [`run_null_mediation_sim()`](https://seantbresnahan.com/iconic/reference/run_null_mediation_sim.md)
+  : Run null mediation simulations to estimate Type I error rates
+
+- [`sweep_instrument_strength()`](https://seantbresnahan.com/iconic/reference/sweep_instrument_strength.md)
+  : Sweep instrument strength
+
+- [`sweep_mediation_null_by_conf()`](https://seantbresnahan.com/iconic/reference/sweep_mediation_null_by_conf.md)
+  : Sweep mediation Type I error across confounding strength levels
+
+- [`sweep_mediation_param()`](https://seantbresnahan.com/iconic/reference/sweep_mediation_param.md)
+  : Sweep a single mediation simulation parameter across a grid
+
+- [`sweep_nc_validity()`](https://seantbresnahan.com/iconic/reference/sweep_nc_validity.md)
+  : Sweep negative-control validity diagnostics
+
+- [`sweep_null_by_conf()`](https://seantbresnahan.com/iconic/reference/sweep_null_by_conf.md)
+  : Sweep Type I error rate across confounding strength levels
+
+- [`sweep_param()`](https://seantbresnahan.com/iconic/reference/sweep_param.md)
+  : Sweep a single simulation parameter across a grid
+
+- [`analyze_methods_robust()`](https://seantbresnahan.com/iconic/reference/analyze_methods_robust.md)
+  : Run all five estimators (plus UNADJ) on one synthetic dataset
+
+- [`analyze_methods_parallel()`](https://seantbresnahan.com/iconic/reference/analyze_methods_parallel.md)
+  :
+
+  Parallel version of
+  [`analyze_methods_robust()`](https://seantbresnahan.com/iconic/reference/analyze_methods_robust.md)
+
+- [`analyze_mediation_robust()`](https://seantbresnahan.com/iconic/reference/analyze_mediation_robust.md)
+  : Run all mediation estimators on one synthetic dataset
+
+- [`scenario_manifest()`](https://seantbresnahan.com/iconic/reference/scenario_manifest.md)
+  : Scenario manifest: truth and parameter ranges for a simulation
+
+## Generative texture model
+
+Train and sample from the hybrid GAN + Gaussian-copula texture model
+that calibrates synthetic data to a cohort.
+
+- [`train_gan_on_real_data()`](https://seantbresnahan.com/iconic/reference/train_gan_on_real_data.md)
+  : Train a generative texture model on real data
+- [`train_feature_texture()`](https://seantbresnahan.com/iconic/reference/train_feature_texture.md)
+  : Train a feature-level texture model for the mediator panel
+- [`sample_texture()`](https://seantbresnahan.com/iconic/reference/sample_texture.md)
+  : Draw synthetic base rows from a trained texture model
+- [`sample_feature_texture()`](https://seantbresnahan.com/iconic/reference/sample_feature_texture.md)
+  : Draw synthetic feature vectors from a trained feature texture model
+- [`check_torch_setup()`](https://seantbresnahan.com/iconic/reference/check_torch_setup.md)
+  : Check whether a working torch installation is available
+
+## Plotting
+
+Visualization functions for diagnostics, sensitivity, and results.
+
+- [`plot_bias()`](https://seantbresnahan.com/iconic/reference/plot_bias.md)
+  : Plot absolute bias vs a swept parameter
+- [`plot_bias_boxplot()`](https://seantbresnahan.com/iconic/reference/plot_bias_boxplot.md)
+  : Grouped boxplots of per-seed bias across a parameter sweep
+- [`plot_bias_distribution()`](https://seantbresnahan.com/iconic/reference/plot_bias_distribution.md)
+  : Baseline bias distribution (single-setting hero plot)
+- [`plot_degradation_surface()`](https://seantbresnahan.com/iconic/reference/plot_degradation_surface.md)
+  : Degradation surface figure
+- [`plot_estimate_distribution()`](https://seantbresnahan.com/iconic/reference/plot_estimate_distribution.md)
+  : Boxplot of estimate distributions from run_simulation()
+- [`plot_estimated_vs_true()`](https://seantbresnahan.com/iconic/reference/plot_estimated_vs_true.md)
+  : Plot estimated effect vs true effect
+- [`plot_estimator_benchmark()`](https://seantbresnahan.com/iconic/reference/plot_estimator_benchmark.md)
+  : Estimator benchmark figure
+- [`plot_feature_correlation_sweep()`](https://seantbresnahan.com/iconic/reference/plot_feature_correlation_sweep.md)
+  : Feature correlation sweep figure
+- [`plot_gan_diagnostics()`](https://seantbresnahan.com/iconic/reference/plot_gan_diagnostics.md)
+  : Compare real vs synthetic marginals from a trained generator
+- [`plot_instrument_strength_sweep()`](https://seantbresnahan.com/iconic/reference/plot_instrument_strength_sweep.md)
+  : Instrument strength sweep figure
+- [`plot_model_selection()`](https://seantbresnahan.com/iconic/reference/plot_model_selection.md)
+  : Model selection workflow figure
+- [`plot_nc_coverage_comparison()`](https://seantbresnahan.com/iconic/reference/plot_nc_coverage_comparison.md)
+  : NC coverage comparison figure
+- [`plot_nc_validity_diagnostics()`](https://seantbresnahan.com/iconic/reference/plot_nc_validity_diagnostics.md)
+  : NC validity diagnostics figure
+- [`plot_pleiotropy_sweep()`](https://seantbresnahan.com/iconic/reference/plot_pleiotropy_sweep.md)
+  : Pleiotropy sweep figure
+- [`plot_power()`](https://seantbresnahan.com/iconic/reference/plot_power.md)
+  : Plot detection rate (power) vs a swept parameter
+- [`plot_prospective_analysis()`](https://seantbresnahan.com/iconic/reference/plot_prospective_analysis.md)
+  : Prospective analysis figure
+- [`plot_sensitivity_heatmap()`](https://seantbresnahan.com/iconic/reference/plot_sensitivity_heatmap.md)
+  : Heatmap of a sensitivity metric across the scenario grid
+- [`plot_type1_boxplot()`](https://seantbresnahan.com/iconic/reference/plot_type1_boxplot.md)
+  : Type I error boxplot per method
+- [`plot_type1_error()`](https://seantbresnahan.com/iconic/reference/plot_type1_error.md)
+  : Bar chart of Type I error rates
+- [`plot_type1_vs_conf()`](https://seantbresnahan.com/iconic/reference/plot_type1_vs_conf.md)
+  : Type I error rate vs confounding strength
+
+## Data constants
+
+Package data constants for estimator display (colours and ordering).
+
+- [`iconic_method_colors`](https://seantbresnahan.com/iconic/reference/iconic_method_colors.md)
+  : Colour palette for iconic methods
+- [`iconic_method_order`](https://seantbresnahan.com/iconic/reference/iconic_method_order.md)
+  : Default method display order
+
+## S3 print & summary methods
+
+Print and summary methods for the result objects returned above.
+
+- [`print(`*`<iconic_confounding>`*`)`](https://seantbresnahan.com/iconic/reference/print.iconic_confounding.md)
+  : Print method for iconic_confounding objects
+- [`print(`*`<iconic_data>`*`)`](https://seantbresnahan.com/iconic/reference/print.iconic_data.md)
+  : Print method for iconic_data objects
+- [`print(`*`<iconic_diagnosis>`*`)`](https://seantbresnahan.com/iconic/reference/print.iconic_diagnosis.md)
+  : Print method for iconic_diagnosis objects
+- [`print(`*`<iconic_feature_texture>`*`)`](https://seantbresnahan.com/iconic/reference/print.iconic_feature_texture.md)
+  : Print method for iconic_feature_texture objects
+- [`print(`*`<iconic_gan>`*`)`](https://seantbresnahan.com/iconic/reference/print.iconic_gan.md)
+  : Print method for iconic_gan objects
+- [`print(`*`<iconic_prospect>`*`)`](https://seantbresnahan.com/iconic/reference/print.iconic_prospect.md)
+  : Print method for iconic_prospect objects
+- [`print(`*`<iconic_recommendation>`*`)`](https://seantbresnahan.com/iconic/reference/print.iconic_recommendation.md)
+  : Print method for iconic_recommendation objects
+- [`print(`*`<iconic_sensitivity>`*`)`](https://seantbresnahan.com/iconic/reference/print.iconic_sensitivity.md)
+  : Print method for iconic_sensitivity objects
+- [`summary(`*`<iconic_diagnosis>`*`)`](https://seantbresnahan.com/iconic/reference/summary.iconic_diagnosis.md)
+  : Summary method for iconic_diagnosis objects
+- [`summary(`*`<iconic_prospect>`*`)`](https://seantbresnahan.com/iconic/reference/summary.iconic_prospect.md)
+  : Summary method for iconic_prospect objects
+- [`summary(`*`<iconic_recommendation>`*`)`](https://seantbresnahan.com/iconic/reference/summary.iconic_recommendation.md)
+  : Summary method for iconic_recommendation objects
+- [`summary(`*`<iconic_sensitivity>`*`)`](https://seantbresnahan.com/iconic/reference/summary.iconic_sensitivity.md)
+  : Summary method for iconic_sensitivity objects
+
+# Articles
+
+### Get started
+
+Start here for the end-to-end workflow.
+
+- [ICONIC: Causal Model Selection with Genetic Instruments and Negative
+  Controls](https://seantbresnahan.com/iconic/articles/iconic-walkthrough.md):
+
+### Core concepts
+
+- [Diagnosing Estimator
+  Eligibility](https://seantbresnahan.com/iconic/articles/iconic-diagnose.md):
+- [Sensitivity Analysis and Confounding
+  Inference](https://seantbresnahan.com/iconic/articles/iconic-sensitivity.md):
+- [The Generative Texture
+  Model](https://seantbresnahan.com/iconic/articles/iconic-texture-model.md):
+- [Survival
+  Outcomes](https://seantbresnahan.com/iconic/articles/iconic-survival.md):
+
+### Data preparation
+
+- [Genetic Instruments and Negative Controls from External
+  Data](https://seantbresnahan.com/iconic/articles/iconic-instruments.md):

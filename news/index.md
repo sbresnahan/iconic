@@ -1,0 +1,1120 @@
+# Changelog
+
+## iconic 0.99.0
+
+### New features
+
+- **Exposure-instrument helpers** (`R/instruments_exposure.R`): a
+  GWAS-to-instrument workflow distilled from the case-study scripts.
+  [`qc_gwas_sumstats()`](https://seantbresnahan.com/iconic/reference/qc_gwas_sumstats.md)
+  standardises and QC-filters GWAS summary statistics (column aliases,
+  missing/invalid rows, IQR-based extreme-beta filter, ambiguous-strand
+  removal, SD-ratio check);
+  [`build_prs_ldpred2()`](https://seantbresnahan.com/iconic/reference/build_prs_ldpred2.md)
+  fits LDpred2-auto weights from summary statistics plus an LD reference
+  and scores a target panel;
+  [`score_pgs_panel()`](https://seantbresnahan.com/iconic/reference/score_pgs_panel.md)
+  applies a published per-variant weight panel (e.g. PGS Catalog) to a
+  dosage matrix with automatic allele-flip handling;
+  [`check_instrument_strength()`](https://seantbresnahan.com/iconic/reference/check_instrument_strength.md)
+  computes the first-stage partial F / partial R2 and flags weak
+  instruments.
+
+- **Mediator-instrument helpers** (`R/instruments_mediator.R`):
+  [`call_cis_eqtls()`](https://seantbresnahan.com/iconic/reference/call_cis_eqtls.md)
+  calls cis-eQTLs for a gene panel from genotype and expression
+  matrices;
+  [`build_mediator_instruments()`](https://seantbresnahan.com/iconic/reference/build_mediator_instruments.md)
+  trains per-gene elastic-net cis instruments and returns the
+  genetically predicted mediator panel (`Gm`) with QC.
+
+- **Negative-control helpers** (`R/negative_controls.R`):
+  [`beta_to_m()`](https://seantbresnahan.com/iconic/reference/beta_to_m.md)
+  logit-transforms methylation beta values with clipping;
+  [`residualize_matrix()`](https://seantbresnahan.com/iconic/reference/residualize_matrix.md)
+  residualises a feature matrix on covariates (chunked);
+  [`build_w_pcs()`](https://seantbresnahan.com/iconic/reference/build_w_pcs.md)
+  builds a negative-control panel of principal components;
+  [`apply_fusion_weights()`](https://seantbresnahan.com/iconic/reference/apply_fusion_weights.md)
+  applies FUSION/TWAS weights to a dosage matrix.
+
+- **SummarizedExperiment interop**:
+  [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
+  is now an S3 generic with a `SummarizedExperiment` method that pulls
+  the outcome panel from an assay and sample-level fields (exposure,
+  instruments, negative controls, covariates, survival endpoints) from
+  `colData`, in addition to the existing `iconic_data` /
+  `load_real_input_data` paths.
+
+- **New vignette**:
+  [`vignette("iconic-instruments")`](https://seantbresnahan.com/iconic/articles/iconic-instruments.md)
+  walks through the instrument-construction and negative-control
+  workflow end to end.
+
+### Bioconductor submission preparation
+
+- Version bumped to 0.99.0; `biocViews` added (StatisticalMethod,
+  Genetics, MultipleComparison, Regression, Transcriptomics, RNASeq,
+  Survival); `BiocStyle` used for all vignettes, each gaining
+  Introduction, Installation, and Session information sections.
+- `withr` moved to Imports; `bigsnpr`, `bigstatsr`, `glmnet`, `irlba`,
+  `SummarizedExperiment`, `S4Vectors`, and `BiocStyle` listed under
+  Suggests and used conditionally.
+- Code hygiene for CRAN/BiocCheck:
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) replaced with
+  [`withr::local_seed()`](https://withr.r-lib.org/reference/with_seed.html),
+  [`cat()`](https://rdrr.io/r/base/cat.html) with
+  [`message()`](https://rdrr.io/r/base/message.html),
+  [`seq_len()`](https://rdrr.io/r/base/seq.html)-style indexing, and
+  signaler calls no longer use
+  [`paste()`](https://rdrr.io/r/base/paste.html) or message keywords.
+- Every exported function now has a runnable `@examples` block and a
+  documented `@return`; `\dontrun{}` removed (torch-dependent examples
+  are guarded by
+  [`check_torch_setup()`](https://seantbresnahan.com/iconic/reference/check_torch_setup.md))
+  and `\donttest{}` minimised.
+- Added testthat coverage for all new functions.
+
+## iconic 0.9.9.3
+
+### Documentation and housekeeping
+
+- **Documentation cleanup.** Removed version-control/changelog language
+  from roxygen help pages, comments, and defunct-argument error messages
+  (the defunct-argument traps for `w`, `Z`, `Z_matrix`, `beta_Z`, and
+  `separate_U` are retained and still error informatively). Generalized
+  case-study-specific motivating examples in the help pages to
+  domain-neutral omics language. Clarified the
+  [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)
+  documentation to describe the composite robustness rule directly. No
+  functional or API changes.
+
+## iconic 0.9.9.2
+
+### New features
+
+- **Data-driven composite recommendation in
+  [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md).**
+  The headline recommendation is now a single data-driven composite
+  rather than the NDE-only ranking. For each estimator the composite is
+  the *worst-estimand* robustness (`min(score_NDE, score_NIE)`), so an
+  estimator is only as trustworthy as its weakest estimand, multiplied
+  by a *confidence factor* derived from the graded diagnostic verdict
+  for the assumptions that estimator depends on. Bridge-dependent
+  estimators (DIRECT, COCA, PGC, PGC2, PGC2Gm) are discounted when path
+  completeness is borderline or weak-capture; instrument-only estimators
+  (IV2SLS, IV2SLS2) are not. Structurally naive estimators (UNADJ,
+  DIRECT) are demoted below eligible instrument/NC estimators. The
+  discount is exposed via the new `completeness_penalty` argument
+  (default
+  `c(satisfied = 1.0, borderline = 0.7, "weak-capture" = 0.5, "under-identified" = 0)`),
+  and the ranking gains `composite`, `confidence_mult`, and
+  `final_score` columns. Per-estimand recommendations are retained as
+  `$recommended_NDE` and `$recommended_NIE`.
+
+- **`min_f` / `g_threshold` / `gm_threshold` pass-through.** When
+  `diagnosis` is `NULL`,
+  [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)
+  now runs
+  [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md)
+  with the caller’s thresholds instead of silently using the defaults,
+  so a non-default `min_f` is honoured.
+
+### Bug fixes
+
+- **Threshold-aware requirement labels.** The rationale text previously
+  hardcoded `F>=10` regardless of the instrument-strength gate actually
+  applied. Labels now interpolate the `min_f` stored in the diagnosis
+  (or the `min_f` argument), so the printed requirement matches the
+  gate.
+
+## iconic 0.9.9.1
+
+### Bug fixes
+
+- **Lone path-specific NC panel now derives the pooled `W`.** Supplying
+  only `W2` (or only `W1`) without a pooled `W` previously left `W`
+  unset and `has_nc = FALSE`, so the single-panel estimators (DIRECT,
+  COCA, PGC) were incorrectly ineligible and the NC validity /
+  completeness screens were skipped entirely.
+  [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  now derives `W` from the lone panel (mirroring the existing
+  `W1 + W2 -> W` derivation), so DIRECT / COCA / PGC become eligible and
+  the NC screens run. This applies to both continuous and survival
+  outcomes. `has_path_nc` still correctly remains `FALSE`, so the
+  two-bridge estimators (PGC2, PGC2Gm) stay gated unless the user opts
+  in (below).
+
+- **`iconic_sensitivity(confounding = "inferred")` no longer runs the
+  full mediator panel.** It previously called
+  [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md)
+  on every mediator and passed the result to
+  [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md),
+  bypassing the documented random-subset behaviour. It now lets
+  [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md)
+  use its `max_infer_tasks` random subset (default 50
+  mediators/features) for the gap-based calibration — an unbiased Monte
+  Carlo estimate at a fraction of the cost.
+
+- **User-supplied `omega_1` / `omega_2` sweeps take precedence over
+  inferred values.** Under `confounding = "inferred"`, the inferred
+  scalar omegas previously overwrote user-supplied sweep vectors,
+  collapsing the omega facet of the degradation surface to a single
+  point. Inferred values now only fill in `omega_1` / `omega_2` /
+  `mo_confounding` when those arguments are left at their defaults;
+  explicit values always win. Same fix applied to
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md).
+
+### New features
+
+- **`recycle_lone_panel` argument to
+  [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md).**
+  When exactly one of `W1` / `W2` is supplied (no pooled `W`), setting
+  `recycle_lone_panel = TRUE` uses that lone panel as BOTH path-specific
+  bridges (`W1 = W2`), making PGC2 / PGC2Gm eligible. This is the
+  shared-panel special case and assumes the single panel is complete for
+  BOTH path confounder composites; a warning is emitted, the
+  `recycled_lone_panel` flag is recorded on the object, and the
+  [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md)
+  eligibility table annotates PGC2 / PGC2Gm with “(shared recycled
+  panel)”. Default `FALSE` keeps the previous gating (IV2SLS2 remains
+  the more defensible primary estimator when coverage of the other
+  path’s composite is in doubt).
+
+- **[`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  accepts a precomputed `iconic_confounding` object.** Passing the
+  result of a prior
+  [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md)
+  call as the `confounding` argument reuses it as-is (equivalent to
+  `"inferred"`) and skips recomputation, avoiding redundant work when
+  [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md)
+  was already run separately.
+
+## iconic 0.9.9
+
+### Breaking changes
+
+- **IV2SLS2 negative-control augmentation is now path-specific (collider
+  fix).**
+  [`fit_iv2sls_mediation2()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2.md)
+  and
+  [`fit_iv2sls_mediation2_surv()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2_surv.md)
+  no longer take a single pooled negative-control panel `w`. The pooled
+  panel `scale((W1 + W2) / 2)` is a common child of the two independent
+  confounders (conf_XM and conf_MY) under multi-confounder designs, so
+  conditioning on it in all three 2SLS stages opened a collider path and
+  made the NDE bias *worse* as NC coverage increased. The estimators now
+  take optional path-specific panels:
+
+  - `W1` (proxies the exposure–mediator confounder, X-\>M path) is added
+    to stage 1 (`X ~ G + W1`) only;
+  - `W2` (proxies the mediator–outcome confounder, M-\>Y path) is added
+    to stages 2 and 3 (`M ~ X_hat + Gm + W2`, `Y ~ X_hat + M_hat + W2`).
+    Either panel may be omitted; with both `NULL` the estimator reduces
+    to plain two-instrument 2-stage MR. If `W1` and `W2` are identical
+    they are treated as absent (pure MR), because an identical panel is
+    a pooled panel in disguise. Passing the old `w` argument is a hard
+    error redirecting to `W1`/`W2`. With path-specific panels, higher NC
+    coverage now *improves* the NDE estimate.
+
+- **Shared-composite (single-confounder) fallback.** Path-specific
+  augmentation is only defined when `W1` and `W2` proxy *distinct*
+  confounders. When the two panels are distinct-noise proxies of the
+  *same* latent composite (the single-confounder / shared-loading
+  design), their column spaces are near-collinear; augmenting stage 1
+  with `W1` would then inject the shared M-\>Y confounder into `X_hat`
+  and bias the NDE. The estimators detect this (leading-PC correlation
+  between the panels) and fall back to plain two-instrument 2-stage MR.
+  Genuinely distinct panels are unaffected.
+
+- **[`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  retains a lone path-specific panel.** Supplying only `W2` (or only
+  `W1`) without a pooled `W` previously dropped the panel silently. A
+  lone panel is now stored so IV2SLS2 can use it for path-specific
+  augmentation, while `has_path_nc` remains `FALSE` so the two-bridge
+  estimators (PGC2, PGC2Gm) — which require both panels — stay
+  ineligible.
+
+## iconic 0.9.8
+
+### Breaking changes
+
+- **[`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  is now sequential-only.** The `n_cores` argument has been removed from
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md);
+  simulation replicates always run sequentially. (Parallel replicate
+  execution remains available in
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md),
+  [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md),
+  [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md),
+  and the simulation drivers via their own `n_cores` arguments.)
+
+- **Quiet by default.**
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md),
+  [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md),
+  and
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  gain a `verbose` argument (default `FALSE`) that gates all progress
+  messages (grid-cell updates, replicate progress, and completion
+  banners). Set `verbose = TRUE` to restore the previous behaviour.
+
+- **Exposure argument renamed `Z` -\> `X` throughout.** The exposure is
+  now consistently `X` across the API (`iconic_data(X = ...)`), the
+  structural causal model, and all documentation, matching the
+  manuscript’s notation. Passing the old `Z` argument to
+  [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  triggers a hard error with an actionable message
+  (`argument`Z`was renamed to`X`; please use`X =
+  …`); there is no silent alias. Related internal names were renamed consistently (e.g. the`sweep_instrument_strength()`parameter`pi_GZ_grid`is now`pi_GX_grid`; the exposure coefficient is`beta_X\`).
+
+- **`separate_U` removed.** The boolean `separate_U` toggle is replaced
+  by a general `k`-dimensional unmeasured-confounder space with per-path
+  loading vectors `lambda_XM` and `lambda_MY`. The two paths’ confounder
+  composites are `conf_XM = U %*% lambda_XM` and
+  `conf_MY = U %*% lambda_MY`; distinct unit-vector loadings
+  (e.g. `c(1,0)` / `c(0,1)` at `k = 2`) recover the old
+  `separate_U = TRUE` behaviour, while identical loadings recover
+  `separate_U = FALSE`. Supplying `separate_U` now errors with a pointer
+  to the loading-vector parameterization.
+
+### New features
+
+- **Path-specific negative controls and confounder loadings.**
+  [`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)
+  /
+  [`run_single_iteration()`](https://seantbresnahan.com/iconic/reference/run_single_iteration.md)
+  accept `n_confounders` (dimension `k` of `U`), `lambda_XM` /
+  `lambda_MY` (per-path loadings), and path-specific negative-control
+  panels `W1` / `W2` with independent coverage `omega_1` / `omega_2`.
+  The path-specific proximal estimators PGC2 and PGC2Gm use `W1` for the
+  `X -> M` bridge and `W2` for the `M -> Y` bridge.
+
+- **Negative-control coverage (`omega`) sweeps.**
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  and
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  now sweep `omega_1` / `omega_2` (singly or on a grid) so estimator
+  performance can be mapped across NC-coverage scenarios, not just at a
+  single assumed coverage.
+
+- **[`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  Phase 3: joint exogeneity + coverage robustness sweep.** The
+  prospective analysis previously swept instrument strength (`gamma_G`,
+  Phase 1) and NC coverage (`omega`, Phase 1/2) but held the instruments
+  perfectly exogenous (`rho_G1 = rho_G2 = 0`). A new Phase 3 sweeps the
+  instrument-exogeneity violations `rho_G1 x rho_G2` jointly with NC
+  coverage `omega` (on the diagonal, `omega_1 == omega_2`) at the target
+  instrument strength (new arguments `rho_G1_grid`, `rho_G2_grid`, both
+  defaulting to `c(0, 0.1, 0.2, 0.3, 0.5)`, `omega_grid_rho` defaulting
+  to `c(0.3, 0.7, 1.0)`, and `run_rho_sweep = TRUE` to toggle). The
+  resulting degradation surface is returned as `$rho_surface` and is
+  passed to
+  [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)
+  as its `sensitivity` argument, so the recommended estimator is chosen
+  by robustness to both imperfect instruments and weakening controls
+  rather than by a single-point or eligibility-only ranking.
+
+- **[`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  conditional recommendation by collection scenario.** The prospective
+  printout no longer reports a single “recommended estimator if
+  instruments collected” — which was internally contradictory when the
+  top estimator (e.g. COCA) does not use an instrument. A new
+  `$recommendation_by_scenario` table reports the best eligible
+  estimator under each collection scenario (G1 only / Gm only / G1+Gm /
+  W only / W1+W2 / G1+W / G1+Gm+W / G1+W1+W2 / full), mapping each
+  scenario to the estimators its data makes available and ranking those
+  by robustness.
+
+- **[`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  sweeps NC coverage by default.** `omega_1` and `omega_2` now default
+  to `c(0.3, 0.7, 1.0)` (swept on the diagonal when identical) instead
+  of the fixed scalar `0.7`, so the degradation surface spans both
+  instrument-exogeneity and NC-coverage violations out of the box.
+
+- **[`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)
+  auto-runs the sensitivity suite.** When `sensitivity = NULL` and
+  `auto_sensitivity = TRUE` (the default),
+  [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)
+  now calls
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  internally so the recommendation is robustness-based by default, not
+  opt-in. The auto-run is guarded by torch availability and falls back
+  to eligibility-only ranking (with a message) when the torch backend is
+  unavailable or the run fails. New arguments `auto_sensitivity`,
+  `rho_G1_grid`, `rho_G2_grid`, `omega_1`, `omega_2`, `n_iter_sens`,
+  `gan_epochs`, and `n_cores` control the auto-run.
+
+- **Testability reframe and completeness in
+  [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md).**
+  The negative-control assumptions are framed as empirically testable
+  projections (A1: `W _|_ X | C,U`; A2: `W _|_ G1 | C,U`; A2’:
+  `W _|_ Gm | C,U`) plus a two-component completeness condition (A3:
+  dimensional check `dim(W_valid) >= k` combined with a
+  covariance-capture test). The completeness assessment is wired into
+  the diagnosis and the per-estimator eligibility report.
+
+- **Total-effect output.** Estimation surfaces the total effect
+  alongside the NDE/NIE decomposition.
+
+### Bug fixes
+
+- **[`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  recommendation no longer crowns UNADJ by list position.** Previously
+  the prospective recommendation called
+  [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)
+  with no sensitivity surface and no estimates, so the ranking fell back
+  to an eligibility-only stable sort in which `UNADJ` — first in the
+  method list — was returned as “recommended” whenever all estimators
+  were eligible (the best-case simulated setting). This contradicted the
+  function’s own Phase 2 bias numbers. Two changes fix it:
+
+  1.  Phase 3 now supplies a real degradation surface, so the
+      recommendation is robustness-based; (2)
+      [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)’s
+      no-sensitivity fallback now demotes the unconfoundedness-based
+      estimators (`UNADJ`, `DIRECT`) below the instrument/NC-based
+      estimators instead of ranking by list position.
+
+- **`.extract_per_scenario()` robust to degenerate cells.** Per-scenario
+  extraction now skips grid cells in which every estimator returned a
+  non-finite bias/coverage metric (previously
+  [`which.min()`](https://rdrr.io/r/base/which.min.html) on an all-`NA`
+  distance vector returned `integer(0)`, and the
+  [`cbind()`](https://rdrr.io/r/base/cbind.html) of the cell metadata
+  with the length-0 result errored with “arguments imply differing
+  number of rows”). Within-cell normalization is now computed over
+  finite values only.
+
+- **[`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)
+  DGP fix.** With path-specific loadings, the non-covered portion of
+  each negative control is now fresh noise rather than the other path’s
+  confounder composite; previously `W1` was contaminated with the
+  `M -> Y` confounder, biasing the PGC purge.
+
+- **[`plot_degradation_surface()`](https://seantbresnahan.com/iconic/reference/plot_degradation_surface.md)
+  colour scales.** The shared colour limit was inflated by a single
+  divergent cell, washing out the informative bias range. Each estimator
+  panel now uses its own robust (95% quantile, floored) colour cap with
+  [`scales::squish()`](https://scales.r-lib.org/reference/oob.html) for
+  outliers; the crossover panel preserves a direct `|bias|` comparison.
+
+### Behaviour changes
+
+- **Recommendation tiers removed.**
+  [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)
+  no longer assigns estimators to recommendation tiers; it reports
+  per-estimand robustness scores (max `|bias|` and CI-coverage distance
+  across the sensitivity grid) and ranks on those.
+
+- **Instrument-variable estimators no longer require negative
+  controls.** `IV2SLS` (instrument `G`) and `IV2SLS2` (instruments `G` +
+  `Gm`) are identified by the instrument(s) alone — relevance,
+  independence, and the exclusion restriction — and do not need a
+  negative-control panel `W`. They are now eligible and run whenever the
+  required instrument(s) are present, with or without `W`; when `W` is
+  supplied it is used as an optional proximal augmentation (improving
+  efficiency) rather than as a requirement. The proximal bridge
+  estimators (`PGC`, `PGC2`, `PGC2Gm`) and the negative-control
+  estimators (`COCA`, `DIRECT`) still require `W`. This fixes the case
+  where a dataset with instruments but no negative controls was
+  previously left with only `UNADJ`.
+
+- **[`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md)
+  infers confounding strength on a random subset.** When
+  `estimate = NULL`, the confounding-strength (`delta`, the UNADJ–IV2SLS
+  gap) and mediator-outcome (`delta_mo`, the IV2SLS–IV2SLS2 gap)
+  parameters are averages across the mediator × feature grid. They are
+  now estimated on a random subset of at most `max_infer_tasks`
+  mediators and `max_infer_tasks` features (default 50) instead of the
+  full panel — an unbiased Monte Carlo estimate of the same quantity.
+  This makes `iconic_diagnose(k = NULL)`,
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md),
+  and
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  far faster on wide mediator panels (previously the internal
+  [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md)
+  call fit every mediator × feature cell). The subset sizes are recorded
+  in the returned object as `$inference_subset` and noted in the
+  `conf_strength` / `mo_confounding` method strings. Panels smaller than
+  the cap are used in full (no behaviour change).
+
+## iconic 0.9.7
+
+### Examples
+
+- **Fixed example failures under
+  `R CMD check --as-cran --run-donttest`.** Several examples errored
+  when run by the check (which executes `\donttest{}` blocks) on
+  environments without a libtorch backend or under CRAN’s core limit:
+  - The `iconic_prospect`, `iconic_sensitivity`,
+    `gan_mediation_sensitivity`, `gan_pleiotropy_sensitivity`,
+    `train_gan_on_real_data`, and `run_single_iteration` examples
+    reached a GAN-training path inside `\donttest{}`; switched to
+    `\dontrun{}` so they are not executed by the check (they require the
+    optional torch backend).
+  - The `infer_confounding` and `iconic_prospect` examples used
+    `n_cores = 4`, exceeding CRAN’s two-core limit (`.check_ncores`);
+    reduced to `n_cores = 2`.
+  - The `sample_feature_texture` example referenced an undefined `M`;
+    made it self-contained by defining `M` first.
+  - The `nc_completeness_capture` and `nc_completeness_check` examples
+    run a 1000-permutation loop and exceeded the 5s example-time flag;
+    wrapped in `\dontrun{}`.
+
+### Test suite
+
+- **Guarded all torch-dependent tests so `R CMD check` passes without a
+  libtorch backend.** Forty `test_that()` blocks across `test-gan.R`,
+  `test-model-sensitivity.R`, `test-v06-workflow.R`,
+  `test-infer-confounding.R`, and `test-ground-truth-regression.R` reach
+  a GAN-training code path
+  ([`train_gan_on_real_data()`](https://seantbresnahan.com/iconic/reference/train_gan_on_real_data.md)
+  directly, or
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  /
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  via the internal
+  [`.auto_train_gan()`](https://seantbresnahan.com/iconic/reference/dot-auto_train_gan.md)
+  step) but lacked a skip guard. On environments where the `torch` R
+  package is installed but its libtorch backend is not (e.g. the GitHub
+  Actions runners, which do not run
+  [`torch::install_torch()`](https://torch.mlverse.org/docs/reference/install_torch.html)),
+  these tests errored with “torch is required for the generative texture
+  model” instead of skipping, failing the check. Each block now begins
+  with `skip_if_not_installed("torch")` and
+  `skip_if_not(check_torch_setup())`, matching the guard convention
+  already used elsewhere in the suite. The tests still run (and pass)
+  wherever the libtorch backend is available.
+
+### Packaging and vignettes
+
+- **Removed the shipped pre-trained GAN** (`inst/pretrained_gan.rds`).
+  The serialized object used serialization format version 3, which
+  forced an implicit `R (>= 3.5.0)` dependency and emitted an
+  `R CMD build` warning. Removing it drops that constraint. Texture
+  models are now always trained from data, consistent with the package’s
+  design that GANs are fit to the user’s cohort rather than loaded from
+  a shipped artifact.
+
+- **Vignettes train the texture model instead of loading it.** The
+  *Walkthrough* and *Sensitivity Analysis* vignettes previously loaded
+  the bundled `pretrained_gan.rds` for speed; they now call
+  [`train_gan_on_real_data()`](https://seantbresnahan.com/iconic/reference/train_gan_on_real_data.md)
+  for a small number of epochs (guarded by
+  [`check_torch_setup()`](https://seantbresnahan.com/iconic/reference/check_torch_setup.md)),
+  matching the *Texture Model* vignette.
+
+## iconic 0.9.6
+
+### Documentation cleanup
+
+- **biocViews**: removed `Bayesian` from the `biocViews` field.
+
+- **Description**: tightened the `DESCRIPTION` Description from ~1,300
+  words to ~180 words, removing version-history prose and internal
+  implementation details. The new Description describes the package’s
+  purpose, the eight estimators, the diagnose/estimate/sensitivity/
+  recommend/prospect workflow, survival outcome support, and the torch
+  dependency.
+
+- **Coauthor and version-control markers**: removed all coauthor comment
+  markers (`JYH #NNN`), review-process markers
+  (`critique #N of the QED review`), `TODO(v1.0)` markers, and inline
+  version-history annotations (`v0.x.y`) from all documentation, man
+  pages, roxygen blocks, the vignette, README, inst scripts, and test
+  files. Substantive documentation content was preserved; only
+  changelog-style commentary and internal review references were
+  removed.
+
+- **Vignette**: corrected an inaccurate statement that the package falls
+  back to a multivariate-normal texture model when `torch` is not
+  installed. `torch` is a hard dependency; the vignette now states this
+  explicitly.
+
+- **Tests**: removed the source-level test asserting the presence of
+  `TODO(v1.0)` markers (the markers were removed in this release).
+
+## iconic 0.9.5
+
+### CRAN / Bioconductor readiness
+
+- **Documentation**: fixed non-ASCII characters in R source files
+  (em-dashes, superscripts, box-drawing characters) that triggered
+  `R CMD check` NOTEs. Fixed malformed Rd `\eqn{}` braces and
+  cross-references in `composite_p_value`, `fit_pgc_mediation2`,
+  `sample_texture`, and related help pages. Documented the previously
+  undocumented `feat_cor` argument in `run_simulation`,
+  `run_mediation_sim`, and `run_null_mediation_sim`. Removed an internal
+  roxygen block for the `%||%` operator that produced an invalid
+  `\name{}` entry.
+
+- **Global variables**: declared all ggplot2 non-standard-evaluation
+  variables (`.data`, `bias`, `estimate`, `method`, etc.) via
+  [`utils::globalVariables()`](https://rdrr.io/r/utils/globalVariables.html)
+  and extended the `stats` import list, so `R CMD check` no longer
+  reports undeclared global variables.
+
+- **Removed unused code**: deleted the unused, exported
+  `cuda_available_safe()` helper. Removed the top-level
+  `generate_manuscript_figures.R` script (preserved in the manuscript
+  repository) that triggered a non-standard top-level file NOTE.
+
+- **Tests**: updated stale tests in `test-refactoring.R` and
+  `test-v0.9.2-revisions.R` to match function contracts that changed in
+  v0.8.4 / v0.9.3 / v0.9.4
+  ([`.analyze_feature()`](https://seantbresnahan.com/iconic/reference/dot-analyze_feature.md)
+  now passes the full W matrix;
+  [`nc_completeness_capture()`](https://seantbresnahan.com/iconic/reference/nc_completeness_capture.md)
+  returns `capture_R2` / `capture_pvalue` / `capture_verdict`; Rd alias
+  tests use [`system.file()`](https://rdrr.io/r/base/system.file.html)
+  instead of relative paths). All 17 test files now pass with 0
+  failures.
+
+- **Vignette**: rewrote `iconic-walkthrough.Rmd` (1582 -\> 264 lines) to
+  build in ~1.5 minutes. The new vignette trains the GAN texture model
+  once and reuses it across
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  and
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md),
+  and drops the simulation benchmarking section (retained in the
+  manuscript). Keeps the model-selection workflow, GAN training,
+  sensitivity analysis, confounding inference, recommendation,
+  prospective analysis, and survival outcomes.
+
+- **README**: rewrote `README.md` (540 -\> 100 lines) as a minimal
+  CRAN/Bioconductor-style README with package description, installation,
+  a tight getting-started code block, a key-functions table, and
+  pointers to the vignette and manuscript.
+
+## iconic 0.9.4.1
+
+### Bug fixes
+
+- **Missing
+  [`fit_pgc_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation_surv.md)
+  estimator**: the survival mediation driver dispatched both “PGC” and
+  “PGC2” to
+  [`fit_pgc_mediation2_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2_surv.md)
+  (path-specific bridges), making them identical. In the continuous
+  case, PGC uses
+  [`fit_pgc_mediation()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation.md)
+  (single W-matrix bridge) and PGC2 uses
+  [`fit_pgc_mediation2()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2.md)
+  (path-specific W1/W2 bridges). Added the missing
+  [`fit_pgc_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation_surv.md)
+  estimator — the survival analogue of
+  [`fit_pgc_mediation()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation.md)
+  — and updated the dispatch in `estimate.R` so “PGC” routes to it. PGC
+  and PGC2 now produce distinct results.
+
+- **[`fit_pgc_mediation2_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2_surv.md)
+  numerical instability**: the path-specific bridge estimator could
+  produce catastrophically large coefficient estimates (RMSE 4-150 in
+  benchmarks) when the generated regressors (Z_hat, M_hat, W_hat_Z,
+  W_hat_M) became collinear or extreme in the Cox partial likelihood.
+  Added a numerical-stability guard that rejects estimates whose
+  absolute value exceeds 10 on either scale (log-HR \> 10 corresponds to
+  HR \> 22,000; RMST shift \> 10 time units is equally implausible for
+  standardised data), returning NA instead. The same guard is applied to
+  [`fit_pgc_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation_surv.md)
+  for consistency.
+
+- **`.fit_surv_outcome_stage()` coefficient-name flexibility**: the
+  shared outcome-stage helper hardcoded `"Z_hat"` and `"M_hat"` as the
+  coefficient names to extract. Generalised to accept `nde_name` and
+  `med_name` parameters (defaulting to `"Z_hat"` / `"M_hat"`), so
+  estimators that use non-instrumented regressors (e.g.,
+  [`fit_pgc_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation_surv.md)
+  uses `Z` and `M`) can reuse the helper.
+
+### Benchmark script fixes (generate_manuscript_figures.R)
+
+- **Total-effect truth correction**: `SURV_TRUE_TE_LOGHR` was set to
+  `SURV_TAU + SURV_ALPHA_M * SURV_BETA_M` (0.40), but the total-effect
+  sweep DGP uses `alpha_M = 0, beta_M = 0` (no mediation path), so the
+  true total effect is `beta_Z = 0.25`. Corrected to
+  `SURV_TRUE_TE_LOGHR <- SURV_TAU`.
+
+- **Survival mediation DGP alignment**: the survival mediation benchmark
+  did not set `separate_U`, `mo_confounding`, or `rho_G1`, using
+  defaults (single U, no M-O confounding) instead of the continuous
+  benchmark settings (`MED_SEPARATE = TRUE`, `MED_MO_CONF = 0.8`,
+  `MED_RHO_G1 = 0.3`). Added these parameters and passed `W1`/`W2` to
+  [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  so path-specific estimators (PGC2, PGC2Gm) exercise their intended
+  two-bridge design. Updated pre-computed RMST truth values accordingly
+  (NDE: -0.7100 -\> -0.7284, NIE: -0.5573 -\> -0.6198).
+
+- **PGC2 added to mediation figure**: `surv_med_methods_show` now
+  includes “PGC2” alongside “PGC” and “PGC2Gm”, since PGC and PGC2 are
+  now distinct estimators.
+
+## iconic 0.9.4
+
+### New features
+
+- **Time-to-event (survival) outcome support**:
+  [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  now accepts `outcome_type = "survival"` with `surv_time` and
+  `surv_event` arguments, enabling causal inference with genetic
+  instruments and negative controls for time-to-event outcomes (e.g.,
+  overall survival in cancer cohorts). All estimators are available on
+  two effect scales:
+
+  - **Cox log-hazard-ratio** (`effect_scale = "loghr"`, default): the
+    outcome stage uses
+    [`survival::coxph()`](https://rdrr.io/pkg/survival/man/coxph.html)
+    via two-stage predictor substitution (2SPS). First-stage regressions
+    (Z ~ G, M ~ Z_hat + Gm, bridges) remain OLS because Z, M, and W are
+    continuous; only the outcome stage switches to Cox regression. The
+    log-HR is non-collapsible, so the product-of-coefficients NIE =
+    alpha \* beta on this scale is an approximation.
+
+  - **Restricted mean survival time** (`effect_scale = "rmst"`): the
+    outcome stage uses OLS on RMST pseudo-observations (leave-one-out
+    jackknife of Kaplan-Meier RMST, Graw et al. 2009). The RMST scale is
+    collapsible, so the product-of-coefficients NDE/NIE decomposition is
+    exact. Default truncation time `tau` is the 90th percentile of
+    observed follow-up.
+
+- **Survival estimators**:
+  [`fit_unadj_surv()`](https://seantbresnahan.com/iconic/reference/fit_unadj_surv.md),
+  [`fit_direct_surv()`](https://seantbresnahan.com/iconic/reference/fit_direct_surv.md),
+  [`fit_iv2sls_surv()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_surv.md),
+  [`fit_pgc_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_surv.md),
+  [`fit_coca_surv()`](https://seantbresnahan.com/iconic/reference/fit_coca_surv.md)
+  (total-effect);
+  [`fit_unadj_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_unadj_mediation_surv.md),
+  [`fit_direct_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_direct_mediation_surv.md),
+  [`fit_iv2sls_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation_surv.md),
+  [`fit_iv2sls_mediation2_surv()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2_surv.md),
+  [`fit_pgc_mediation2_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2_surv.md),
+  [`fit_coca_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_coca_mediation_surv.md)
+  (mediation). All are exported and documented. COCA is structurally
+  incompatible with survival outcomes (it regresses W on Y, placing the
+  outcome on the RHS, impossible with a Surv object) and returns NA with
+  an informative `reason` attribute.
+
+- **Survival simulation DGP**:
+  [`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)
+  and
+  [`run_single_iteration()`](https://seantbresnahan.com/iconic/reference/run_single_iteration.md)
+  gain `outcome_type`, `surv_h0`, `surv_event_frac`, and
+  `surv_censor_rate` arguments. When `outcome_type = "survival"`, the
+  continuous linear predictor is converted to time-to-event via an
+  exponential proportional-hazards model with independent exponential
+  censoring, targeting ~50-60% event fraction. The `true_total` /
+  `true_NDE` / `true_NIE` are then on the Cox log-HR scale.
+
+- **Survival sensitivity and prospective analysis**:
+  [`gan_sensitivity()`](https://seantbresnahan.com/iconic/reference/gan_sensitivity.md),
+  [`gan_mediation_sensitivity()`](https://seantbresnahan.com/iconic/reference/gan_mediation_sensitivity.md),
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md),
+  and
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  all gain `outcome_type`, `effect_scale`, and survival DGP parameters.
+  When survival is active, estimation uses
+  [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md)
+  with the survival drivers instead of
+  [`run_methods()`](https://seantbresnahan.com/iconic/reference/run_methods.md)
+  /
+  [`run_mediation_methods()`](https://seantbresnahan.com/iconic/reference/run_mediation_methods.md).
+
+### Bug fixes
+
+- **[`switch()`](https://rdrr.io/r/base/switch.html) factor dispatch in
+  survival mediation driver**: the mediation survival driver used
+  `switch(method, ...)` where `method` came from
+  [`expand.grid()`](https://rdrr.io/r/base/expand.grid.html), which
+  converts strings to factors.
+  [`switch()`](https://rdrr.io/r/base/switch.html) treats factors as
+  integers (positional matching), silently dispatching methods to the
+  wrong estimators (e.g., PGC calling IV2SLS2, COCA calling IV2SLS).
+  Fixed by wrapping in
+  [`as.character()`](https://rdrr.io/r/base/character.html) and adding
+  `stringsAsFactors = FALSE` to
+  [`expand.grid()`](https://rdrr.io/r/base/expand.grid.html).
+
+- **`.find_tipping_points()` NA/NaN handling**: the tipping-point
+  detection in
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  crashed with `missing value where TRUE/FALSE needed` when any method’s
+  bias was entirely NA/NaN (e.g., COCA for survival outcomes). Fixed by
+  guarding with [`is.finite()`](https://rdrr.io/r/base/is.finite.html)
+  before threshold comparisons. Also fixed `max(..., na.rm = TRUE)`
+  returning `-Inf` with a warning for all-NA methods, replaced with
+  `.safe_max_abs()` returning `NA`.
+
+- **GAN texture model for survival outcomes**:
+  [`.resolve_gan()`](https://seantbresnahan.com/iconic/reference/dot-resolve_gan.md)
+  attempted to auto-train a GAN from `data$Y`, which is absent for
+  survival outcomes. Now returns `NULL` (default texture) when
+  `data$outcome_type == "survival"`.
+
+## iconic 0.9.3.1
+
+### Bug fixes
+
+- **Panel instrument-strength scalar coercion**:
+  [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md),
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md),
+  and
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  crashed with `'length = N' in coercion to 'logical(1)'` when the
+  mediator instrument (Gm) was a panel (one F-statistic per gene). The
+  diagnosis object stores `F_Gm` as a vector, but
+  [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md)
+  and the `phi` calibration in
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  used scalar comparisons (`is.na(F_Gm) || F_Gm < 10`, `F_gm >= 100`).
+  The prospective summary builder in
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  passed the vector to `sprintf("%.1f", ...)`. All three sites now
+  collapse to `F_Gm_median` (a scalar) when `length(F_Gm) > 1`, using
+  the pre-existing `F_Gm_median` field from
+  [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md).
+  The same fix is applied to `F_G` for symmetry.
+
+  Affected files: `R/infer_confounding.R`, `R/model_sensitivity.R`,
+  `R/prospect.R`.
+
+## iconic 0.9.2
+
+This release addresses coauthor (JYH) comments on the
+proximal-completeness condition, negative-control validity screens, the
+recommendation criterion, and simulation reporting. All changes are
+backward-compatible (new arguments carry defaults preserving v0.9.1
+behavior).
+
+### New features
+
+- **Covariance-capture completeness test**
+  ([`nc_completeness_capture()`](https://seantbresnahan.com/iconic/reference/nc_completeness_capture.md)):
+  operationalizes the proximal completeness condition as whether the
+  negative-control panel captures the confounder covariance (incremental
+  R^2 of W for the outcome, with a permutation null), rather than only a
+  proxy count.
+  [`nc_completeness_check()`](https://seantbresnahan.com/iconic/reference/nc_completeness_check.md)
+  now returns both the dimensional verdict (dim(W_valid) vs k) and the
+  capture verdict, plus a composite. Addresses JYH comments that
+  completeness is about covariance captured, not proxy number.
+
+- **Magnitude-based A1 screen**:
+  [`nc_validity_screen()`](https://seantbresnahan.com/iconic/reference/nc_validity_screen.md)
+  gains a `criterion = c("fdr", "magnitude", "both")` argument and a
+  `magnitude_threshold` (default 0.10). The magnitude branch flags
+  controls by partial-correlation size, not significance, addressing the
+  concern that FDR hypothesis tests are underpowered and “always
+  significant via U.” Returns per-branch verdicts (`verdict_fdr`,
+  `verdict_magnitude`).
+
+- **COCA A2 exemption**: COCA no longer requires the A2 (instrument-
+  independence) screen for eligibility, only A1 + completeness. A2
+  remains required for IV2SLS, PGC, IV2SLS2, PGC2, PGC2Gm. The
+  eligibility table gains an `a2_required` column.
+
+- **Per-scenario recommendations**:
+  [`iconic_recommend()`](https://seantbresnahan.com/iconic/reference/iconic_recommend.md)
+  now returns a `$per_scenario` table (top estimator per
+  sensitivity-surface cell) in addition to the global recommendation,
+  and a `criterion` argument (`"minimax_bias"`, `"ci_coverage"`,
+  `"combined"`). The sensitivity surface gains `NDE_coverage` and
+  `NIE_coverage` columns (Wald CI coverage from the delta-method SE).
+  Tier-A label changed to “identified under stated assumptions.”
+
+- **CI coverage, %bias, and mean SE in benchmarks**: the simulation
+  summarization now reports `NDE_coverage`, `NIE_coverage`,
+  `NDE_pct_bias`, `NIE_pct_bias`, `NDE_mean_se`, `NIE_mean_se`. The
+  mediation estimators and
+  [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md)
+  gain `se_method = c("delta", "bootstrap")` (default `"delta"`) and
+  `n_boot` (default 500) for optional bootstrap SE.
+
+- **Scenario manifest**: new
+  [`scenario_manifest()`](https://seantbresnahan.com/iconic/reference/scenario_manifest.md)
+  helper exposes the ground-truth estimands and the swept vs. fixed
+  parameter ranges;
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  and
+  [`gan_mediation_sensitivity()`](https://seantbresnahan.com/iconic/reference/gan_mediation_sensitivity.md)
+  add a `$manifest` field to their return value.
+
+- **U/W strength heterogeneity**:
+  [`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)
+  and
+  [`run_single_iteration()`](https://seantbresnahan.com/iconic/reference/run_single_iteration.md)
+  gain `u_strength` (per-confounder scaling) and `w_coverage_profile`
+  (per-control coverage) arguments, allowing some confounders/proxies to
+  be stronger than others. Exposed in the returned dataset.
+
+- **Optional U-deconfounding in residual correlation**:
+  [`.residual_correlation()`](https://seantbresnahan.com/iconic/reference/dot-residual_correlation.md)
+  and the texture-training entry points gain
+  `residualize_on = c("ZC", "ZCW")` (default `"ZC"`). Under `"ZCW"`, the
+  residual correlation partials out the U-signature captured by W,
+  reducing the double-counting of U’s cross-feature signature. A
+  `$double_count_estimate` diagnostic is exposed.
+
+- **Defaults enumeration and `allow_no_proxy`**:
+  [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md),
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md),
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  documentation gains a `@section Defaults` block.
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  and
+  [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md)
+  gain `allow_no_proxy` (default TRUE): when FALSE, they error if no IV
+  and no NC are supplied.
+
+### Documentation
+
+- [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  and
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  gain `@aliases` (`effect_decomposition_bias_sweep`,
+  `bias_reduction_prospective`) and updated `@title`/`@section` blocks
+  for emphasis, without renaming the functions (backward compatible).
+
+### Deferred (placeholders for the future supplement / companion paper)
+
+- `# TODO(v1.0)` markers added in `R/gan.R`, `R/feature_texture.R`, and
+  `R/model_sensitivity.R` for the future move of generative-pipeline and
+  technical-sensitivity detail to the supplement.
+- The biobank-scale / cross-ancestry case study is deferred to a
+  companion paper; no package change.
+
+## iconic 0.9.1
+
+### New features
+
+- **Panel-level instrument-strength distributions**:
+  [`.check_instrument_strength()`](https://seantbresnahan.com/iconic/reference/dot-check_instrument_strength.md)
+  now computes the partial F for every mediator in the panel (not just
+  the first transcript) for both G and Gm. The full distributions are
+  exposed at `diag[["instrument_strength"]][["F_G"]]` and
+  `diag[["instrument_strength"]][["F_Gm"]]` (numeric vectors, one entry
+  per instrument/mediator).
+  [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md)
+  gains `g_threshold = list(E, R)` and `gm_threshold = list(E, R)`
+  arguments: an instrument-dependent method is eligible if at least E
+  fraction of transcripts have F \>= R. Default NULL preserves the
+  legacy scalar behavior (median F vs `min_f`).
+
+- **run_all flag**:
+  [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md)
+  gains `run_all = FALSE` and `min_f` arguments. `run_all = TRUE`
+  overrides diagnosis eligibility, running every method whose required
+  data exists. `min_f` (default NULL) is inherited from
+  `diagnosis$min_f` when a diagnosis is supplied and not explicitly set,
+  otherwise defaults to 10. It is passed through to the per-transcript
+  weak-instrument gate (previously hardcoded to 10 inside the estimator
+  functions and never configurable from the top-level API).
+
+### Bug fixes
+
+- **Parallel progress reporting**: `.parallel_lapply()` now reports
+  percentage-complete progress during parallel execution (Unix
+  `mclapply` and Windows PSOCK), not just a start message. Tasks are
+  split into ~10 chunks; a progress message is printed after each chunk
+  completes. Previously, parallel runs printed only a single start line
+  and produced no intermediate output until completion.
+
+- **Sequential timing bug**: The final “100%” completion line in
+  sequential mode now reports total elapsed time from task start, not
+  just elapsed time since the last 30-second update. A separate
+  `start_time` is retained alongside the throttle timer.
+
+- **Unified progress cadence**: Both sequential and parallel paths now
+  report at ~10% increments, replacing the previous 30-second throttle
+  for sequential mode. Progress messages include cumulative percentage,
+  task count, and elapsed seconds.
+
+## iconic 0.9.0
+
+### Major changes
+
+- **Hybrid GAN + copula texture model**: The generative texture model is
+  now a hybrid of two independently trained components. A sample-level
+  torch GAN learns the joint distribution of per-sample exposure,
+  outcome, mediator level, and encoded covariates. A new feature-level
+  Gaussian copula model
+  ([`train_feature_texture()`](https://seantbresnahan.com/iconic/reference/train_feature_texture.md)
+  /
+  [`sample_feature_texture()`](https://seantbresnahan.com/iconic/reference/sample_feature_texture.md))
+  learns the full joint distribution of the mediator (M) panel —
+  marginal distributions and cross-feature dependence — directly from
+  the user’s data.
+
+- **Gaussian copula for mediator panel**: Each mediator feature’s
+  marginal is fitted as an empirical CDF by default, with a parametric
+  fallback (normal, log-normal, gamma, or beta, selected by AIC) used
+  when the parametric fit passes a Kolmogorov-Smirnov goodness-of-fit
+  test at p \> 0.05. The user may override this automatic selection via
+  the `marginal_method` parameter (“auto”, “empirical”, “parametric”).
+  Cross-feature dependence is captured by the Gaussian copula
+  correlation matrix of the normal-transformed scores. During
+  simulation, copula draws replace the parametric Gaussian noise in the
+  mediator structural equations, preserving realistic marginal shapes
+  and correlations from the user’s cohort while maintaining the
+  closed-form ground truth.
+
+- **torch is now a hard dependency**: The MVN fallback has been removed
+  entirely. `torch` has moved from Suggests to Imports. The GAN
+  component requires torch;
+  [`train_gan_on_real_data()`](https://seantbresnahan.com/iconic/reference/train_gan_on_real_data.md)
+  errors if torch is unavailable.
+
+- **W panel unchanged**: The negative-control (W) panel continues to use
+  the pluggable `nc_model` with residual correlation matrices. The
+  copula replaces the residual correlation approach only for the
+  mediator panel.
+
+### New functions
+
+- `train_feature_texture(M_matrix, marginal_method)` — trains the
+  Gaussian copula + marginals model
+- `sample_feature_texture(feature_texture, n_samples, n_features)` —
+  draws from the copula, centered and scaled
+- [`print.iconic_feature_texture()`](https://seantbresnahan.com/iconic/reference/print.iconic_feature_texture.md)
+  — summary print method
+
+### Modified functions
+
+- [`load_real_input_data()`](https://seantbresnahan.com/iconic/reference/load_real_input_data.md)
+  — gains `marginal_method` parameter; trains feature_texture from
+  M_matrix
+- [`train_gan_on_real_data()`](https://seantbresnahan.com/iconic/reference/train_gan_on_real_data.md)
+  — gains `feature_texture` argument; errors without torch
+- [`run_single_iteration()`](https://seantbresnahan.com/iconic/reference/run_single_iteration.md)
+  — uses copula-based mediator texture injection
+  ([`.iteration_mediator_texture_features()`](https://seantbresnahan.com/iconic/reference/dot-iteration_mediator_texture_features.md))
+- [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  /
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  — pass `feature_texture` through the auto-training pipeline
+- [`plot_gan_diagnostics()`](https://seantbresnahan.com/iconic/reference/plot_gan_diagnostics.md)
+  — gains `M_matrix` argument for feature-level marginal comparison
+  panels
+
+### Bug fixes
+
+- Fixed `test-refactoring.R` to use `iconic:::` namespace prefix for
+  internal function calls
+
+## iconic 0.8.4
+
+### Major changes
+
+- **Full negative-control panel for all estimators**: DIRECT, IV2SLS,
+  and IV2SLS2 now use the full W panel (all q negative-control features)
+  in their regression formulas, rather than matching a single NC feature
+  to each outcome feature. This improves confounding adjustment and
+  aligns the code with the model specification described in the
+  manuscript. A new internal `.expand_w()` helper handles both vector
+  and matrix W inputs. COCA continues to use `rowMeans(W)` as a scalar
+  summary (required by its ratio-estimator form). PGC and PGC2 already
+  used the full panel via bridge regressions.
+
+- **Per-mediator genetic instruments**:
+  [`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)
+  and
+  [`run_single_iteration()`](https://seantbresnahan.com/iconic/reference/run_single_iteration.md)
+  now accept an `n_mediators` parameter (default 1, backward
+  compatible). When `n_mediators > 1`, each mediator M_m has its own
+  independent genetic instrument Gm_m, and both M and Gm are returned as
+  `n_mediators x n` matrices. The mediation estimation pipeline
+  estimates each mediator one at a time (M_vec = M\[m, \]), mirroring
+  the
+  [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md)
+  behavior.
+  [`run_mediation_sim()`](https://seantbresnahan.com/iconic/reference/run_mediation_sim.md)
+  and
+  [`sweep_mediation_param()`](https://seantbresnahan.com/iconic/reference/sweep_mediation_param.md)
+  also accept `n_mediators`.
+
+- **Vignette migration**: The walkthrough document has been moved from
+  the package root to `vignettes/iconic-walkthrough.Rmd` with a proper
+  `VignetteIndexEntry` and `knitr::rmarkdown` engine. The output format
+  is now
+  [`rmarkdown::html_vignette`](https://pkgs.rstudio.com/rmarkdown/reference/html_vignette.html).
+  `VignetteBuilder: knitr` added to DESCRIPTION; `knitr` and `rmarkdown`
+  added to Suggests.
+
+### Minor changes
+
+- Fixed Gm dimension validation in
+  [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  and `validate_iconic_data()` to correctly check `nrow(Gm)` against
+  `n_mediators` (previously checked `ncol(Gm)`, which always equaled n
+  after transposition)
+- Fixed Gm extraction in `estimate.R` to use `nrow(data$Gm) == nm`
+  instead of `ncol(data$Gm) == nm`
+- Updated roxygen documentation throughout to reflect matrix M/Gm
+  support and full W panel usage
+
+## iconic 0.8.3
+
+### Major changes
+
+- **Cross-platform parallelization**: All computationally intensive
+  functions now accept an `n_cores` argument for multi-core execution.
+  Uses [`parallel::mclapply`](https://rdrr.io/r/parallel/mclapply.html)
+  on Unix (Linux, macOS) and PSOCK clusters
+  (`makeCluster`/`parLapply`/`stopCluster`) on Windows. No new
+  dependencies required.
+
+- **Progress milestones**: Parallelized functions emit
+  [`message()`](https://rdrr.io/r/base/message.html)-based progress
+  reports — start lines announcing task count and core count, and
+  incremental progress every ~10% of tasks in sequential mode.
+
+### Functions with new `n_cores` argument
+
+- [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md)
+  — parallelizes per-feature and per-mediator × feature estimation
+- [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  — parallelizes replicate iterations within each grid cell
+- [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md)
+  — parallelizes Phase 1 and Phase 2 replicate iterations
+- [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md)
+  — parallelizes NC validity screens (A1, A2, A2’)
+- [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md)
+  — parallelizes NC-coverage loop (omega) and k permutation analysis
+- [`sweep_nc_validity()`](https://seantbresnahan.com/iconic/reference/sweep_nc_validity.md)
+  — parallelizes replicate iterations in all four diagnostic panels
+- [`sweep_instrument_strength()`](https://seantbresnahan.com/iconic/reference/sweep_instrument_strength.md)
+  — parallelizes replicate iterations per grid point
+- [`analyze_methods_robust()`](https://seantbresnahan.com/iconic/reference/analyze_methods_robust.md)
+  — parallelizes per-feature estimation
+- [`analyze_mediation_robust()`](https://seantbresnahan.com/iconic/reference/analyze_mediation_robust.md)
+  — parallelizes per-feature mediation estimation
+- [`run_methods()`](https://seantbresnahan.com/iconic/reference/run_methods.md)
+  /
+  [`run_mediation_methods()`](https://seantbresnahan.com/iconic/reference/run_mediation_methods.md)
+  — parallelizes per-feature estimation (internal drivers)
+- [`nc_validity_screen()`](https://seantbresnahan.com/iconic/reference/nc_validity_screen.md)
+  — parallelizes per-control-feature regression
+- [`nc_independence_check()`](https://seantbresnahan.com/iconic/reference/nc_independence_check.md)
+  /
+  [`nc_independence_check_gm()`](https://seantbresnahan.com/iconic/reference/nc_independence_check_gm.md)
+  — parallelizes per-control-feature partial correlation
+- [`nc_completeness_check()`](https://seantbresnahan.com/iconic/reference/nc_completeness_check.md)
+  — delegates `n_cores` to underlying screens
+
+### Internal changes
+
+- Rewrote `.parallel_lapply()` dispatcher with cross-platform support
+  (mclapply Unix, PSOCK Windows) and optional `progress` parameter for
+  milestone messages
+- Flattened nested `for(m) for(f)` mediation estimation loop into single
+  `expand.grid` task list for one parallel call
+- Default `n_cores = 1` preserves exact backward compatibility with
+  v0.8.2
+- No nested parallelism: simulation functions parallelized at the
+  replicate level call
+  [`run_methods()`](https://seantbresnahan.com/iconic/reference/run_methods.md)
+  with `n_cores = 1` inside each worker
+
+## iconic 0.8.2
+
+- Initial CRAN submission

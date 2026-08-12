@@ -1,0 +1,272 @@
+# Generate one synthetic dataset (internal)
+
+When `mo_confounding > 0`, the unmeasured confounder U1 also affects the
+mediator M, creating mediator-outcome confounding — the key extension
+for the mediation simulation. When `mo_confounding = 0` (default), the
+original DGP is preserved exactly.
+
+## Usage
+
+``` r
+generate_toy_data(
+  n = 500,
+  n_features = 20,
+  n_mediators = 1,
+  beta_X = 0.1,
+  alpha_M = 0.5,
+  beta_M = 0.3,
+  conf_str = 0.8,
+  w_signal = 0.7,
+  mo_confounding = 0,
+  pleio = 0,
+  phi = 0,
+  gamma_G = 0.6,
+  rho_G1 = 0,
+  rho_G2 = 0,
+  rho_pop = 0,
+  lambda_XM = NULL,
+  lambda_MY = NULL,
+  omega_1 = NULL,
+  omega_2 = NULL,
+  feat_cor = 0,
+  separate_U = NULL,
+  u_strength = NULL,
+  w_coverage_profile = NULL,
+  outcome_type = c("continuous", "survival"),
+  surv_h0 = 0.1,
+  surv_event_frac = 0.6,
+  surv_censor_rate = NULL,
+  seed = NULL,
+  beta_Z = NULL
+)
+```
+
+## Arguments
+
+- n:
+
+  Sample size. Default 500.
+
+- n_features:
+
+  Number of outcome and negative-control features. Default 20.
+
+- n_mediators:
+
+  Number of independent mediators. When \> 1, each mediator M_m has its
+  own genetic instrument Gm_m and contributes additively to Y. M and Gm
+  are returned as `n_mediators x n` matrices. Default 1 (single
+  mediator, backward compatible).
+
+- beta_X:
+
+  Direct effect of X on Y (true NDE). Default 0.10.
+
+- alpha_M:
+
+  Effect of X on mediator M. Default 0.50.
+
+- beta_M:
+
+  Effect of M on Y (per-mediator NIE = alpha_M \* beta_M; total NIE =
+  n_mediators \* alpha_M \* beta_M). Default 0.30.
+
+- conf_str:
+
+  Confounding strength delta. Default 0.80.
+
+- w_signal:
+
+  Proxy quality omega (0 = noise, 1 = perfect U proxy). Default 0.70.
+
+- mo_confounding:
+
+  Strength of U1 -\> M (mediator-outcome confounding). 0 = no M-O
+  confounding (original DGP). Default 0.
+
+- pleio:
+
+  Strength of a direct G -\> Y path (horizontal pleiotropy), violating
+  the exclusion restriction. 0 = no pleiotropy (valid instrument,
+  original DGP). Default 0.
+
+- phi:
+
+  Strength of the mediator instrument Gm -\> M. 0 = no mediator
+  instrument (original DGP, no Gm generated). Default 0. When \> 0, a
+  valid instrument for M is generated, enabling point identification of
+  NDE/NIE via
+  [`fit_iv2sls_mediation2`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2.md).
+
+- gamma_G:
+
+  Strength of the exposure instrument G -\> X. Default 0.6.
+
+- rho_G1:
+
+  Correlation of G1 with conf_XM. Default 0.
+
+- rho_G2:
+
+  Correlation of G2 with conf_MY. Default 0.
+
+- rho_pop:
+
+  Shared population structure inducing G1-G2 correlation . Default 0.
+
+- lambda_XM:
+
+  Optional per-path loading vector for the X-\>M confounder composite.
+  NULL (default) = shared loadings.
+
+- lambda_MY:
+
+  Optional per-path loading vector for the M-\>Y confounder composite.
+  NULL (default) = shared loadings.
+
+- omega_1:
+
+  Coverage of conf_XM by W1. NULL = use w_signal.
+
+- omega_2:
+
+  Coverage of conf_MY by W2. NULL = use w_signal.
+
+- feat_cor:
+
+  Within-module feature correlation. When \> 0, the idiosyncratic noise
+  in the Y and W panels is drawn from a multivariate normal with a
+  block-diagonal correlation matrix modelling co-expression modules. 0 =
+  independent noise (backward compatible). Default 0. Sensitivity sweeps
+  in the ICONIC preprint show estimator performance is largely
+  insensitive to `feat_cor`, so it is retained for completeness rather
+  than as a primary stress axis.
+
+- separate_U:
+
+  Defunct. Passing a value errors with a message pointing to the
+  replacement per-path loading vectors `lambda_XM` / `lambda_MY`.
+  Retained in the signature only to catch and redirect old calls.
+
+- u_strength:
+
+  Numeric scalar: scales the single confounder's effect on X, M, and Y.
+  Default NULL → 1 (backward compatible). See
+  [`run_single_iteration`](https://seantbresnahan.com/iconic/reference/run_single_iteration.md)
+  for the length-k vector version (multiple confounders).
+
+- w_coverage_profile:
+
+  A list with optional `w1` and `w2` numeric vectors: per-control
+  coverage of conf_XM / conf_MY. Default NULL → scalar omega applied
+  uniformly (backward compatible).
+
+- outcome_type:
+
+  `"continuous"` (default) or `"survival"` When `"survival"`, the
+  continuous linear predictor Y is converted to `surv_time` and
+  `surv_event` via an exponential PH model.
+
+- surv_h0:
+
+  Baseline hazard for the survival DGP. Default 0.1.
+
+- surv_event_frac:
+
+  Target fraction of observed events. Default 0.6. The censoring rate is
+  solved internally from this.
+
+- surv_censor_rate:
+
+  Explicit censoring rate. Default NULL → solved from `surv_event_frac`.
+
+- seed:
+
+  Optional integer RNG seed for reproducibility.
+
+- beta_Z:
+
+  Defunct. Renamed to `beta_X`; passing a value errors with a message
+  pointing to `beta_X`. Retained in the signature only to catch and
+  redirect old calls.
+
+## Value
+
+A named list with elements X, G (n x n_features matrix), Y, W, U1, M,
+synthetic_data, true_total, true_NDE, true_NIE. When `phi > 0`, also
+includes `Gm` (numeric vector, length n, or `n_mediators x n` matrix
+when `n_mediators > 1`). When any parameter is non-default, also
+includes `G1`, `G2`, `W1`, `W2`, `conf_XM`, `conf_MY`, and (when
+`rho_pop > 0`) `P`. When `n_mediators > 1`, `M` is an `n_mediators x n`
+matrix.
+
+## Details
+
+When `phi > 0`, a mediator-specific genetic instrument `Gm` is
+generated: \\Gm \sim \mathcal{N}(0,1)\\, independent of `G`, `U`, and
+all other variables, and the mediator equation becomes \\M = \alpha_M
+X + \delta\_{mo} 0.5 U_1 + \phi Gm + \varepsilon_M\\. `Gm` is a valid
+instrument for `M`: it moves `M` but is independent of the confounders
+and has no direct path to `Y`. This enables the 2-stage MR mediation
+estimator
+([`fit_iv2sls_mediation2`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2.md))
+to point-identify NDE and NIE even under M-O confounding. When `phi = 0`
+(default), no `Gm` is generated and the original DGP is preserved
+exactly.
+
+## imperfect instrument independence
+
+The generates instruments as pure noise, independent of the confounders
+— the best possible case. adds parameters that violate this
+independence, modelling realistic genomic structure:
+
+- `rho_G1`:
+
+  Correlation of the exposure instrument G1 with the X-\>M confounder
+  conf_XM (instrument exogeneity violation). Default 0.
+
+- `rho_G2`:
+
+  Correlation of the mediator instrument G2 with the M-\>Y confounder
+  conf_MY (instrument exogeneity violation). Default 0.
+
+- `rho_pop`:
+
+  Shared population-structure factor P that induces correlation between
+  G1 and G2 (linkage / stratification). Default 0.
+
+- `lambda_XM`, `lambda_MY`:
+
+  Per-path confounder loading vectors; distinct values draw conf_XM and
+  conf_MY as independent confounders for the X-\>M and M-\>Y paths
+  respectively. If `FALSE` (default), conf_XM = conf_MY = U1 (backward
+  compatible).
+
+- `omega_1`:
+
+  Coverage of conf_XM by the path-specific negative controls W1. `NULL`
+  (default) uses `w_signal`.
+
+- `omega_2`:
+
+  Coverage of conf_MY by the path-specific negative controls W2. `NULL`
+  (default) uses `w_signal`.
+
+When all are at their defaults, the DGP is identical to the default.
+When any is non-default, the output additionally includes `G1`, `G2`,
+`W1`, `W2`, `conf_XM`, `conf_MY`, and (when `rho_pop > 0`) `P`.
+
+## Examples
+
+``` r
+# Basic total-effect data
+dat <- generate_toy_data(n = 200, n_features = 10, seed = 42)
+
+# Mediation with mediator instrument and path-specific NCs
+dat <- generate_toy_data(n = 200, n_features = 10, phi = 0.8,
+mo_confounding = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
+omega_1 = 0.7, omega_2 = 0.7, seed = 42)
+idata <- iconic_data(X = dat$X, Y = dat$Y, M = dat$M,
+G = dat$G[, 1], Gm = dat$Gm,
+W1 = dat$W1, W2 = dat$W2)
+```

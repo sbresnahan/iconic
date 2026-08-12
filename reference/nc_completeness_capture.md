@@ -74,15 +74,15 @@ dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
 nc_completeness_capture(dat, n_perm = 99)
 #> NC capture null: 99 tasks (sequential)
 #>  NC capture null: 10% (10/99) [0.2s]
-#>  NC capture null: 20% (20/99) [0.4s]
+#>  NC capture null: 20% (20/99) [0.5s]
 #>  NC capture null: 30% (30/99) [0.7s]
-#>  NC capture null: 40% (40/99) [0.9s]
-#>  NC capture null: 51% (50/99) [1.1s]
-#>  NC capture null: 61% (60/99) [1.3s]
-#>  NC capture null: 71% (70/99) [1.5s]
-#>  NC capture null: 81% (80/99) [1.7s]
-#>  NC capture null: 91% (90/99) [2s]
-#>  NC capture null: 100% (99/99) [2.2s]
+#>  NC capture null: 40% (40/99) [1s]
+#>  NC capture null: 51% (50/99) [1.2s]
+#>  NC capture null: 61% (60/99) [1.4s]
+#>  NC capture null: 71% (70/99) [1.7s]
+#>  NC capture null: 81% (80/99) [1.9s]
+#>  NC capture null: 91% (90/99) [2.1s]
+#>  NC capture null: 100% (99/99) [2.3s]
 #> $capture_R2
 #> [1] 0.616692
 #> 

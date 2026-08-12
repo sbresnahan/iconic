@@ -85,14 +85,14 @@ analyze_mediation_robust(dat)
 #> analyze_mediation_robust: 20 tasks (sequential)
 #>  analyze_mediation_robust: 10% (2/20) [0.1s]
 #>  analyze_mediation_robust: 20% (4/20) [0.2s]
-#>  analyze_mediation_robust: 30% (6/20) [0.2s]
-#>  analyze_mediation_robust: 40% (8/20) [0.3s]
+#>  analyze_mediation_robust: 30% (6/20) [0.3s]
+#>  analyze_mediation_robust: 40% (8/20) [0.4s]
 #>  analyze_mediation_robust: 50% (10/20) [0.4s]
 #>  analyze_mediation_robust: 60% (12/20) [0.5s]
 #>  analyze_mediation_robust: 70% (14/20) [0.6s]
-#>  analyze_mediation_robust: 80% (16/20) [0.6s]
-#>  analyze_mediation_robust: 90% (18/20) [0.7s]
-#>  analyze_mediation_robust: 100% (20/20) [0.8s]
+#>  analyze_mediation_robust: 80% (16/20) [0.7s]
+#>  analyze_mediation_robust: 90% (18/20) [0.8s]
+#>  analyze_mediation_robust: 100% (20/20) [1s]
 #>          feature method        NDE     NDE_se        NDE_p        NIE
 #> UNADJ          1  UNADJ -0.3567091 0.03644547 8.992960e-20  0.9708511
 #> DIRECT         1 DIRECT -0.2337947 0.06100961 1.576139e-04  0.7170643

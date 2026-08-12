@@ -72,7 +72,6 @@
 <div class="section level2">
 <h2 id="about-the-package">About the Package<a class="anchor" aria-label="anchor" href="#about-the-package"></a>
 </h2>
-<p><img src="reference/figures/logo.png" align="right" width="259" height="300" alt="ICONIC logo"></p>
 <p>The R package <code>iconic</code> provides a model selection workflow for causal inference with genetic instruments and negative controls in observational omics data. It fits eight estimators of the natural direct and indirect effects (NDE / NIE), diagnoses which are valid for the user’s data, stress-tests them against confounding and pleiotropy violations, and recommends the one most likely to be unbiased.</p>
 <p>The motivating application is estimating the causal effect of an exposure (e.g. gestational diabetes mellitus) on a panel of molecular outcomes (e.g. placental transcriptome), but the package is applicable to any observational study with a genetic instrument, negative controls, and a mediator and/or outcome panel. A hybrid generative texture model (a torch GAN for sample-level structure and a Gaussian copula for the mediator panel) lets the sensitivity analysis mirror the marginal and joint structure of the user’s cohort. Time-to-event outcomes are supported on the Cox log-hazard-ratio and restricted-mean-survival-time scales.</p>
 <p>See the package vignettes for a quickstart guide, an overview of each functional area, and worked examples.</p>

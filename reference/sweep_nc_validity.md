@@ -181,16 +181,16 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
 #>   Panel C replicates: 50% (1/2) [0s]
 #>   Panel C replicates: 100% (2/2) [0s]
 #> NC capture null: 1000 tasks (sequential)
-#>  NC capture null: 10% (100/1000) [2s]
-#>  NC capture null: 20% (200/1000) [4s]
-#>  NC capture null: 30% (300/1000) [6s]
-#>  NC capture null: 40% (400/1000) [8s]
-#>  NC capture null: 50% (500/1000) [10s]
-#>  NC capture null: 60% (600/1000) [12s]
-#>  NC capture null: 70% (700/1000) [14s]
-#>  NC capture null: 80% (800/1000) [16s]
-#>  NC capture null: 90% (900/1000) [18s]
-#>  NC capture null: 100% (1000/1000) [20s]
+#>  NC capture null: 10% (100/1000) [2.2s]
+#>  NC capture null: 20% (200/1000) [4.4s]
+#>  NC capture null: 30% (300/1000) [6.6s]
+#>  NC capture null: 40% (400/1000) [8.8s]
+#>  NC capture null: 50% (500/1000) [11s]
+#>  NC capture null: 60% (600/1000) [13.2s]
+#>  NC capture null: 70% (700/1000) [15.4s]
+#>  NC capture null: 80% (800/1000) [17.6s]
+#>  NC capture null: 90% (900/1000) [19.8s]
+#>  NC capture null: 100% (1000/1000) [22s]
 #>  Panel D: nc_independence_check_gm (A2')
 #>  Panel D replicates: 2 tasks (sequential)
 #> NC independence (Gm): 10 tasks (sequential)
@@ -242,7 +242,7 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
 #>  NC independence (Gm): 90% (9/10) [0s]
 #>  NC independence (Gm): 100% (10/10) [0s]
 #>   Panel D replicates: 100% (2/2) [0s]
-#>  Done in 20.2 s
+#>  Done in 22.2 s
 panels$panel_a
 #>   contamination violated_mean violated_sd confounding_mean confounding_sd
 #> 1           0.0           0.0   0.0000000                1              0

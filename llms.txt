@@ -8,8 +8,6 @@ coverage](https://codecov.io/gh/sbresnahan/iconic/graph/badge.svg)](https://app.
 
 ## About the Package
 
-![ICONIC logo](reference/figures/logo.png)
-
 The R package `iconic` provides a model selection workflow for causal
 inference with genetic instruments and negative controls in
 observational omics data. It fits eight estimators of the natural direct

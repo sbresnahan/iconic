@@ -368,8 +368,8 @@ pros <- iconic_prospect(idat, confounding = "inferred")
   negative-control assumptions, the completeness condition, the
   sensitivity surface, and the model-selection criterion.
 - **Function reference** –
-  [`help(package = "iconic")`](https://rdrr.io/pkg/iconic/man) for the
-  full API, including
+  [`help(package = "iconic")`](https://seantbresnahan.com/iconic/reference)
+  for the full API, including
   [`gan_sensitivity()`](https://seantbresnahan.com/iconic/reference/gan_sensitivity.md),
   `pleiotropy_sweep()`, `mediation_sensitivity()`, and the
   negative-control diagnostics

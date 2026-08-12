@@ -14,3 +14,6 @@ Verifies the package is installed, libtorch is present, and a basic tensor
 op succeeds. Used to gate the GAN path; a \code{FALSE} result triggers the
 multivariate-normal fallback.
 }
+\examples{
+check_torch_setup()
+}

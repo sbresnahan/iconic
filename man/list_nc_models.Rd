@@ -12,3 +12,6 @@ Character vector of registered NC model names.
 \description{
 List the built-in negative-control models
 }
+\examples{
+list_nc_models()
+}

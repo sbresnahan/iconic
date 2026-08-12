@@ -17,3 +17,7 @@ Invisibly returns \code{x} (the \code{iconic_feature_texture} object); called fo
 \description{
 Print method for iconic_feature_texture objects
 }
+\examples{
+ft <- train_feature_texture(matrix(rnorm(20 * 100), 20, 100))
+print(ft)
+}

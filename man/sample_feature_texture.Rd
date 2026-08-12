@@ -29,9 +29,7 @@ variance per feature, so the texture acts as noise that the structural
 signal in \code{\link[=run_single_iteration]{run_single_iteration()}} provides the mean for.
 }
 \examples{
-\donttest{
 M <- matrix(rnorm(30 * 200), 30, 200) # 30 transcripts, 200 samples
 ft <- train_feature_texture(M)
 draws <- sample_feature_texture(ft, 500, n_features = 20)
-}
 }

@@ -62,12 +62,10 @@ When \code{gm} is supplied (PGC2Gm), the mediator instrument helps
 isolate conf_MY before bridging W2.
 }
 \examples{
-\donttest{
 set.seed(1)
-dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
+dat <- generate_toy_data(n = 500, outcome_type = "survival",
 mo_confounding = 0.8, rho_G2 = 0.3,
 lambda_XM = c(1, 0), lambda_MY = c(0, 1), seed = 1)
 fit_pgc_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
-}
 }

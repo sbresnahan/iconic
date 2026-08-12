@@ -39,3 +39,17 @@ workflow on example data. Panels: (A) eligibility table from
 \code{iconic_estimate()}, (C) degradation surface heatmap from
 \code{iconic_sensitivity()}.
 }
+\examples{
+if (check_torch_setup()) {
+  data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+    M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+    W = matrix(rnorm(100 * 10), 10, 100))
+  diag <- iconic_diagnose(data)
+  est <- iconic_estimate(data, diagnosis = diag)
+  sens <- iconic_sensitivity(data, n_iter = 2, gan_epochs = 5,
+    rho_G1_grid = c(0, 0.2), rho_G2_grid = c(0, 0.2))
+  rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
+    sensitivity = sens, auto_sensitivity = FALSE)
+  plot_model_selection(diag, est, sens, rec)
+}
+}

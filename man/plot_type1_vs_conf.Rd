@@ -26,3 +26,8 @@ Invisibly returns \code{NULL}; called for the side effect of drawing Type I erro
 \description{
 Type I error rate vs confounding strength
 }
+\examples{
+t1e <- sweep_null_by_conf(c(0.5, 0.8), n_iter = 2, n_samples = 100,
+  n_features = 5)
+plot_type1_vs_conf(t1e)
+}

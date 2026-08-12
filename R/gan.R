@@ -31,6 +31,8 @@
 #'
 #' @return `TRUE` if torch is usable, otherwise `FALSE`.
 #' @export
+#' @examples
+#' check_torch_setup()
 check_torch_setup <- function() {
   if (!requireNamespace("torch", quietly = TRUE)) return(FALSE)
   ok <- tryCatch({
@@ -46,6 +48,7 @@ check_torch_setup <- function() {
 #' Returns the names of columns whose unique values are a subset of \eqn{{0, 1}}.
 #' Used to flag columns that must be rounded back to 0/1 after sampling.
 #' @keywords internal
+#' @noRd
 .detect_binary_cols <- function(X) {
   if (!ncol(X)) return(character(0))
   bin <- vapply(X, function(col) {
@@ -62,6 +65,7 @@ check_torch_setup <- function() {
 #' mutual exclusivity can be enforced after rounding. Only groups with >= 2
 #' members are returned.
 #' @keywords internal
+#' @noRd
 .detect_onehot_groups <- function(columns) {
   if (length(columns) < 2) return(list())
   parts <- strsplit(columns, "_")
@@ -82,6 +86,7 @@ check_torch_setup <- function() {
 #' pre-rounding value wins (set to 1, others to 0), preserving the constraint
 #' that exactly one level is active per row.
 #' @keywords internal
+#' @noRd
 .enforce_discrete <- function(df, binary_cols, onehot_groups) {
   if (!length(binary_cols)) return(df)
 
@@ -205,19 +210,19 @@ create_discriminator <- function(input_dim) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' dat <- load_real_input_data(example = TRUE)
-#' gan <- train_gan_on_real_data(dat$gan_training_data,
-#' feature_correlations = dat$feature_correlations,
-#' feature_texture = dat$feature_texture,
-#' epochs = 50)
-#' head(sample_texture(gan, 5))
+#' if (check_torch_setup()) {
+#'   dat <- load_real_input_data(example = TRUE)
+#'   gan <- train_gan_on_real_data(dat$gan_training_data,
+#'     feature_correlations = dat$feature_correlations,
+#'     feature_texture = dat$feature_texture,
+#'     epochs = 5, verbose = FALSE)
+#'   head(sample_texture(gan, 5))
 #' }
 train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
                                    feature_texture = NULL,
                                    epochs = 300, batch_size = 32,
                                    lr = 2e-4, seed = NULL, verbose = TRUE) {
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) withr::local_seed(seed)
 
   if (!check_torch_setup())
     stop("torch is required for the generative texture model. ",
@@ -250,6 +255,7 @@ train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
 
 #' Torch GAN training loop (internal)
 #' @keywords internal
+#' @noRd
 .gan_train_loop <- function(Xn, columns, norm, stats, epochs, batch_size, lr,
                             seed, verbose, binary_cols, onehot_groups,
                             feature_correlations = NULL,
@@ -318,6 +324,13 @@ train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
 #' @return A data frame of `n` rows with the trained columns, on the original
 #' (de-normalised) scale. Binary columns contain only 0/1 values.
 #' @export
+#' @examples
+#' if (check_torch_setup()) {
+#'   dat <- load_real_input_data(example = TRUE)
+#'   gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
+#'     verbose = FALSE)
+#'   head(sample_texture(gan, 5))
+#' }
 sample_texture <- function(trained_gan, n) {
   stopifnot(inherits(trained_gan, "iconic_gan"))
   cols <- trained_gan$columns
@@ -348,6 +361,13 @@ sample_texture <- function(trained_gan, n) {
 #' @param ... Unused.
 #' @return Invisibly returns `x` (the `iconic_gan` object); called for its side effect of printing a human-readable summary.
 #' @export
+#' @examples
+#' if (check_torch_setup()) {
+#'   dat <- load_real_input_data(example = TRUE)
+#'   gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
+#'     verbose = FALSE)
+#'   print(gan)
+#' }
 print.iconic_gan <- function(x, ...) {
   cat("<iconic_gan>\n")
   cat(" engine : torch GAN\n")

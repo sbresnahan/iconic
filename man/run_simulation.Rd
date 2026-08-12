@@ -49,8 +49,7 @@ A list with raw, summary, iter_bias, true_total, params.
 Run repeated simulations for a single parameter configuration
 }
 \examples{
-\donttest{
-res <- run_simulation(n_iter = 50, beta_X = 0.1, conf_str = 0.8)
+res <- run_simulation(n_iter = 3, n_samples = 100, beta_X = 0.1,
+                      conf_str = 0.8)
 res$summary
-}
 }

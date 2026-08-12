@@ -71,6 +71,11 @@
 #'
 #' @return `n x n_features` matrix of negative controls.
 #' @export
+#' @examples
+#' U <- matrix(rnorm(100), 100, 1)
+#' W <- nc_proxy(U, covariates = NULL,
+#'   params = list(n_features = 10, coverage = 0.7))
+#' dim(W)
 nc_proxy <- function(U, covariates, params) {
   n <- nrow(U); k <- ncol(U)
   p <- params$n_features
@@ -182,6 +187,11 @@ nc_proxy <- function(U, covariates, params) {
 #'
 #' @return `n x n_features` matrix of CpG-predicted negative controls.
 #' @export
+#' @examples
+#' U <- matrix(rnorm(100), 100, 1)
+#' W <- nc_cpg(U, covariates = NULL,
+#'   params = list(n_features = 10, coverage = 0.7, n_cpg = 20))
+#' dim(W)
 nc_cpg <- function(U, covariates, params) {
   n <- nrow(U); k <- ncol(U)
   p <- params$n_features
@@ -226,6 +236,7 @@ nc_cpg <- function(U, covariates, params) {
 #'
 #' Accepts a function (used as-is), or a registered name (`"proxy"`, `"cpg"`).
 #' @keywords internal
+#' @noRd
 .resolve_nc_model <- function(nc_model) {
   if (is.function(nc_model)) return(nc_model)
   if (is.character(nc_model) && length(nc_model) == 1 &&
@@ -239,6 +250,7 @@ nc_cpg <- function(U, covariates, params) {
 #'
 #' Calls the model on tiny inputs and checks the returned shape.
 #' @keywords internal
+#' @noRd
 .validate_nc_model <- function(nc_model, k = 2, n = 10, p = 3) {
   f <- .resolve_nc_model(nc_model)
   U <- matrix(rnorm(n * k), n, k)
@@ -251,6 +263,8 @@ nc_cpg <- function(U, covariates, params) {
 #' List the built-in negative-control models
 #' @return Character vector of registered NC model names.
 #' @export
+#' @examples
+#' list_nc_models()
 list_nc_models <- function() names(.iconic_nc_registry)
 
 
@@ -268,9 +282,12 @@ list_nc_models <- function() names(.iconic_nc_registry)
 #' @return List with `G` (standardised instrument, length `n`), `dosages`
 #' (`n x n_snps`), and `maf`.
 #' @export
+#' @examples
+#' g <- simulate_single_genetic_instrument(100, n_snps = 10, seed = 1)
+#' length(g$G)
 simulate_single_genetic_instrument <- function(n, n_snps = 20, maf = 0.3,
                                                seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) withr::local_seed(seed)
   dosages <- matrix(rbinom(n * n_snps, 2, maf), n, n_snps)
   score <- rowSums(dosages)
   list(G = as.numeric(scale(score)), dosages = dosages, maf = maf)

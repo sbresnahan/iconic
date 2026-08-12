@@ -41,3 +41,7 @@ A list with rates (data frame) and raw (full results).
 \description{
 Run null simulations to estimate Type I error rates
 }
+\examples{
+null <- run_null_sim(n_iter = 2, n_samples = 100, n_features = 5)
+null$rates
+}

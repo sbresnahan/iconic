@@ -29,10 +29,9 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' res <- run_simulation(n_iter = 50, beta_X = 0.1, conf_str = 0.8)
+#' res <- run_simulation(n_iter = 3, n_samples = 100, beta_X = 0.1,
+#'                       conf_str = 0.8)
 #' res$summary
-#' }
 
 run_simulation <- function(n_iter = 100,
                            n_samples = 500,
@@ -97,9 +96,8 @@ run_simulation <- function(n_iter = 100,
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' res <- sweep_param("conf_str", c(0.2, 0.5, 0.8, 1.0), n_iter = 50)
-#' }
+#' res <- sweep_param("conf_str", c(0.2, 0.8), n_iter = 3, n_samples = 100)
+#' res$summary
 sweep_param <- function(param,
                         param_grid,
                         n_iter = 100,
@@ -178,6 +176,9 @@ sweep_param <- function(param,
 #'
 #' @return A list with rates (data frame) and raw (full results).
 #' @export
+#' @examples
+#' null <- run_null_sim(n_iter = 2, n_samples = 100, n_features = 5)
+#' null$rates
 run_null_sim <- function(n_iter = 200,
                          n_samples = 500,
                          n_features = 20,
@@ -235,10 +236,8 @@ run_null_sim <- function(n_iter = 200,
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' t1e <- sweep_null_by_conf(c(0.2, 0.4, 0.6, 0.8, 1.0), n_iter = 50)
+#' t1e <- sweep_null_by_conf(c(0.2, 0.8), n_iter = 3, n_samples = 100)
 #' plot_type1_vs_conf(t1e)
-#' }
 sweep_null_by_conf <- function(conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),
                                n_iter = 100,
                                n_samples = 500,
@@ -318,6 +317,7 @@ compute_iter_bias <- function(combined, true_total) {
 #' a progress message is printed after each chunk
 #' completes. Default NULL (silent).
 #' @keywords internal
+#' @noRd
 .parallel_lapply <- function(X, FUN, n_cores = 1, progress = NULL) {
   n <- length(X)
   if (n == 0) return(list())

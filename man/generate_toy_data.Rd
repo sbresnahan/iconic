@@ -94,7 +94,11 @@ composite. NULL (default) = shared loadings.}
 the idiosyncratic noise in the Y and W panels is drawn
 from a multivariate normal with a block-diagonal
 correlation matrix modelling co-expression modules.
-0 = independent noise (backward compatible). Default 0.}
+0 = independent noise (backward compatible). Default 0.
+Sensitivity sweeps in the ICONIC preprint show estimator
+performance is largely insensitive to \code{feat_cor}, so it
+is retained for completeness rather than as a primary
+stress axis.}
 
 \item{separate_U}{Defunct. Passing a value errors with a message pointing
 to the replacement per-path loading vectors

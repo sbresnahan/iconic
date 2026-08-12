@@ -134,11 +134,9 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
+#' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_direct(dat$Y[, 1], dat$X, dat$G[, 1], dat$W[, 1])
-#' }
 
 
 fit_direct <- function(y, X, g, w, covars = NULL) {
@@ -191,11 +189,9 @@ fit_direct <- function(y, X, g, w, covars = NULL) {
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
+#' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_coca(dat$Y[, 1], dat$X, rowMeans(dat$W))
-#' }
 
 
 fit_coca <- function(y, X, w, covars = NULL, ratio_cap = 10, se_cap = 5) {
@@ -252,11 +248,9 @@ fit_coca <- function(y, X, w, covars = NULL, ratio_cap = 10, se_cap = 5) {
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
+#' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_iv2sls(dat$Y[, 1], dat$X, dat$G[, 1], dat$W[, 1])
-#' }
 
 
 fit_iv2sls <- function(y, X, g, w, covars = NULL, min_f = 10) {
@@ -338,11 +332,9 @@ fit_iv2sls <- function(y, X, g, w, covars = NULL, min_f = 10) {
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
+#' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_pgc(dat$Y[, 1], dat$X, dat$G[, 1], dat$W)
-#' }
 fit_pgc <- function(y, X, g, W, covars = NULL) {
   NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
   cnames <- if (!is.null(covars)) names(covars) else character(0)
@@ -422,11 +414,9 @@ fit_pgc <- function(y, X, g, W, covars = NULL) {
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, seed = 1)
+#' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_pgc_scalar(dat$Y[, 1], dat$X, dat$G[, 1], rowMeans(dat$W))
-#' }
 fit_pgc_scalar <- function(y, X, g, w, covars = NULL) {
   NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
   cnames <- if (!is.null(covars)) names(covars) else character(0)

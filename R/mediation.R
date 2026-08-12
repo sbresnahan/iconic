@@ -317,11 +317,9 @@ composite_p_value <- function(a, b, var_a = 1, var_b = 1) {
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
+#' dat <- generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
 #' fit_unadj_mediation(dat$Y[, 1], dat$X, dat$M)
-#' }
 fit_unadj_mediation <- function(y, X, M, covars = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
@@ -383,11 +381,9 @@ fit_unadj_mediation <- function(y, X, M, covars = NULL) {
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
+#' dat <- generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
 #' fit_direct_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W[, 1])
-#' }
 fit_direct_mediation <- function(y, X, M, g, w, covars = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
@@ -460,11 +456,9 @@ fit_direct_mediation <- function(y, X, M, g, w, covars = NULL) {
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
+#' dat <- generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
 #' fit_coca_mediation(dat$Y[, 1], dat$X, dat$M, rowMeans(dat$W))
-#' }
 fit_coca_mediation <- function(y, X, M, w, covars = NULL, ratio_cap = 10) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
@@ -554,11 +548,9 @@ fit_coca_mediation <- function(y, X, M, w, covars = NULL, ratio_cap = 10) {
 #' with an instrumental variable. *Biometrics*.
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
+#' dat <- generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
 #' fit_iv2sls_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W[, 1])
-#' }
 fit_iv2sls_mediation <- function(y, X, M, g, w, covars = NULL, min_f = 10) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
@@ -710,14 +702,12 @@ fit_iv2sls_mediation <- function(y, X, M, g, w, covars = NULL, min_f = 10) {
 #' with an instrumental variable. *Biometrics*.
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
+#' dat <- generate_toy_data(n = 500, mo_confounding = 0.8,
 #' phi = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
 #' omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 #' fit_iv2sls_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$Gm,
 #' W1 = dat$W1, W2 = dat$W2)
-#' }
 fit_iv2sls_mediation2 <- function(y, X, M, g, gm, covars = NULL, min_f = 10,
                                   W1 = NULL, W2 = NULL, w = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
@@ -845,11 +835,9 @@ fit_iv2sls_mediation2 <- function(y, X, M, g, gm, covars = NULL, min_f = 10,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
+#' dat <- generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
 #' fit_pgc_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W)
-#' }
 fit_pgc_mediation <- function(y, X, M, g, W, covars = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
@@ -988,9 +976,8 @@ fit_pgc_mediation <- function(y, X, M, g, W, covars = NULL) {
 #' 105(4), 987-993.
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 500, mo_confounding = 0.8,
+#' dat <- generate_toy_data(n = 500, mo_confounding = 0.8,
 #' rho_G2 = 0.3, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
 #' omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 #' # Without mediator instrument (pure NC identification)
@@ -998,7 +985,6 @@ fit_pgc_mediation <- function(y, X, M, g, W, covars = NULL) {
 #' # With (possibly imperfect) mediator instrument
 #' fit_pgc_mediation2(dat$Y[, 1], dat$X, dat$M, dat$G1, dat$W1, dat$W2,
 #' gm = dat$Gm)
-#' }
 fit_pgc_mediation2 <- function(y, X, M, g, W1, W2, gm = NULL,
                                covars = NULL, min_f = 10) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
@@ -1152,11 +1138,9 @@ fit_pgc_mediation2 <- function(y, X, M, g, W1, W2, gm = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
+#' dat <- generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
 #' fit_pgc_scalar_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], rowMeans(dat$W))
-#' }
 fit_pgc_scalar_mediation <- function(y, X, M, g, w, covars = NULL) {
   NA_res <- list(NDE = NA_real_, NDE_se = NA_real_, NDE_p = NA_real_,
                  NIE = NA_real_, NIE_se = NA_real_, NIE_p = NA_real_,
@@ -1579,10 +1563,8 @@ run_mediation_methods <- function(dat, n_features = ncol(dat$Y), W_valid = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' dat <- iconic:::generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
+#' dat <- generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
 #' analyze_mediation_robust(dat)
-#' }
 analyze_mediation_robust <- function(iteration_data, test_features = NULL,
                                      alpha = 0.05, n_cores = 1,
                                      se_method = c("delta", "bootstrap",

@@ -3,7 +3,7 @@
 
 #' @importFrom grDevices adjustcolor colorRampPalette
 #' @importFrom graphics abline axis barplot box boxplot grid image legend lines mtext par points polygon rect text
-#' @importFrom stats aggregate as.formula ave coef complete.cases cov dbeta density fitted integrate lm median p.adjust pnorm pt quantile rbinom residuals rnorm runif sd setNames vcov
+#' @importFrom stats aggregate as.formula ave coef complete.cases cov dbeta density fitted integrate lm median p.adjust pnorm prcomp pt quantile rbinom residuals rnorm runif sd setNames vcov
 #' @importFrom utils modifyList tail
 NULL
 

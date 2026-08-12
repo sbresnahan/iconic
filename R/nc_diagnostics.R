@@ -401,10 +401,8 @@ nc_independence_check_gm <- function(dat, fdr_level = 0.10, n_cores = 1) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
-#' nc_completeness_check(dat)
-#' }
+#' nc_completeness_check(dat, n_perm = 50)
 nc_completeness_check <- function(dat, n_valid_controls = NULL,
                                   fdr_level = 0.10, n_cores = 1,
                                   outcome = "Y", n_perm = 1000,
@@ -516,10 +514,8 @@ nc_completeness_check <- function(dat, n_valid_controls = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
-#' nc_completeness_capture(dat)
-#' }
+#' nc_completeness_capture(dat, n_perm = 99)
 nc_completeness_capture <- function(dat, outcome = "Y", n_perm = 1000,
                                     n_cores = 1,
                                     thresholds = list(strong = 0.3, weak = 0.1)) {
@@ -667,10 +663,8 @@ nc_completeness_capture <- function(dat, outcome = "Y", n_perm = 1000,
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
 #' nc_support_check(dat)
-#' }
 nc_support_check <- function(dat, fdr_level = 0.10) {
   W <- dat$W
   if (is.null(W)) stop("dat$W is not present.")

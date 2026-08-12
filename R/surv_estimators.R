@@ -127,12 +127,10 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_unadj_surv(dat$surv_time, dat$surv_event, dat$X)
 #' fit_unadj_surv(dat$surv_time, dat$surv_event, dat$X, effect_scale = "rmst")
-#' }
 fit_unadj_surv <- function(time, event, X, covars = NULL,
                            effect_scale = c("loghr", "rmst"), tau = NULL) {
   effect_scale <- match.arg(effect_scale)
@@ -178,11 +176,9 @@ fit_unadj_surv <- function(time, event, X, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_direct_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W[, 1])
-#' }
 fit_direct_surv <- function(time, event, X, g, w, covars = NULL,
                             effect_scale = c("loghr", "rmst"), tau = NULL) {
   effect_scale <- match.arg(effect_scale)
@@ -238,11 +234,9 @@ fit_direct_surv <- function(time, event, X, g, w, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_iv2sls_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W[, 1])
-#' }
 fit_iv2sls_surv <- function(time, event, X, g, w, covars = NULL, min_f = 10,
                             effect_scale = c("loghr", "rmst"), tau = NULL) {
   effect_scale <- match.arg(effect_scale)
@@ -307,11 +301,9 @@ fit_iv2sls_surv <- function(time, event, X, g, w, covars = NULL, min_f = 10,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_pgc_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W)
-#' }
 fit_pgc_surv <- function(time, event, X, g, W, covars = NULL,
                          effect_scale = c("loghr", "rmst"), tau = NULL) {
   effect_scale <- match.arg(effect_scale)
@@ -383,12 +375,10 @@ fit_pgc_surv <- function(time, event, X, g, W, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_coca_surv(dat$surv_time, dat$surv_event, dat$X, dat$W[, 1])
 #' # $beta [1] NA (COCA unsupported for survival outcomes)
-#' }
 fit_coca_surv <- function(time, event, X, w, covars = NULL, ...) {
   out <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
   attr(out, "reason") <- paste(

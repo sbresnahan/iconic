@@ -23,3 +23,7 @@ A \code{ggplot} object showing the distribution of estimates by method.
 \description{
 Boxplot of estimate distributions from run_simulation()
 }
+\examples{
+sim <- run_simulation(n_iter = 2, n_samples = 100, n_features = 5)
+plot_estimate_distribution(sim)
+}

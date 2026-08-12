@@ -92,6 +92,10 @@
 #' `conf_strength`, `coverage`, `k`, `true_total` and the columns from
 #' `summarise_results`) and `grid` (the scenario grid).
 #' @export
+#' @examples
+#' sens <- gan_sensitivity(NULL, conf_grid = 0.8, coverage_grid = 0.7,
+#'   n_iter = 2, n_samples = 100, n_features = 5)
+#' head(sens$summary)
 gan_sensitivity <- function(trained_gan = NULL,
                             conf_grid = c(0.2, 0.5, 0.8),
                             coverage_grid = c(0.3, 0.7, 1),
@@ -165,6 +169,10 @@ gan_sensitivity <- function(trained_gan = NULL,
 #' `worst_case` (max RMSE per method across scenarios), and `overall` (the
 #' method minimising worst-case RMSE).
 #' @export
+#' @examples
+#' sens <- gan_sensitivity(NULL, conf_grid = 0.8, coverage_grid = 0.7,
+#'   n_iter = 2, n_samples = 100, n_features = 5)
+#' recommend_estimator(sens)
 recommend_estimator <- function(sens, exclude = c("UNADJ")) {
   s <- sens$summary
   s <- s[!s$method %in% exclude, , drop = FALSE]
@@ -217,6 +225,10 @@ recommend_estimator <- function(sens, exclude = c("UNADJ")) {
 #' @return A list with `summary` (COCA/PGC/IV2SLS bias & RMSE per scenario,
 #' with an `identified` flag) and `verdict` (short per-scenario diagnosis).
 #' @export
+#' @examples
+#' chk <- nc_validity_check(NULL, coverage_grid = 0.7, k_grid = 1,
+#'   n_iter = 2, n_samples = 100, n_features = 5)
+#' chk$verdict
 nc_validity_check <- function(trained_gan = NULL,
                               coverage_grid = c(0.2, 0.5, 0.8, 1),
                               k_grid = c(1, 2, 3),
@@ -335,11 +347,10 @@ nc_validity_check <- function(trained_gan = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' sens <- gan_mediation_sensitivity(NULL, conf_grid = c(0.3, 0.8),
-#' mo_confounding = 0.8, n_iter = 20)
+#' sens <- gan_mediation_sensitivity(NULL, conf_grid = 0.8,
+#'   coverage_grid = 0.7, mo_confounding = 0.8,
+#'   n_iter = 2, n_samples = 100, n_features = 5)
 #' head(sens$summary)
-#' }
 gan_mediation_sensitivity <- function(trained_gan = NULL,
                                       conf_grid = c(0.2, 0.5, 0.8),
                                       coverage_grid = c(0.3, 0.7, 1),

@@ -2,31 +2,86 @@
 % Please edit documentation in R/iconic_data.R
 \name{as_iconic_data}
 \alias{as_iconic_data}
-\title{Convert a load_real_input_data result (or named components) to iconic_data}
+\alias{as_iconic_data.default}
+\alias{as_iconic_data.SummarizedExperiment}
+\title{Convert external data containers to iconic_data}
 \usage{
 as_iconic_data(input, ...)
+
+\method{as_iconic_data}{default}(input, ...)
+
+\method{as_iconic_data}{SummarizedExperiment}(
+  input,
+  assay = 1,
+  mediator_assay = NULL,
+  exposure,
+  instrument = NULL,
+  mediator_instrument = NULL,
+  negative_controls = NULL,
+  covariates = NULL,
+  surv_time = NULL,
+  surv_event = NULL,
+  outcome_type = c("continuous", "survival"),
+  ...
+)
 }
 \arguments{
-\item{input}{Either a list returned by \code{\link[=load_real_input_data]{load_real_input_data()}}, or
-the exposure vector X (when using named-argument form).}
+\item{input}{An object to convert: a list returned by
+\code{\link[=load_real_input_data]{load_real_input_data()}}, an \code{iconic_data} object, an exposure
+vector (named-argument form), or a SummarizedExperiment.}
 
 \item{...}{Named arguments passed to \code{\link[=iconic_data]{iconic_data()}} when using
-the named-argument form. Ignored when \code{input} is a list.}
+the named-argument form, or to the method.}
+
+\item{assay}{Name or index of the assay of \code{input} holding the
+outcome panel (features x samples). Default \code{1}. Set to \code{NULL} for
+survival outcomes (when \code{surv_time}/\code{surv_event} are colData
+columns and no continuous outcome panel is used).}
+
+\item{mediator_assay}{Optional name or index of an assay holding
+the mediator panel (mediators x samples).}
+
+\item{exposure}{Character: name of the \code{colData} column holding the
+exposure X.}
+
+\item{instrument}{Optional character: name of the \code{colData} column
+holding the exposure instrument G (e.g. a polygenic score).}
+
+\item{mediator_instrument}{Optional character vector of \code{colData}
+column names holding the mediator instrument(s) Gm (one column per
+mediator).}
+
+\item{negative_controls}{Optional character vector of \code{colData}
+column names forming the negative-control panel W.}
+
+\item{covariates}{Optional character vector of \code{colData} column
+names to carry through as covariates.}
+
+\item{surv_time, surv_event}{Optional character: names of \code{colData}
+columns holding follow-up time and the 0/1 event indicator; set
+together with \code{outcome_type = "survival"}.}
+
+\item{outcome_type}{\verb{\\"continuous\\"} (default) or
+\verb{\\"survival\\"}.}
 }
 \value{
 An \code{iconic_data} S3 object.
 }
 \description{
-Bridges the GAN-training data interface to the estimation interface.
-Can be called in two ways:
+S3 generic bridging other data interfaces to the estimation
+interface. Methods:
 }
 \details{
-\enumerate{
-\item With a list returned by \code{\link[=load_real_input_data]{load_real_input_data()}} (the original
-interface).
-\item With named arguments matching \code{\link[=iconic_data]{iconic_data()}} (X, Y, M, G, Gm,
-W, W1, W2, covariates, feature_names, mediator_names), which
-simply delegates to \code{\link[=iconic_data]{iconic_data()}}.
+\itemize{
+\item \code{default}: a list returned by \code{\link[=load_real_input_data]{load_real_input_data()}}, an
+existing \code{iconic_data} object (returned as-is), or the exposure
+vector \code{X} with named arguments matching \code{\link[=iconic_data]{iconic_data()}} (Y, M,
+G, Gm, W, W1, W2, covariates, feature_names, mediator_names),
+which delegates to \code{\link[=iconic_data]{iconic_data()}}.
+\item \code{SummarizedExperiment}: extracts the outcome panel from an assay
+and sample-level fields (exposure, instruments, negative
+controls, covariates) from \code{colData}. Requires the
+SummarizedExperiment package (listed under \code{Suggests}).
 }
 }
 \examples{
@@ -39,4 +94,19 @@ print(data)
 data <- as_iconic_data(rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 G = rnorm(100), Gm = rnorm(100),
 W = matrix(rnorm(100*10), 10, 100))
+if (requireNamespace("SummarizedExperiment", quietly = TRUE)) {
+  se <- SummarizedExperiment::SummarizedExperiment(
+    assays = list(expr = matrix(rnorm(20 * 60), 20, 60,
+                                dimnames = list(paste0("gene", 1:20),
+                                                paste0("S", 1:60)))),
+    colData = S4Vectors::DataFrame(
+      bmi = rnorm(60), prs = rnorm(60),
+      nc1 = rnorm(60), nc2 = rnorm(60), age = rnorm(60))
+  )
+  data <- as_iconic_data(se, assay = "expr", exposure = "bmi",
+                         instrument = "prs",
+                         negative_controls = c("nc1", "nc2"),
+                         covariates = "age")
+  print(data)
+}
 }

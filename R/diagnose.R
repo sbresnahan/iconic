@@ -112,8 +112,8 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = NULL,
            "estimation, or supply instruments/NCs for the core estimators.")
     }
     message("No instruments or negative controls supplied: only UNADJ ",
-            "estimation is eligible. Set allow_no_proxy = FALSE to make ",
-            "this an error.")
+            "estimation is eligible. Set allow_no_proxy = FALSE to ",
+            "disallow this.")
   }
 
   # ── Instrument strength ──
@@ -400,6 +400,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = NULL,
 #' $synthetic_data. This helper converts an iconic_data object to
 #' that format.
 #' @keywords internal
+#' @noRd
 .to_nc_dat <- function(data) {
   # Use W if available; fall back to W1 when only path-specific NCs supplied
   W_mat <- data$W
@@ -439,6 +440,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = NULL,
 #' assumption does not involve the instrument, so COCA uses A1 only;
 #' IV2SLS/PGC/IV2SLS2/PGC2/PGC2Gm use A2 (the legacy behavior).
 #' @keywords internal
+#' @noRd
 .count_valid_ncs <- function(nc_val, nc_ind, for_estimator = NULL) {
   # COCA does not require A2 (instrument-independence): its identifying
   # assumption is the negative-control outcome structure, not the instrument.
@@ -464,6 +466,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = NULL,
 
 #' Assess completeness (internal)
 #' @keywords internal
+#' @noRd
 .assess_completeness <- function(n_valid, k, dim_W) {
   status <- if (n_valid > k) {
     "satisfied"
@@ -507,6 +510,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = NULL,
 #' only A1 + completeness. The eligibility table gains an
 #' `a2_required` column documenting which estimators need A2.
 #' @keywords internal
+#' @noRd
 .assess_eligibility <- function(data, inst, completeness, min_f) {
   has_G <- data$has_instrument
   has_Gm <- data$has_mediator_instrument
@@ -623,6 +627,7 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = NULL,
 
 #' Build human-readable diagnosis summary (internal)
 #' @keywords internal
+#' @noRd
 .build_diagnosis_summary <- function(data, inst, nc_val, nc_ind,
                                      nc_ind_gm, completeness,
                                      eligibility) {
@@ -717,6 +722,12 @@ iconic_diagnose <- function(data, fdr_level = 0.10, min_f = 10, k = NULL,
 #' @param ... Unused.
 #' @return Invisibly returns `x` (the `iconic_diagnosis` object); called for its side effect of printing a human-readable summary.
 #' @export
+#' @examples
+#' set.seed(1)
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'   G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#' diag <- iconic_diagnose(data)
+#' print(diag)
 print.iconic_diagnosis <- function(x, ...) {
   cat("<iconic_diagnosis>\n")
   cat("Diagnostic summary:\n")
@@ -731,6 +742,12 @@ print.iconic_diagnosis <- function(x, ...) {
 #' @param ... Unused.
 #' @return Invisibly returns \code{object}.
 #' @export
+#' @examples
+#' set.seed(1)
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'   G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#' diag <- iconic_diagnose(data)
+#' summary(diag)
 summary.iconic_diagnosis <- function(object, ...) {
   print.iconic_diagnosis(object, ...)
   invisible(object)

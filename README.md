@@ -30,7 +30,7 @@ functional area, and worked examples.
 
 We welcome your feedback and questions:
 
-- Email <stbresnahan@mdanderson.org> for general questions
+- Email <seantbresnahan3@gmail.com> for general questions
 
 ## Estimators
 
@@ -102,7 +102,7 @@ NIE, confounding strength, instrument strength, NC coverage) is a
 closed-form function of the parameters, making it suitable for estimator
 validation under controlled confounding scenarios.
 
-![](man/figures/iconic_benchmark_simulation_mode.png)
+![Diagram of the benchmark simulation mode: two latent confounders open the exposure-mediator and mediator-outcome backdoor paths, with the exposure, mediator, and outcome generated from the structural causal model under parametric Gaussian noise.](man/figures/iconic_benchmark_simulation_mode.png)
 
 **Benchmark simulation mode: the structural synthetic-data generator
 (`generate_toy_data`).** Two latent confounders are drawn independently —
@@ -125,7 +125,7 @@ mediator panel's marginals and cross-feature dependence). Neither
 component learns the causal effect; the ground truth is imposed by the
 structural skeleton and guaranteed by construction.
 
-![](man/figures/ICONIC_generative_texture.png)
+![Diagram of the generative texture pipeline: a sample-level GAN and a feature-level Gaussian copula are trained on the user's data, injected into the structural causal model, and used to draw a synthetic dataset with realistic texture and known ground truth.](man/figures/ICONIC_generative_texture.png)
 
 **Data-calibrated simulation mode: the hybrid GAN-plus-copula generative
 texture pipeline.** (1) Texture learning: a sample-level GAN and a
@@ -137,11 +137,17 @@ data texture and known ground truth.
 
 ## Installation
 
-```r
-# From CRAN (once accepted):
-install.packages("iconic")
+`iconic` is being submitted to Bioconductor. Once accepted, install the
+release with:
 
-# From GitHub:
+```r
+# install.packages("BiocManager")
+BiocManager::install("iconic")
+```
+
+The development version is available from GitHub:
+
+```r
 # install.packages("remotes")
 remotes::install_github("sbresnahan/iconic")
 

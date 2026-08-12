@@ -109,6 +109,10 @@
 #' from a multivariate normal with a block-diagonal
 #' correlation matrix modelling co-expression modules.
 #' 0 = independent noise (backward compatible). Default 0.
+#' Sensitivity sweeps in the ICONIC preprint show estimator
+#' performance is largely insensitive to \code{feat_cor}, so it
+#' is retained for completeness rather than as a primary
+#' stress axis.
 #' @param u_strength Numeric scalar: scales the single
 #' confounder's effect on X, M, and Y. Default NULL → 1
 #' (backward compatible). See \code{\link{run_single_iteration}}
@@ -194,7 +198,7 @@ generate_toy_data <- function(n = 500,
                               surv_censor_rate = NULL,
                               seed = NULL,
                               beta_Z = NULL) {
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) withr::local_seed(seed)
   outcome_type <- match.arg(outcome_type)
 
   # Deprecated-argument trap: the exposure effect was renamed beta_Z -> beta_X.

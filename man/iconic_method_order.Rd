@@ -12,3 +12,6 @@ A character vector giving the canonical display order of the eight ICONIC estima
 \description{
 Default method display order
 }
+\examples{
+iconic_method_order
+}

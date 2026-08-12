@@ -170,10 +170,7 @@ When \code{n_mediators > 1}, \code{M} is an \verb{n_mediators x n} matrix.
 Generate one synthetic dataset under the generalised SCM
 }
 \examples{
-\dontrun{
-gan <- train_gan_on_real_data(load_real_input_data(example = TRUE)$gan_training_data)
-dat <- run_single_iteration(gan, n_features = 10, n_confounders = 2,
-nc_model = "cpg", coverage = 0.5)
+dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
+  n_features = 5, n_confounders = 1, seed = 1)
 analyze_methods_robust(dat)
-}
 }

@@ -26,3 +26,7 @@ Invisibly returns \code{NULL}; called for the side effect of drawing a boxplot o
 \description{
 Type I error boxplot per method
 }
+\examples{
+null <- run_null_sim(n_iter = 2, n_samples = 100, n_features = 5)
+plot_type1_boxplot(null)
+}

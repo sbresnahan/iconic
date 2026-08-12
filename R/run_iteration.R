@@ -127,12 +127,9 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' gan <- train_gan_on_real_data(load_real_input_data(example = TRUE)$gan_training_data)
-#' dat <- run_single_iteration(gan, n_features = 10, n_confounders = 2,
-#' nc_model = "cpg", coverage = 0.5)
+#' dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
+#'   n_features = 5, n_confounders = 1, seed = 1)
 #' analyze_methods_robust(dat)
-#' }
 run_single_iteration <- function(trained_gan = NULL,
                                  n_synthetic_samples = 500,
                                  n_features = 20,
@@ -172,7 +169,7 @@ run_single_iteration <- function(trained_gan = NULL,
                                  surv_event_frac = 0.6,
                                  surv_censor_rate = NULL,
                                  seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) withr::local_seed(seed)
   outcome_type <- match.arg(outcome_type)
 
   if (!is.null(effect_size)) { beta_X <- effect_size; alpha_M <- 0; beta_M <- 0 }
@@ -522,6 +519,7 @@ run_single_iteration <- function(trained_gan = NULL,
 
 #' Covariates for one iteration: from texture if available, else default (internal)
 #' @keywords internal
+#' @noRd
 .iteration_covariates <- function(trained_gan, n) {
   default <- data.frame(fetal_sex = rbinom(n, 1, 0.5),
                         gestational_age = rnorm(n))
@@ -541,6 +539,7 @@ run_single_iteration <- function(trained_gan = NULL,
 #' added to every outcome feature to inject a realistic shared component, but is
 #' never fed into X, so it cannot open a confounding backdoor.
 #' @keywords internal
+#' @noRd
 .iteration_outcome_texture <- function(trained_gan, n) {
   if (is.null(trained_gan)) return(rnorm(n))
   tex <- tryCatch(sample_texture(trained_gan, n), error = function(e) NULL)

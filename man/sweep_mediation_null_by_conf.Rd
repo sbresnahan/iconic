@@ -71,7 +71,7 @@ A data frame with columns: conf_str, method, NIE_type1, NDE_type1.
 Sweep mediation Type I error across confounding strength levels
 }
 \examples{
-\donttest{
-t1e <- sweep_mediation_null_by_conf(c(0.2, 0.4, 0.6, 0.8, 1.0), n_iter = 50)
-}
+t1e <- sweep_mediation_null_by_conf(c(0.2, 0.8), n_iter = 3,
+                                    n_samples = 100)
+head(t1e)
 }

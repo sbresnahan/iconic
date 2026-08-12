@@ -80,12 +80,10 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival",
 #' mo_confounding = 0.8, seed = 1)
 #' fit_unadj_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M)
-#' }
 fit_unadj_mediation_surv <- function(time, event, X, M, covars = NULL,
                                      effect_scale = c("loghr", "rmst"),
                                      tau = NULL) {
@@ -155,13 +153,11 @@ fit_unadj_mediation_surv <- function(time, event, X, M, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival",
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival",
 #' mo_confounding = 0.8, seed = 1)
 #' fit_direct_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$W[, 1])
-#' }
 fit_direct_mediation_surv <- function(time, event, X, M, g, w, covars = NULL,
                                       effect_scale = c("loghr", "rmst"),
                                       tau = NULL) {
@@ -249,12 +245,10 @@ fit_direct_mediation_surv <- function(time, event, X, M, g, w, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$W[, 1])
-#' }
 fit_iv2sls_mediation_surv <- function(time, event, X, M, g, w,
                                       covars = NULL, min_f = 10,
                                       effect_scale = c("loghr", "rmst"),
@@ -375,14 +369,12 @@ fit_iv2sls_mediation_surv <- function(time, event, X, M, g, w,
 #' with an instrumental variable. *Biometrics*.
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
+#' dat <- generate_toy_data(n = 500, outcome_type = "survival",
 #' mo_confounding = 0.8, phi = 0.8, lambda_XM = c(1, 0),
 #' lambda_MY = c(0, 1), omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 #' fit_iv2sls_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$Gm, W1 = dat$W1, W2 = dat$W2)
-#' }
 fit_iv2sls_mediation2_surv <- function(time, event, X, M, g, gm,
                                        covars = NULL, min_f = 10,
                                        W1 = NULL, W2 = NULL, w = NULL,
@@ -504,12 +496,10 @@ fit_iv2sls_mediation2_surv <- function(time, event, X, M, g, gm,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$W)
-#' }
 fit_pgc_mediation_surv <- function(time, event, X, M, g, W, covars = NULL,
                                    min_f = 10,
                                    effect_scale = c("loghr", "rmst"),
@@ -619,14 +609,12 @@ fit_pgc_mediation_surv <- function(time, event, X, M, g, W, covars = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 500, outcome_type = "survival",
+#' dat <- generate_toy_data(n = 500, outcome_type = "survival",
 #' mo_confounding = 0.8, rho_G2 = 0.3,
 #' lambda_XM = c(1, 0), lambda_MY = c(0, 1), seed = 1)
 #' fit_pgc_mediation2_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
 #' dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
-#' }
 fit_pgc_mediation2_surv <- function(time, event, X, M, g, W1, W2, gm = NULL,
                                     covars = NULL, min_f = 10,
                                     effect_scale = c("loghr", "rmst"),
@@ -769,12 +757,10 @@ fit_pgc_mediation2_surv <- function(time, event, X, M, g, W1, W2, gm = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
-#' dat <- iconic:::generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
+#' dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 #' fit_coca_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M, dat$W[, 1])
 #' # all NA (COCA mediation unsupported for survival outcomes)
-#' }
 fit_coca_mediation_surv <- function(time, event, X, M, w, covars = NULL, ...) {
   out <- .surv_med_NA()
   attr(out, "reason") <- paste(

@@ -71,10 +71,9 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' res <- run_mediation_sim(n_iter = 50, mo_confounding = 0.8)
+#' res <- run_mediation_sim(n_iter = 3, n_samples = 100,
+#'                          mo_confounding = 0.8)
 #' res$summary
-#' }
 run_mediation_sim <- function(n_iter = 100,
                               n_samples = 500,
                               n_features = 20,
@@ -179,9 +178,9 @@ run_mediation_sim <- function(n_iter = 100,
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' res <- sweep_mediation_param("conf_str", c(0.2, 0.5, 0.8, 1.0), n_iter = 50)
-#' }
+#' res <- sweep_mediation_param("conf_str", c(0.2, 0.8), n_iter = 3,
+#'                              n_samples = 100)
+#' res$summary
 sweep_mediation_param <- function(param,
                                   param_grid,
                                   n_iter = 100,
@@ -322,6 +321,10 @@ sweep_mediation_param <- function(param,
 #' @return A list with \code{rates} (data frame: method, NIE_type1, NDE_type1)
 #' and \code{raw} (full results).
 #' @export
+#' @examples
+#' null <- run_null_mediation_sim(n_iter = 2, n_samples = 100,
+#'   n_features = 5, mo_confounding = 0.8, phi = 0.8)
+#' null$rates
 run_null_mediation_sim <- function(n_iter = 200,
                                    n_samples = 500,
                                    n_features = 20,
@@ -405,9 +408,9 @@ run_null_mediation_sim <- function(n_iter = 200,
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' t1e <- sweep_mediation_null_by_conf(c(0.2, 0.4, 0.6, 0.8, 1.0), n_iter = 50)
-#' }
+#' t1e <- sweep_mediation_null_by_conf(c(0.2, 0.8), n_iter = 3,
+#'                                     n_samples = 100)
+#' head(t1e)
 sweep_mediation_null_by_conf <- function(conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),
                                          n_iter = 100,
                                          n_samples = 500,

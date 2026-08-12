@@ -38,3 +38,9 @@ Invisibly returns \code{NULL}; called for the side effect of drawing a boxplot o
 \description{
 Grouped boxplots of per-seed bias across a parameter sweep
 }
+\examples{
+sweep <- sweep_param("conf_str", c(0.5, 0.8), n_iter = 2,
+  n_samples = 100, n_features = 5)
+plot_bias_boxplot(sweep$iter_bias, c(0.5, 0.8),
+  xlab = "Confounding strength")
+}

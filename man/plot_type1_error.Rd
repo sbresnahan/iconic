@@ -18,3 +18,8 @@ Invisibly returns \code{NULL}; called for the side effect of plotting Type I err
 \description{
 Bar chart of Type I error rates
 }
+\examples{
+t1e <- sweep_null_by_conf(0.8, n_iter = 2, n_samples = 100,
+  n_features = 5)
+plot_type1_error(t1e)
+}

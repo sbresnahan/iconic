@@ -50,12 +50,10 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' sens <- gan_pleiotropy_sensitivity(NULL,
-#' pleio_grid = c(0, 0.05, 0.10), conf_grid = c(0.5, 0.8),
-#' n_iter = 20, n_features = 10)
+#'   pleio_grid = c(0, 0.10), conf_grid = 0.8,
+#'   n_iter = 2, n_samples = 100, n_features = 5)
 #' head(sens$summary)
-#' }
 gan_pleiotropy_sensitivity <- function(trained_gan = NULL,
                                        pleio_grid = c(0, 0.05, 0.10),
                                        conf_grid = c(0.2, 0.5, 0.8),

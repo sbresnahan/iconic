@@ -46,13 +46,15 @@ faceted by estimand. Panel C: NIE Type I error vs feature correlation
 strength.
 }
 \examples{
-\donttest{
-sweep <- sweep_mediation_param("feat_cor", c(0, 0.2, 0.5, 0.8),
-n_iter = 50, n_features = 10, mo_confounding = 0.8, phi = 0.8,
-omega_1 = 0.7, omega_2 = 0.7)
-null <- sweep_mediation_null_by_conf(c(0.8), n_iter = 50,
-n_features = 10, mo_confounding = 0.8, phi = 0.8,
-omega_1 = 0.7, omega_2 = 0.7, feat_cor = 0.5)
+# Toy inputs standing in for sweep_mediation_param("feat_cor", ...) output
+sweep <- list(summary = expand.grid(param_value = c(0, 0.5),
+  method = c("UNADJ", "IV2SLS2", "PGC2Gm")))
+sweep$summary$NDE_bias <- rnorm(nrow(sweep$summary), 0, 0.05)
+sweep$summary$NIE_bias <- rnorm(nrow(sweep$summary), 0, 0.05)
+sweep$summary$NDE_rmse <- runif(nrow(sweep$summary), 0.05, 0.15)
+sweep$summary$NIE_rmse <- runif(nrow(sweep$summary), 0.05, 0.15)
+null <- expand.grid(feat_cor = c(0, 0.5),
+  method = c("UNADJ", "IV2SLS2", "PGC2Gm"))
+null$NIE_type1 <- runif(nrow(null), 0, 0.1)
 plot_feature_correlation_sweep(sweep, null)
-}
 }

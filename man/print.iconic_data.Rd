@@ -17,3 +17,8 @@ Invisibly returns \code{x} (the \code{iconic_data} object); called for its side 
 \description{
 Print method for iconic_data objects
 }
+\examples{
+data <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 5), 5, 50),
+  G = rnorm(50), W = matrix(rnorm(50 * 5), 5, 50))
+print(data)
+}

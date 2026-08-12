@@ -17,3 +17,10 @@ Invisibly returns \code{object}.
 \description{
 Prints the full diagnosis summary (same as \code{print()}).
 }
+\examples{
+set.seed(1)
+data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+  G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+diag <- iconic_diagnose(data)
+summary(diag)
+}

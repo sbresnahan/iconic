@@ -52,3 +52,9 @@ identified only when \code{n_features >= k}.}
 }
 }
 
+\examples{
+U <- matrix(rnorm(100), 100, 1)
+W <- nc_proxy(U, covariates = NULL,
+  params = list(n_features = 10, coverage = 0.7))
+dim(W)
+}

@@ -30,9 +30,7 @@ this is a naive adjustment that does not correct for unmeasured
 confounding via a ratio or IV approach.
 }
 \examples{
-\donttest{
 set.seed(1)
-dat <- iconic:::generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
+dat <- generate_toy_data(n = 200, mo_confounding = 0.8, seed = 1)
 fit_direct_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W[, 1])
-}
 }

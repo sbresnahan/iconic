@@ -48,8 +48,6 @@ proxy (it mixes the confounder with exposure noise), so the values are
 interpretable only comparatively across controls and panels.
 }
 \examples{
-\dontrun{
 dat <- run_single_iteration(n_features = 10, n_confounders = 1, seed = 1)
 nc_support_check(dat)
-}
 }

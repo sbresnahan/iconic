@@ -45,11 +45,9 @@ whose bias from M-O confounding is the key finding the simulation
 demonstrates.
 }
 \examples{
-\donttest{
 set.seed(1)
-dat <- iconic:::generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
+dat <- generate_toy_data(n = 300, mo_confounding = 0.8, seed = 1)
 fit_iv2sls_mediation(dat$Y[, 1], dat$X, dat$M, dat$G[, 1], dat$W[, 1])
-}
 }
 \references{
 Rudolph, K. E., et al. (2024). Natural direct and indirect effects

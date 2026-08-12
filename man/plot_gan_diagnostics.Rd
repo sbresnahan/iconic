@@ -19,10 +19,21 @@ feature-level marginal comparison. When supplied and the GAN carries a
 feature_texture, an additional panel of density overlays compares real vs
 copula-sampled mediator marginals.}
 }
+\value{
+Called for its side effects; invisibly returns \code{NULL}.
+}
 \description{
 For continuous variables, overlays kernel densities of the real training
 variables against draws from the trained generator. For binary (0/1)
 variables -- detected at training time and stored in the \code{iconic_gan} object
 -- uses side-by-side bar charts of the proportion of 1s, which is the
 appropriate visualisation for discrete data. One panel per variable.
+}
+\examples{
+if (check_torch_setup()) {
+  dat <- load_real_input_data(example = TRUE)
+  gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
+    verbose = FALSE)
+  plot_gan_diagnostics(gan, dat$gan_training_data)
+}
 }

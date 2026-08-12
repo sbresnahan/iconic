@@ -106,14 +106,13 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
 #' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
 #' G = rnorm(100), W = matrix(rnorm(100*10), 10, 100))
 #' diag <- iconic_diagnose(data)
 #' est <- iconic_estimate(data, diagnosis = diag)
-#' rec <- iconic_recommend(data, diagnosis = diag, estimate = est)
+#' rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
+#'                         auto_sensitivity = FALSE)
 #' print(rec)
-#' }
 iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
                              sensitivity = NULL,
                              criterion = c("combined","minimax_bias","ci_coverage"),
@@ -401,6 +400,7 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 #' lower is better. Implements the "second-best bias with nominal coverage"
 #' tradeoff.
 #' @keywords internal
+#' @noRd
 .extract_robustness <- function(sensitivity, criterion = c("combined","minimax_bias","ci_coverage")) {
   criterion <- match.arg(criterion)
   empty <- data.frame(method = character(0), max_bias_NDE = numeric(0),
@@ -507,6 +507,7 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 #' with one row per cell (
 #' insufficient; some scenarios favor IV, others PGC).
 #' @keywords internal
+#' @noRd
 .extract_per_scenario <- function(sensitivity, criterion = c("combined","minimax_bias","ci_coverage")) {
   criterion <- match.arg(criterion)
   if (is.null(sensitivity) || is.null(sensitivity$surface)) return(NULL)
@@ -583,6 +584,7 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 
 #' Build recommendation summary (internal)
 #' @keywords internal
+#' @noRd
 .build_recommendation_summary <- function(ranking, recommended,
                                           recommended_NDE, recommended_NIE,
                                           data) {
@@ -649,6 +651,14 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 #' @param ... Unused.
 #' @return Invisibly returns `x` (the `iconic_recommendation` object); called for its side effect of printing a human-readable summary.
 #' @export
+#' @examples
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'   G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#' diag <- iconic_diagnose(data)
+#' est <- iconic_estimate(data, diagnosis = diag)
+#' rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
+#'   auto_sensitivity = FALSE)
+#' print(rec)
 print.iconic_recommendation <- function(x, ...) {
   cat("<iconic_recommendation>\n")
   cat(x$summary, "\n")
@@ -685,6 +695,14 @@ print.iconic_recommendation <- function(x, ...) {
 #' @param ... Unused.
 #' @return Invisibly returns \code{object}.
 #' @export
+#' @examples
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'   G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#' diag <- iconic_diagnose(data)
+#' est <- iconic_estimate(data, diagnosis = diag)
+#' rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
+#'   auto_sensitivity = FALSE)
+#' summary(rec)
 summary.iconic_recommendation <- function(object, ...) {
   print.iconic_recommendation(object, ...)
   invisible(object)

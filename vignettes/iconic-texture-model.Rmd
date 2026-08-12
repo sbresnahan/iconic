@@ -3,9 +3,10 @@ title: "The Generative Texture Model"
 author: "Sean T. Bresnahan and Charis Xiong"
 date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette:
+  BiocStyle::html_document:
     toc: true
     toc_depth: 3
+    toc_float: true
 vignette: >
   %\VignetteIndexEntry{The Generative Texture Model}
   %\VignetteEngine{knitr::rmarkdown}
@@ -21,6 +22,28 @@ set.seed(1)
 library(iconic)
 has_torch <- check_torch_setup()
 ```
+
+# Introduction
+
+This vignette describes the generative texture model used to simulate realistic omics features: a torch GAN for the covariate table combined with a Gaussian copula for the feature panel, so that synthetic datasets inherit the marginal and dependence structure of the observed data.
+
+# Installation
+
+`iconic` is being submitted to Bioconductor. Once accepted, install the
+release version with:
+
+```{r install-bioc, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("iconic")
+```
+
+The development version is available from GitHub:
+
+```{r install-github, eval=FALSE}
+BiocManager::install("sbresnahan/iconic")
+```
+
 
 # Two simulation modes
 
@@ -160,3 +183,9 @@ validation where the ground truth must be known exactly.
   trained texture model is used in the sensitivity sweep.
 - **Function reference**: `?train_gan_on_real_data` for training arguments,
   `?check_torch_setup` for the torch verification helper.
+
+# Session information
+
+```{r sessionInfo}
+sessionInfo()
+```

@@ -41,3 +41,8 @@ its control summary. The matrix-bridge PGC uses the full W panel
 A scalar-bridge variant (\code{\link[=fit_pgc_scalar]{fit_pgc_scalar()}}) is exported for standalone
 use but is not included in the default pipeline.
 }
+\examples{
+dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
+  n_features = 5, n_confounders = 1, seed = 1)
+analyze_methods_robust(dat)
+}

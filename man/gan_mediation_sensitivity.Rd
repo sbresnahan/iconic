@@ -110,9 +110,8 @@ generated and the 2-stage MR estimator (IV2SLS2) is included in the
 results, enabling point identification of NDE/NIE under M-O confounding.
 }
 \examples{
-\dontrun{
-sens <- gan_mediation_sensitivity(NULL, conf_grid = c(0.3, 0.8),
-mo_confounding = 0.8, n_iter = 20)
+sens <- gan_mediation_sensitivity(NULL, conf_grid = 0.8,
+  coverage_grid = 0.7, mo_confounding = 0.8,
+  n_iter = 2, n_samples = 100, n_features = 5)
 head(sens$summary)
-}
 }

@@ -576,48 +576,64 @@ plot_degradation_surface <- function(results,
 }
 
 # ============================================================
-# NC validity diagnostics (4-panel sweep figure)
+# NC validity diagnostics (5-panel sweep figure)
 # ============================================================
 
 #' Sweep negative-control validity diagnostics
 #'
-#' Runs simulation sweeps for the four empirical NC validity
-#' diagnostics (A1, A2, A2', A3) and returns data frames ready for
-#' plotting with \code{plot_nc_validity_diagnostics()}.
+#' Runs simulation sweeps for the empirical NC validity diagnostics
+#' and returns data frames ready for plotting with
+#' \code{plot_nc_validity_diagnostics()}. Panels: (A) A1 W perp X | C,
+#' (B) A2 W perp G | C, (C) A2' W perp Gm | C, (D) A3
+#' covariance-capture versus true coverage omega, (E) A3 support
+#' R2(Utilde | W) versus omega.
 #'
 #' @param n_samples Number of synthetic samples per iteration.
 #' @param n_iter Number of replications per sweep point.
-#' @param phi_val Mediator-instrument strength (for A2' panel).
+#' @param phi_val Mediator-instrument strength (for the A2' panel and
+#' the capture/support sweeps).
 #' @param contam_grid X->W contamination strength grid (A1).
 #' @param meqtl_grid G->W (meQTL) strength grid (A2).
 #' @param eqtl_grid Gm->W (eQTL) strength grid (A2').
-#' @param k_grid Number of confounders grid (A3).
-#' @param n_valid_grid Number of valid controls grid (A3).
+#' @param omega_grid True negative-control coverage grid for the
+#' capture (D) and support (E) sweeps. Includes 0 by default so the
+#' permutation-null calibration is visible.
+#' @param n_perm Permutations per replicate for the capture test.
+#' Default 200, matching \code{iconic_diagnose()}.
+#' @param cs_confounders Number of latent confounders for the
+#' capture/support sweeps (distinct loadings). Default 2.
+#' @param include_a3_grid Logical; also run the legacy A3 dimensional
+#' grid (PGC bias over n_valid x k). Default FALSE (no longer plotted).
+#' @param k_grid,n_valid_grid Grids for the legacy A3 dimensional sweep.
 #' @param n_cores Number of parallel workers for the replicate loops.
 #' Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
 #' and a PSOCK cluster on Windows.
 #' @return A list with elements \code{panel_a}, \code{panel_b},
-#' \code{panel_c}, \code{panel_d} (data frames).
+#' \code{panel_d}, \code{panel_capture_support} (per-replicate raw),
+#' and optionally \code{panel_c} when \code{include_a3_grid = TRUE}.
 #' @export
 #' @examples
 #' \donttest{
-#' panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
-#'   n_valid_grid = 1, contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
-#'   eqtl_grid = c(0, 0.1))
+#' panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
+#'   contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
+#'   eqtl_grid = c(0, 0.1), omega_grid = c(0, 0.5), n_perm = 20)
 #' panels$panel_a
+#' panels$panel_capture_support
 #' }
 sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
-                               contam_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
-                               meqtl_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
-                               eqtl_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
-                               k_grid = c(1, 2, 3),
-                               n_valid_grid = c(1, 2, 3),
-                               n_cores = 1) {
+                              contam_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
+                              meqtl_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
+                              eqtl_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
+                              omega_grid = c(0, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1.0),
+                              n_perm = 200, cs_confounders = 2,
+                              include_a3_grid = FALSE,
+                              k_grid = c(1, 2, 3), n_valid_grid = c(1, 2, 3),
+                              n_cores = 1) {
 
   message("Running NC validity sweeps (n_iter = ", n_iter, ", n = ", n_samples, ") ...")
   t0 <- Sys.time()
 
-  ## Panel A: A1 (W perp X | C) — X->W contamination
+  ## Panel A: A1 (W perp X | C) — X->W contamination  [unchanged]
   message(" Panel A: nc_validity_screen (A1)")
   panel_a <- do.call(rbind, lapply(contam_grid, function(cs) {
     res_a <- .parallel_lapply(seq_len(n_iter), function(i) {
@@ -637,7 +653,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
                stringsAsFactors = FALSE)
   }))
 
-  ## Panel B: A2 (W perp G | C) — G->W (meQTL)
+  ## Panel B: A2 (W perp G | C) — G->W (meQTL)  [unchanged]
   message(" Panel B: nc_independence_check (A2)")
   panel_b <- do.call(rbind, lapply(meqtl_grid, function(ms) {
     res_b <- .parallel_lapply(seq_len(n_iter), function(i) {
@@ -655,33 +671,8 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
                stringsAsFactors = FALSE)
   }))
 
-  ## Panel C: A3 (dim(W_valid) >= k) — completeness grid with PGC bias
-  message(" Panel C: nc_completeness_check (A3)")
-  grid <- expand.grid(n_valid = n_valid_grid, k = k_grid, KEEP.OUT.ATTRS = FALSE)
-  panel_c <- do.call(rbind, lapply(seq_len(nrow(grid)), function(gi) {
-    nv <- grid$n_valid[gi]; kk <- grid$k[gi]
-    biases <- unlist(.parallel_lapply(seq_len(n_iter), function(i) {
-      dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
-                                  n_features = 10, n_confounders = kk, seed = i,
-                                  nc_params = list(mode = "distinct"))
-      W_valid <- dat$W[, seq_len(nv), drop = FALSE]
-      res <- fit_pgc(dat$Y[, 1], dat$X, dat$G[, 1], W_valid)
-      res$beta - dat$true_total
-    }, n_cores = n_cores, progress = " Panel C replicates"))
-    # Generate a fresh dataset for the completeness check (the 'dat'
-    # inside the parallel worker is not available in this scope when
-    # n_cores > 1).
-    dat_comp <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
-                                     n_features = 10, n_confounders = kk, seed = 1,
-                                     nc_params = list(mode = "distinct"))
-    comp <- nc_completeness_check(dat_comp, n_valid_controls = nv)
-    data.frame(n_valid = nv, k = kk,
-               pgc_bias = mean(biases), pgc_bias_sd = sd(biases),
-               completeness = comp$completeness, stringsAsFactors = FALSE)
-  }))
-
-  ## Panel D: A2' (W perp Gm | C) — Gm->W (eQTL)
-  message(" Panel D: nc_independence_check_gm (A2')")
+  ## Panel C: A2' (W perp Gm | C) — Gm->W (eQTL)  [unchanged]
+  message(" Panel C: nc_independence_check_gm (A2')")
   panel_d <- do.call(rbind, lapply(eqtl_grid, function(es) {
     res_d <- .parallel_lapply(seq_len(n_iter), function(i) {
       dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
@@ -690,7 +681,7 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
       dat$W[, seq_len(5)] <- dat$W[, seq_len(5)] + es * dat$Gm
       s <- nc_independence_check_gm(dat)
       c(sum(s$significant[seq_len(5)]) / 5, sum(s$significant[seq.int(6, 10)]) / 5)
-    }, n_cores = n_cores, progress = " Panel D replicates")
+    }, n_cores = n_cores, progress = " Panel C replicates")
     det_violated <- vapply(res_d, function(x) x[1], numeric(1))
     det_clean <- vapply(res_d, function(x) x[2], numeric(1))
     data.frame(eqtl = es,
@@ -699,20 +690,82 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
                stringsAsFactors = FALSE)
   }))
 
+  ## Panels D-E (new): capture + support versus true coverage omega.
+  ## Each replicate draws one dataset (k = cs_confounders, distinct NC
+  ## loadings) and runs nc_completeness_capture() and nc_support_check()
+  ## on it, so both diagnostics share the same realized data.
+  message(" Panels D-E: nc_completeness_capture + nc_support_check vs omega")
+  panel_capture_support <- do.call(rbind, lapply(seq_along(omega_grid), function(oi) {
+    om <- omega_grid[oi]
+    res <- .parallel_lapply(seq_len(n_iter), function(i) {
+      dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
+                                  n_features = 10,
+                                  n_confounders = cs_confounders,
+                                  coverage = om, phi = phi_val,
+                                  seed = 3000L + oi * 1000L + i,
+                                  nc_params = list(mode = "distinct"))
+      cap <- tryCatch(
+        nc_completeness_capture(dat, outcome = "Y", n_perm = n_perm, n_cores = 1),
+        error = function(e) NULL)
+      sup <- tryCatch(nc_support_check(dat), error = function(e) NULL)
+      data.frame(
+        omega = om, rep = i,
+        capture_R2 = if (!is.null(cap)) cap$capture_R2 else NA_real_,
+        capture_p = if (!is.null(cap)) cap$capture_pvalue else NA_real_,
+        null_R2 = if (!is.null(cap)) mean(cap$null_distribution, na.rm = TRUE) else NA_real_,
+        support_R2 = if (!is.null(sup)) sup$R2_utilde_given_W else NA_real_,
+        frac_adds_coverage = if (!is.null(sup)) mean(sup$support$adds_coverage, na.rm = TRUE) else NA_real_,
+        stringsAsFactors = FALSE)
+    }, n_cores = n_cores, progress = paste0("  omega = ", om))
+    do.call(rbind, res)
+  }))
+
+  out <- list(panel_a = panel_a, panel_b = panel_b, panel_d = panel_d,
+              panel_capture_support = panel_capture_support)
+
+  ## Legacy A3 dimensional grid (PGC bias over n_valid x k) — optional.
+  if (isTRUE(include_a3_grid)) {
+    message(" Legacy A3 grid: nc_completeness_check + fit_pgc")
+    grid <- expand.grid(n_valid = n_valid_grid, k = k_grid, KEEP.OUT.ATTRS = FALSE)
+    panel_c <- do.call(rbind, lapply(seq_len(nrow(grid)), function(gi) {
+      nv <- grid$n_valid[gi]; kk <- grid$k[gi]
+      biases <- unlist(.parallel_lapply(seq_len(n_iter), function(i) {
+        dat <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
+                                    n_features = 10, n_confounders = kk, seed = i,
+                                    nc_params = list(mode = "distinct"))
+        W_valid <- dat$W[, seq_len(nv), drop = FALSE]
+        res <- fit_pgc(dat$Y[, 1], dat$X, dat$G[, 1], W_valid)
+        res$beta - dat$true_total
+      }, n_cores = n_cores, progress = " A3 grid replicates"))
+      dat_comp <- run_single_iteration(NULL, n_synthetic_samples = n_samples,
+                                       n_features = 10, n_confounders = kk, seed = 1,
+                                       nc_params = list(mode = "distinct"))
+      comp <- nc_completeness_check(dat_comp, n_valid_controls = nv)
+      data.frame(n_valid = nv, k = kk,
+                 pgc_bias = mean(biases), pgc_bias_sd = sd(biases),
+                 completeness = comp$completeness, stringsAsFactors = FALSE)
+    }))
+    out$panel_c <- panel_c
+  }
+
   message(sprintf(" Done in %.1f s", as.numeric(difftime(Sys.time(), t0, units = "secs"))))
-  list(panel_a = panel_a, panel_b = panel_b, panel_c = panel_c, panel_d = panel_d)
+  out
 }
 
-#' NC validity diagnostics figure
+#' NC validity diagnostics figure (5 panels)
 #'
-#' Produces a 4-panel figure sweeping the four empirical NC validity
-#' diagnostics. Panels: (A) A1 W perp X|C, (B) A2 W perp G|C,
-#' (C) A3 dim(W_valid) >= k completeness grid, (D) A2' W perp Gm|C.
+#' Produces a 5-panel figure sweeping the empirical NC validity
+#' diagnostics. Panels: (A) A1 W perp X | C, (B) A2 W perp G | C,
+#' (C) A2' W perp Gm | C, (D) A3 covariance-capture versus true
+#' coverage omega (with permutation-null mean and the fraction of
+#' replicates with permutation p < 0.05 on a secondary axis), and
+#' (E) A3 support R2(Utilde | W) versus omega.
 #'
 #' @param panels List returned by \code{sweep_nc_validity()}.
-#' @param file Optional file path to save the figure.
-#' @param width Figure width in inches.
-#' @param height Figure height in inches.
+#' @param file Optional file path to save the figure (cairo_pdf, so the
+#' omega and Utilde glyphs render).
+#' @param width Figure width in inches. Default 10.
+#' @param height Figure height in inches. Default 6.5.
 #' @return A \code{patchwork} ggplot object.
 #' @export
 #' @examples
@@ -724,132 +777,143 @@ sweep_nc_validity <- function(n_samples = 500, n_iter = 50, phi_val = 0.8,
 #'   panel_b = data.frame(meqtl = c(0, 0.1),
 #'     violated_mean = c(0.1, 0.3), violated_sd = 0.05,
 #'     clean_mean = c(0.1, 0.12), clean_sd = 0.05),
-#'   panel_c = expand.grid(n_valid = 1:2, k = 1:2),
 #'   panel_d = data.frame(eqtl = c(0, 0.1),
 #'     violated_mean = c(0.1, 0.3), violated_sd = 0.05,
-#'     clean_mean = c(0.1, 0.12), clean_sd = 0.05))
-#' panels$panel_c$pgc_bias <- c(0.05, 0.20, 0.08, 0.25)
-#' panels$panel_c$completeness <- c("satisfied", "under-identified",
-#'   "satisfied", "under-identified")
+#'     clean_mean = c(0.1, 0.12), clean_sd = 0.05),
+#'   panel_capture_support = data.frame(
+#'     omega = rep(c(0, 0.5), each = 2), rep = 1:2,
+#'     capture_R2 = c(0.02, 0.03, 0.25, 0.30),
+#'     capture_p = c(0.40, 0.60, 0.01, 0.02),
+#'     null_R2 = 0.02,
+#'     support_R2 = c(0.02, 0.03, 0.35, 0.40),
+#'     frac_adds_coverage = 1))
 #' plot_nc_validity_diagnostics(panels)
 plot_nc_validity_diagnostics <- function(panels, file = NULL,
-                                          width = 8, height = 6) {
+                                         width = 10, height = 6.5) {
   .figures_check_deps()
   .figures_check_scales()
 
   col_violated <- "#FF9400"; col_confounding <- "#888888"
-  col_clean <- "#27A062"; col_under <- "#c0392b"; col_satisfied <- "#0279EE"
+  col_clean <- "#27A062"; col_capture <- "#0279EE"; col_support <- "#75A025"
 
-  # Panel A: A1 screen sweep
-  pa_df <- rbind(
-    data.frame(x = panels$panel_a$contamination,
-               rate = panels$panel_a$violated_mean, sd = panels$panel_a$violated_sd,
-               group = "Violated (injected X\u2192W)"),
-    data.frame(x = panels$panel_a$contamination,
-               rate = panels$panel_a$confounding_mean, sd = panels$panel_a$confounding_sd,
-               group = "Confounder-sharing (expected)"))
-  pA <- ggplot2::ggplot(pa_df, ggplot2::aes(x = x, y = rate, color = group, fill = group)) +
-    ggplot2::geom_ribbon(ggplot2::aes(ymin = pmax(rate - sd, 0),
-                       ymax = pmin(rate + sd, 1)), alpha = 0.15, color = NA) +
-    ggplot2::geom_line(linewidth = 0.8) +
-    ggplot2::geom_point(size = 2, shape = 16) +
-    ggplot2::geom_hline(yintercept = 0.10, linetype = "dotted", color = "grey50",
+  build_screen_panel <- function(df, xvar, xlabel, title_txt, groups) {
+    long <- do.call(rbind, lapply(names(groups), function(g) {
+      spec <- groups[[g]]
+      data.frame(x = df[[xvar]], rate = df[[spec$mean]], sd = df[[spec$sd]],
+                 group = g, stringsAsFactors = FALSE)
+    }))
+    cols <- vapply(names(groups), function(g) groups[[g]]$col, character(1))
+    ggplot2::ggplot(long, ggplot2::aes(x = x, y = rate, color = group, fill = group)) +
+      ggplot2::geom_ribbon(ggplot2::aes(ymin = pmax(rate - sd, 0),
+                                        ymax = pmin(rate + sd, 1)),
+                           alpha = 0.15, color = NA) +
+      ggplot2::geom_line(linewidth = 0.8) +
+      ggplot2::geom_point(size = 2, shape = 16) +
+      ggplot2::geom_hline(yintercept = 0.10, linetype = "dotted", color = "grey50",
+                          linewidth = 0.4) +
+      ggplot2::scale_color_manual(values = cols) +
+      ggplot2::scale_fill_manual(values = cols) +
+      ggplot2::scale_y_continuous(limits = c(0, 1.05),
+                                  labels = scales::percent_format(accuracy = 1)) +
+      ggplot2::labs(x = xlabel, y = "Proportion flagged \"drop\"",
+                    title = title_txt, color = NULL, fill = NULL) +
+      .figure_theme() +
+      ggplot2::theme(legend.position = "bottom",
+                     legend.text = ggplot2::element_text(size = 7.5)) +
+      ggplot2::guides(color = ggplot2::guide_legend(nrow = 2, byrow = TRUE),
+                      fill = "none")
+  }
+
+  pA <- build_screen_panel(
+    panels$panel_a, "contamination",
+    "X\u2192W contamination strength", "A1: W perp X | C",
+    groups = list(
+      "Confounder-sharing (expected)" = list(mean = "confounding_mean", sd = "confounding_sd", col = col_confounding),
+      "Violated (injected X\u2192W)" = list(mean = "violated_mean", sd = "violated_sd", col = col_violated)))
+  pB <- build_screen_panel(
+    panels$panel_b, "meqtl",
+    "G\u2192W (meQTL) strength", "A2: W perp G | C",
+    groups = list(
+      "Violated (injected G\u2192W)" = list(mean = "violated_mean", sd = "violated_sd", col = col_violated),
+      "Clean (false positive)" = list(mean = "clean_mean", sd = "clean_sd", col = col_clean)))
+  pC <- build_screen_panel(
+    panels$panel_d, "eqtl",
+    "Gm\u2192W strength", "A2': W perp Gm | C",
+    groups = list(
+      "Violated (injected Gm\u2192W)" = list(mean = "violated_mean", sd = "violated_sd", col = col_violated),
+      "Clean (false positive)" = list(mean = "clean_mean", sd = "clean_sd", col = col_clean)))
+
+  ## Summarize the capture/support sweep
+  raw <- panels$panel_capture_support
+  summ <- do.call(rbind, lapply(split(raw, raw$omega), function(d) {
+    data.frame(
+      omega = d$omega[1],
+      capture_R2_mean = mean(d$capture_R2, na.rm = TRUE),
+      capture_R2_sd = stats::sd(d$capture_R2, na.rm = TRUE),
+      null_R2_mean = mean(d$null_R2, na.rm = TRUE),
+      frac_sig = mean(d$capture_p < 0.05, na.rm = TRUE),
+      support_R2_mean = mean(d$support_R2, na.rm = TRUE),
+      support_R2_sd = stats::sd(d$support_R2, na.rm = TRUE),
+      stringsAsFactors = FALSE)
+  }))
+
+  ## Panel D: capture vs omega
+  sec_scale <- 0.6
+  pD <- ggplot2::ggplot(summ, ggplot2::aes(x = omega)) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = pmax(capture_R2_mean - capture_R2_sd, 0),
+                                      ymax = capture_R2_mean + capture_R2_sd),
+                         alpha = 0.15, fill = col_capture, color = NA) +
+    ggplot2::geom_line(ggplot2::aes(y = capture_R2_mean, color = "Observed capture R\u00b2"),
+                       linewidth = 0.8) +
+    ggplot2::geom_point(ggplot2::aes(y = capture_R2_mean, color = "Observed capture R\u00b2"),
+                        size = 2, shape = 16) +
+    ggplot2::geom_line(ggplot2::aes(y = null_R2_mean, color = "Permutation null (mean)"),
+                       linewidth = 0.7) +
+    ggplot2::geom_point(ggplot2::aes(y = null_R2_mean, color = "Permutation null (mean)"),
+                        size = 1.6, shape = 17) +
+    ggplot2::geom_line(ggplot2::aes(y = frac_sig * sec_scale,
+                                    color = "Fraction permutation p<0.05"),
+                       linewidth = 0.6, linetype = "twodash") +
+    ggplot2::geom_hline(yintercept = 0.3, linetype = "dashed", colour = "grey40",
+                        linewidth = 0.4) +
+    ggplot2::geom_hline(yintercept = 0.1, linetype = "dotted", colour = "grey60",
                         linewidth = 0.4) +
     ggplot2::scale_color_manual(values = c(
-      "Confounder-sharing (expected)" = col_confounding,
-      "Violated (injected X\u2192W)" = col_violated)) +
-    ggplot2::scale_fill_manual(values = c(
-      "Confounder-sharing (expected)" = col_confounding,
-      "Violated (injected X\u2192W)" = col_violated)) +
-    ggplot2::scale_y_continuous(limits = c(0, 1.05),
-                                labels = scales::percent_format(accuracy = 1)) +
-    ggplot2::labs(x = "X\u2192W contamination strength",
-                  y = "Proportion flagged \"drop\"",
-                  title = "A1: W perp X | C", color = NULL, fill = NULL) +
+      "Observed capture R\u00b2" = col_capture,
+      "Permutation null (mean)" = "grey50",
+      "Fraction permutation p<0.05" = col_violated)) +
+    ggplot2::scale_y_continuous(
+      limits = c(0, NA),
+      sec.axis = ggplot2::sec_axis(~ . / sec_scale, name = "Fraction p<0.05",
+                                   labels = scales::percent_format(accuracy = 1))) +
+    ggplot2::labs(x = "True NC coverage (\u03c9)",
+                  y = "Incremental R\u00b2 of W for Y | C",
+                  title = "A3 capture: R\u00b2(W | C) vs coverage", color = NULL) +
     .figure_theme() +
     ggplot2::theme(legend.position = "bottom",
                    legend.text = ggplot2::element_text(size = 7.5)) +
-    ggplot2::guides(color = ggplot2::guide_legend(nrow = 2, byrow = TRUE), fill = "none")
+    ggplot2::guides(color = ggplot2::guide_legend(nrow = 2, byrow = TRUE))
 
-  # Panel B: A2 screen sweep
-  pb_df <- rbind(
-    data.frame(x = panels$panel_b$meqtl,
-               rate = panels$panel_b$violated_mean, sd = panels$panel_b$violated_sd,
-               group = "Violated (injected G\u2192W)"),
-    data.frame(x = panels$panel_b$meqtl,
-               rate = panels$panel_b$clean_mean, sd = panels$panel_b$clean_sd,
-               group = "Clean (false positive)"))
-  pB <- ggplot2::ggplot(pb_df, ggplot2::aes(x = x, y = rate, color = group, fill = group)) +
-    ggplot2::geom_ribbon(ggplot2::aes(ymin = pmax(rate - sd, 0),
-                       ymax = pmin(rate + sd, 1)), alpha = 0.15, color = NA) +
-    ggplot2::geom_line(linewidth = 0.8) +
-    ggplot2::geom_point(size = 2, shape = 16) +
-    ggplot2::geom_hline(yintercept = 0.10, linetype = "dotted", color = "grey50",
+  ## Panel E: support vs omega
+  pE <- ggplot2::ggplot(summ, ggplot2::aes(x = omega)) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = pmax(support_R2_mean - support_R2_sd, 0),
+                                      ymax = pmin(support_R2_mean + support_R2_sd, 1)),
+                         alpha = 0.15, fill = col_support, color = NA) +
+    ggplot2::geom_line(ggplot2::aes(y = support_R2_mean), color = col_support,
+                       linewidth = 0.8) +
+    ggplot2::geom_point(ggplot2::aes(y = support_R2_mean), color = col_support,
+                        size = 2, shape = 16) +
+    ggplot2::geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey40",
                         linewidth = 0.4) +
-    ggplot2::scale_color_manual(values = c(
-      "Violated (injected G\u2192W)" = col_violated,
-      "Clean (false positive)" = col_clean)) +
-    ggplot2::scale_fill_manual(values = c(
-      "Violated (injected G\u2192W)" = col_violated,
-      "Clean (false positive)" = col_clean)) +
-    ggplot2::scale_y_continuous(limits = c(0, 1.05),
-                                labels = scales::percent_format(accuracy = 1)) +
-    ggplot2::labs(x = "G\u2192W (meQTL) strength",
-                  y = "Proportion flagged \"drop\"",
-                  title = "A2: W perp G | C", color = NULL, fill = NULL) +
-    .figure_theme() +
-    ggplot2::theme(legend.position = "bottom",
-                   legend.text = ggplot2::element_text(size = 7.5)) +
-    ggplot2::guides(color = ggplot2::guide_legend(nrow = 2, byrow = TRUE), fill = "none")
-
-  # Panel C: Completeness grid with PGC bias heatmap
-  pc_df <- panels$panel_c
-  pc_df$completeness <- gsub("under-identified", "under", pc_df$completeness)
-  pC <- ggplot2::ggplot(pc_df, ggplot2::aes(x = factor(n_valid), y = factor(k))) +
-    ggplot2::geom_tile(ggplot2::aes(fill = pgc_bias), color = "white", linewidth = 0.8) +
-    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.3f\n%s", pgc_bias, completeness)),
-                       size = 2.8, fontface = "bold", color = "grey20") +
-    ggplot2::scale_fill_gradient2(low = col_satisfied, mid = "white", high = col_under,
-                                  midpoint = 0.15, limits = c(0, 0.32), name = "PGC bias") +
-    ggplot2::labs(x = "Number of valid controls",
-                  y = "Number of confounders (k)",
-                  title = expression(A3:~dim(W[valid]) > k)) +
-    .figure_theme() +
-    ggplot2::theme(panel.grid = ggplot2::element_blank(),
-                   legend.position = "right")
-
-  # Panel D: A2' screen sweep
-  pd_df <- rbind(
-    data.frame(x = panels$panel_d$eqtl,
-               rate = panels$panel_d$violated_mean, sd = panels$panel_d$violated_sd,
-               group = "Violated (injected Gm\u2192W)"),
-    data.frame(x = panels$panel_d$eqtl,
-               rate = panels$panel_d$clean_mean, sd = panels$panel_d$clean_sd,
-               group = "Clean (false positive)"))
-  pD <- ggplot2::ggplot(pd_df, ggplot2::aes(x = x, y = rate, color = group, fill = group)) +
-    ggplot2::geom_ribbon(ggplot2::aes(ymin = pmax(rate - sd, 0),
-                       ymax = pmin(rate + sd, 1)), alpha = 0.15, color = NA) +
-    ggplot2::geom_line(linewidth = 0.8) +
-    ggplot2::geom_point(size = 2, shape = 16) +
-    ggplot2::geom_hline(yintercept = 0.10, linetype = "dotted", color = "grey50",
+    ggplot2::geom_hline(yintercept = 0.2, linetype = "dotted", colour = "grey60",
                         linewidth = 0.4) +
-    ggplot2::scale_color_manual(values = c(
-      "Violated (injected Gm\u2192W)" = col_violated,
-      "Clean (false positive)" = col_clean)) +
-    ggplot2::scale_fill_manual(values = c(
-      "Violated (injected Gm\u2192W)" = col_violated,
-      "Clean (false positive)" = col_clean)) +
-    ggplot2::scale_y_continuous(limits = c(0, 1.05),
-                                labels = scales::percent_format(accuracy = 1)) +
-    ggplot2::labs(x = "Gm\u2192W strength",
-                  y = "Proportion flagged \"drop\"",
-                  title = "A2': W perp Gm | C", color = NULL, fill = NULL) +
-    .figure_theme() +
-    ggplot2::theme(legend.position = "bottom",
-                   legend.text = ggplot2::element_text(size = 7.5)) +
-    ggplot2::guides(color = ggplot2::guide_legend(nrow = 2, byrow = TRUE), fill = "none")
+    ggplot2::scale_y_continuous(limits = c(0, 1.0)) +
+    ggplot2::labs(x = "True NC coverage (\u03c9)",
+                  y = expression(R^2 * (tilde(U) ~ "|" ~ W)),
+                  title = "A3 support: R\u00b2(\u0168 | W) vs coverage") +
+    .figure_theme()
 
-  fig <- ((pA | pC) / (pB | pD)) +
+  fig <- ((pA | pB | pC) / (pD | pE | patchwork::plot_spacer())) +
     patchwork::plot_annotation(
       title = "ICONIC negative-control validity diagnostics: simulation sweeps",
       tag_levels = "A",
@@ -857,7 +921,11 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
         size = 11, face = "bold", hjust = 0.5))) &
     ggplot2::theme(plot.tag = ggplot2::element_text(face = "bold", size = 14))
 
-  .save_figure(fig, file, width, height)
+  if (!is.null(file)) {
+    ggplot2::ggsave(file, fig, width = width, height = height, units = "in",
+                    bg = "white", dpi = 300, device = grDevices::cairo_pdf)
+    message("Saved ", file)
+  }
   fig
 }
 

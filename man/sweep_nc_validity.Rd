@@ -11,6 +11,10 @@ sweep_nc_validity(
   contam_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
   meqtl_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
   eqtl_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
+  omega_grid = c(0, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1),
+  n_perm = 200,
+  cs_confounders = 2,
+  include_a3_grid = FALSE,
   k_grid = c(1, 2, 3),
   n_valid_grid = c(1, 2, 3),
   n_cores = 1
@@ -21,7 +25,8 @@ sweep_nc_validity(
 
 \item{n_iter}{Number of replications per sweep point.}
 
-\item{phi_val}{Mediator-instrument strength (for A2' panel).}
+\item{phi_val}{Mediator-instrument strength (for the A2' panel and
+the capture/support sweeps).}
 
 \item{contam_grid}{X->W contamination strength grid (A1).}
 
@@ -29,9 +34,20 @@ sweep_nc_validity(
 
 \item{eqtl_grid}{Gm->W (eQTL) strength grid (A2').}
 
-\item{k_grid}{Number of confounders grid (A3).}
+\item{omega_grid}{True negative-control coverage grid for the
+capture (D) and support (E) sweeps. Includes 0 by default so the
+permutation-null calibration is visible.}
 
-\item{n_valid_grid}{Number of valid controls grid (A3).}
+\item{n_perm}{Permutations per replicate for the capture test.
+Default 200, matching \code{iconic_diagnose()}.}
+
+\item{cs_confounders}{Number of latent confounders for the
+capture/support sweeps (distinct loadings). Default 2.}
+
+\item{include_a3_grid}{Logical; also run the legacy A3 dimensional
+grid (PGC bias over n_valid x k). Default FALSE (no longer plotted).}
+
+\item{k_grid, n_valid_grid}{Grids for the legacy A3 dimensional sweep.}
 
 \item{n_cores}{Number of parallel workers for the replicate loops.
 Default 1 (sequential). Uses \code{parallel::mclapply} on Unix
@@ -39,18 +55,23 @@ and a PSOCK cluster on Windows.}
 }
 \value{
 A list with elements \code{panel_a}, \code{panel_b},
-\code{panel_c}, \code{panel_d} (data frames).
+\code{panel_d}, \code{panel_capture_support} (per-replicate raw),
+and optionally \code{panel_c} when \code{include_a3_grid = TRUE}.
 }
 \description{
-Runs simulation sweeps for the four empirical NC validity
-diagnostics (A1, A2, A2', A3) and returns data frames ready for
-plotting with \code{plot_nc_validity_diagnostics()}.
+Runs simulation sweeps for the empirical NC validity diagnostics
+and returns data frames ready for plotting with
+\code{plot_nc_validity_diagnostics()}. Panels: (A) A1 W perp X | C,
+(B) A2 W perp G | C, (C) A2' W perp Gm | C, (D) A3
+covariance-capture versus true coverage omega, (E) A3 support
+R2(Utilde | W) versus omega.
 }
 \examples{
 \donttest{
-panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
-  n_valid_grid = 1, contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
-  eqtl_grid = c(0, 0.1))
+panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
+  contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
+  eqtl_grid = c(0, 0.1), omega_grid = c(0, 0.5), n_perm = 20)
 panels$panel_a
+panels$panel_capture_support
 }
 }

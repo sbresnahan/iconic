@@ -878,17 +878,26 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
                         linewidth = 0.4) +
     ggplot2::geom_hline(yintercept = 0.1, linetype = "dotted", colour = "grey60",
                         linewidth = 0.4) +
-    ggplot2::scale_color_manual(values = c(
-      "Observed capture R\u00b2" = col_capture,
-      "Permutation null (mean)" = "grey50",
-      "Fraction permutation p<0.05" = col_violated)) +
+    ggplot2::scale_color_manual(
+      values = c(
+        "Observed capture R\u00b2" = col_capture,
+        "Permutation null (mean)" = "grey50",
+        "Fraction permutation p<0.05" = col_violated),
+      limits = c("Observed capture R\u00b2", "Permutation null (mean)",
+                 "Fraction permutation p<0.05"),
+      labels = c(
+        expression(paste("Observed capture ", R^2)),
+        expression("Permutation null (mean)"),
+        expression(paste("Fraction permutation ", p < 0.05)))) +
     ggplot2::scale_y_continuous(
       limits = c(0, NA),
       sec.axis = ggplot2::sec_axis(~ . / sec_scale, name = "Fraction p<0.05",
                                    labels = scales::percent_format(accuracy = 1))) +
-    ggplot2::labs(x = "True NC coverage (\u03c9)",
-                  y = "Incremental R\u00b2 of W for Y | C",
-                  title = "A3 capture: R\u00b2(W | C) vs coverage", color = NULL) +
+    ggplot2::labs(x = expression(paste("True NC coverage (", omega, ")")),
+                  y = expression(paste("Incremental ", R^2, " of W for Y | C")),
+                  title = expression(paste("A3 capture: ", R^2,
+                                           "(W | C) vs coverage")),
+                  color = NULL) +
     .figure_theme() +
     ggplot2::theme(legend.position = "bottom",
                    legend.text = ggplot2::element_text(size = 7.5)) +
@@ -908,9 +917,10 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
     ggplot2::geom_hline(yintercept = 0.2, linetype = "dotted", colour = "grey60",
                         linewidth = 0.4) +
     ggplot2::scale_y_continuous(limits = c(0, 1.0)) +
-    ggplot2::labs(x = "True NC coverage (\u03c9)",
+    ggplot2::labs(x = expression(paste("True NC coverage (", omega, ")")),
                   y = expression(R^2 * (tilde(U) ~ "|" ~ W)),
-                  title = "A3 support: R\u00b2(\u0168 | W) vs coverage") +
+                  title = expression(paste("A3 support: ", R^2, "(",
+                                           tilde(U), " | W) vs coverage"))) +
     .figure_theme()
 
   fig <- ((pA | pB | pC) / (pD | pE | patchwork::plot_spacer())) +

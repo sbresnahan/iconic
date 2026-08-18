@@ -1,7 +1,7 @@
 Package: iconic
 Title: Causal Model Selection with Genetic Instruments and Negative
         Controls
-Version: 0.99.1
+Version: 0.99.2
 biocViews: StatisticalMethod, Genetics, MultipleComparison, Regression,
         Transcriptomics, RNASeq, Survival
 Authors@R: c(

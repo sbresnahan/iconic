@@ -163,7 +163,7 @@ diag <- iconic_diagnose(data)
 #>  Estimating features: 20% (2/10) [0s]
 #>  Estimating features: 30% (3/10) [0s]
 #>  Estimating features: 40% (4/10) [0s]
-#>  Estimating features: 50% (5/10) [0.1s]
+#>  Estimating features: 50% (5/10) [0s]
 #>  Estimating features: 60% (6/10) [0.1s]
 #>  Estimating features: 70% (7/10) [0.1s]
 #>  Estimating features: 80% (8/10) [0.1s]

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">iconic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,14 @@
       <small>Source: <a href="https://github.com/sbresnahan/iconic/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.99.2" id="iconic-0992">iconic 0.99.2<a class="anchor" aria-label="anchor" href="#iconic-0992"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-99-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-99-2"></a></h3>
+<ul><li>
+<strong>Portable plotmath labels in <code><a href="../reference/plot_nc_validity_diagnostics.html">plot_nc_validity_diagnostics()</a></code>.</strong> The new panels D/E introduced in 0.99.1 drew omega / Utilde / R2 glyphs as Unicode string literals, which fail with <code>mbcsToSbcs</code> conversion errors when the plot is printed on devices/locales without multi-byte glyph support (observed on the macOS check runner). All drawn text in those panels now uses plotmath expressions, which render through the symbol font on any device. The saved figure (cairo_pdf) is visually unchanged.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.99.1" id="iconic-0991">iconic 0.99.1<a class="anchor" aria-label="anchor" href="#iconic-0991"></a></h2>
 <div class="section level3">
@@ -80,7 +88,7 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.9.9.2" id="iconic-0992">iconic 0.9.9.2<a class="anchor" aria-label="anchor" href="#iconic-0992"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.9.9.2" id="iconic-0992-1">iconic 0.9.9.2<a class="anchor" aria-label="anchor" href="#iconic-0992-1"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-9-9-2">New features<a class="anchor" aria-label="anchor" href="#new-features-0-9-9-2"></a></h3>
 <ul><li><p><strong>Data-driven composite recommendation in <code><a href="../reference/iconic_recommend.html">iconic_recommend()</a></code>.</strong> The headline recommendation is now a single data-driven composite rather than the NDE-only ranking. For each estimator the composite is the <em>worst-estimand</em> robustness (<code>min(score_NDE, score_NIE)</code>), so an estimator is only as trustworthy as its weakest estimand, multiplied by a <em>confidence factor</em> derived from the graded diagnostic verdict for the assumptions that estimator depends on. Bridge-dependent estimators (DIRECT, COCA, PGC, PGC2, PGC2Gm) are discounted when path completeness is borderline or weak-capture; instrument-only estimators (IV2SLS, IV2SLS2) are not. Structurally naive estimators (UNADJ, DIRECT) are demoted below eligible instrument/NC estimators. The discount is exposed via the new <code>completeness_penalty</code> argument (default <code>c(satisfied = 1.0, borderline = 0.7, "weak-capture" = 0.5, "under-identified" = 0)</code>), and the ranking gains <code>composite</code>, <code>confidence_mult</code>, and <code>final_score</code> columns. Per-estimand recommendations are retained as <code>$recommended_NDE</code> and <code>$recommended_NIE</code>.</p></li>

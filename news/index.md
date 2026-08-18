@@ -1,5 +1,19 @@
 # Changelog
 
+## iconic 0.99.2
+
+### Bug fixes
+
+- **Portable plotmath labels in
+  [`plot_nc_validity_diagnostics()`](https://seantbresnahan.com/iconic/reference/plot_nc_validity_diagnostics.md).**
+  The new panels D/E introduced in 0.99.1 drew omega / Utilde / R2
+  glyphs as Unicode string literals, which fail with `mbcsToSbcs`
+  conversion errors when the plot is printed on devices/locales without
+  multi-byte glyph support (observed on the macOS check runner). All
+  drawn text in those panels now uses plotmath expressions, which render
+  through the symbol font on any device. The saved figure (cairo_pdf) is
+  visually unchanged.
+
 ## iconic 0.99.1
 
 ### Figure revision

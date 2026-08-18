@@ -263,7 +263,7 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
 #>  NC capture null: 50% (10/20) [0.2s]
 #>  NC capture null: 60% (12/20) [0.3s]
 #>  NC capture null: 70% (14/20) [0.3s]
-#>  NC capture null: 80% (16/20) [0.4s]
+#>  NC capture null: 80% (16/20) [0.3s]
 #>  NC capture null: 90% (18/20) [0.4s]
 #>  NC capture null: 100% (20/20) [0.4s]
 #>    omega = 0: 50% (1/2) [0.5s]
@@ -277,7 +277,7 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
 #>  NC capture null: 70% (14/20) [0.3s]
 #>  NC capture null: 80% (16/20) [0.4s]
 #>  NC capture null: 90% (18/20) [0.4s]
-#>  NC capture null: 100% (20/20) [0.5s]
+#>  NC capture null: 100% (20/20) [0.4s]
 #>    omega = 0: 100% (2/2) [1s]
 #>   omega = 0.5: 2 tasks (sequential)
 #> NC capture null: 20 tasks (sequential)
@@ -302,7 +302,7 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
 #>  NC capture null: 70% (14/20) [0.3s]
 #>  NC capture null: 80% (16/20) [0.4s]
 #>  NC capture null: 90% (18/20) [0.4s]
-#>  NC capture null: 100% (20/20) [0.5s]
+#>  NC capture null: 100% (20/20) [0.4s]
 #>    omega = 0.5: 100% (2/2) [1s]
 #>  Done in 2.2 s
 panels$panel_a

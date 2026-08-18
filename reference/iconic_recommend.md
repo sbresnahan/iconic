@@ -203,7 +203,7 @@ diag <- iconic_diagnose(data)
 #>  omega_1 NC coverage: 30% (3/10) [0s]
 #>  omega_1 NC coverage: 40% (4/10) [0s]
 #>  omega_1 NC coverage: 50% (5/10) [0s]
-#>  omega_1 NC coverage: 60% (6/10) [0.1s]
+#>  omega_1 NC coverage: 60% (6/10) [0s]
 #>  omega_1 NC coverage: 70% (7/10) [0.1s]
 #>  omega_1 NC coverage: 80% (8/10) [0.1s]
 #>  omega_1 NC coverage: 90% (9/10) [0.1s]
@@ -238,9 +238,9 @@ diag <- iconic_diagnose(data)
 #>  NC capture null: 50% (100/200) [2s]
 #>  NC capture null: 60% (120/200) [2.4s]
 #>  NC capture null: 70% (140/200) [2.8s]
-#>  NC capture null: 80% (160/200) [3.2s]
-#>  NC capture null: 90% (180/200) [3.6s]
-#>  NC capture null: 100% (200/200) [4s]
+#>  NC capture null: 80% (160/200) [3.1s]
+#>  NC capture null: 90% (180/200) [3.5s]
+#>  NC capture null: 100% (200/200) [3.9s]
 #> iconic_diagnose complete. Call summary() or print() on the result for the full diagnosis.
 est <- iconic_estimate(data, diagnosis = diag)
 #> Estimating features: 10 tasks (sequential)

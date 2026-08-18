@@ -54,7 +54,7 @@ dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
 analyze_methods_parallel(dat, n_cores = 1)
 #> analyze_methods_parallel: 5 tasks (sequential)
 #>  analyze_methods_parallel: 20% (1/5) [0.7s]
-#>  analyze_methods_parallel: 40% (2/5) [0.7s]
+#>  analyze_methods_parallel: 40% (2/5) [0.8s]
 #>  analyze_methods_parallel: 60% (3/5) [0.8s]
 #>  analyze_methods_parallel: 80% (4/5) [0.8s]
 #>  analyze_methods_parallel: 100% (5/5) [0.8s]

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">iconic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,17 @@
       <small>Source: <a href="https://github.com/sbresnahan/iconic/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.99.1" id="iconic-0991">iconic 0.99.1<a class="anchor" aria-label="anchor" href="#iconic-0991"></a></h2>
+<div class="section level3">
+<h3 id="figure-revision-0-99-1">Figure revision<a class="anchor" aria-label="anchor" href="#figure-revision-0-99-1"></a></h3>
+<ul><li>
+<strong>Supplementary Figure S6 revision</strong> (<code>R/figures.R</code>): the A3 dimensional heatmap (PGC bias over the <code>n_valid</code> x <code>k</code> grid) is no longer plotted by default; <code><a href="../reference/plot_nc_validity_diagnostics.html">plot_nc_validity_diagnostics()</a></code> now assembles a 5-panel figure — (A) A1 screen, (B) A2 screen, (C) A2’ screen, (D) A3 covariance-capture versus true negative-control coverage omega (with the permutation-null mean and the fraction of replicates with permutation p &lt; 0.05 on a secondary axis), and (E) A3 support R2(Utilde | W) versus omega.</li>
+<li>
+<strong><code><a href="../reference/sweep_nc_validity.html">sweep_nc_validity()</a></code></strong> gains <code>omega_grid</code> (default 0 to 1), <code>n_perm</code> (default 200, matching <code><a href="../reference/iconic_diagnose.html">iconic_diagnose()</a></code>), <code>cs_confounders</code> (default 2), and <code>include_a3_grid</code> (default FALSE) arguments, and returns a new per-replicate <code>panel_capture_support</code> data frame (capture R2, permutation p-value, permutation-null mean, support R2, and the fraction of controls adding unique coverage). The legacy A3 dimensional grid sweep remains available via <code>include_a3_grid = TRUE</code>.</li>
+<li>The figure is saved with <code>cairo_pdf</code> so the omega / Utilde / arrow glyphs render correctly; the default figure size is now 10 x 6.5 inches.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.99.0" id="iconic-0990">iconic 0.99.0<a class="anchor" aria-label="anchor" href="#iconic-0990"></a></h2>
 <div class="section level3">
@@ -82,7 +93,7 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.9.9.1" id="iconic-0991">iconic 0.9.9.1<a class="anchor" aria-label="anchor" href="#iconic-0991"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.9.9.1" id="iconic-0991-1">iconic 0.9.9.1<a class="anchor" aria-label="anchor" href="#iconic-0991-1"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-9-9-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-9-9-1"></a></h3>
 <ul><li><p><strong>Lone path-specific NC panel now derives the pooled <code>W</code>.</strong> Supplying only <code>W2</code> (or only <code>W1</code>) without a pooled <code>W</code> previously left <code>W</code> unset and <code>has_nc = FALSE</code>, so the single-panel estimators (DIRECT, COCA, PGC) were incorrectly ineligible and the NC validity / completeness screens were skipped entirely. <code><a href="../reference/iconic_data.html">iconic_data()</a></code> now derives <code>W</code> from the lone panel (mirroring the existing <code>W1 + W2 -&gt; W</code> derivation), so DIRECT / COCA / PGC become eligible and the NC screens run. This applies to both continuous and survival outcomes. <code>has_path_nc</code> still correctly remains <code>FALSE</code>, so the two-bridge estimators (PGC2, PGC2Gm) stay gated unless the user opts in (below).</p></li>

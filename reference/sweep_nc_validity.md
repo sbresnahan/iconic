@@ -1,8 +1,11 @@
 # Sweep negative-control validity diagnostics
 
-Runs simulation sweeps for the four empirical NC validity diagnostics
-(A1, A2, A2', A3) and returns data frames ready for plotting with
+Runs simulation sweeps for the empirical NC validity diagnostics and
+returns data frames ready for plotting with
 [`plot_nc_validity_diagnostics()`](https://seantbresnahan.com/iconic/reference/plot_nc_validity_diagnostics.md).
+Panels: (A) A1 W perp X \| C, (B) A2 W perp G \| C, (C) A2' W perp Gm \|
+C, (D) A3 covariance-capture versus true coverage omega, (E) A3 support
+R2(Utilde \| W) versus omega.
 
 ## Usage
 
@@ -14,6 +17,10 @@ sweep_nc_validity(
   contam_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
   meqtl_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
   eqtl_grid = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5),
+  omega_grid = c(0, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1),
+  n_perm = 200,
+  cs_confounders = 2,
+  include_a3_grid = FALSE,
   k_grid = c(1, 2, 3),
   n_valid_grid = c(1, 2, 3),
   n_cores = 1
@@ -32,7 +39,8 @@ sweep_nc_validity(
 
 - phi_val:
 
-  Mediator-instrument strength (for A2' panel).
+  Mediator-instrument strength (for the A2' panel and the
+  capture/support sweeps).
 
 - contam_grid:
 
@@ -46,13 +54,30 @@ sweep_nc_validity(
 
   Gm-\>W (eQTL) strength grid (A2').
 
-- k_grid:
+- omega_grid:
 
-  Number of confounders grid (A3).
+  True negative-control coverage grid for the capture (D) and
+  support (E) sweeps. Includes 0 by default so the permutation-null
+  calibration is visible.
 
-- n_valid_grid:
+- n_perm:
 
-  Number of valid controls grid (A3).
+  Permutations per replicate for the capture test. Default 200, matching
+  [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md).
+
+- cs_confounders:
+
+  Number of latent confounders for the capture/support sweeps (distinct
+  loadings). Default 2.
+
+- include_a3_grid:
+
+  Logical; also run the legacy A3 dimensional grid (PGC bias over
+  n_valid x k). Default FALSE (no longer plotted).
+
+- k_grid, n_valid_grid:
+
+  Grids for the legacy A3 dimensional sweep.
 
 - n_cores:
 
@@ -63,16 +88,17 @@ sweep_nc_validity(
 
 ## Value
 
-A list with elements `panel_a`, `panel_b`, `panel_c`, `panel_d` (data
-frames).
+A list with elements `panel_a`, `panel_b`, `panel_d`,
+`panel_capture_support` (per-replicate raw), and optionally `panel_c`
+when `include_a3_grid = TRUE`.
 
 ## Examples
 
 ``` r
 # \donttest{
-panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
-  n_valid_grid = 1, contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
-  eqtl_grid = c(0, 0.1))
+panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
+  contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
+  eqtl_grid = c(0, 0.1), omega_grid = c(0, 0.5), n_perm = 20)
 #> Running NC validity sweeps (n_iter = 2, n = 100) ...
 #>  Panel A: nc_validity_screen (A1)
 #>  Panel A replicates: 2 tasks (sequential)
@@ -176,23 +202,33 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
 #>  NC independence (G): 90% (9/10) [0s]
 #>  NC independence (G): 100% (10/10) [0s]
 #>   Panel B replicates: 100% (2/2) [0s]
-#>  Panel C: nc_completeness_check (A3)
+#>  Panel C: nc_independence_check_gm (A2')
 #>  Panel C replicates: 2 tasks (sequential)
+#> NC independence (Gm): 10 tasks (sequential)
+#>  NC independence (Gm): 10% (1/10) [0s]
+#>  NC independence (Gm): 20% (2/10) [0s]
+#>  NC independence (Gm): 30% (3/10) [0s]
+#>  NC independence (Gm): 40% (4/10) [0s]
+#>  NC independence (Gm): 50% (5/10) [0s]
+#>  NC independence (Gm): 60% (6/10) [0s]
+#>  NC independence (Gm): 70% (7/10) [0s]
+#>  NC independence (Gm): 80% (8/10) [0s]
+#>  NC independence (Gm): 90% (9/10) [0s]
+#>  NC independence (Gm): 100% (10/10) [0s]
 #>   Panel C replicates: 50% (1/2) [0s]
+#> NC independence (Gm): 10 tasks (sequential)
+#>  NC independence (Gm): 10% (1/10) [0s]
+#>  NC independence (Gm): 20% (2/10) [0s]
+#>  NC independence (Gm): 30% (3/10) [0s]
+#>  NC independence (Gm): 40% (4/10) [0s]
+#>  NC independence (Gm): 50% (5/10) [0s]
+#>  NC independence (Gm): 60% (6/10) [0s]
+#>  NC independence (Gm): 70% (7/10) [0s]
+#>  NC independence (Gm): 80% (8/10) [0s]
+#>  NC independence (Gm): 90% (9/10) [0s]
+#>  NC independence (Gm): 100% (10/10) [0s]
 #>   Panel C replicates: 100% (2/2) [0s]
-#> NC capture null: 1000 tasks (sequential)
-#>  NC capture null: 10% (100/1000) [2.2s]
-#>  NC capture null: 20% (200/1000) [4.4s]
-#>  NC capture null: 30% (300/1000) [6.6s]
-#>  NC capture null: 40% (400/1000) [8.8s]
-#>  NC capture null: 50% (500/1000) [11s]
-#>  NC capture null: 60% (600/1000) [13.2s]
-#>  NC capture null: 70% (700/1000) [15.4s]
-#>  NC capture null: 80% (800/1000) [17.6s]
-#>  NC capture null: 90% (900/1000) [19.8s]
-#>  NC capture null: 100% (1000/1000) [22s]
-#>  Panel D: nc_independence_check_gm (A2')
-#>  Panel D replicates: 2 tasks (sequential)
+#>  Panel C replicates: 2 tasks (sequential)
 #> NC independence (Gm): 10 tasks (sequential)
 #>  NC independence (Gm): 10% (1/10) [0s]
 #>  NC independence (Gm): 20% (2/10) [0s]
@@ -204,7 +240,7 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
 #>  NC independence (Gm): 80% (8/10) [0s]
 #>  NC independence (Gm): 90% (9/10) [0s]
 #>  NC independence (Gm): 100% (10/10) [0s]
-#>   Panel D replicates: 50% (1/2) [0s]
+#>   Panel C replicates: 50% (1/2) [0s]
 #> NC independence (Gm): 10 tasks (sequential)
 #>  NC independence (Gm): 10% (1/10) [0s]
 #>  NC independence (Gm): 20% (2/10) [0s]
@@ -216,36 +252,68 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2, k_grid = 1,
 #>  NC independence (Gm): 80% (8/10) [0s]
 #>  NC independence (Gm): 90% (9/10) [0s]
 #>  NC independence (Gm): 100% (10/10) [0s]
-#>   Panel D replicates: 100% (2/2) [0s]
-#>  Panel D replicates: 2 tasks (sequential)
-#> NC independence (Gm): 10 tasks (sequential)
-#>  NC independence (Gm): 10% (1/10) [0s]
-#>  NC independence (Gm): 20% (2/10) [0s]
-#>  NC independence (Gm): 30% (3/10) [0s]
-#>  NC independence (Gm): 40% (4/10) [0s]
-#>  NC independence (Gm): 50% (5/10) [0s]
-#>  NC independence (Gm): 60% (6/10) [0s]
-#>  NC independence (Gm): 70% (7/10) [0s]
-#>  NC independence (Gm): 80% (8/10) [0s]
-#>  NC independence (Gm): 90% (9/10) [0s]
-#>  NC independence (Gm): 100% (10/10) [0s]
-#>   Panel D replicates: 50% (1/2) [0s]
-#> NC independence (Gm): 10 tasks (sequential)
-#>  NC independence (Gm): 10% (1/10) [0s]
-#>  NC independence (Gm): 20% (2/10) [0s]
-#>  NC independence (Gm): 30% (3/10) [0s]
-#>  NC independence (Gm): 40% (4/10) [0s]
-#>  NC independence (Gm): 50% (5/10) [0s]
-#>  NC independence (Gm): 60% (6/10) [0s]
-#>  NC independence (Gm): 70% (7/10) [0s]
-#>  NC independence (Gm): 80% (8/10) [0s]
-#>  NC independence (Gm): 90% (9/10) [0s]
-#>  NC independence (Gm): 100% (10/10) [0s]
-#>   Panel D replicates: 100% (2/2) [0s]
-#>  Done in 22.2 s
+#>   Panel C replicates: 100% (2/2) [0s]
+#>  Panels D-E: nc_completeness_capture + nc_support_check vs omega
+#>   omega = 0: 2 tasks (sequential)
+#> NC capture null: 20 tasks (sequential)
+#>  NC capture null: 10% (2/20) [0s]
+#>  NC capture null: 20% (4/20) [0.1s]
+#>  NC capture null: 30% (6/20) [0.1s]
+#>  NC capture null: 40% (8/20) [0.2s]
+#>  NC capture null: 50% (10/20) [0.2s]
+#>  NC capture null: 60% (12/20) [0.3s]
+#>  NC capture null: 70% (14/20) [0.3s]
+#>  NC capture null: 80% (16/20) [0.4s]
+#>  NC capture null: 90% (18/20) [0.4s]
+#>  NC capture null: 100% (20/20) [0.4s]
+#>    omega = 0: 50% (1/2) [0.5s]
+#> NC capture null: 20 tasks (sequential)
+#>  NC capture null: 10% (2/20) [0s]
+#>  NC capture null: 20% (4/20) [0.1s]
+#>  NC capture null: 30% (6/20) [0.1s]
+#>  NC capture null: 40% (8/20) [0.2s]
+#>  NC capture null: 50% (10/20) [0.2s]
+#>  NC capture null: 60% (12/20) [0.3s]
+#>  NC capture null: 70% (14/20) [0.3s]
+#>  NC capture null: 80% (16/20) [0.4s]
+#>  NC capture null: 90% (18/20) [0.4s]
+#>  NC capture null: 100% (20/20) [0.5s]
+#>    omega = 0: 100% (2/2) [1s]
+#>   omega = 0.5: 2 tasks (sequential)
+#> NC capture null: 20 tasks (sequential)
+#>  NC capture null: 10% (2/20) [0s]
+#>  NC capture null: 20% (4/20) [0.1s]
+#>  NC capture null: 30% (6/20) [0.1s]
+#>  NC capture null: 40% (8/20) [0.2s]
+#>  NC capture null: 50% (10/20) [0.2s]
+#>  NC capture null: 60% (12/20) [0.3s]
+#>  NC capture null: 70% (14/20) [0.3s]
+#>  NC capture null: 80% (16/20) [0.4s]
+#>  NC capture null: 90% (18/20) [0.4s]
+#>  NC capture null: 100% (20/20) [0.4s]
+#>    omega = 0.5: 50% (1/2) [0.5s]
+#> NC capture null: 20 tasks (sequential)
+#>  NC capture null: 10% (2/20) [0s]
+#>  NC capture null: 20% (4/20) [0.1s]
+#>  NC capture null: 30% (6/20) [0.1s]
+#>  NC capture null: 40% (8/20) [0.2s]
+#>  NC capture null: 50% (10/20) [0.2s]
+#>  NC capture null: 60% (12/20) [0.3s]
+#>  NC capture null: 70% (14/20) [0.3s]
+#>  NC capture null: 80% (16/20) [0.4s]
+#>  NC capture null: 90% (18/20) [0.4s]
+#>  NC capture null: 100% (20/20) [0.5s]
+#>    omega = 0.5: 100% (2/2) [1s]
+#>  Done in 2.2 s
 panels$panel_a
 #>   contamination violated_mean violated_sd confounding_mean confounding_sd
 #> 1           0.0           0.0   0.0000000                1              0
 #> 2           0.1           0.3   0.1414214                1              0
+panels$panel_capture_support
+#>   omega rep capture_R2 capture_p    null_R2 support_R2 frac_adds_coverage
+#> 1   0.0   1 0.07755442      0.75 0.10999436 0.11589077                0.0
+#> 2   0.0   2 0.04619164      0.90 0.09367601 0.05081462                0.0
+#> 3   0.5   1 0.49594649      0.00 0.08636304 0.65417453                0.4
+#> 4   0.5   2 0.48886836      0.00 0.10329703 0.63588698                0.2
 # }
 ```

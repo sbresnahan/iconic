@@ -301,7 +301,7 @@ Visualization functions for diagnostics, sensitivity, and results.
 - [`plot_nc_coverage_comparison()`](https://seantbresnahan.com/iconic/reference/plot_nc_coverage_comparison.md)
   : NC coverage comparison figure
 - [`plot_nc_validity_diagnostics()`](https://seantbresnahan.com/iconic/reference/plot_nc_validity_diagnostics.md)
-  : NC validity diagnostics figure
+  : NC validity diagnostics figure (5 panels)
 - [`plot_pleiotropy_sweep()`](https://seantbresnahan.com/iconic/reference/plot_pleiotropy_sweep.md)
   : Pleiotropy sweep figure
 - [`plot_power()`](https://seantbresnahan.com/iconic/reference/plot_power.md)

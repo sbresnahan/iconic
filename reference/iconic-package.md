@@ -30,6 +30,8 @@ and prospective analysis); all other functionality works without it.
 
 Useful links:
 
+- <https://seantbresnahan.com/iconic/>
+
 - <https://github.com/sbresnahan/iconic>
 
 - Report bugs at <https://github.com/sbresnahan/iconic/issues>

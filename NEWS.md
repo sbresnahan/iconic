@@ -1,3 +1,27 @@
+# iconic 0.99.1
+
+## Figure revision
+
+- **Supplementary Figure S6 revision** (`R/figures.R`): the A3
+  dimensional heatmap (PGC bias over the `n_valid` x `k` grid) is no
+  longer plotted by default; `plot_nc_validity_diagnostics()` now
+  assembles a 5-panel figure — (A) A1 screen, (B) A2 screen, (C) A2'
+  screen, (D) A3 covariance-capture versus true negative-control
+  coverage omega (with the permutation-null mean and the fraction of
+  replicates with permutation p < 0.05 on a secondary axis), and (E) A3
+  support R2(Utilde | W) versus omega.
+- **`sweep_nc_validity()`** gains `omega_grid` (default 0 to 1),
+  `n_perm` (default 200, matching `iconic_diagnose()`),
+  `cs_confounders` (default 2), and `include_a3_grid` (default FALSE)
+  arguments, and returns a new per-replicate `panel_capture_support`
+  data frame (capture R2, permutation p-value, permutation-null mean,
+  support R2, and the fraction of controls adding unique coverage). The
+  legacy A3 dimensional grid sweep remains available via
+  `include_a3_grid = TRUE`.
+- The figure is saved with `cairo_pdf` so the omega / Utilde / arrow
+  glyphs render correctly; the default figure size is now 10 x 6.5
+  inches.
+
 # iconic 0.99.0
 
 ## New features

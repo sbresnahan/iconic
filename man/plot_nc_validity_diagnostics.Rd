@@ -2,26 +2,30 @@
 % Please edit documentation in R/figures.R
 \name{plot_nc_validity_diagnostics}
 \alias{plot_nc_validity_diagnostics}
-\title{NC validity diagnostics figure}
+\title{NC validity diagnostics figure (5 panels)}
 \usage{
-plot_nc_validity_diagnostics(panels, file = NULL, width = 8, height = 6)
+plot_nc_validity_diagnostics(panels, file = NULL, width = 10, height = 6.5)
 }
 \arguments{
 \item{panels}{List returned by \code{sweep_nc_validity()}.}
 
-\item{file}{Optional file path to save the figure.}
+\item{file}{Optional file path to save the figure (cairo_pdf, so the
+omega and Utilde glyphs render).}
 
-\item{width}{Figure width in inches.}
+\item{width}{Figure width in inches. Default 10.}
 
-\item{height}{Figure height in inches.}
+\item{height}{Figure height in inches. Default 6.5.}
 }
 \value{
 A \code{patchwork} ggplot object.
 }
 \description{
-Produces a 4-panel figure sweeping the four empirical NC validity
-diagnostics. Panels: (A) A1 W perp X|C, (B) A2 W perp G|C,
-(C) A3 dim(W_valid) >= k completeness grid, (D) A2' W perp Gm|C.
+Produces a 5-panel figure sweeping the empirical NC validity
+diagnostics. Panels: (A) A1 W perp X | C, (B) A2 W perp G | C,
+(C) A2' W perp Gm | C, (D) A3 covariance-capture versus true
+coverage omega (with permutation-null mean and the fraction of
+replicates with permutation p < 0.05 on a secondary axis), and
+(E) A3 support R2(Utilde | W) versus omega.
 }
 \examples{
 # Toy panels standing in for sweep_nc_validity() output
@@ -32,12 +36,15 @@ panels <- list(
   panel_b = data.frame(meqtl = c(0, 0.1),
     violated_mean = c(0.1, 0.3), violated_sd = 0.05,
     clean_mean = c(0.1, 0.12), clean_sd = 0.05),
-  panel_c = expand.grid(n_valid = 1:2, k = 1:2),
   panel_d = data.frame(eqtl = c(0, 0.1),
     violated_mean = c(0.1, 0.3), violated_sd = 0.05,
-    clean_mean = c(0.1, 0.12), clean_sd = 0.05))
-panels$panel_c$pgc_bias <- c(0.05, 0.20, 0.08, 0.25)
-panels$panel_c$completeness <- c("satisfied", "under-identified",
-  "satisfied", "under-identified")
+    clean_mean = c(0.1, 0.12), clean_sd = 0.05),
+  panel_capture_support = data.frame(
+    omega = rep(c(0, 0.5), each = 2), rep = 1:2,
+    capture_R2 = c(0.02, 0.03, 0.25, 0.30),
+    capture_p = c(0.40, 0.60, 0.01, 0.02),
+    null_R2 = 0.02,
+    support_R2 = c(0.02, 0.03, 0.35, 0.40),
+    frac_adds_coverage = 1))
 plot_nc_validity_diagnostics(panels)
 }

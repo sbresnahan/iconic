@@ -121,10 +121,14 @@
 #' numeric vectors: per-control coverage
 #' of conf_XM / conf_MY. Default NULL → scalar omega applied
 #' uniformly (backward compatible).
-#' @param outcome_type \code{"continuous"} (default) or \code{"survival"}
+#' @param outcome_type \code{"continuous"} (default), \code{"survival"},
+#'   or \code{"binary"}.
 #'   When \code{"survival"}, the continuous
 #' linear predictor Y is converted to \code{surv_time}
 #' and \code{surv_event} via an exponential PH model.
+#'   When \code{"binary"}, the linear predictor is converted to a 0/1
+#' outcome \code{y_bin} via a logistic (Bernoulli) model; the true
+#' effects are then on the conditional log-odds-ratio scale.
 #' @param surv_h0 Baseline hazard for the survival DGP.
 #' Default 0.1.
 #' @param surv_event_frac Target fraction of observed events.
@@ -132,6 +136,9 @@
 #' internally from this.
 #' @param surv_censor_rate Explicit censoring rate. Default NULL
 #' → solved from \code{surv_event_frac}.
+#' @param bin_prev Target prevalence (marginal event probability) for
+#' the binary DGP. Default 0.5. The logistic intercept is solved
+#' internally from this.
 #' @param seed Optional integer RNG seed for reproducibility.
 #' @param separate_U Defunct. Passing a value errors with a message pointing
 #'   to the replacement per-path loading vectors
@@ -192,10 +199,14 @@ generate_toy_data <- function(n = 500,
                               # an exponential PH model with censoring. The
                               # true_total / true_NDE / true_NIE are then on
                               # the Cox log-HR scale.
-                              outcome_type = c("continuous", "survival"),
+                              # When "binary", Y is converted to a 0/1 outcome
+                              # via a logistic (Bernoulli) model; the true
+                              # effects are on the conditional log-OR scale.
+                              outcome_type = c("continuous", "survival", "binary"),
                               surv_h0 = 0.1,
                               surv_event_frac = 0.6,
                               surv_censor_rate = NULL,
+                              bin_prev = 0.5,
                               seed = NULL,
                               beta_Z = NULL) {
   if (!is.null(seed)) withr::local_seed(seed)
@@ -440,6 +451,15 @@ generate_toy_data <- function(n = 500,
                              censor_rate = surv_censor_rate)
   }
 
+  # binary outcome — convert the linear predictor to a 0/1 outcome via a
+  # logistic (Bernoulli) model. As for survival, the first column of Y
+  # carries the causal signal; true_total / true_NDE / true_NIE are on
+  # the conditional log-OR scale.
+  bin <- NULL
+  if (outcome_type == "binary") {
+    bin <- .linpred_to_binary(Y[, 1], prev = bin_prev)
+  }
+
   out <- list(
     X = X,
     G = matrix(rep(G, n_features), n, n_features),
@@ -459,6 +479,9 @@ generate_toy_data <- function(n = 500,
     out$surv_time <- surv$surv_time
     out$surv_event <- surv$surv_event
     out$outcome_type <- "survival"
+  } else if (outcome_type == "binary") {
+    out$y_bin <- bin$y_bin
+    out$outcome_type <- "binary"
   } else {
     out$outcome_type <- "continuous"
   }
@@ -481,7 +504,8 @@ generate_toy_data <- function(n = 500,
     w_coverage_profile = wcp,
     outcome_type = outcome_type,
     surv_h0 = surv_h0, surv_event_frac = surv_event_frac,
-    surv_censor_rate = surv_censor_rate
+    surv_censor_rate = surv_censor_rate,
+    bin_prev = bin_prev
   )
 
   # (only when the is active)

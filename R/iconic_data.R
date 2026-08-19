@@ -25,7 +25,9 @@
 #' matrix. If a matrix, column means are taken and scaled (one exposure
 #' per sample).
 #' @param Y Outcome: numeric vector (length n) or features x samples
-#' matrix. When a matrix, estimation runs per-feature.
+#' matrix. When a matrix, estimation runs per-feature. When
+#' \code{outcome_type = "binary"}, \code{Y} is the 0/1 outcome vector
+#' (length n).
 #' @param M Optional mediator: numeric vector (length n) or features x
 #' samples matrix. When a matrix, estimation runs per-mediator x
 #' per-outcome.
@@ -71,11 +73,15 @@
 #' the other path's composite is in doubt. A warning is emitted when the
 #' recycle is activated.
 #' @param outcome_type Character: \code{"continuous"} (default,
-#' backward-compatible) or \code{"survival"}. When \code{"survival"},
+#' backward-compatible), \code{"survival"}, or \code{"binary"}. When
+#' \code{"survival"},
 #' \code{Y} is not required; instead supply \code{surv_time} and
 #' \code{surv_event}. Estimation uses Cox proportional-hazards
 #' (\code{\link[survival]{coxph}}) or RMST pseudo-observation OLS
-#' (see \code{effect_scale} in \code{\link{iconic_estimate}()}).
+#' (see \code{effect_scale} in \code{\link{iconic_estimate}()}). When
+#' \code{"binary"}, supply \code{Y} as the 0/1 outcome vector (length n);
+#' estimation uses logistic regression (log-OR scale) or a linear
+#' probability model (risk-difference scale).
 #' @param surv_time Numeric follow-up time vector (length n). Required
 #' when \code{outcome_type = "survival"}; ignored otherwise.
 #' @param surv_event Numeric 0/1 event indicator (length n; 1 = event
@@ -90,7 +96,7 @@
 #' `$n_mediators`, `$has_instrument`, `$has_mediator_instrument`,
 #' `$has_nc`, `$has_path_nc`, `$is_mediation`, `$feature_names`,
 #' `$mediator_names`, `$trained_gan`, `$outcome_type`, and (when
-#' survival) `$surv_time`, `$surv_event`.
+#' survival) `$surv_time`, `$surv_event`, or (when binary) `$Y_bin`.
 #' @export
 #'
 #' @examples
@@ -113,11 +119,19 @@
 #' W = matrix(rnorm(100 * 10), 10, 100)
 #' )
 #' print(data)
+#'
+#' # Binary outcome (Y is the 0/1 outcome vector)
+#' data <- iconic_data(
+#' X = rnorm(100), Y = rbinom(100, 1, 0.4), outcome_type = "binary",
+#' M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+#' W = matrix(rnorm(100 * 10), 10, 100)
+#' )
+#' print(data)
 iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
                         W1 = NULL, W2 = NULL, covariates = NULL,
                         feature_names = NULL, mediator_names = NULL,
                         trained_gan = NULL,
-                        outcome_type = c("continuous", "survival"),
+                        outcome_type = c("continuous", "survival", "binary"),
                         surv_time = NULL, surv_event = NULL,
                         scale = TRUE,
                         recycle_lone_panel = FALSE,
@@ -184,9 +198,29 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
       stop("surv_event must be 0/1 (1 = event observed, 0 = censored).")
     Y <- NULL
     n_features <- 1L
+  } else if (outcome_type == "binary") {
+    # Binary outcome: Y is the 0/1 outcome vector (length n). Stored as
+    # the dedicated Y_bin field; n_features = 1 (single binary outcome).
+    # Y_bin is NOT scaled (it is a 0/1 indicator).
+    if (missing(Y) || is.null(Y))
+      stop("When outcome_type = 'binary', Y must be the 0/1 outcome ",
+           "vector (length n).")
+    Y_bin <- as.numeric(Y)
+    if (length(Y_bin) != n)
+      stop("Y must have length n (=", n, ") when outcome_type = 'binary'.")
+    if (any(is.na(Y_bin)))
+      stop("Y must not contain NA values when outcome_type = 'binary'.")
+    if (!all(Y_bin %in% c(0, 1)))
+      stop("Y must be dichotomous (0/1) when outcome_type = 'binary'.")
+    if (length(unique(Y_bin)) < 2L)
+      stop("Y must contain both 0 and 1 when outcome_type = 'binary' ",
+           "(the outcome has no variation).")
+    Y <- NULL
+    n_features <- 1L
   } else {
     if (missing(Y) || is.null(Y)) stop("Y (outcome) is required ",
-         "(or set outcome_type = 'survival' with surv_time/surv_event).")
+         "(or set outcome_type = 'survival' with surv_time/surv_event, ",
+         "or outcome_type = 'binary' with Y as the 0/1 outcome vector).")
     Y <- as.matrix(Y)
     if (nrow(Y) == n) {
       # User passed samples x features; transpose to features x samples
@@ -405,6 +439,7 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
   ## --- Feature / mediator names ---
   if (is.null(feature_names)) {
     feature_names <- if (outcome_type == "survival") "survival"
+                     else if (outcome_type == "binary") "binary"
                      else if (!is.null(rownames(Y))) rownames(Y)
                      else paste0("feature_", seq_len(n_features))
   }
@@ -439,6 +474,7 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     outcome_type = outcome_type,
     surv_time = if (outcome_type == "survival") surv_time else NULL,
     surv_event = if (outcome_type == "survival") surv_event else NULL,
+    Y_bin = if (outcome_type == "binary") Y_bin else NULL,
     scaling = scaling
   )
   validate_iconic_data(obj)
@@ -564,8 +600,11 @@ as_iconic_data.default <- function(input, ...) {
 #' @param surv_time,surv_event Optional character: names of `colData`
 #' columns holding follow-up time and the 0/1 event indicator; set
 #' together with `outcome_type = "survival"`.
-#' @param outcome_type `\"continuous\"` (default) or
-#' `\"survival\"`.
+#' @param bin_outcome Optional character: name of a `colData` column
+#' holding the 0/1 outcome; set together with
+#' `outcome_type = "binary"`.
+#' @param outcome_type `\"continuous\"` (default),
+#' `\"survival\"`, or `\"binary\"`.
 #' @method as_iconic_data SummarizedExperiment
 #' @export
 #'
@@ -594,7 +633,8 @@ as_iconic_data.SummarizedExperiment <- function(input, assay = 1,
                                                 covariates = NULL,
                                                 surv_time = NULL,
                                                 surv_event = NULL,
-                                                outcome_type = c("continuous", "survival"),
+                                                bin_outcome = NULL,
+                                                outcome_type = c("continuous", "survival", "binary"),
                                                 ...) {
   if (!requireNamespace("SummarizedExperiment", quietly = TRUE))
     stop("The SummarizedExperiment method requires the ",
@@ -618,8 +658,14 @@ as_iconic_data.SummarizedExperiment <- function(input, assay = 1,
   Y <- NULL
   if (outcome_type == "continuous") {
     if (is.null(assay))
-      stop("assay = NULL is only valid with outcome_type = 'survival'.")
+      stop("assay = NULL is only valid with outcome_type = 'survival' ",
+           "or 'binary'.")
     Y <- as.matrix(SummarizedExperiment::assay(input, assay))
+  } else if (outcome_type == "binary") {
+    if (is.null(bin_outcome))
+      stop("When outcome_type = 'binary', supply bin_outcome = '<colData ",
+           "column>' naming the 0/1 outcome column.")
+    Y <- get_col(bin_outcome, "bin_outcome")
   }
 
   M <- NULL
@@ -675,6 +721,10 @@ print.iconic_data <- function(x, ...) {
     n_events <- sum(x$surv_event)
     cat("<iconic_data> ", x$n, " samples, survival outcome (",
         n_events, " events / ", x$n, ")", sep = "")
+  } else if (x$outcome_type == "binary") {
+    n_cases <- sum(x$Y_bin)
+    cat("<iconic_data> ", x$n, " samples, binary outcome (",
+        n_cases, " cases / ", x$n, ")", sep = "")
   } else {
     cat("<iconic_data> ", x$n, " samples, ", x$n_features, " outcome features",
         sep = "")

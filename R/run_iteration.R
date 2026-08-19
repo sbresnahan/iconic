@@ -103,12 +103,18 @@
 #' (length n_features). Default NULL → scalar omega applied uniformly.
 #' @param MMExp,MMOut,MMCon,MMCpG Per-pathway confounding multipliers (exposure,
 #' outcome, controls, methylation). Default 1.
-#' @param outcome_type \code{"continuous"} (default) or \code{"survival"}
+#' @param outcome_type \code{"continuous"} (default), \code{"survival"},
+#'   or \code{"binary"}.
 #'   When \code{"survival"}, the linear predictor is converted to
 #' \code{surv_time} and \code{surv_event} via an exponential PH model.
+#'   When \code{"binary"}, the linear predictor is converted to a 0/1
+#' outcome \code{y_bin} via a logistic (Bernoulli) model; true effects
+#' are on the conditional log-odds-ratio scale.
 #' @param surv_h0 Baseline hazard for the survival DGP. Default 0.1.
 #' @param surv_event_frac Target fraction of observed events. Default 0.6.
 #' @param surv_censor_rate Explicit censoring rate. Default NULL.
+#' @param bin_prev Target prevalence (marginal event probability) for the
+#' binary DGP. Default 0.5.
 #' @param seed Optional RNG seed.
 #' @param separate_U Defunct. Passing a value errors with a
 #'   message pointing to the replacement per-path loading vectors
@@ -164,10 +170,11 @@ run_single_iteration <- function(trained_gan = NULL,
                                  w_coverage_profile = NULL,
                                  MMExp = 1, MMOut = 1, MMCon = 1, MMCpG = 1,
                                  # survival / time-to-event outcome.
-                                 outcome_type = c("continuous", "survival"),
+                                 outcome_type = c("continuous", "survival", "binary"),
                                  surv_h0 = 0.1,
                                  surv_event_frac = 0.6,
                                  surv_censor_rate = NULL,
+                                 bin_prev = 0.5,
                                  seed = NULL) {
   if (!is.null(seed)) withr::local_seed(seed)
   outcome_type <- match.arg(outcome_type)
@@ -456,6 +463,14 @@ run_single_iteration <- function(trained_gan = NULL,
                              censor_rate = surv_censor_rate)
   }
 
+  # binary outcome — convert the linear predictor to a 0/1 outcome via a
+  # logistic (Bernoulli) model. true_total / true_NDE / true_NIE are on
+  # the conditional log-OR scale.
+  bin <- NULL
+  if (outcome_type == "binary") {
+    bin <- .linpred_to_binary(Y[, 1], prev = bin_prev)
+  }
+
   out <- list(
     X = X,
     G = matrix(rep(G, p), n, p),
@@ -491,12 +506,16 @@ run_single_iteration <- function(trained_gan = NULL,
                                w_coverage_profile = if (!is.null(wcp)) wcp else list(w1 = om1_vec, w2 = om2_vec),
                                outcome_type = outcome_type,
                                surv_h0 = surv_h0, surv_event_frac = surv_event_frac,
-                               surv_censor_rate = surv_censor_rate)
+                               surv_censor_rate = surv_censor_rate,
+                               bin_prev = bin_prev)
   )
   if (outcome_type == "survival") {
     out$surv_time <- surv$surv_time
     out$surv_event <- surv$surv_event
     out$outcome_type <- "survival"
+  } else if (outcome_type == "binary") {
+    out$y_bin <- bin$y_bin
+    out$outcome_type <- "binary"
   } else {
     out$outcome_type <- "continuous"
   }

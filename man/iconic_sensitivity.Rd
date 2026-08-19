@@ -27,10 +27,11 @@ iconic_sensitivity(
   n_cores = 1,
   verbose = FALSE,
   outcome_type = NULL,
-  effect_scale = c("loghr", "rmst"),
+  effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
   surv_h0 = 0.1,
   surv_event_frac = 0.6,
-  surv_censor_rate = NULL
+  surv_censor_rate = NULL,
+  bin_prev = 0.5
 )
 }
 \arguments{
@@ -105,17 +106,23 @@ and a PSOCK cluster on Windows.}
 Default \code{FALSE} (quiet).}
 
 \item{outcome_type}{\code{NULL} (inherit from \code{data}, default) or
-\code{"continuous"} / \code{"survival"}. When survival, the
-sensitivity sweep uses the Cox / RMST survival mediation drivers.}
+\code{"continuous"} / \code{"survival"} / \code{"binary"}. When
+survival, the sensitivity sweep uses the Cox / RMST survival mediation
+drivers; when binary, the logistic / linear-probability-model binary
+mediation drivers.}
 
-\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}. Only
-used when \code{outcome_type = "survival"}.}
+\item{effect_scale}{\code{"loghr"} (default), \code{"rmst"},
+\code{"logor"}, or \code{"riskdiff"}. \code{"loghr"}/\code{"rmst"}
+apply to survival outcomes; \code{"logor"}/\code{"riskdiff"} apply to
+binary outcomes (an inert default is remapped with a message).}
 
 \item{surv_h0}{Baseline hazard for survival DGP. Default 0.1.}
 
 \item{surv_event_frac}{Target fraction of observed events. Default 0.6.}
 
 \item{surv_censor_rate}{Explicit censoring rate. Default NULL.}
+
+\item{bin_prev}{Target prevalence for the binary DGP. Default 0.5.}
 }
 \value{
 An \code{iconic_sensitivity} S3 object: a named list with

@@ -28,11 +28,12 @@ iconic_prospect(
   base_seed = 500,
   verbose = FALSE,
   allow_no_proxy = TRUE,
-  outcome_type = c("continuous", "survival"),
-  effect_scale = c("loghr", "rmst"),
+  outcome_type = c("continuous", "survival", "binary"),
+  effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
   surv_h0 = 0.1,
   surv_event_frac = 0.6,
-  surv_censor_rate = NULL
+  surv_censor_rate = NULL,
+  bin_prev = 0.5
 )
 }
 \arguments{
@@ -100,14 +101,18 @@ Default \code{FALSE} (quiet).}
 already has instruments/NCs (with a message). When \code{FALSE},
 error if the data already has IV+NC (use iconic_estimate instead).}
 
-\item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
-Threads through to the simulation DGP.}
+\item{outcome_type}{\code{"continuous"} (default), \code{"survival"},
+or \code{"binary"}. Threads through to the simulation DGP.}
 
-\item{effect_scale}{\code{"loghr"} (default) or \code{"rmst"}. Only
-used when \code{outcome_type = "survival"}.}
+\item{effect_scale}{\code{"loghr"} (default), \code{"rmst"},
+\code{"logor"}, or \code{"riskdiff"}. \code{"loghr"}/\code{"rmst"}
+apply to survival outcomes; \code{"logor"}/\code{"riskdiff"} apply to
+binary outcomes (an inert default is remapped with a message).}
 
 \item{surv_h0, surv_event_frac, surv_censor_rate}{Survival DGP parameters
 See \code{\link{generate_toy_data}}.}
+
+\item{bin_prev}{Target prevalence for the binary DGP. Default 0.5.}
 }
 \value{
 An \code{iconic_prospect} S3 object: a named list with

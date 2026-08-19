@@ -21,7 +21,8 @@ as_iconic_data(input, ...)
   covariates = NULL,
   surv_time = NULL,
   surv_event = NULL,
-  outcome_type = c("continuous", "survival"),
+  bin_outcome = NULL,
+  outcome_type = c("continuous", "survival", "binary"),
   ...
 )
 }
@@ -61,8 +62,12 @@ names to carry through as covariates.}
 columns holding follow-up time and the 0/1 event indicator; set
 together with \code{outcome_type = "survival"}.}
 
-\item{outcome_type}{\verb{\\"continuous\\"} (default) or
-\verb{\\"survival\\"}.}
+\item{bin_outcome}{Optional character: name of a \code{colData} column
+holding the 0/1 outcome; set together with
+\code{outcome_type = "binary"}.}
+
+\item{outcome_type}{\verb{\\"continuous\\"} (default),
+\verb{\\"survival\\"}, or \verb{\\"binary\\"}.}
 }
 \value{
 An \code{iconic_data} S3 object.

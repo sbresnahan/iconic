@@ -38,10 +38,11 @@ run_single_iteration(
   MMOut = 1,
   MMCon = 1,
   MMCpG = 1,
-  outcome_type = c("continuous", "survival"),
+  outcome_type = c("continuous", "survival", "binary"),
   surv_h0 = 0.1,
   surv_event_frac = 0.6,
   surv_censor_rate = NULL,
+  bin_prev = 0.5,
   seed = NULL
 )
 }
@@ -143,15 +144,22 @@ numeric vectors: per-control coverage of conf_XM / conf_MY
 \item{MMExp, MMOut, MMCon, MMCpG}{Per-pathway confounding multipliers (exposure,
 outcome, controls, methylation). Default 1.}
 
-\item{outcome_type}{\code{"continuous"} (default) or \code{"survival"}
+\item{outcome_type}{\code{"continuous"} (default), \code{"survival"},
+or \code{"binary"}.
 When \code{"survival"}, the linear predictor is converted to
-\code{surv_time} and \code{surv_event} via an exponential PH model.}
+\code{surv_time} and \code{surv_event} via an exponential PH model.
+When \code{"binary"}, the linear predictor is converted to a 0/1
+outcome \code{y_bin} via a logistic (Bernoulli) model; true effects
+are on the conditional log-odds-ratio scale.}
 
 \item{surv_h0}{Baseline hazard for the survival DGP. Default 0.1.}
 
 \item{surv_event_frac}{Target fraction of observed events. Default 0.6.}
 
 \item{surv_censor_rate}{Explicit censoring rate. Default NULL.}
+
+\item{bin_prev}{Target prevalence (marginal event probability) for the
+binary DGP. Default 0.5.}
 
 \item{seed}{Optional RNG seed.}
 }

@@ -1,7 +1,7 @@
 Package: iconic
 Title: Causal Model Selection with Genetic Instruments and Negative
         Controls
-Version: 0.99.2
+Version: 0.99.3
 biocViews: StatisticalMethod, Genetics, MultipleComparison, Regression,
         Transcriptomics, RNASeq, Survival
 Authors@R: c(
@@ -32,7 +32,10 @@ Description: Provides a model selection workflow for causal inference
     panels (principal components of residualized omics matrices), and
     data can be imported directly from SummarizedExperiment objects.
     Time-to-event outcomes are supported on the Cox log-hazard-ratio and
-    restricted-mean-survival-time scales. The torch package is required
+    restricted-mean-survival-time scales. Binary outcomes are supported
+    on the log-odds-ratio (logistic two-stage predictor-substitution
+    outcome stage) and risk-difference (linear probability model)
+    scales. The torch package is required
     for the generative texture model (sensitivity and prospective
     analysis); all other functionality works without it.
 License: MIT + file LICENSE
@@ -45,6 +48,11 @@ Suggests: testthat (>= 3.0.0), ggplot2, patchwork, scales, knitr,
         SummarizedExperiment, S4Vectors, BiocStyle
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-URL: https://seantbresnahan.com/iconic/, https://github.com/sbresnahan/iconic
+URL: https://seantbresnahan.com/iconic/,
+        https://github.com/sbresnahan/iconic
 BugReports: https://github.com/sbresnahan/iconic/issues
 NeedsCompilation: no
+Packaged: 2026-08-19 17:42:24 UTC; root
+Author: Sean T. Bresnahan [aut, cre],
+  Charis Xiong [aut]
+Maintainer: Sean T. Bresnahan <seantbresnahan3@gmail.com>

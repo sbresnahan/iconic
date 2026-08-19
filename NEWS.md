@@ -1,3 +1,69 @@
+iconic 0.99.3
+
+## New features
+
+- **Binary outcome support.** `outcome_type = "binary"` is now
+  available throughout the workflow: `iconic_data()` accepts a 0/1
+  outcome vector (validated as dichotomous, stored unscaled as
+  `Y_bin`), and `iconic_estimate()`, `iconic_sensitivity()`,
+  `iconic_prospect()`, and `run_single_iteration()` all dispatch to
+  binary-specific estimators. `generate_toy_data()` and
+  `run_single_iteration()` gain a `bin_prev` argument (default 0.5)
+  controlling the outcome prevalence of the simulated binary DGP.
+
+- **Two effect scales for binary outcomes** via the `effect_scale`
+  argument: `"logor"` (default; logistic two-stage
+  predictor-substitution outcome stage, mirroring the Cox log-HR
+  convention for survival) and `"riskdiff"` (linear probability model
+  outcome stage, giving an exactly collapsible NDE/NIE decomposition).
+  Inert scale requests are remapped with an informative message
+  (e.g. `effect_scale = "loghr"` on binary data maps to `"logor"`).
+
+- **New binary estimators** (`R/bin_estimators.R`,
+  `R/bin_mediation.R`): `fit_unadj_bin()`, `fit_direct_bin()`,
+  `fit_iv2sls_bin()`, `fit_pgc_bin()`, and the mediation variants
+  `fit_unadj_mediation_bin()`, `fit_direct_mediation_bin()`,
+  `fit_iv2sls_mediation_bin()`, `fit_iv2sls_mediation2_bin()`,
+  `fit_pgc_mediation_bin()`, `fit_pgc_mediation2_bin()`. First stages
+  remain OLS; only the outcome stage changes (binomial GLM or linear
+  probability model). The partial-F weak-instrument gate and the
+  collinear-panel fallback behave as for continuous and survival
+  outcomes.
+
+- **COCA is excluded for binary outcomes** (`fit_coca_bin()` and
+  `fit_coca_mediation_bin()` return `NA` with a `reason` attribute, the
+  same contract as for survival): COCA's ratio identification assumes a
+  linear structural outcome model, which neither the log-OR nor the
+  risk-difference binary outcome stage satisfies.
+
+## Behavioural notes
+
+- `infer_confounding()` now errors informatively for binary outcomes:
+  gap-based calibration relies on a continuous outcome scale. Use
+  `confounding = "manual"` or the default confounding grid in
+  sensitivity/prospective analyses of binary data.
+- The generative texture model (torch GAN) is unavailable for binary
+  outcomes because there is no continuous outcome margin to texture;
+  `iconic_sensitivity()` falls back to the default texture with an
+  informative message.
+
+## Bug fixes
+
+- **Locale/device-safe plot labels (completes the 0.99.2 fix).**
+  Remaining multi-byte glyphs that are drawn when the package examples
+  run are now portable across locales and graphics devices. In
+  `plot_nc_validity_diagnostics()` the internal colour-scale keys still
+  used Unicode arrow and superscript-two string literals; these are now
+  ASCII (`->`, `R2`). The displayed legend label was already a plotmath
+  expression, so the figure is visually unchanged. In
+  `plot_pleiotropy_sweep()` and `plot_instrument_strength_sweep()` the
+  axis titles carried a Unicode arrow / minus sign as string literals;
+  these are now plotmath expressions, which render the real glyphs
+  through the symbol font on any device -- including the base `pdf()`
+  device used by `R CMD check` -- without `mbcsToSbcs` conversion
+  errors. No code line in `R/figures.R` now contains a non-ASCII or
+  `\uXXXX`-escaped character.
+
 # iconic 0.99.2
 
 ## Bug fixes

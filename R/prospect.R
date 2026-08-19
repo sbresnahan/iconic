@@ -109,12 +109,15 @@
 #' (default), proceed with the prospective sweep even if the data
 #' already has instruments/NCs (with a message). When \code{FALSE},
 #' error if the data already has IV+NC (use iconic_estimate instead).
-#' @param outcome_type \code{"continuous"} (default) or \code{"survival"}
-#'   Threads through to the simulation DGP.
-#' @param effect_scale \code{"loghr"} (default) or \code{"rmst"}. Only
-#' used when \code{outcome_type = "survival"}.
+#' @param outcome_type \code{"continuous"} (default), \code{"survival"},
+#'   or \code{"binary"}. Threads through to the simulation DGP.
+#' @param effect_scale \code{"loghr"} (default), \code{"rmst"},
+#'   \code{"logor"}, or \code{"riskdiff"}. \code{"loghr"}/\code{"rmst"}
+#' apply to survival outcomes; \code{"logor"}/\code{"riskdiff"} apply to
+#' binary outcomes (an inert default is remapped with a message).
 #' @param surv_h0,surv_event_frac,surv_censor_rate Survival DGP parameters
 #'   See \code{\link{generate_toy_data}}.
+#' @param bin_prev Target prevalence for the binary DGP. Default 0.5.
 #'
 #' @section Defaults:
 #' \tabular{lll}{
@@ -176,11 +179,12 @@ iconic_prospect <- function(data,
                             base_seed = 500,
                             verbose = FALSE,
                             allow_no_proxy = TRUE,
-                            outcome_type = c("continuous", "survival"),
-                            effect_scale = c("loghr", "rmst"),
+                            outcome_type = c("continuous", "survival", "binary"),
+                            effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
                             surv_h0 = 0.1,
                             surv_event_frac = 0.6,
-                            surv_censor_rate = NULL) {
+                            surv_censor_rate = NULL,
+                            bin_prev = 0.5) {
   if (!inherits(data, "iconic_data"))
     stop("data must be an iconic_data object from iconic_data().")
   if (!data$is_mediation)
@@ -191,8 +195,20 @@ iconic_prospect <- function(data,
   outcome_type <- match.arg(outcome_type)
   effect_scale <- match.arg(effect_scale)
   # inherit outcome_type from data if not explicitly set
-  if (outcome_type == "continuous" && data$outcome_type == "survival")
-    outcome_type <- "survival"
+  if (outcome_type == "continuous" &&
+      data$outcome_type %in% c("survival", "binary"))
+    outcome_type <- data$outcome_type
+  # remap an inert effect_scale default to the outcome-appropriate scale
+  if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for binary outcomes; using 'logor'.")
+    effect_scale <- "logor"
+  }
+  if (outcome_type == "survival" && effect_scale %in% c("logor", "riskdiff")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for survival outcomes; using 'loghr'.")
+    effect_scale <- "loghr"
+  }
 
   # Capture which calibration arguments the user left at their defaults
   # BEFORE any reassignment: inferred values may fill in defaults, but
@@ -289,10 +305,14 @@ iconic_prospect <- function(data,
         lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = o1, omega_2 = o2,
         seed = base_seed + as.integer(gg * 10000) + gi * 1000L + i,
         outcome_type = outcome_type, surv_h0 = surv_h0,
-        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
+        bin_prev = bin_prev)
       if (outcome_type == "survival") {
         res <- .run_surv_methods(dat, effect_scale = effect_scale,
                                  is_mediation = TRUE)
+      } else if (outcome_type == "binary") {
+        res <- .run_bin_methods(dat, effect_scale = effect_scale,
+                                is_mediation = TRUE)
       } else {
         res <- run_mediation_methods(dat, n_features)
       }
@@ -324,10 +344,14 @@ iconic_prospect <- function(data,
       lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = omega_1_ref, omega_2 = omega_2_ref,
       seed = base_seed + 99999 + i,
       outcome_type = outcome_type, surv_h0 = surv_h0,
-      surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+      surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
+      bin_prev = bin_prev)
     if (outcome_type == "survival") {
       res <- .run_surv_methods(dat, effect_scale = effect_scale,
                                is_mediation = TRUE)
+    } else if (outcome_type == "binary") {
+      res <- .run_bin_methods(dat, effect_scale = effect_scale,
+                              is_mediation = TRUE)
     } else {
       res <- run_mediation_methods(dat, n_features)
     }
@@ -346,11 +370,18 @@ iconic_prospect <- function(data,
     lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = omega_1_ref, omega_2 = omega_2_ref,
     seed = base_seed + 77777,
     outcome_type = outcome_type, surv_h0 = surv_h0,
-    surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+    surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
+    bin_prev = bin_prev)
   if (outcome_type == "survival") {
     rep_idata <- iconic_data(
       X = rep_dat$X, outcome_type = "survival",
       surv_time = rep_dat$surv_time, surv_event = rep_dat$surv_event,
+      M = rep_dat$M, W = t(rep_dat$W), W1 = t(rep_dat$W1), W2 = t(rep_dat$W2),
+      G = rep_dat$G[, 1], Gm = rep_dat$Gm,
+      covariates = rep_dat$synthetic_data)
+  } else if (outcome_type == "binary") {
+    rep_idata <- iconic_data(
+      X = rep_dat$X, Y = rep_dat$y_bin, outcome_type = "binary",
       M = rep_dat$M, W = t(rep_dat$W), W1 = t(rep_dat$W1), W2 = t(rep_dat$W2),
       G = rep_dat$G[, 1], Gm = rep_dat$Gm,
       covariates = rep_dat$synthetic_data)
@@ -408,10 +439,14 @@ iconic_prospect <- function(data,
           omega_1 = o1, omega_2 = o2,
           seed = base_seed + 55555 + gi * 1000L + i,
           outcome_type = outcome_type, surv_h0 = surv_h0,
-          surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+          surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
+          bin_prev = bin_prev)
         if (outcome_type == "survival") {
           res <- .run_surv_methods(dat, effect_scale = effect_scale,
                                    is_mediation = TRUE)
+        } else if (outcome_type == "binary") {
+          res <- .run_bin_methods(dat, effect_scale = effect_scale,
+                                  is_mediation = TRUE)
         } else {
           res <- run_mediation_methods(dat, n_features)
         }

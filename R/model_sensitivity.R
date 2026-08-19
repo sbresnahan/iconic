@@ -88,10 +88,13 @@
   if (!is.null(data$trained_gan)) {
     return(list(gan = data$trained_gan, source = "data-attached GAN"))
   }
-  # survival outcomes have no continuous Y matrix, so the GAN
+  # survival and binary outcomes have no continuous Y matrix, so the GAN
   # texture model cannot be trained. Use default (NULL) texture instead.
-  if (!is.null(data$outcome_type) && data$outcome_type == "survival") {
-    return(list(gan = NULL, source = "default texture (survival outcome)"))
+  if (!is.null(data$outcome_type) &&
+      data$outcome_type %in% c("survival", "binary")) {
+    return(list(gan = NULL,
+                source = sprintf("default texture (%s outcome)",
+                                 data$outcome_type)))
   }
   gan <- .auto_train_gan(data, epochs = epochs)
   list(gan = gan, source = "auto-trained from data")
@@ -195,13 +198,18 @@
 #' @param verbose Logical: print progress messages during the sweep.
 #' Default \code{FALSE} (quiet).
 #' @param outcome_type \code{NULL} (inherit from \code{data}, default) or
-#' \code{"continuous"} / \code{"survival"}. When survival, the
-#' sensitivity sweep uses the Cox / RMST survival mediation drivers.
-#' @param effect_scale \code{"loghr"} (default) or \code{"rmst"}. Only
-#' used when \code{outcome_type = "survival"}.
+#' \code{"continuous"} / \code{"survival"} / \code{"binary"}. When
+#' survival, the sensitivity sweep uses the Cox / RMST survival mediation
+#' drivers; when binary, the logistic / linear-probability-model binary
+#' mediation drivers.
+#' @param effect_scale \code{"loghr"} (default), \code{"rmst"},
+#' \code{"logor"}, or \code{"riskdiff"}. \code{"loghr"}/\code{"rmst"}
+#' apply to survival outcomes; \code{"logor"}/\code{"riskdiff"} apply to
+#' binary outcomes (an inert default is remapped with a message).
 #' @param surv_h0 Baseline hazard for survival DGP. Default 0.1.
 #' @param surv_event_frac Target fraction of observed events. Default 0.6.
 #' @param surv_censor_rate Explicit censoring rate. Default NULL.
+#' @param bin_prev Target prevalence for the binary DGP. Default 0.5.
 #'
 #' @section Defaults:
 #' \tabular{lll}{
@@ -255,10 +263,11 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
                                n_cores = 1,
                                verbose = FALSE,
                                outcome_type = NULL,
-                               effect_scale = c("loghr", "rmst"),
+                               effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
                                surv_h0 = 0.1,
                                surv_event_frac = 0.6,
-                               surv_censor_rate = NULL) {
+                               surv_censor_rate = NULL,
+                               bin_prev = 0.5) {
   if (!inherits(data, "iconic_data"))
     stop("data must be an iconic_data object from iconic_data().")
   if (!data$is_mediation)
@@ -288,7 +297,18 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
   if (is.null(outcome_type)) {
     outcome_type <- if (!is.null(data$outcome_type)) data$outcome_type else "continuous"
   }
-  outcome_type <- match.arg(outcome_type, c("continuous", "survival"))
+  outcome_type <- match.arg(outcome_type, c("continuous", "survival", "binary"))
+  # remap an inert effect_scale default to the outcome-appropriate scale
+  if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for binary outcomes; using 'logor'.")
+    effect_scale <- "logor"
+  }
+  if (outcome_type == "survival" && effect_scale %in% c("logor", "riskdiff")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for survival outcomes; using 'loghr'.")
+    effect_scale <- "loghr"
+  }
 
   # ── Resolve the texture model ──
   gan_res <- .resolve_gan(trained_gan, data, epochs = gan_epochs)
@@ -379,10 +399,14 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
         lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = o1, omega_2 = o2,
         seed = base_seed + gi * 1000L + i,
         outcome_type = outcome_type, surv_h0 = surv_h0,
-        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
+        bin_prev = bin_prev)
       if (outcome_type == "survival") {
         res <- .run_surv_methods(dat, effect_scale = effect_scale,
                                  is_mediation = TRUE)
+      } else if (outcome_type == "binary") {
+        res <- .run_bin_methods(dat, effect_scale = effect_scale,
+                                is_mediation = TRUE)
       } else {
         res <- run_mediation_methods(dat, n_features)
       }

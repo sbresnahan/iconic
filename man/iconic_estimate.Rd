@@ -14,7 +14,7 @@ iconic_estimate(
   run_all = FALSE,
   se_method = c("delta", "bootstrap", "composite"),
   n_boot = 500,
-  effect_scale = c("loghr", "rmst"),
+  effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
   tau = NULL
 )
 }
@@ -58,14 +58,21 @@ sparse. Only applies in mediation mode. NDE_p and NIE_se are unchanged.}
 \item{n_boot}{Integer: number of bootstrap resamples when
 \code{se_method = "bootstrap"}. Default 500.}
 
-\item{effect_scale}{Character: \code{"loghr"} (default) or
-\code{"rmst"}. Only used when \code{data$outcome_type = "survival"}.
-\code{"loghr"} fits Cox proportional-hazards models and reports
-log-hazard ratios. \code{"rmst"} regresses leave-one-out RMST
+\item{effect_scale}{Character: \code{"loghr"}, \code{"rmst"},
+\code{"logor"}, or \code{"riskdiff"}. Only used for non-continuous
+outcomes. For \code{data$outcome_type = "survival"}: \code{"loghr"}
+(default) fits Cox proportional-hazards models and reports
+log-hazard ratios; \code{"rmst"} regresses leave-one-out RMST
 pseudo-observations (Graw et al. 2009) via OLS, reporting effects on
 the restricted-mean-survival-time (time) scale — a collapsible
-alternative where the NDE/NIE product decomposition is exact. Ignored
-(with a message) when \code{outcome_type = "continuous"}.}
+alternative where the NDE/NIE product decomposition is exact. For
+\code{data$outcome_type = "binary"}: \code{"logor"} (default) fits
+logistic outcome stages and reports conditional log-odds ratios;
+\code{"riskdiff"} fits linear probability models (OLS on the 0/1
+outcome), reporting risk differences — again a collapsible scale
+where the product decomposition is exact. Ignored (with a message)
+when \code{outcome_type = "continuous"}; an inert default is
+remapped (with a message) when it does not match the outcome type.}
 
 \item{tau}{Numeric: RMST restriction time horizon. Default
 \code{NULL} (90th percentile of follow-up). Used only when
@@ -79,7 +86,9 @@ mode: \code{feature}, \code{mediator}, \code{method}, \code{NDE},
 \code{NDE_significant}, \code{NIE_significant}. When
 \code{outcome_type = "survival"}, estimates are on the log-HR scale
 (\code{effect_scale = "loghr"}) or the RMST/time scale
-(\code{effect_scale = "rmst"}).
+(\code{effect_scale = "rmst"}). When \code{outcome_type = "binary"},
+estimates are on the log-OR scale (\code{effect_scale = "logor"}) or
+the risk-difference scale (\code{effect_scale = "riskdiff"}).
 }
 \description{
 Applies all eligible causal estimators to the user's real data
@@ -107,4 +116,11 @@ surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
 G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 est <- iconic_estimate(sdat, effect_scale = "loghr")
 est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
+
+# Binary outcome
+bdat <- iconic_data(X = rnorm(100), Y = rbinom(100, 1, 0.4),
+outcome_type = "binary",
+G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+est <- iconic_estimate(bdat, effect_scale = "logor")
+est_rd <- iconic_estimate(bdat, effect_scale = "riskdiff")
 }

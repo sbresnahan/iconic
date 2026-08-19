@@ -17,7 +17,7 @@ iconic_data(
   feature_names = NULL,
   mediator_names = NULL,
   trained_gan = NULL,
-  outcome_type = c("continuous", "survival"),
+  outcome_type = c("continuous", "survival", "binary"),
   surv_time = NULL,
   surv_event = NULL,
   scale = TRUE,
@@ -31,7 +31,9 @@ matrix. If a matrix, column means are taken and scaled (one exposure
 per sample).}
 
 \item{Y}{Outcome: numeric vector (length n) or features x samples
-matrix. When a matrix, estimation runs per-feature.}
+matrix. When a matrix, estimation runs per-feature. When
+\code{outcome_type = "binary"}, \code{Y} is the 0/1 outcome vector
+(length n).}
 
 \item{M}{Optional mediator: numeric vector (length n) or features x
 samples matrix. When a matrix, estimation runs per-mediator x
@@ -72,11 +74,15 @@ instead of auto-training a new one. This avoids retraining when the
 same data is used across multiple workflow steps.}
 
 \item{outcome_type}{Character: \code{"continuous"} (default,
-backward-compatible) or \code{"survival"}. When \code{"survival"},
+backward-compatible), \code{"survival"}, or \code{"binary"}. When
+\code{"survival"},
 \code{Y} is not required; instead supply \code{surv_time} and
 \code{surv_event}. Estimation uses Cox proportional-hazards
 (\code{\link[survival]{coxph}}) or RMST pseudo-observation OLS
-(see \code{effect_scale} in \code{\link{iconic_estimate}()}).}
+(see \code{effect_scale} in \code{\link{iconic_estimate}()}). When
+\code{"binary"}, supply \code{Y} as the 0/1 outcome vector (length n);
+estimation uses logistic regression (log-OR scale) or a linear
+probability model (risk-difference scale).}
 
 \item{surv_time}{Numeric follow-up time vector (length n). Required
 when \code{outcome_type = "survival"}; ignored otherwise.}
@@ -113,7 +119,7 @@ An \code{iconic_data} S3 object: a named list with \verb{$X}, \verb{$Y}, \verb{$
 \verb{$n_mediators}, \verb{$has_instrument}, \verb{$has_mediator_instrument},
 \verb{$has_nc}, \verb{$has_path_nc}, \verb{$is_mediation}, \verb{$feature_names},
 \verb{$mediator_names}, \verb{$trained_gan}, \verb{$outcome_type}, and (when
-survival) \verb{$surv_time}, \verb{$surv_event}.
+survival) \verb{$surv_time}, \verb{$surv_event}, or (when binary) \verb{$Y_bin}.
 }
 \description{
 Creates an \code{iconic_data} S3 object from the user's real data,
@@ -136,6 +142,14 @@ print(data)
 data <- iconic_data(
 X = rnorm(100), outcome_type = "survival",
 surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+W = matrix(rnorm(100 * 10), 10, 100)
+)
+print(data)
+
+# Binary outcome (Y is the 0/1 outcome vector)
+data <- iconic_data(
+X = rnorm(100), Y = rbinom(100, 1, 0.4), outcome_type = "binary",
 M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
 W = matrix(rnorm(100 * 10), 10, 100)
 )

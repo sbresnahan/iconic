@@ -25,6 +25,11 @@
 # and estimates via iconic_estimate() with the survival drivers, instead of
 # run_methods() / run_mediation_methods(). The summary functions are
 # format-compatible because iconic_estimate() returns the same column names.
+#
+# binary (0/1) outcomes. When outcome_type = "binary", the simulation
+# generates y_bin via run_single_iteration() and estimates via
+# iconic_estimate() with the binary drivers (logistic log-OR or linear
+# probability model risk-difference scales).
 # ============================================================
 
 # Run survival estimators on a dat list from run_single_iteration().
@@ -58,6 +63,35 @@
   iconic_estimate(sdat, effect_scale = effect_scale, tau = tau)
 }
 
+# Run binary estimators on a dat list from run_single_iteration().
+# Converts dat to an iconic_data object and calls iconic_estimate().
+# Returns a data frame with the same columns as run_methods() (total-effect)
+# or run_mediation_methods() (mediation), so summarise_results() /
+# summarise_mediation_results() consume it unchanged.
+.run_bin_methods <- function(dat, effect_scale = "logor",
+                             is_mediation = FALSE) {
+  G_vec <- if (!is.null(dat$G)) {
+    if (is.matrix(dat$G)) dat$G[, 1] else dat$G
+  } else NULL
+  Gm_vec <- if (!is.null(dat$Gm)) {
+    if (is.matrix(dat$Gm)) dat$Gm[1, ] else dat$Gm
+  } else NULL
+
+  if (is_mediation) {
+    bdat <- iconic_data(
+      X = dat$X, Y = dat$y_bin, outcome_type = "binary",
+      M = dat$M, G = G_vec, Gm = Gm_vec,
+      W = t(dat$W),
+      W1 = if (!is.null(dat$W1)) t(dat$W1) else NULL,
+      W2 = if (!is.null(dat$W2)) t(dat$W2) else NULL)
+  } else {
+    bdat <- iconic_data(
+      X = dat$X, Y = dat$y_bin, outcome_type = "binary",
+      G = G_vec, W = t(dat$W))
+  }
+  iconic_estimate(bdat, effect_scale = effect_scale)
+}
+
 #' Benchmark estimators across confounding scenarios on synthetic data
 #'
 #' For each scenario in the grid, generates `n_iter` synthetic datasets with
@@ -78,15 +112,21 @@
 #' [run_single_iteration()]).
 #' @param base_seed Base RNG seed. Default 700.
 #' @param n_cores Parallel workers across replicates. Default 1.
-#' @param outcome_type \code{"continuous"} (default) or \code{"survival"}
+#' @param outcome_type \code{"continuous"} (default), \code{"survival"},
+#'   or \code{"binary"}.
 #'   When survival, the DGP generates time-to-event outcomes and
 #' estimation uses the Cox / RMST survival drivers via
-#' [iconic_estimate()].
-#' @param effect_scale \code{"loghr"} (default) or \code{"rmst"}. Only
-#' used when \code{outcome_type = "survival"}.
+#' [iconic_estimate()]. When binary, the DGP generates a 0/1 outcome and
+#' estimation uses the logistic / linear-probability-model binary
+#' drivers via [iconic_estimate()].
+#' @param effect_scale \code{"loghr"} (default), \code{"rmst"},
+#'   \code{"logor"}, or \code{"riskdiff"}. \code{"loghr"}/\code{"rmst"}
+#' apply to survival outcomes; \code{"logor"}/\code{"riskdiff"} apply to
+#' binary outcomes (an inert default is remapped with a message).
 #' @param surv_h0 Baseline hazard for the survival DGP. Default 0.1.
 #' @param surv_event_frac Target fraction of observed events. Default 0.6.
 #' @param surv_censor_rate Explicit censoring rate. Default NULL.
+#' @param bin_prev Target prevalence for the binary DGP. Default 0.5.
 #'
 #' @return A list with `summary` (one row per scenario x method, with
 #' `conf_strength`, `coverage`, `k`, `true_total` and the columns from
@@ -108,13 +148,24 @@ gan_sensitivity <- function(trained_gan = NULL,
                             effect_size = NULL,
                             base_seed = 700,
                             n_cores = 1,
-                            outcome_type = c("continuous", "survival"),
-                            effect_scale = c("loghr", "rmst"),
+                            outcome_type = c("continuous", "survival", "binary"),
+                            effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
                             surv_h0 = 0.1,
                             surv_event_frac = 0.6,
-                            surv_censor_rate = NULL) {
+                            surv_censor_rate = NULL,
+                            bin_prev = 0.5) {
   outcome_type <- match.arg(outcome_type)
   effect_scale <- match.arg(effect_scale)
+  if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for binary outcomes; using 'logor'.")
+    effect_scale <- "logor"
+  }
+  if (outcome_type == "survival" && effect_scale %in% c("logor", "riskdiff")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for survival outcomes; using 'loghr'.")
+    effect_scale <- "loghr"
+  }
 
   grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
                       k = k_grid, KEEP.OUT.ATTRS = FALSE)
@@ -131,10 +182,14 @@ gan_sensitivity <- function(trained_gan = NULL,
         effect_size = effect_size, conf_strength = cs, coverage = cov,
         nc_model = nc_model, seed = base_seed + gi * 1000L + i,
         outcome_type = outcome_type, surv_h0 = surv_h0,
-        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
+        bin_prev = bin_prev)
       if (outcome_type == "survival") {
         res <- .run_surv_methods(dat, effect_scale = effect_scale,
                                  is_mediation = FALSE)
+      } else if (outcome_type == "binary") {
+        res <- .run_bin_methods(dat, effect_scale = effect_scale,
+                                is_mediation = FALSE)
       } else {
         res <- run_methods(dat, n_features)
       }
@@ -330,16 +385,22 @@ nc_validity_check <- function(trained_gan = NULL,
 #' @param beta_X,alpha_M,beta_M Causal paths (ground truth). Defaults 0.10 / 0.50 / 0.30.
 #' @param base_seed Base RNG seed. Default 750.
 #' @param n_cores Parallel workers across replicates. Default 1.
-#' @param outcome_type \code{"continuous"} (default) or \code{"survival"}
+#' @param outcome_type \code{"continuous"} (default), \code{"survival"},
+#'   or \code{"binary"}.
 #'   When survival, the DGP generates time-to-event outcomes and
 #' estimation uses the Cox / RMST survival mediation drivers via
-#' [iconic_estimate()].
-#' @param effect_scale \code{"loghr"} (default) or \code{"rmst"}. Only
-#' used when \code{outcome_type = "survival"}.
+#' [iconic_estimate()]. When binary, the DGP generates a 0/1 outcome and
+#' estimation uses the logistic / linear-probability-model binary
+#' mediation drivers via [iconic_estimate()].
+#' @param effect_scale \code{"loghr"} (default), \code{"rmst"},
+#'   \code{"logor"}, or \code{"riskdiff"}. \code{"loghr"}/\code{"rmst"}
+#' apply to survival outcomes; \code{"logor"}/\code{"riskdiff"} apply to
+#' binary outcomes (an inert default is remapped with a message).
 #' @param surv_h0 Baseline hazard for survival DGP. See
 #' [run_single_iteration()].
 #' @param surv_event_frac Target event fraction for survival DGP.
 #' @param surv_censor_rate Censoring rate for survival DGP.
+#' @param bin_prev Target prevalence for the binary DGP. Default 0.5.
 #'
 #' @return A list with `summary` (one row per scenario x method, with
 #' `conf_strength`, `coverage`, `k`, `mo_confounding`, `phi`, `true_NDE`,
@@ -371,13 +432,24 @@ gan_mediation_sensitivity <- function(trained_gan = NULL,
                                       beta_X = 0.10, alpha_M = 0.50, beta_M = 0.30,
                                       base_seed = 750,
                                       n_cores = 1,
-                                      outcome_type = c("continuous", "survival"),
-                                      effect_scale = c("loghr", "rmst"),
+                                      outcome_type = c("continuous", "survival", "binary"),
+                                      effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
                                       surv_h0 = 0.1,
                                       surv_event_frac = 0.6,
-                                      surv_censor_rate = NULL) {
+                                      surv_censor_rate = NULL,
+                                      bin_prev = 0.5) {
   outcome_type <- match.arg(outcome_type)
   effect_scale <- match.arg(effect_scale)
+  if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for binary outcomes; using 'logor'.")
+    effect_scale <- "logor"
+  }
+  if (outcome_type == "survival" && effect_scale %in% c("logor", "riskdiff")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for survival outcomes; using 'loghr'.")
+    effect_scale <- "loghr"
+  }
 
   grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
                       k = k_grid, KEEP.OUT.ATTRS = FALSE)
@@ -398,10 +470,14 @@ gan_mediation_sensitivity <- function(trained_gan = NULL,
         lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = omega_1, omega_2 = omega_2,
         seed = base_seed + gi * 1000L + i,
         outcome_type = outcome_type, surv_h0 = surv_h0,
-        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate)
+        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
+        bin_prev = bin_prev)
       if (outcome_type == "survival") {
         res <- .run_surv_methods(dat, effect_scale = effect_scale,
                                  is_mediation = TRUE)
+      } else if (outcome_type == "binary") {
+        res <- .run_bin_methods(dat, effect_scale = effect_scale,
+                                is_mediation = TRUE)
       } else {
         res <- run_mediation_methods(dat, n_features)
       }

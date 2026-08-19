@@ -111,6 +111,14 @@ infer_confounding <- function(data, diagnosis = NULL, estimate = NULL,
   if (!inherits(data, "iconic_data"))
     stop("data must be an iconic_data object from iconic_data().")
 
+  # Binary outcomes are unsupported: the gap-based calibration relies on
+  # a continuous outcome scale (per-cell estimator gaps on the Y scale).
+  if (!is.null(data$outcome_type) && data$outcome_type == "binary")
+    stop("infer_confounding() is not supported for binary outcomes: the ",
+         "gap-based calibration relies on a continuous outcome scale. ",
+         "Supply confounding parameters explicitly (confounding = 'manual') ",
+         "or use the defaults.", call. = FALSE)
+
   warnings <- character(0)
   unavailable <- c("rho_G1", "rho_G2") # always unestimable
 

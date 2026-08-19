@@ -826,21 +826,21 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
 
   pA <- build_screen_panel(
     panels$panel_a, "contamination",
-    "X\u2192W contamination strength", "A1: W perp X | C",
+    "X->W contamination strength", "A1: W perp X | C",
     groups = list(
       "Confounder-sharing (expected)" = list(mean = "confounding_mean", sd = "confounding_sd", col = col_confounding),
-      "Violated (injected X\u2192W)" = list(mean = "violated_mean", sd = "violated_sd", col = col_violated)))
+      "Violated (injected X->W)" = list(mean = "violated_mean", sd = "violated_sd", col = col_violated)))
   pB <- build_screen_panel(
     panels$panel_b, "meqtl",
-    "G\u2192W (meQTL) strength", "A2: W perp G | C",
+    "G->W (meQTL) strength", "A2: W perp G | C",
     groups = list(
-      "Violated (injected G\u2192W)" = list(mean = "violated_mean", sd = "violated_sd", col = col_violated),
+      "Violated (injected G->W)" = list(mean = "violated_mean", sd = "violated_sd", col = col_violated),
       "Clean (false positive)" = list(mean = "clean_mean", sd = "clean_sd", col = col_clean)))
   pC <- build_screen_panel(
     panels$panel_d, "eqtl",
-    "Gm\u2192W strength", "A2': W perp Gm | C",
+    "Gm->W strength", "A2': W perp Gm | C",
     groups = list(
-      "Violated (injected Gm\u2192W)" = list(mean = "violated_mean", sd = "violated_sd", col = col_violated),
+      "Violated (injected Gm->W)" = list(mean = "violated_mean", sd = "violated_sd", col = col_violated),
       "Clean (false positive)" = list(mean = "clean_mean", sd = "clean_sd", col = col_clean)))
 
   ## Summarize the capture/support sweep
@@ -863,9 +863,9 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
     ggplot2::geom_ribbon(ggplot2::aes(ymin = pmax(capture_R2_mean - capture_R2_sd, 0),
                                       ymax = capture_R2_mean + capture_R2_sd),
                          alpha = 0.15, fill = col_capture, color = NA) +
-    ggplot2::geom_line(ggplot2::aes(y = capture_R2_mean, color = "Observed capture R\u00b2"),
+    ggplot2::geom_line(ggplot2::aes(y = capture_R2_mean, color = "Observed capture R2"),
                        linewidth = 0.8) +
-    ggplot2::geom_point(ggplot2::aes(y = capture_R2_mean, color = "Observed capture R\u00b2"),
+    ggplot2::geom_point(ggplot2::aes(y = capture_R2_mean, color = "Observed capture R2"),
                         size = 2, shape = 16) +
     ggplot2::geom_line(ggplot2::aes(y = null_R2_mean, color = "Permutation null (mean)"),
                        linewidth = 0.7) +
@@ -880,10 +880,10 @@ plot_nc_validity_diagnostics <- function(panels, file = NULL,
                         linewidth = 0.4) +
     ggplot2::scale_color_manual(
       values = c(
-        "Observed capture R\u00b2" = col_capture,
+        "Observed capture R2" = col_capture,
         "Permutation null (mean)" = "grey50",
         "Fraction permutation p<0.05" = col_violated),
-      limits = c("Observed capture R\u00b2", "Permutation null (mean)",
+      limits = c("Observed capture R2", "Permutation null (mean)",
                  "Fraction permutation p<0.05"),
       labels = c(
         expression(paste("Observed capture ", R^2)),
@@ -1310,7 +1310,7 @@ plot_pleiotropy_sweep <- function(sensitivity, file = NULL,
     ggplot2::geom_hline(data = data.frame(metric = "Bias", yint = 0),
                         ggplot2::aes(yintercept = yint), linetype = "dashed",
                         color = "grey50", inherit.aes = FALSE) +
-    ggplot2::labs(x = "Pleiotropy strength (direct G\u2192Y coefficient)",
+    ggplot2::labs(x = expression("Pleiotropy strength (direct G" %->% "Y coefficient)"),
                   y = NULL) +
     ggplot2::scale_x_continuous(breaks = c(0, 0.05, 0.10)) +
     .figure_theme() +
@@ -1456,7 +1456,7 @@ plot_instrument_strength_sweep <- function(results, tau = 0.25,
     ggplot2::annotate("text", x = 11, y = 50, label = "F = 10",
                       hjust = 0, size = 3, color = "#FF9400") +
     ggplot2::labs(x = "First-stage partial F (log scale)",
-                  y = "Bias (estimate \u2212 true effect)", title = "A") +
+                  y = expression("Bias (estimate" - "true effect)"), title = "A") +
     .figure_theme()
 
   pB <- ggplot2::ggplot() +

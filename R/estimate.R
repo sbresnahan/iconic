@@ -55,14 +55,21 @@
 #' sparse. Only applies in mediation mode. NDE_p and NIE_se are unchanged.
 #' @param n_boot Integer: number of bootstrap resamples when
 #' \code{se_method = "bootstrap"}. Default 500.
-#' @param effect_scale Character: \code{"loghr"} (default) or
-#' \code{"rmst"}. Only used when \code{data$outcome_type = "survival"}.
-#' \code{"loghr"} fits Cox proportional-hazards models and reports
-#' log-hazard ratios. \code{"rmst"} regresses leave-one-out RMST
+#' @param effect_scale Character: \code{"loghr"}, \code{"rmst"},
+#' \code{"logor"}, or \code{"riskdiff"}. Only used for non-continuous
+#' outcomes. For \code{data$outcome_type = "survival"}: \code{"loghr"}
+#' (default) fits Cox proportional-hazards models and reports
+#' log-hazard ratios; \code{"rmst"} regresses leave-one-out RMST
 #' pseudo-observations (Graw et al. 2009) via OLS, reporting effects on
 #' the restricted-mean-survival-time (time) scale — a collapsible
-#' alternative where the NDE/NIE product decomposition is exact. Ignored
-#' (with a message) when \code{outcome_type = "continuous"}.
+#' alternative where the NDE/NIE product decomposition is exact. For
+#' \code{data$outcome_type = "binary"}: \code{"logor"} (default) fits
+#' logistic outcome stages and reports conditional log-odds ratios;
+#' \code{"riskdiff"} fits linear probability models (OLS on the 0/1
+#' outcome), reporting risk differences — again a collapsible scale
+#' where the product decomposition is exact. Ignored (with a message)
+#' when \code{outcome_type = "continuous"}; an inert default is
+#' remapped (with a message) when it does not match the outcome type.
 #' @param tau Numeric: RMST restriction time horizon. Default
 #' \code{NULL} (90th percentile of follow-up). Used only when
 #' \code{effect_scale = "rmst"}.
@@ -74,7 +81,9 @@
 #' \code{NDE_significant}, \code{NIE_significant}. When
 #' \code{outcome_type = "survival"}, estimates are on the log-HR scale
 #' (\code{effect_scale = "loghr"}) or the RMST/time scale
-#' (\code{effect_scale = "rmst"}).
+#' (\code{effect_scale = "rmst"}). When \code{outcome_type = "binary"},
+#' estimates are on the log-OR scale (\code{effect_scale = "logor"}) or
+#' the risk-difference scale (\code{effect_scale = "riskdiff"}).
 #' @export
 #'
 #' @examples
@@ -91,21 +100,42 @@
 #' G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' est <- iconic_estimate(sdat, effect_scale = "loghr")
 #' est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
+#'
+#' # Binary outcome
+#' bdat <- iconic_data(X = rnorm(100), Y = rbinom(100, 1, 0.4),
+#' outcome_type = "binary",
+#' G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#' est <- iconic_estimate(bdat, effect_scale = "logor")
+#' est_rd <- iconic_estimate(bdat, effect_scale = "riskdiff")
 iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
                             alpha = 0.05, n_cores = 1, min_f = NULL,
                             run_all = FALSE,
                             se_method = c("delta", "bootstrap", "composite"),
                             n_boot = 500,
-                            effect_scale = c("loghr", "rmst"),
+                            effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
                             tau = NULL) {
   se_method <- match.arg(se_method)
   effect_scale <- match.arg(effect_scale)
   if (!inherits(data, "iconic_data"))
     stop("data must be an iconic_data object from iconic_data().")
 
-  # effect_scale only applies to survival outcomes
-  if (data$outcome_type != "survival" && effect_scale == "rmst")
-    message("effect_scale = 'rmst' is ignored for continuous outcomes.")
+  # effect_scale applies only to non-continuous outcomes. An inert
+  # default (or a scale meant for the other non-continuous type) is
+  # remapped to the appropriate default with a message.
+  if (data$outcome_type == "continuous" && effect_scale != "loghr") {
+    message("effect_scale = '", effect_scale,
+            "' is ignored for continuous outcomes.")
+  } else if (data$outcome_type == "survival" &&
+             effect_scale %in% c("logor", "riskdiff")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for survival outcomes; using 'loghr'.")
+    effect_scale <- "loghr"
+  } else if (data$outcome_type == "binary" &&
+             effect_scale %in% c("loghr", "rmst")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for binary outcomes; using 'logor'.")
+    effect_scale <- "logor"
+  }
 
   # Inherit min_f from diagnosis when not explicitly set; fall back to 10.
   if (is.null(min_f)) {
@@ -133,9 +163,10 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
          "Supply instruments (G) or negative controls (W) ",
          "or specify methods explicitly.")
 
-  # branch on outcome_type. Survival outcomes use dedicated
-  # survival drivers that call the fit_*_surv / fit_*_mediation_surv
-  # estimators. Continuous outcomes use the existing drivers unchanged.
+  # branch on outcome_type. Survival and binary outcomes use dedicated
+  # drivers that call the fit_*_surv / fit_*_mediation_surv and
+  # fit_*_bin / fit_*_mediation_bin estimators. Continuous outcomes use
+  # the existing drivers unchanged.
   if (data$outcome_type == "survival") {
     if (data$is_mediation) {
       .estimate_mediation_surv_driver(data, methods_to_run, alpha, n_cores,
@@ -144,6 +175,15 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
     } else {
       .estimate_total_surv_driver(data, methods_to_run, alpha, n_cores,
                                   min_f, effect_scale, tau)
+    }
+  } else if (data$outcome_type == "binary") {
+    if (data$is_mediation) {
+      .estimate_mediation_bin_driver(data, methods_to_run, alpha, n_cores,
+                                     min_f, se_method, n_boot,
+                                     effect_scale)
+    } else {
+      .estimate_total_bin_driver(data, methods_to_run, alpha, n_cores,
+                                 min_f, effect_scale)
     }
   } else if (data$is_mediation) {
     .estimate_mediation_driver(data, methods_to_run, alpha, n_cores, min_f,
@@ -463,6 +503,166 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
   results <- .parallel_lapply(seq_len(nrow(grid)), function(i) {
     run_one(grid$m[i], grid$method[i])
   }, n_cores = n_cores, progress = "Estimating survival mediation effects")
+
+  err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
+  if (length(err_idx)) {
+    stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
+         conditionMessage(attr(results[[err_idx[1]]], "condition")))
+  }
+
+  results <- Filter(Negate(is.null), results)
+  out <- do.call(rbind, results)
+  if (is.null(out)) return(out)
+
+  # Composite p-values (same two-pass logic as continuous driver)
+  if (se_method == "composite")
+    out <- .apply_composite_pvalues(out)
+
+  out$NDE_significant <- out$NDE_p < alpha
+  out$NIE_significant <- out$NIE_p < alpha
+
+  out$feature <- data$feature_names[out$feature]
+  out$mediator <- data$mediator_names[out$mediator]
+
+  front <- c("feature", "mediator", "method")
+  out <- out[, c(front, setdiff(names(out), front))]
+  out
+}
+
+
+# ============================================================
+# Binary outcome estimation drivers
+#
+# These mirror .estimate_total_surv_driver /
+# .estimate_mediation_surv_driver but call the fit_*_bin /
+# fit_*_mediation_bin estimators and pass Y_bin / effect_scale
+# ("logor" or "riskdiff"; no tau). The per-feature loop runs once
+# (n_features = 1 for binary); the per-mediator loop runs over all
+# mediators.
+# ============================================================
+
+#' Total-effect binary estimation driver
+#'
+#' Runs all eligible binary estimators on a single 0/1 outcome.
+#' Returns a data frame with the same columns as
+#' \code{.estimate_total_driver}.
+#' @keywords internal
+#' @noRd
+.estimate_total_bin_driver <- function(data, methods, alpha, n_cores = 1,
+                                       min_f = 10, effect_scale = "logor") {
+  y <- data$Y_bin
+  X <- data$X
+  cv <- data$covariates
+  G <- data$G
+  W <- data$W
+  W_mat <- if (!is.null(W)) t(W) else NULL # n x q
+
+  run_one <- function(method) {
+    r <- switch(method,
+      UNADJ = fit_unadj_bin(y, X, cv, effect_scale),
+      DIRECT = fit_direct_bin(y, X, G, W_mat, cv, effect_scale),
+      COCA = fit_coca_bin(y, X, if (!is.null(W_mat)) W_mat[, 1] else NULL, cv),
+      IV2SLS = fit_iv2sls_bin(y, X, G, W_mat, cv, min_f, effect_scale),
+      PGC = fit_pgc_bin(y, X, G, W_mat, cv, effect_scale),
+      NULL
+    )
+    if (is.null(r)) return(NULL)
+    data.frame(feature = 1L, method = method,
+               beta = r$beta, se = r$se, pvalue = r$pvalue,
+               stringsAsFactors = FALSE)
+  }
+
+  results <- lapply(methods, run_one)
+  out <- do.call(rbind, Filter(Negate(is.null), results))
+  if (is.null(out)) return(out)
+
+  out$significant <- out$pvalue < alpha
+  out$feature <- data$feature_names[out$feature]
+  out
+}
+
+
+#' Mediation binary estimation driver
+#'
+#' Loops over mediators, calling the binary mediation estimators for
+#' each. Returns a data frame with the same columns as
+#' \code{.estimate_mediation_driver}.
+#' @keywords internal
+#' @noRd
+.estimate_mediation_bin_driver <- function(data, methods, alpha,
+                                           n_cores = 1, min_f = 10,
+                                           se_method = "delta",
+                                           n_boot = 500,
+                                           effect_scale = "logor") {
+  y <- data$Y_bin
+  n <- data$n
+  nm <- data$n_mediators
+  X <- data$X
+  cv <- data$covariates
+  G <- data$G
+  W <- data$W
+  W_mat <- if (!is.null(W)) t(W) else NULL
+  W1_mat <- if (!is.null(data$W1)) t(data$W1) else NULL
+  W2_mat <- if (!is.null(data$W2)) t(data$W2) else NULL
+
+  run_one <- function(m, method) {
+    M_vec <- data$M[m, ]
+    gm <- if (!is.null(data$Gm)) {
+      if (is.matrix(data$Gm) && nrow(data$Gm) == nm) data$Gm[m, ]
+      else if (is.matrix(data$Gm) && ncol(data$Gm) == 1) rep(data$Gm[1, ], n)
+      else if (is.matrix(data$Gm)) data$Gm[min(m, nrow(data$Gm)), ]
+      else data$Gm
+    } else NULL
+
+    w <- W_mat
+    w1 <- W1_mat
+    w2 <- W2_mat
+
+    r <- switch(as.character(method),
+      UNADJ = fit_unadj_mediation_bin(y, X, M_vec, cv, effect_scale),
+      DIRECT = fit_direct_mediation_bin(y, X, M_vec, G, w, cv,
+                                        effect_scale),
+      COCA = fit_coca_mediation_bin(y, X, M_vec,
+                                    if (!is.null(w)) w[, 1] else NULL, cv),
+      IV2SLS = fit_iv2sls_mediation_bin(y, X, M_vec, G, w,
+                                        cv, min_f, effect_scale),
+      IV2SLS2 = fit_iv2sls_mediation2_bin(y, X, M_vec, G, gm,
+                                          covars = cv, min_f = min_f,
+                                          W1 = w1, W2 = w2,
+                                          effect_scale = effect_scale),
+      PGC = fit_pgc_mediation_bin(y, X, M_vec, G, w,
+                                  cv, min_f, effect_scale),
+      PGC2 = fit_pgc_mediation2_bin(y, X, M_vec, G, w1, w2,
+                                    gm = NULL, cv, min_f,
+                                    effect_scale),
+      PGC2Gm = fit_pgc_mediation2_bin(y, X, M_vec, G, w1, w2,
+                                      gm = gm, cv, min_f,
+                                      effect_scale),
+      NULL
+    )
+    if (is.null(r)) return(NULL)
+    TE <- if (!is.na(r$NDE) && !is.na(r$NIE)) r$NDE + r$NIE else NA_real_
+    TE_se <- if (!is.na(r$NDE_se) && !is.na(r$NIE_se))
+      sqrt(r$NDE_se^2 + r$NIE_se^2) else NA_real_
+    TE_p <- if (!is.na(TE) && !is.na(TE_se) && TE_se > 0)
+      2 * pnorm(-abs(TE / TE_se)) else NA_real_
+    data.frame(
+      feature = 1L, mediator = m, method = method,
+      NDE = r$NDE, NDE_se = r$NDE_se, NDE_p = r$NDE_p,
+      NIE = r$NIE, NIE_se = r$NIE_se, NIE_p = r$NIE_p,
+      TE = TE, TE_se = TE_se, TE_p = TE_p,
+      alpha_M = r$alpha_M, alpha_se = r$alpha_se,
+      beta_M = r$beta_M, beta_M_se = r$beta_M_se,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  # Flatten mediator x method grid
+  grid <- expand.grid(m = seq_len(nm), method = methods,
+                      KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
+  results <- .parallel_lapply(seq_len(nrow(grid)), function(i) {
+    run_one(grid$m[i], grid$method[i])
+  }, n_cores = n_cores, progress = "Estimating binary mediation effects")
 
   err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
   if (length(err_idx)) {

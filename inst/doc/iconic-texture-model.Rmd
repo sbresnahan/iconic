@@ -1,0 +1,191 @@
+---
+title: "The Generative Texture Model"
+author: "Sean T. Bresnahan and Charis Xiong"
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+vignette: >
+  %\VignetteIndexEntry{The Generative Texture Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 7, fig.height = 4.5, comment = "#>"
+)
+set.seed(1)
+library(iconic)
+has_torch <- check_torch_setup()
+```
+
+# Introduction
+
+This vignette describes the generative texture model used to simulate realistic omics features: a torch GAN for the covariate table combined with a Gaussian copula for the feature panel, so that synthetic datasets inherit the marginal and dependence structure of the observed data.
+
+# Installation
+
+`iconic` is being submitted to Bioconductor. Once accepted, install the
+release version with:
+
+```{r install-bioc, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("iconic")
+```
+
+The development version is available from GitHub:
+
+```{r install-github, eval=FALSE}
+BiocManager::install("sbresnahan/iconic")
+```
+
+
+# Two simulation modes
+
+ICONIC uses two distinct simulation modes that serve different purposes:
+
+1. **Benchmark mode** (`generate_toy_data`): a structural data-generating
+   process with parametric Gaussian noise and no learned texture. The
+   ground truth (NDE, NIE, confounding strength, instrument strength) is a
+   closed-form function of the parameters. This mode is used to validate
+   the estimators under controlled confounding scenarios with exactly known
+   ground truth.
+
+2. **Data-calibrated mode** (the generative texture pipeline): trains a
+   texture model on the user's own data so that the sensitivity and
+   prospective analyses are calibrated to realistic covariate, outcome,
+   and mediator distributions. The ground truth is still imposed by the
+   structural skeleton, but the nuisance texture (marginals, correlations,
+   covariate structure) is learned from the data.
+
+This separation is deliberate: estimator validation requires a transparent,
+reproducible data-generating process whose parameters are known exactly,
+while the user-facing workflow benefits from realistic data texture even
+at the cost of a learned noise model.
+
+# The hybrid GAN + copula architecture
+
+The texture model is a hybrid of two independently trained components,
+each chosen to match the dimensionality and structure of its target block:
+
+- **Sample-level GAN**: an MLP generator and discriminator trained with a
+  non-saturating BCE-with-logits objective, Adam optimization
+  ($\beta_1 = 0.5$), and one-sided label smoothing. This GAN learns the
+  joint distribution of the per-sample exposure level, outcome level,
+  mediator level, and encoded covariates (one row per sample). A GAN is
+  used here because the block contains mixed continuous and categorical
+  variables whose nonlinear interactions and mutual-exclusivity constraints
+  are more naturally preserved by a flexible generator than by a Gaussian
+  copula.
+
+- **Feature-level Gaussian copula**: learns the full joint distribution of
+  the mediator ($M$) panel. Each feature's marginal is fit by empirical
+  CDF, or by a parametric family (normal, log-normal, gamma, or beta,
+  selected by AIC) when it passes a Kolmogorov-Smirnov test at $p > 0.05$.
+  Cross-feature dependence is captured by the correlation matrix of the
+  normal-score-transformed marginals.
+
+Neither component learns the causal effect. The learned texture is injected
+into the same structural causal model as the benchmark mode, but drawn
+independently of the latent confounders $U$ so it cannot open a hidden
+backdoor. Because the generative model never models the joint of
+$(X, M, Y)$ and only learns the nuisance texture, the ground-truth effect
+is guaranteed by construction.
+
+# Training the texture model
+
+The texture model requires `torch`. Verify your installation first:
+
+```{r texture-check}
+check_torch_setup()
+```
+
+If this returns `FALSE`, install torch with
+`install.packages("torch")` and run `torch::install_torch()`.
+
+We simulate a small panel and train the texture model briefly:
+
+```{r texture-data}
+dat <- generate_toy_data(
+  n = 100, n_features = 5, seed = 1,
+  phi = 0.8, omega_1 = 0.7, omega_2 = 0.7
+)
+
+idat <- iconic_data(
+  X = dat$X, Y = dat$Y, M = dat$M,
+  G = dat$G, Gm = dat$Gm,
+  W1 = dat$W1, W2 = dat$W2,
+  covariates = dat$synthetic_data
+)
+```
+
+```{r texture-train, eval=has_torch}
+input <- load_real_input_data(
+  X_matrix = matrix(dat$X, nrow = 1),
+  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
+  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
+)
+
+gan <- train_gan_on_real_data(
+  input$gan_training_data,
+  feature_correlations = input$feature_correlations,
+  feature_texture = input$feature_texture,
+  epochs = 5, seed = 1, verbose = FALSE
+)
+
+gan
+```
+
+```{r texture-no-torch, eval=!has_torch, echo=FALSE, results="asis"}
+cat(
+"The GAN-training chunks in this vignette are skipped because torch is ",
+"not available. Install torch with `install.packages(\"torch\")` and run ",
+"`torch::install_torch()` to run them."
+)
+```
+
+In practice, use 100–300 epochs for a production-quality texture model.
+The `epochs = 5` setting here is for speed only.
+
+# Attaching the texture model
+
+Once trained, attach the texture model to the `iconic_data` object so that
+every downstream function (`iconic_sensitivity()`, `iconic_prospect()`)
+reuses it without retraining:
+
+```{r texture-attach, eval=has_torch}
+idat$trained_gan <- gan
+```
+
+You can also pass a pre-trained model via the `trained_gan` argument to
+`iconic_data()` at construction time.
+
+# When to use each mode
+
+| Mode | When to use | Ground truth | Texture |
+|---|---|---|---|
+| Benchmark (`generate_toy_data`) | Estimator validation, benchmarks | Known exactly (closed-form) | Parametric Gaussian |
+| Data-calibrated (GAN + copula) | Sensitivity, prospective analysis | Imposed by structural skeleton | Learned from your data |
+
+The sensitivity and prospective analyses benefit from realistic texture
+because estimator performance depends on the empirical distribution of the
+analysis data. The benchmark mode is for transparent, reproducible
+validation where the ground truth must be known exactly.
+
+# Further reading
+
+- **Sensitivity vignette**: `vignette("iconic-sensitivity")` — how the
+  trained texture model is used in the sensitivity sweep.
+- **Function reference**: `?train_gan_on_real_data` for training arguments,
+  `?check_torch_setup` for the torch verification helper.
+
+# Session information
+
+```{r sessionInfo}
+sessionInfo()
+```

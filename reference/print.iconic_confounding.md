@@ -54,7 +54,7 @@ cf <- infer_confounding(data, max_infer_tasks = 5)
 #>  omega_2 NC coverage: 30% (3/10) [0s]
 #>  omega_2 NC coverage: 40% (4/10) [0s]
 #>  omega_2 NC coverage: 50% (5/10) [0s]
-#>  omega_2 NC coverage: 60% (6/10) [0.1s]
+#>  omega_2 NC coverage: 60% (6/10) [0s]
 #>  omega_2 NC coverage: 70% (7/10) [0.1s]
 #>  omega_2 NC coverage: 80% (8/10) [0.1s]
 #>  omega_2 NC coverage: 90% (9/10) [0.1s]

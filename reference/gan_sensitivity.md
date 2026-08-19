@@ -25,11 +25,12 @@ gan_sensitivity(
   effect_size = NULL,
   base_seed = 700,
   n_cores = 1,
-  outcome_type = c("continuous", "survival"),
-  effect_scale = c("loghr", "rmst"),
+  outcome_type = c("continuous", "survival", "binary"),
+  effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
   surv_h0 = 0.1,
   surv_event_frac = 0.6,
-  surv_censor_rate = NULL
+  surv_censor_rate = NULL,
+  bin_prev = 0.5
 )
 ```
 
@@ -86,15 +87,20 @@ gan_sensitivity(
 
 - outcome_type:
 
-  `"continuous"` (default) or `"survival"` When survival, the DGP
-  generates time-to-event outcomes and estimation uses the Cox / RMST
-  survival drivers via
+  `"continuous"` (default), `"survival"`, or `"binary"`. When survival,
+  the DGP generates time-to-event outcomes and estimation uses the Cox /
+  RMST survival drivers via
+  [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md).
+  When binary, the DGP generates a 0/1 outcome and estimation uses the
+  logistic / linear-probability-model binary drivers via
   [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md).
 
 - effect_scale:
 
-  `"loghr"` (default) or `"rmst"`. Only used when
-  `outcome_type = "survival"`.
+  `"loghr"` (default), `"rmst"`, `"logor"`, or `"riskdiff"`.
+  `"loghr"`/`"rmst"` apply to survival outcomes; `"logor"`/`"riskdiff"`
+  apply to binary outcomes (an inert default is remapped with a
+  message).
 
 - surv_h0:
 
@@ -107,6 +113,10 @@ gan_sensitivity(
 - surv_censor_rate:
 
   Explicit censoring rate. Default NULL.
+
+- bin_prev:
+
+  Target prevalence for the binary DGP. Default 0.5.
 
 ## Value
 

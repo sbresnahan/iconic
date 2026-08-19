@@ -125,9 +125,13 @@ iconic_estimate() rather than directly.
 
 - [`fit_coca()`](https://seantbresnahan.com/iconic/reference/fit_coca.md)
   : COCA estimator: Negative-Control Outcome Correction via ratio
+- [`fit_coca_bin()`](https://seantbresnahan.com/iconic/reference/fit_coca_bin.md)
+  : COCA binary estimator: NOT supported (returns NA)
 - [`fit_coca_mediation()`](https://seantbresnahan.com/iconic/reference/fit_coca_mediation.md)
   : COCA mediation estimator: negative-control calibration of both
   stages
+- [`fit_coca_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_coca_mediation_bin.md)
+  : COCA binary mediation estimator: NOT supported (returns NA)
 - [`fit_coca_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_coca_mediation_surv.md)
   : COCA survival mediation estimator: NOT supported (returns NA)
 - [`fit_coca_surv()`](https://seantbresnahan.com/iconic/reference/fit_coca_surv.md)
@@ -135,8 +139,14 @@ iconic_estimate() rather than directly.
 - [`fit_direct()`](https://seantbresnahan.com/iconic/reference/fit_direct.md)
   : DIRECT estimator: OLS with instrument and negative-control as
   covariates
+- [`fit_direct_bin()`](https://seantbresnahan.com/iconic/reference/fit_direct_bin.md)
+  : DIRECT binary estimator: logistic / LPM with instrument and NC
+  covariates
 - [`fit_direct_mediation()`](https://seantbresnahan.com/iconic/reference/fit_direct_mediation.md)
   : DIRECT mediation estimator: OLS with instrument and NC as covariates
+- [`fit_direct_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_direct_mediation_bin.md)
+  : DIRECT binary mediation estimator: logistic / LPM with G and W
+  covariates
 - [`fit_direct_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_direct_mediation_surv.md)
   : DIRECT survival mediation estimator: Cox / RMST with G and W
   covariates
@@ -145,14 +155,23 @@ iconic_estimate() rather than directly.
   covariates
 - [`fit_iv2sls()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls.md)
   : IV2SLS estimator: Two-Stage Least Squares with genetic instrument
+- [`fit_iv2sls_bin()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_bin.md)
+  : IV2SLS binary estimator: two-stage predictor substitution with
+  logistic / LPM
 - [`fit_iv2sls_mediation()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation.md)
   : IV2SLS mediation estimator: instrumented exposure in both stages
 - [`fit_iv2sls_mediation2()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2.md)
   : IV2SLS2 mediation estimator: 2-stage MR with instruments for both X
   and M
+- [`fit_iv2sls_mediation2_bin()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2_bin.md)
+  : IV2SLS2 binary mediation estimator: 2-stage MR with logistic / LPM
+  outcome
 - [`fit_iv2sls_mediation2_surv()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2_surv.md)
   : IV2SLS2 survival mediation estimator: 2-stage MR with Cox / RMST
   outcome
+- [`fit_iv2sls_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation_bin.md)
+  : IV2SLS binary mediation estimator: single-instrument 2SPS with
+  logistic / LPM
 - [`fit_iv2sls_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation_surv.md)
   : IV2SLS survival mediation estimator: single-instrument 2SPS with Cox
   / RMST
@@ -161,15 +180,24 @@ iconic_estimate() rather than directly.
   / RMST
 - [`fit_pgc()`](https://seantbresnahan.com/iconic/reference/fit_pgc.md)
   : PGC estimator: Proxy G-Component Correction (matrix bridge)
+- [`fit_pgc_bin()`](https://seantbresnahan.com/iconic/reference/fit_pgc_bin.md)
+  : PGC binary estimator: proxy G-component correction with logistic /
+  LPM
 - [`fit_pgc_mediation()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation.md)
   : PGC mediation estimator: bridge-function-adjusted natural effects
   (matrix bridge)
 - [`fit_pgc_mediation2()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2.md)
   : PGC-2 mediation estimator: two-stage proximal mediation with
   path-specific bridges
+- [`fit_pgc_mediation2_bin()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2_bin.md)
+  : PGC2 / PGC2Gm binary mediation estimator: path-specific bridges with
+  logistic / LPM
 - [`fit_pgc_mediation2_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2_surv.md)
   : PGC2 / PGC2Gm survival mediation estimator: path-specific bridges
   with Cox / RMST
+- [`fit_pgc_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation_bin.md)
+  : PGC binary mediation estimator: single-panel bridge with logistic /
+  LPM
 - [`fit_pgc_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation_surv.md)
   : PGC survival mediation estimator: single-panel bridge with Cox /
   RMST
@@ -180,8 +208,14 @@ iconic_estimate() rather than directly.
   (scalar bridge)
 - [`fit_pgc_surv()`](https://seantbresnahan.com/iconic/reference/fit_pgc_surv.md)
   : PGC survival estimator: proxy G-component correction with Cox / RMST
+- [`fit_unadj_bin()`](https://seantbresnahan.com/iconic/reference/fit_unadj_bin.md)
+  : UNADJ binary estimator: unadjusted logistic / linear-probability
+  regression
 - [`fit_unadj_mediation()`](https://seantbresnahan.com/iconic/reference/fit_unadj_mediation.md)
   : UNADJ mediation estimator: naive Baron-Kenny style
+- [`fit_unadj_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_unadj_mediation_bin.md)
+  : UNADJ binary mediation estimator: naive Baron-Kenny with logistic /
+  LPM
 - [`fit_unadj_mediation_surv()`](https://seantbresnahan.com/iconic/reference/fit_unadj_mediation_surv.md)
   : UNADJ survival mediation estimator: naive Baron-Kenny with Cox /
   RMST

@@ -32,10 +32,11 @@ generate_toy_data(
   separate_U = NULL,
   u_strength = NULL,
   w_coverage_profile = NULL,
-  outcome_type = c("continuous", "survival"),
+  outcome_type = c("continuous", "survival", "binary"),
   surv_h0 = 0.1,
   surv_event_frac = 0.6,
   surv_censor_rate = NULL,
+  bin_prev = 0.5,
   seed = NULL,
   beta_Z = NULL
 )
@@ -163,9 +164,12 @@ generate_toy_data(
 
 - outcome_type:
 
-  `"continuous"` (default) or `"survival"` When `"survival"`, the
-  continuous linear predictor Y is converted to `surv_time` and
-  `surv_event` via an exponential PH model.
+  `"continuous"` (default), `"survival"`, or `"binary"`. When
+  `"survival"`, the continuous linear predictor Y is converted to
+  `surv_time` and `surv_event` via an exponential PH model. When
+  `"binary"`, the linear predictor is converted to a 0/1 outcome `y_bin`
+  via a logistic (Bernoulli) model; the true effects are then on the
+  conditional log-odds-ratio scale.
 
 - surv_h0:
 
@@ -179,6 +183,11 @@ generate_toy_data(
 - surv_censor_rate:
 
   Explicit censoring rate. Default NULL → solved from `surv_event_frac`.
+
+- bin_prev:
+
+  Target prevalence (marginal event probability) for the binary DGP.
+  Default 0.5. The logistic intercept is solved internally from this.
 
 - seed:
 

@@ -403,7 +403,7 @@ sessionInfo()
     #> [1] stats     graphics  grDevices utils     datasets  methods   base     
     #> 
     #> other attached packages:
-    #> [1] doRNG_1.8.6.3    rngtools_1.5.2   foreach_1.5.2    iconic_0.99.2   
+    #> [1] doRNG_1.8.6.3    rngtools_1.5.2   foreach_1.5.2    iconic_0.99.3   
     #> [5] BiocStyle_2.40.0
     #> 
     #> loaded via a namespace (and not attached):

@@ -91,8 +91,8 @@ diag <- iconic_diagnose(data)
 #>  omega_2 NC coverage: 20% (2/10) [0s]
 #>  omega_2 NC coverage: 30% (3/10) [0s]
 #>  omega_2 NC coverage: 40% (4/10) [0s]
-#>  omega_2 NC coverage: 50% (5/10) [0s]
-#>  omega_2 NC coverage: 60% (6/10) [0s]
+#>  omega_2 NC coverage: 50% (5/10) [0.1s]
+#>  omega_2 NC coverage: 60% (6/10) [0.1s]
 #>  omega_2 NC coverage: 70% (7/10) [0.1s]
 #>  omega_2 NC coverage: 80% (8/10) [0.1s]
 #>  omega_2 NC coverage: 90% (9/10) [0.1s]
@@ -111,14 +111,14 @@ diag <- iconic_diagnose(data)
 #> NC capture null: 200 tasks (sequential)
 #>  NC capture null: 10% (20/200) [0.4s]
 #>  NC capture null: 20% (40/200) [0.8s]
-#>  NC capture null: 30% (60/200) [1.2s]
-#>  NC capture null: 40% (80/200) [1.6s]
+#>  NC capture null: 30% (60/200) [1.1s]
+#>  NC capture null: 40% (80/200) [1.5s]
 #>  NC capture null: 50% (100/200) [1.9s]
 #>  NC capture null: 60% (120/200) [2.3s]
 #>  NC capture null: 70% (140/200) [2.7s]
 #>  NC capture null: 80% (160/200) [3.1s]
-#>  NC capture null: 90% (180/200) [3.5s]
-#>  NC capture null: 100% (200/200) [3.9s]
+#>  NC capture null: 90% (180/200) [3.4s]
+#>  NC capture null: 100% (200/200) [3.8s]
 #> iconic_diagnose complete. Call summary() or print() on the result for the full diagnosis.
 print(diag)
 #> <iconic_diagnosis>

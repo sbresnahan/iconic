@@ -31,11 +31,12 @@ iconic_prospect(
   base_seed = 500,
   verbose = FALSE,
   allow_no_proxy = TRUE,
-  outcome_type = c("continuous", "survival"),
-  effect_scale = c("loghr", "rmst"),
+  outcome_type = c("continuous", "survival", "binary"),
+  effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
   surv_h0 = 0.1,
   surv_event_frac = 0.6,
-  surv_censor_rate = NULL
+  surv_censor_rate = NULL,
+  bin_prev = 0.5
 )
 ```
 
@@ -149,18 +150,24 @@ iconic_prospect(
 
 - outcome_type:
 
-  `"continuous"` (default) or `"survival"` Threads through to the
-  simulation DGP.
+  `"continuous"` (default), `"survival"`, or `"binary"`. Threads through
+  to the simulation DGP.
 
 - effect_scale:
 
-  `"loghr"` (default) or `"rmst"`. Only used when
-  `outcome_type = "survival"`.
+  `"loghr"` (default), `"rmst"`, `"logor"`, or `"riskdiff"`.
+  `"loghr"`/`"rmst"` apply to survival outcomes; `"logor"`/`"riskdiff"`
+  apply to binary outcomes (an inert default is remapped with a
+  message).
 
 - surv_h0, surv_event_frac, surv_censor_rate:
 
   Survival DGP parameters See
   [`generate_toy_data`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md).
+
+- bin_prev:
+
+  Target prevalence for the binary DGP. Default 0.5.
 
 ## Value
 

@@ -20,7 +20,7 @@ iconic_data(
   feature_names = NULL,
   mediator_names = NULL,
   trained_gan = NULL,
-  outcome_type = c("continuous", "survival"),
+  outcome_type = c("continuous", "survival", "binary"),
   surv_time = NULL,
   surv_event = NULL,
   scale = TRUE,
@@ -39,7 +39,8 @@ iconic_data(
 - Y:
 
   Outcome: numeric vector (length n) or features x samples matrix. When
-  a matrix, estimation runs per-feature.
+  a matrix, estimation runs per-feature. When `outcome_type = "binary"`,
+  `Y` is the 0/1 outcome vector (length n).
 
 - M:
 
@@ -104,12 +105,16 @@ iconic_data(
 
 - outcome_type:
 
-  Character: `"continuous"` (default, backward-compatible) or
-  `"survival"`. When `"survival"`, `Y` is not required; instead supply
-  `surv_time` and `surv_event`. Estimation uses Cox proportional-hazards
+  Character: `"continuous"` (default, backward-compatible),
+  `"survival"`, or `"binary"`. When `"survival"`, `Y` is not required;
+  instead supply `surv_time` and `surv_event`. Estimation uses Cox
+  proportional-hazards
   ([`coxph`](https://rdrr.io/pkg/survival/man/coxph.html)) or RMST
   pseudo-observation OLS (see `effect_scale` in
   [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md)).
+  When `"binary"`, supply `Y` as the 0/1 outcome vector (length n);
+  estimation uses logistic regression (log-OR scale) or a linear
+  probability model (risk-difference scale).
 
 - surv_time:
 
@@ -156,7 +161,7 @@ An `iconic_data` S3 object: a named list with `$X`, `$Y`, `$M`, `$G`,
 `$n_mediators`, `$has_instrument`, `$has_mediator_instrument`,
 `$has_nc`, `$has_path_nc`, `$is_mediation`, `$feature_names`,
 `$mediator_names`, `$trained_gan`, `$outcome_type`, and (when survival)
-`$surv_time`, `$surv_event`.
+`$surv_time`, `$surv_event`, or (when binary) `$Y_bin`.
 
 ## Examples
 
@@ -184,6 +189,17 @@ W = matrix(rnorm(100 * 10), 10, 100)
 )
 print(data)
 #> <iconic_data> 100 samples, survival outcome (57 events / 100), 1 mediator(s)
+#>  Available: G (exposure instrument), Gm (mediator instrument), W (negative controls), W1/W2 (path-specific NCs) 
+#>  Mode: mediation 
+
+# Binary outcome (Y is the 0/1 outcome vector)
+data <- iconic_data(
+X = rnorm(100), Y = rbinom(100, 1, 0.4), outcome_type = "binary",
+M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+W = matrix(rnorm(100 * 10), 10, 100)
+)
+print(data)
+#> <iconic_data> 100 samples, binary outcome (45 cases / 100), 1 mediator(s)
 #>  Available: G (exposure instrument), Gm (mediator instrument), W (negative controls), W1/W2 (path-specific NCs) 
 #>  Mode: mediation 
 ```

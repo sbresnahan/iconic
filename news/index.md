@@ -1,5 +1,93 @@
 # Changelog
 
+## iconic 0.99.3
+
+### New features
+
+- **Binary outcome support.** `outcome_type = "binary"` is now available
+  throughout the workflow:
+  [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  accepts a 0/1 outcome vector (validated as dichotomous, stored
+  unscaled as `Y_bin`), and
+  [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md),
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md),
+  [`iconic_prospect()`](https://seantbresnahan.com/iconic/reference/iconic_prospect.md),
+  and
+  [`run_single_iteration()`](https://seantbresnahan.com/iconic/reference/run_single_iteration.md)
+  all dispatch to binary-specific estimators.
+  [`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)
+  and
+  [`run_single_iteration()`](https://seantbresnahan.com/iconic/reference/run_single_iteration.md)
+  gain a `bin_prev` argument (default 0.5) controlling the outcome
+  prevalence of the simulated binary DGP.
+
+- **Two effect scales for binary outcomes** via the `effect_scale`
+  argument: `"logor"` (default; logistic two-stage
+  predictor-substitution outcome stage, mirroring the Cox log-HR
+  convention for survival) and `"riskdiff"` (linear probability model
+  outcome stage, giving an exactly collapsible NDE/NIE decomposition).
+  Inert scale requests are remapped with an informative message
+  (e.g. `effect_scale = "loghr"` on binary data maps to `"logor"`).
+
+- **New binary estimators** (`R/bin_estimators.R`, `R/bin_mediation.R`):
+  [`fit_unadj_bin()`](https://seantbresnahan.com/iconic/reference/fit_unadj_bin.md),
+  [`fit_direct_bin()`](https://seantbresnahan.com/iconic/reference/fit_direct_bin.md),
+  [`fit_iv2sls_bin()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_bin.md),
+  [`fit_pgc_bin()`](https://seantbresnahan.com/iconic/reference/fit_pgc_bin.md),
+  and the mediation variants
+  [`fit_unadj_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_unadj_mediation_bin.md),
+  [`fit_direct_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_direct_mediation_bin.md),
+  [`fit_iv2sls_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation_bin.md),
+  [`fit_iv2sls_mediation2_bin()`](https://seantbresnahan.com/iconic/reference/fit_iv2sls_mediation2_bin.md),
+  [`fit_pgc_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation_bin.md),
+  [`fit_pgc_mediation2_bin()`](https://seantbresnahan.com/iconic/reference/fit_pgc_mediation2_bin.md).
+  First stages remain OLS; only the outcome stage changes (binomial GLM
+  or linear probability model). The partial-F weak-instrument gate and
+  the collinear-panel fallback behave as for continuous and survival
+  outcomes.
+
+- **COCA is excluded for binary outcomes**
+  ([`fit_coca_bin()`](https://seantbresnahan.com/iconic/reference/fit_coca_bin.md)
+  and
+  [`fit_coca_mediation_bin()`](https://seantbresnahan.com/iconic/reference/fit_coca_mediation_bin.md)
+  return `NA` with a `reason` attribute, the same contract as for
+  survival): COCA’s ratio identification assumes a linear structural
+  outcome model, which neither the log-OR nor the risk-difference binary
+  outcome stage satisfies.
+
+### Behavioural notes
+
+- [`infer_confounding()`](https://seantbresnahan.com/iconic/reference/infer_confounding.md)
+  now errors informatively for binary outcomes: gap-based calibration
+  relies on a continuous outcome scale. Use `confounding = "manual"` or
+  the default confounding grid in sensitivity/prospective analyses of
+  binary data.
+- The generative texture model (torch GAN) is unavailable for binary
+  outcomes because there is no continuous outcome margin to texture;
+  [`iconic_sensitivity()`](https://seantbresnahan.com/iconic/reference/iconic_sensitivity.md)
+  falls back to the default texture with an informative message.
+
+### Bug fixes
+
+- **Locale/device-safe plot labels (completes the 0.99.2 fix).**
+  Remaining multi-byte glyphs that are drawn when the package examples
+  run are now portable across locales and graphics devices. In
+  [`plot_nc_validity_diagnostics()`](https://seantbresnahan.com/iconic/reference/plot_nc_validity_diagnostics.md)
+  the internal colour-scale keys still used Unicode arrow and
+  superscript-two string literals; these are now ASCII (`->`, `R2`). The
+  displayed legend label was already a plotmath expression, so the
+  figure is visually unchanged. In
+  [`plot_pleiotropy_sweep()`](https://seantbresnahan.com/iconic/reference/plot_pleiotropy_sweep.md)
+  and
+  [`plot_instrument_strength_sweep()`](https://seantbresnahan.com/iconic/reference/plot_instrument_strength_sweep.md)
+  the axis titles carried a Unicode arrow / minus sign as string
+  literals; these are now plotmath expressions, which render the real
+  glyphs through the symbol font on any device – including the base
+  [`pdf()`](https://rdrr.io/r/grDevices/pdf.html) device used by
+  `R CMD check` – without `mbcsToSbcs` conversion errors. No code line
+  in `R/figures.R` now contains a non-ASCII or `\uXXXX`-escaped
+  character.
+
 ## iconic 0.99.2
 
 ### Bug fixes

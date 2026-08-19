@@ -29,10 +29,11 @@ iconic_sensitivity(
   n_cores = 1,
   verbose = FALSE,
   outcome_type = NULL,
-  effect_scale = c("loghr", "rmst"),
+  effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
   surv_h0 = 0.1,
   surv_event_frac = 0.6,
-  surv_censor_rate = NULL
+  surv_censor_rate = NULL,
+  bin_prev = 0.5
 )
 ```
 
@@ -150,14 +151,17 @@ iconic_sensitivity(
 
 - outcome_type:
 
-  `NULL` (inherit from `data`, default) or `"continuous"` /
-  `"survival"`. When survival, the sensitivity sweep uses the Cox / RMST
-  survival mediation drivers.
+  `NULL` (inherit from `data`, default) or `"continuous"` / `"survival"`
+  / `"binary"`. When survival, the sensitivity sweep uses the Cox / RMST
+  survival mediation drivers; when binary, the logistic /
+  linear-probability-model binary mediation drivers.
 
 - effect_scale:
 
-  `"loghr"` (default) or `"rmst"`. Only used when
-  `outcome_type = "survival"`.
+  `"loghr"` (default), `"rmst"`, `"logor"`, or `"riskdiff"`.
+  `"loghr"`/`"rmst"` apply to survival outcomes; `"logor"`/`"riskdiff"`
+  apply to binary outcomes (an inert default is remapped with a
+  message).
 
 - surv_h0:
 
@@ -170,6 +174,10 @@ iconic_sensitivity(
 - surv_censor_rate:
 
   Explicit censoring rate. Default NULL.
+
+- bin_prev:
+
+  Target prevalence for the binary DGP. Default 0.5.
 
 ## Value
 

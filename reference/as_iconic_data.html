@@ -9,7 +9,7 @@ interface. Methods:"><meta property="og:image" content="https://seantbresnahan.c
 
     <a class="navbar-brand me-2" href="../index.html">iconic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,8 @@ interface. Methods:</p>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  surv_time <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  surv_event <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  outcome_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"continuous"</span>, <span class="st">"survival"</span><span class="op">)</span>,</span>
+<span>  bin_outcome <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  outcome_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"continuous"</span>, <span class="st">"survival"</span>, <span class="st">"binary"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -131,9 +132,15 @@ columns holding follow-up time and the 0/1 event indicator; set
 together with <code>outcome_type = "survival"</code>.</p></dd>
 
 
+<dt id="arg-bin-outcome">bin_outcome<a class="anchor" aria-label="anchor" href="#arg-bin-outcome"></a></dt>
+<dd><p>Optional character: name of a <code>colData</code> column
+holding the 0/1 outcome; set together with
+<code>outcome_type = "binary"</code>.</p></dd>
+
+
 <dt id="arg-outcome-type">outcome_type<a class="anchor" aria-label="anchor" href="#arg-outcome-type"></a></dt>
-<dd><p><code>\"continuous\"</code> (default) or
-<code>\"survival\"</code>.</p></dd>
+<dd><p><code>\"continuous\"</code> (default),
+<code>\"survival\"</code>, or <code>\"binary\"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

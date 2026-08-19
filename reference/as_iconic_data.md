@@ -23,7 +23,8 @@ as_iconic_data(
   covariates = NULL,
   surv_time = NULL,
   surv_event = NULL,
-  outcome_type = c("continuous", "survival"),
+  bin_outcome = NULL,
+  outcome_type = c("continuous", "survival", "binary"),
   ...
 )
 ```
@@ -85,9 +86,14 @@ as_iconic_data(
   and the 0/1 event indicator; set together with
   `outcome_type = "survival"`.
 
+- bin_outcome:
+
+  Optional character: name of a `colData` column holding the 0/1
+  outcome; set together with `outcome_type = "binary"`.
+
 - outcome_type:
 
-  `\"continuous\"` (default) or `\"survival\"`.
+  `\"continuous\"` (default), `\"survival\"`, or `\"binary\"`.
 
 ## Value
 

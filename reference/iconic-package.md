@@ -22,9 +22,12 @@ instruments (cis-eQTL scans and elastic-net predicted-expression
 composites), and negative-control panels (principal components of
 residualized omics matrices), and data can be imported directly from
 SummarizedExperiment objects. Time-to-event outcomes are supported on
-the Cox log-hazard-ratio and restricted-mean-survival-time scales. The
-torch package is required for the generative texture model (sensitivity
-and prospective analysis); all other functionality works without it.
+the Cox log-hazard-ratio and restricted-mean-survival-time scales.
+Binary outcomes are supported on the log-odds-ratio (logistic two-stage
+predictor-substitution outcome stage) and risk-difference (linear
+probability model) scales. The torch package is required for the
+generative texture model (sensitivity and prospective analysis); all
+other functionality works without it.
 
 ## See also
 

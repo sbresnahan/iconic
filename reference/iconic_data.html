@@ -11,7 +11,7 @@ all downstream model selection functions consume."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">iconic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,7 +66,7 @@ all downstream model selection functions consume.</p>
 <span>  feature_names <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mediator_names <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  trained_gan <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  outcome_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"continuous"</span>, <span class="st">"survival"</span><span class="op">)</span>,</span>
+<span>  outcome_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"continuous"</span>, <span class="st">"survival"</span>, <span class="st">"binary"</span><span class="op">)</span>,</span>
 <span>  surv_time <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  surv_event <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  scale <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -87,7 +87,9 @@ per sample).</p></dd>
 
 <dt id="arg-y">Y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
 <dd><p>Outcome: numeric vector (length n) or features x samples
-matrix. When a matrix, estimation runs per-feature.</p></dd>
+matrix. When a matrix, estimation runs per-feature. When
+<code>outcome_type = "binary"</code>, <code>Y</code> is the 0/1 outcome vector
+(length n).</p></dd>
 
 
 <dt id="arg-m">M<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
@@ -150,11 +152,15 @@ same data is used across multiple workflow steps.</p></dd>
 
 <dt id="arg-outcome-type">outcome_type<a class="anchor" aria-label="anchor" href="#arg-outcome-type"></a></dt>
 <dd><p>Character: <code>"continuous"</code> (default,
-backward-compatible) or <code>"survival"</code>. When <code>"survival"</code>,
+backward-compatible), <code>"survival"</code>, or <code>"binary"</code>. When
+<code>"survival"</code>,
 <code>Y</code> is not required; instead supply <code>surv_time</code> and
 <code>surv_event</code>. Estimation uses Cox proportional-hazards
 (<code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">coxph</a></code>) or RMST pseudo-observation OLS
-(see <code>effect_scale</code> in <code><a href="iconic_estimate.html">iconic_estimate()</a></code>).</p></dd>
+(see <code>effect_scale</code> in <code><a href="iconic_estimate.html">iconic_estimate()</a></code>). When
+<code>"binary"</code>, supply <code>Y</code> as the 0/1 outcome vector (length n);
+estimation uses logistic regression (log-OR scale) or a linear
+probability model (risk-difference scale).</p></dd>
 
 
 <dt id="arg-surv-time">surv_time<a class="anchor" aria-label="anchor" href="#arg-surv-time"></a></dt>
@@ -203,7 +209,7 @@ catch and redirect old calls.</p></dd>
 <code>$n_mediators</code>, <code>$has_instrument</code>, <code>$has_mediator_instrument</code>,
 <code>$has_nc</code>, <code>$has_path_nc</code>, <code>$is_mediation</code>, <code>$feature_names</code>,
 <code>$mediator_names</code>, <code>$trained_gan</code>, <code>$outcome_type</code>, and (when
-survival) <code>$surv_time</code>, <code>$surv_event</code>.</p>
+survival) <code>$surv_time</code>, <code>$surv_event</code>, or (when binary) <code>$Y_bin</code>.</p>
     </div>
 
     <div class="section level2">
@@ -231,6 +237,17 @@ survival) <code>$surv_time</code>, <code>$surv_event</code>.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;iconic_data&gt; 100 samples, survival outcome (57 events / 100), 1 mediator(s)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Available: G (exposure instrument), Gm (mediator instrument), W (negative controls), W1/W2 (path-specific NCs) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Mode: mediation </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Binary outcome (Y is the 0/1 outcome vector)</span></span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">iconic_data</span><span class="op">(</span></span></span>
+<span class="r-in"><span>X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>, Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">1</span>, <span class="fl">0.4</span><span class="op">)</span>, outcome_type <span class="op">=</span> <span class="st">"binary"</span>,</span></span>
+<span class="r-in"><span>M <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>, G <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>, Gm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>W <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="fl">10</span><span class="op">)</span>, <span class="fl">10</span>, <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;iconic_data&gt; 100 samples, binary outcome (45 cases / 100), 1 mediator(s)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Available: G (exposure instrument), Gm (mediator instrument), W (negative controls), W1/W2 (path-specific NCs) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Mode: mediation </span>
 </code></pre></div>

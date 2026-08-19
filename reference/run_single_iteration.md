@@ -39,10 +39,11 @@ run_single_iteration(
   MMOut = 1,
   MMCon = 1,
   MMCpG = 1,
-  outcome_type = c("continuous", "survival"),
+  outcome_type = c("continuous", "survival", "binary"),
   surv_h0 = 0.1,
   surv_event_frac = 0.6,
   surv_censor_rate = NULL,
+  bin_prev = 0.5,
   seed = NULL
 )
 ```
@@ -210,9 +211,12 @@ run_single_iteration(
 
 - outcome_type:
 
-  `"continuous"` (default) or `"survival"` When `"survival"`, the linear
-  predictor is converted to `surv_time` and `surv_event` via an
-  exponential PH model.
+  `"continuous"` (default), `"survival"`, or `"binary"`. When
+  `"survival"`, the linear predictor is converted to `surv_time` and
+  `surv_event` via an exponential PH model. When `"binary"`, the linear
+  predictor is converted to a 0/1 outcome `y_bin` via a logistic
+  (Bernoulli) model; true effects are on the conditional log-odds-ratio
+  scale.
 
 - surv_h0:
 
@@ -225,6 +229,11 @@ run_single_iteration(
 - surv_censor_rate:
 
   Explicit censoring rate. Default NULL.
+
+- bin_prev:
+
+  Target prevalence (marginal event probability) for the binary DGP.
+  Default 0.5.
 
 - seed:
 

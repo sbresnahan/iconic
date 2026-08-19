@@ -19,7 +19,7 @@ iconic_estimate(
   run_all = FALSE,
   se_method = c("delta", "bootstrap", "composite"),
   n_boot = 500,
-  effect_scale = c("loghr", "rmst"),
+  effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
   tau = NULL
 )
 ```
@@ -87,14 +87,20 @@ iconic_estimate(
 
 - effect_scale:
 
-  Character: `"loghr"` (default) or `"rmst"`. Only used when
-  `data$outcome_type = "survival"`. `"loghr"` fits Cox
-  proportional-hazards models and reports log-hazard ratios. `"rmst"`
-  regresses leave-one-out RMST pseudo-observations (Graw et al. 2009)
-  via OLS, reporting effects on the restricted-mean-survival-time (time)
-  scale — a collapsible alternative where the NDE/NIE product
+  Character: `"loghr"`, `"rmst"`, `"logor"`, or `"riskdiff"`. Only used
+  for non-continuous outcomes. For `data$outcome_type = "survival"`:
+  `"loghr"` (default) fits Cox proportional-hazards models and reports
+  log-hazard ratios; `"rmst"` regresses leave-one-out RMST
+  pseudo-observations (Graw et al. 2009) via OLS, reporting effects on
+  the restricted-mean-survival-time (time) scale — a collapsible
+  alternative where the NDE/NIE product decomposition is exact. For
+  `data$outcome_type = "binary"`: `"logor"` (default) fits logistic
+  outcome stages and reports conditional log-odds ratios; `"riskdiff"`
+  fits linear probability models (OLS on the 0/1 outcome), reporting
+  risk differences — again a collapsible scale where the product
   decomposition is exact. Ignored (with a message) when
-  `outcome_type = "continuous"`.
+  `outcome_type = "continuous"`; an inert default is remapped (with a
+  message) when it does not match the outcome type.
 
 - tau:
 
@@ -108,7 +114,10 @@ A data frame. For total-effect mode: `feature`, `method`, `beta`, `se`,
 `method`, `NDE`, `NDE_se`, `NDE_p`, `NIE`, `NIE_se`, `NIE_p`,
 `NDE_significant`, `NIE_significant`. When `outcome_type = "survival"`,
 estimates are on the log-HR scale (`effect_scale = "loghr"`) or the
-RMST/time scale (`effect_scale = "rmst"`).
+RMST/time scale (`effect_scale = "rmst"`). When
+`outcome_type = "binary"`, estimates are on the log-OR scale
+(`effect_scale = "logor"`) or the risk-difference scale
+(`effect_scale = "riskdiff"`).
 
 ## Details
 
@@ -175,7 +184,7 @@ diag <- iconic_diagnose(data)
 #>  omega_1 NC coverage: 30% (3/10) [0s]
 #>  omega_1 NC coverage: 40% (4/10) [0s]
 #>  omega_1 NC coverage: 50% (5/10) [0s]
-#>  omega_1 NC coverage: 60% (6/10) [0.1s]
+#>  omega_1 NC coverage: 60% (6/10) [0s]
 #>  omega_1 NC coverage: 70% (7/10) [0.1s]
 #>  omega_1 NC coverage: 80% (8/10) [0.1s]
 #>  omega_1 NC coverage: 90% (9/10) [0.1s]
@@ -186,7 +195,7 @@ diag <- iconic_diagnose(data)
 #>  omega_2 NC coverage: 30% (3/10) [0s]
 #>  omega_2 NC coverage: 40% (4/10) [0s]
 #>  omega_2 NC coverage: 50% (5/10) [0s]
-#>  omega_2 NC coverage: 60% (6/10) [0.1s]
+#>  omega_2 NC coverage: 60% (6/10) [0s]
 #>  omega_2 NC coverage: 70% (7/10) [0.1s]
 #>  omega_2 NC coverage: 80% (8/10) [0.1s]
 #>  omega_2 NC coverage: 90% (9/10) [0.1s]
@@ -204,15 +213,15 @@ diag <- iconic_diagnose(data)
 #>  k permutation analysis: 100% (100/100) [0s]
 #> NC capture null: 200 tasks (sequential)
 #>  NC capture null: 10% (20/200) [0.4s]
-#>  NC capture null: 20% (40/200) [0.8s]
-#>  NC capture null: 30% (60/200) [1.2s]
-#>  NC capture null: 40% (80/200) [1.6s]
-#>  NC capture null: 50% (100/200) [2s]
-#>  NC capture null: 60% (120/200) [2.4s]
-#>  NC capture null: 70% (140/200) [2.8s]
-#>  NC capture null: 80% (160/200) [3.2s]
-#>  NC capture null: 90% (180/200) [3.6s]
-#>  NC capture null: 100% (200/200) [4s]
+#>  NC capture null: 20% (40/200) [0.7s]
+#>  NC capture null: 30% (60/200) [1.1s]
+#>  NC capture null: 40% (80/200) [1.5s]
+#>  NC capture null: 50% (100/200) [1.8s]
+#>  NC capture null: 60% (120/200) [2.2s]
+#>  NC capture null: 70% (140/200) [2.6s]
+#>  NC capture null: 80% (160/200) [3s]
+#>  NC capture null: 90% (180/200) [3.3s]
+#>  NC capture null: 100% (200/200) [3.7s]
 #> iconic_diagnose complete. Call summary() or print() on the result for the full diagnosis.
 est <- iconic_estimate(data, diagnosis = diag)
 #> Estimating features: 10 tasks (sequential)
@@ -241,4 +250,11 @@ surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
 G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 est <- iconic_estimate(sdat, effect_scale = "loghr")
 est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
+
+# Binary outcome
+bdat <- iconic_data(X = rnorm(100), Y = rbinom(100, 1, 0.4),
+outcome_type = "binary",
+G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+est <- iconic_estimate(bdat, effect_scale = "logor")
+est_rd <- iconic_estimate(bdat, effect_scale = "riskdiff")
 ```

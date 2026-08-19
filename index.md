@@ -24,6 +24,7 @@ and a mediator and/or outcome panel. A hybrid generative texture model
 mediator panel) lets the sensitivity analysis mirror the marginal and
 joint structure of the user’s cohort. Time-to-event outcomes are
 supported on the Cox log-hazard-ratio and restricted-mean-survival-time
+scales, and binary outcomes on the log-odds-ratio and risk-difference
 scales.
 
 See the package vignettes for a quickstart guide, an overview of each
@@ -53,8 +54,8 @@ checks which are met for your data.
   negative controls on the outcome and exposure, then recovers the
   effect as the ratio of the two coefficients. Efficient when the
   negative controls are strong proxies of the confounder; unstable when
-  the outcome coefficient is near zero. Incompatible with survival
-  outcomes.
+  the outcome coefficient is near zero. Incompatible with survival and
+  binary outcomes.
 - **IV2SLS** (two-stage least squares): instruments the exposure with
   the genetic instrument in the first stage, then regresses the outcome
   on the fitted exposure. Requires a valid instrument (independent of
@@ -90,6 +91,7 @@ mediator instrument or path-specific negative controls.
 |------------------------------|:-----:|:------:|:----:|:------:|:---:|:-------:|:----:|:------:|
 | Continuous outcome           |   X   |   X    |  X   |   X    |  X  |    X    |  X   |   X    |
 | Survival outcome             |   X   |   X    |      |   X    |  X  |    X    |  X   |   X    |
+| Binary outcome               |   X   |   X    |      |   X    |  X  |    X    |  X   |   X    |
 | Total effect                 |   X   |   X    |  X   |   X    |  X  |    X    |  X   |   X    |
 | Mediation (NDE + NIE)        |   X   |   X    |  X   |   X    |  X  |    X    |  X   |   X    |
 | Requires exposure instrument |       |        |      |   X    |     |    X    |      |        |

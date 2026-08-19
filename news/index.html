@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">iconic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,27 @@
       <small>Source: <a href="https://github.com/sbresnahan/iconic/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.99.3" id="iconic-0993">iconic 0.99.3<a class="anchor" aria-label="anchor" href="#iconic-0993"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-99-3">New features<a class="anchor" aria-label="anchor" href="#new-features-0-99-3"></a></h3>
+<ul><li><p><strong>Binary outcome support.</strong> <code>outcome_type = "binary"</code> is now available throughout the workflow: <code><a href="../reference/iconic_data.html">iconic_data()</a></code> accepts a 0/1 outcome vector (validated as dichotomous, stored unscaled as <code>Y_bin</code>), and <code><a href="../reference/iconic_estimate.html">iconic_estimate()</a></code>, <code><a href="../reference/iconic_sensitivity.html">iconic_sensitivity()</a></code>, <code><a href="../reference/iconic_prospect.html">iconic_prospect()</a></code>, and <code><a href="../reference/run_single_iteration.html">run_single_iteration()</a></code> all dispatch to binary-specific estimators. <code><a href="../reference/generate_toy_data.html">generate_toy_data()</a></code> and <code><a href="../reference/run_single_iteration.html">run_single_iteration()</a></code> gain a <code>bin_prev</code> argument (default 0.5) controlling the outcome prevalence of the simulated binary DGP.</p></li>
+<li><p><strong>Two effect scales for binary outcomes</strong> via the <code>effect_scale</code> argument: <code>"logor"</code> (default; logistic two-stage predictor-substitution outcome stage, mirroring the Cox log-HR convention for survival) and <code>"riskdiff"</code> (linear probability model outcome stage, giving an exactly collapsible NDE/NIE decomposition). Inert scale requests are remapped with an informative message (e.g. <code>effect_scale = "loghr"</code> on binary data maps to <code>"logor"</code>).</p></li>
+<li><p><strong>New binary estimators</strong> (<code>R/bin_estimators.R</code>, <code>R/bin_mediation.R</code>): <code><a href="../reference/fit_unadj_bin.html">fit_unadj_bin()</a></code>, <code><a href="../reference/fit_direct_bin.html">fit_direct_bin()</a></code>, <code><a href="../reference/fit_iv2sls_bin.html">fit_iv2sls_bin()</a></code>, <code><a href="../reference/fit_pgc_bin.html">fit_pgc_bin()</a></code>, and the mediation variants <code><a href="../reference/fit_unadj_mediation_bin.html">fit_unadj_mediation_bin()</a></code>, <code><a href="../reference/fit_direct_mediation_bin.html">fit_direct_mediation_bin()</a></code>, <code><a href="../reference/fit_iv2sls_mediation_bin.html">fit_iv2sls_mediation_bin()</a></code>, <code><a href="../reference/fit_iv2sls_mediation2_bin.html">fit_iv2sls_mediation2_bin()</a></code>, <code><a href="../reference/fit_pgc_mediation_bin.html">fit_pgc_mediation_bin()</a></code>, <code><a href="../reference/fit_pgc_mediation2_bin.html">fit_pgc_mediation2_bin()</a></code>. First stages remain OLS; only the outcome stage changes (binomial GLM or linear probability model). The partial-F weak-instrument gate and the collinear-panel fallback behave as for continuous and survival outcomes.</p></li>
+<li><p><strong>COCA is excluded for binary outcomes</strong> (<code><a href="../reference/fit_coca_bin.html">fit_coca_bin()</a></code> and <code><a href="../reference/fit_coca_mediation_bin.html">fit_coca_mediation_bin()</a></code> return <code>NA</code> with a <code>reason</code> attribute, the same contract as for survival): COCA’s ratio identification assumes a linear structural outcome model, which neither the log-OR nor the risk-difference binary outcome stage satisfies.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="behavioural-notes-0-99-3">Behavioural notes<a class="anchor" aria-label="anchor" href="#behavioural-notes-0-99-3"></a></h3>
+<ul><li>
+<code><a href="../reference/infer_confounding.html">infer_confounding()</a></code> now errors informatively for binary outcomes: gap-based calibration relies on a continuous outcome scale. Use <code>confounding = "manual"</code> or the default confounding grid in sensitivity/prospective analyses of binary data.</li>
+<li>The generative texture model (torch GAN) is unavailable for binary outcomes because there is no continuous outcome margin to texture; <code><a href="../reference/iconic_sensitivity.html">iconic_sensitivity()</a></code> falls back to the default texture with an informative message.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-99-3">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-99-3"></a></h3>
+<ul><li>
+<strong>Locale/device-safe plot labels (completes the 0.99.2 fix).</strong> Remaining multi-byte glyphs that are drawn when the package examples run are now portable across locales and graphics devices. In <code><a href="../reference/plot_nc_validity_diagnostics.html">plot_nc_validity_diagnostics()</a></code> the internal colour-scale keys still used Unicode arrow and superscript-two string literals; these are now ASCII (<code>-&gt;</code>, <code>R2</code>). The displayed legend label was already a plotmath expression, so the figure is visually unchanged. In <code><a href="../reference/plot_pleiotropy_sweep.html">plot_pleiotropy_sweep()</a></code> and <code><a href="../reference/plot_instrument_strength_sweep.html">plot_instrument_strength_sweep()</a></code> the axis titles carried a Unicode arrow / minus sign as string literals; these are now plotmath expressions, which render the real glyphs through the symbol font on any device – including the base <code><a href="https://rdrr.io/r/grDevices/pdf.html" class="external-link">pdf()</a></code> device used by <code>R CMD check</code> – without <code>mbcsToSbcs</code> conversion errors. No code line in <code>R/figures.R</code> now contains a non-ASCII or <code>\uXXXX</code>-escaped character.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.99.2" id="iconic-0992">iconic 0.99.2<a class="anchor" aria-label="anchor" href="#iconic-0992"></a></h2>
 <div class="section level3">
@@ -80,7 +101,7 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.9.9.3" id="iconic-0993">iconic 0.9.9.3<a class="anchor" aria-label="anchor" href="#iconic-0993"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.9.9.3" id="iconic-0993-1">iconic 0.9.9.3<a class="anchor" aria-label="anchor" href="#iconic-0993-1"></a></h2>
 <div class="section level3">
 <h3 id="documentation-and-housekeeping-0-9-9-3">Documentation and housekeeping<a class="anchor" aria-label="anchor" href="#documentation-and-housekeeping-0-9-9-3"></a></h3>
 <ul><li>

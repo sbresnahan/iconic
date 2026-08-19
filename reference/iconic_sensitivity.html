@@ -13,7 +13,7 @@ with the unmeasured confounders."><meta property="og:image" content="https://sea
 
     <a class="navbar-brand me-2" href="../index.html">iconic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,10 +78,11 @@ with the unmeasured confounders.</p>
 <span>  n_cores <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  outcome_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  effect_scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"loghr"</span>, <span class="st">"rmst"</span><span class="op">)</span>,</span>
+<span>  effect_scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"loghr"</span>, <span class="st">"rmst"</span>, <span class="st">"logor"</span>, <span class="st">"riskdiff"</span><span class="op">)</span>,</span>
 <span>  surv_h0 <span class="op">=</span> <span class="fl">0.1</span>,</span>
 <span>  surv_event_frac <span class="op">=</span> <span class="fl">0.6</span>,</span>
-<span>  surv_censor_rate <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  surv_censor_rate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bin_prev <span class="op">=</span> <span class="fl">0.5</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -199,13 +200,17 @@ Default <code>FALSE</code> (quiet).</p></dd>
 
 <dt id="arg-outcome-type">outcome_type<a class="anchor" aria-label="anchor" href="#arg-outcome-type"></a></dt>
 <dd><p><code>NULL</code> (inherit from <code>data</code>, default) or
-<code>"continuous"</code> / <code>"survival"</code>. When survival, the
-sensitivity sweep uses the Cox / RMST survival mediation drivers.</p></dd>
+<code>"continuous"</code> / <code>"survival"</code> / <code>"binary"</code>. When
+survival, the sensitivity sweep uses the Cox / RMST survival mediation
+drivers; when binary, the logistic / linear-probability-model binary
+mediation drivers.</p></dd>
 
 
 <dt id="arg-effect-scale">effect_scale<a class="anchor" aria-label="anchor" href="#arg-effect-scale"></a></dt>
-<dd><p><code>"loghr"</code> (default) or <code>"rmst"</code>. Only
-used when <code>outcome_type = "survival"</code>.</p></dd>
+<dd><p><code>"loghr"</code> (default), <code>"rmst"</code>,
+<code>"logor"</code>, or <code>"riskdiff"</code>. <code>"loghr"</code>/<code>"rmst"</code>
+apply to survival outcomes; <code>"logor"</code>/<code>"riskdiff"</code> apply to
+binary outcomes (an inert default is remapped with a message).</p></dd>
 
 
 <dt id="arg-surv-h-">surv_h0<a class="anchor" aria-label="anchor" href="#arg-surv-h-"></a></dt>
@@ -218,6 +223,10 @@ used when <code>outcome_type = "survival"</code>.</p></dd>
 
 <dt id="arg-surv-censor-rate">surv_censor_rate<a class="anchor" aria-label="anchor" href="#arg-surv-censor-rate"></a></dt>
 <dd><p>Explicit censoring rate. Default NULL.</p></dd>
+
+
+<dt id="arg-bin-prev">bin_prev<a class="anchor" aria-label="anchor" href="#arg-bin-prev"></a></dt>
+<dd><p>Target prevalence for the binary DGP. Default 0.5.</p></dd>
 
 </dl></div>
     <div class="section level2">

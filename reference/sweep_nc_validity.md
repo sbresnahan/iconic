@@ -265,7 +265,7 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
 #>  NC capture null: 70% (14/20) [0.3s]
 #>  NC capture null: 80% (16/20) [0.4s]
 #>  NC capture null: 90% (18/20) [0.4s]
-#>  NC capture null: 100% (20/20) [0.4s]
+#>  NC capture null: 100% (20/20) [0.5s]
 #>    omega = 0: 50% (1/2) [0.5s]
 #> NC capture null: 20 tasks (sequential)
 #>  NC capture null: 10% (2/20) [0s]
@@ -275,10 +275,10 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
 #>  NC capture null: 50% (10/20) [0.2s]
 #>  NC capture null: 60% (12/20) [0.3s]
 #>  NC capture null: 70% (14/20) [0.3s]
-#>  NC capture null: 80% (16/20) [0.3s]
+#>  NC capture null: 80% (16/20) [0.4s]
 #>  NC capture null: 90% (18/20) [0.4s]
-#>  NC capture null: 100% (20/20) [0.4s]
-#>    omega = 0: 100% (2/2) [1s]
+#>  NC capture null: 100% (20/20) [0.5s]
+#>    omega = 0: 100% (2/2) [1.1s]
 #>   omega = 0.5: 2 tasks (sequential)
 #> NC capture null: 20 tasks (sequential)
 #>  NC capture null: 10% (2/20) [0s]
@@ -288,9 +288,9 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
 #>  NC capture null: 50% (10/20) [0.2s]
 #>  NC capture null: 60% (12/20) [0.3s]
 #>  NC capture null: 70% (14/20) [0.3s]
-#>  NC capture null: 80% (16/20) [0.3s]
+#>  NC capture null: 80% (16/20) [0.4s]
 #>  NC capture null: 90% (18/20) [0.4s]
-#>  NC capture null: 100% (20/20) [0.4s]
+#>  NC capture null: 100% (20/20) [0.5s]
 #>    omega = 0.5: 50% (1/2) [0.5s]
 #> NC capture null: 20 tasks (sequential)
 #>  NC capture null: 10% (2/20) [0s]
@@ -298,13 +298,13 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
 #>  NC capture null: 30% (6/20) [0.1s]
 #>  NC capture null: 40% (8/20) [0.2s]
 #>  NC capture null: 50% (10/20) [0.2s]
-#>  NC capture null: 60% (12/20) [0.2s]
+#>  NC capture null: 60% (12/20) [0.3s]
 #>  NC capture null: 70% (14/20) [0.3s]
-#>  NC capture null: 80% (16/20) [0.3s]
+#>  NC capture null: 80% (16/20) [0.4s]
 #>  NC capture null: 90% (18/20) [0.4s]
-#>  NC capture null: 100% (20/20) [0.4s]
+#>  NC capture null: 100% (20/20) [0.5s]
 #>    omega = 0.5: 100% (2/2) [1s]
-#>  Done in 2.1 s
+#>  Done in 2.3 s
 panels$panel_a
 #>   contamination violated_mean violated_sd confounding_mean confounding_sd
 #> 1           0.0           0.0   0.0000000                1              0

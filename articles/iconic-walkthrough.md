@@ -416,7 +416,7 @@ sessionInfo()
     #> [16] knitr_1.51          bookdown_0.47       desc_1.4.3         
     #> [19] bslib_0.12.0        rlang_1.3.0         cachem_1.1.0       
     #> [22] xfun_0.60           fs_2.1.0            sass_0.4.10        
-    #> [25] bit64_4.8.2         otel_0.2.0          cli_3.6.6          
+    #> [25] bit64_4.8.4         otel_0.2.0          cli_3.6.6          
     #> [28] pkgdown_2.2.1       withr_3.0.3         magrittr_2.0.5     
     #> [31] ps_1.9.3            digest_0.6.39       grid_4.6.1         
     #> [34] processx_3.9.0      torch_0.17.0        lifecycle_1.0.5    

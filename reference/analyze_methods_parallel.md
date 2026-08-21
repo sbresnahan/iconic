@@ -53,11 +53,11 @@ dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
   n_features = 5, n_confounders = 1, seed = 1)
 analyze_methods_parallel(dat, n_cores = 1)
 #> analyze_methods_parallel: 5 tasks (sequential)
-#>  analyze_methods_parallel: 20% (1/5) [0.8s]
-#>  analyze_methods_parallel: 40% (2/5) [0.8s]
-#>  analyze_methods_parallel: 60% (3/5) [0.8s]
-#>  analyze_methods_parallel: 80% (4/5) [0.8s]
-#>  analyze_methods_parallel: 100% (5/5) [0.8s]
+#>  analyze_methods_parallel: 20% (1/5) [0.9s]
+#>  analyze_methods_parallel: 40% (2/5) [0.9s]
+#>  analyze_methods_parallel: 60% (3/5) [0.9s]
+#>  analyze_methods_parallel: 80% (4/5) [0.9s]
+#>  analyze_methods_parallel: 100% (5/5) [0.9s]
 #>         feature method       beta         se       pvalue significant
 #> UNADJ         1  UNADJ  0.5261014 0.05357861 2.987041e-16        TRUE
 #> DIRECT        1 DIRECT  0.3610414 0.10312635 7.234765e-04        TRUE

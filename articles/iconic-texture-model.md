@@ -219,5 +219,5 @@ sessionInfo()
     #> [25] fs_2.1.0            Rcpp_1.1.2          systemfonts_1.3.2  
     #> [28] digest_0.6.39       R6_2.6.1            magrittr_2.0.5     
     #> [31] callr_3.8.0         bslib_0.12.0        withr_3.0.3        
-    #> [34] bit64_4.8.2         tools_4.6.1         pkgdown_2.2.1      
+    #> [34] bit64_4.8.4         tools_4.6.1         pkgdown_2.2.1      
     #> [37] cachem_1.1.0        desc_1.4.3

@@ -2,6 +2,10 @@ url: https://seantbresnahan.com/iconic/
 
 template:
   bootstrap: 5
+  opengraph:
+    image:
+      src: man/figures/social-preview.jpg
+      alt: "Inference with Causal Observational Negative-control Instruments and Controls"
 
 navbar:
   structure:

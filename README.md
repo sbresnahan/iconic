@@ -6,7 +6,8 @@
 
 ## About the Package
 
-The R package `iconic` provides a model selection workflow for causal
+The R package `iconic` (Inference with Causal Observational Negative-control Instruments and Controls)
+provides a model selection workflow for causal
 inference with genetic instruments and negative controls in observational
 omics data. It fits eight estimators of the natural direct and indirect
 effects (NDE / NIE), diagnoses which are valid for the user's data,
@@ -14,10 +15,10 @@ stress-tests them against confounding and pleiotropy violations, and
 recommends the one most likely to be unbiased.
 
 The motivating application is estimating the causal effect of an exposure
-(e.g. gestational diabetes mellitus) on a panel of molecular outcomes
-(e.g. placental transcriptome), but the package is applicable to any
-observational study with a genetic instrument, negative controls, and a
-mediator and/or outcome panel. A hybrid generative texture model (a torch
+(e.g. gestational diabetes mellitus) on an outcome (e.g. birth weight) 
+mediated through a panel of molecular features (e.g. placental transcriptome), 
+but the package is applicable to any observational study with a genetic instrument, 
+negative controls, and a mediator and/or outcome panel. A hybrid generative texture model (a torch
 GAN for sample-level structure and a Gaussian copula for the mediator
 panel) lets the sensitivity analysis mirror the marginal and joint
 structure of the user's cohort. Time-to-event outcomes are supported on
@@ -237,9 +238,9 @@ pros <- iconic_prospect(idat, confounding = "inferred")
 
 Cite the accompanying manuscript (in preparation):
 
-> Bresnahan ST, Xiong C, et al. ICONIC: an R package for negative-control
-> and genetic-instrument causal inference and mediation diagnostics in
-> observational omics studies.
+> Bresnahan ST, Xiong C, et al. ICONIC: An R Package for 
+> Integrating Instrumental Variable- and Negative-Control-Informed 
+> Causal Discovery and Diagnostics in Multiomic Studies.
 
 ## License
 

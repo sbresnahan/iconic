@@ -122,8 +122,8 @@ nc_completeness_check(dat, n_perm = 50)
 #>  NC capture null: 50% (25/50) [0.6s]
 #>  NC capture null: 60% (30/50) [0.7s]
 #>  NC capture null: 70% (35/50) [0.8s]
-#>  NC capture null: 80% (40/50) [1s]
-#>  NC capture null: 90% (45/50) [1.1s]
+#>  NC capture null: 80% (40/50) [0.9s]
+#>  NC capture null: 90% (45/50) [1s]
 #>  NC capture null: 100% (50/50) [1.2s]
 #> $n_valid_controls
 #> [1] 0

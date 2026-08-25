@@ -214,12 +214,12 @@ diag <- iconic_diagnose(data)
 #> NC capture null: 200 tasks (sequential)
 #>  NC capture null: 10% (20/200) [0.4s]
 #>  NC capture null: 20% (40/200) [0.8s]
-#>  NC capture null: 30% (60/200) [1.3s]
-#>  NC capture null: 40% (80/200) [1.7s]
-#>  NC capture null: 50% (100/200) [2.1s]
-#>  NC capture null: 60% (120/200) [2.5s]
-#>  NC capture null: 70% (140/200) [2.9s]
-#>  NC capture null: 80% (160/200) [3.3s]
+#>  NC capture null: 30% (60/200) [1.2s]
+#>  NC capture null: 40% (80/200) [1.6s]
+#>  NC capture null: 50% (100/200) [2s]
+#>  NC capture null: 60% (120/200) [2.4s]
+#>  NC capture null: 70% (140/200) [2.8s]
+#>  NC capture null: 80% (160/200) [3.2s]
 #>  NC capture null: 90% (180/200) [3.7s]
 #>  NC capture null: 100% (200/200) [4.1s]
 #> iconic_diagnose complete. Call summary() or print() on the result for the full diagnosis.
@@ -234,7 +234,7 @@ est <- iconic_estimate(data, diagnosis = diag)
 #>  Estimating features: 70% (7/10) [0s]
 #>  Estimating features: 80% (8/10) [0s]
 #>  Estimating features: 90% (9/10) [0s]
-#>  Estimating features: 100% (10/10) [0.1s]
+#>  Estimating features: 100% (10/10) [0s]
 head(est)
 #>           feature method       beta        se    pvalue significant
 #> UNADJ   feature_1  UNADJ 0.04862181 0.1008958 0.6309506       FALSE

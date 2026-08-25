@@ -416,7 +416,7 @@ sessionInfo()
     #> [13] generics_0.1.4              stats4_4.6.1               
     #> [15] parallel_4.6.1              tibble_3.3.1               
     #> [17] pkgconfig_2.0.3             Matrix_1.7-5               
-    #> [19] data.table_1.18.4           RColorBrewer_1.1-3         
+    #> [19] data.table_1.18.6.1         RColorBrewer_1.1-3         
     #> [21] bigstatsr_1.6.2             S7_0.2.2                   
     #> [23] desc_1.4.3                  S4Vectors_0.50.1           
     #> [25] lifecycle_1.0.5             compiler_4.6.1             

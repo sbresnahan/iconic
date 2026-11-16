@@ -41,8 +41,9 @@ reference:
     negative-control data into the object used across the package, and
     simulate ground-truth panels.
   contents:
-  - iconic_data
   - as_iconic_data
+  - iconic_data
+  - as_MultiAssayExperiment
   - load_real_input_data
   - generate_toy_data
   - simulate_single_genetic_instrument

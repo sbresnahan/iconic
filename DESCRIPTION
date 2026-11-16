@@ -1,9 +1,10 @@
 Package: iconic
 Title: Causal Model Selection with Genetic Instruments and Negative
         Controls
-Version: 0.99.3
+Version: 0.99.4
 biocViews: StatisticalMethod, Genetics, MultipleComparison, Regression,
-        Transcriptomics, RNASeq, Survival
+        Transcriptomics, RNASeq, Survival, GeneExpression, SNP,
+        GeneticVariability
 Authors@R: c(
     person("Sean T.", "Bresnahan", role = c("aut", "cre"),
         email = "seantbresnahan3@gmail.com"),
@@ -25,12 +26,16 @@ Description: Provides a model selection workflow for causal inference
     to sweep instrument exogeneity, iconic_recommend() to rank estimators
     by identification strength and robustness, and iconic_prospect() to
     plan future studies. infer_confounding() estimates held-fixed
-    confounding parameters from the data. Helper functions construct
-    exposure instruments (polygenic scores from GWAS summary statistics
-    or PGS Catalog scoring files), mediator instruments (cis-eQTL scans
-    and elastic-net predicted-expression composites), and negative-control
-    panels (principal components of residualized omics matrices), and
-    data can be imported directly from SummarizedExperiment objects.
+    confounding parameters from the data. Multi-omic cohorts are supplied
+    as MultiAssayExperiment objects (omics panels as experiments,
+    sample-level exposure, instruments and covariates as colData), and
+    analysis data can be exported back to MultiAssayExperiment. Helper
+    functions construct exposure instruments (polygenic scores from GWAS
+    summary statistics or PGS Catalog scoring files), mediator instruments
+    (GenomicRanges-based cis-eQTL scans and elastic-net
+    predicted-expression composites from RangedSummarizedExperiment or
+    matrix inputs), and negative-control panels (principal components of
+    residualized omics matrices).
     Time-to-event outcomes are supported on the Cox log-hazard-ratio and
     restricted-mean-survival-time scales. Binary outcomes are supported
     on the log-odds-ratio (logistic two-stage predictor-substitution
@@ -41,18 +46,16 @@ Description: Provides a model selection workflow for causal inference
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Config/roxygen2/version: 8.1.0
-Imports: AER, MASS, parallel, stats, survival, utils, withr
+Config/roxygen2/version: 8.1.1
+Imports: AER, GenomicRanges, grDevices, graphics, IRanges, MASS, methods,
+        MultiAssayExperiment, parallel, S4Vectors, stats,
+        SummarizedExperiment, survival, utils, withr
 Suggests: testthat (>= 3.0.0), ggplot2, patchwork, scales, knitr,
         rmarkdown, torch, bigsnpr, bigstatsr, glmnet, irlba,
-        SummarizedExperiment, S4Vectors, BiocStyle
+        BiocStyle
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 URL: https://seantbresnahan.com/iconic/,
         https://github.com/sbresnahan/iconic
 BugReports: https://github.com/sbresnahan/iconic/issues
 NeedsCompilation: no
-Packaged: 2026-08-19 17:42:24 UTC; root
-Author: Sean T. Bresnahan [aut, cre],
-  Charis Xiong [aut]
-Maintainer: Sean T. Bresnahan <seantbresnahan3@gmail.com>

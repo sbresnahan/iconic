@@ -7,8 +7,8 @@
 build_mediator_instruments(
   expression,
   genotypes,
-  gene_pos,
-  snp_pos,
+  gene_pos = NULL,
+  snp_pos = NULL,
   covariates = NULL,
   cis_snps = NULL,
   alpha = 0.3,
@@ -18,19 +18,32 @@ build_mediator_instruments(
   cv_p_max = 0.1,
   n_cores = 1,
   seed = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  expr_assay = 1L,
+  geno_assay = 1L
 )
 }
 \arguments{
 \item{expression}{Numeric matrix, genes x samples (e.g.
-inverse-normal-transformed TPM).}
+inverse-normal-transformed TPM), or a
+\link[SummarizedExperiment:RangedSummarizedExperiment]{SummarizedExperiment::RangedSummarizedExperiment} whose
+\code{rowRanges()} supply gene coordinates (used when \code{gene_pos} is
+\code{NULL}).}
 
-\item{genotypes}{Numeric dosage matrix, variants x samples (0-2).}
+\item{genotypes}{Numeric dosage matrix, variants x samples (0-2),
+or a \code{RangedSummarizedExperiment} whose \code{rowRanges()} supply
+variant positions (used when \code{snp_pos} is \code{NULL}).}
 
-\item{gene_pos}{data.frame with columns \code{gene}, \code{chr}, and \code{tss}
-(or \code{start}).}
+\item{gene_pos}{Gene coordinates: a \link[GenomicRanges:GRanges]{GenomicRanges::GRanges} with
+gene IDs as \code{names()} or a \code{gene} metadata column (the TSS is the
+strand-aware 5' end of each range), or a data.frame with columns
+\code{gene}, \code{chr}, and \code{tss} (or \code{start}). May be \code{NULL} when
+\code{expression} is a \code{RangedSummarizedExperiment}.}
 
-\item{snp_pos}{data.frame with columns \code{snp}, \code{chr}, \code{pos}.}
+\item{snp_pos}{Variant positions: a \code{GRanges} with variant IDs as
+\code{names()} or an \code{snp} metadata column, or a data.frame with columns
+\code{snp}, \code{chr}, \code{pos}. May be \code{NULL} when \code{genotypes} is a
+\code{RangedSummarizedExperiment}.}
 
 \item{covariates}{Optional data.frame or matrix (n rows) of
 covariates to partial out (ancestry PCs, technical factors, ...).}
@@ -62,6 +75,9 @@ Default 1.}
 \item{seed}{Optional integer for reproducible CV fold assignments.}
 
 \item{verbose}{Logical: print progress. Default \code{TRUE}.}
+
+\item{expr_assay, geno_assay}{Name or index of the assay to use when
+\code{expression} / \code{genotypes} is a SummarizedExperiment. Default \code{1}.}
 }
 \value{
 A list with:
@@ -88,6 +104,10 @@ instrument \code{Gm} consumed by \code{\link[=iconic_data]{iconic_data()}}.
 }
 \details{
 Requires the glmnet package (listed under \code{Suggests}).
+
+Coordinates are handled with GenomicRanges exactly as in
+\code{\link[=call_cis_eqtls]{call_cis_eqtls()}}; genes listed more than once in \code{gene_pos} are
+skipped.
 }
 \examples{
 if (requireNamespace("glmnet", quietly = TRUE)) {

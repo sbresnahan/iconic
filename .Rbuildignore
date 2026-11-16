@@ -1,1 +1,10 @@
 ^\.github$
+^\.gitignore$
+^_pkgdown\.yml$
+^pkgdown$
+^docs$
+^doc$
+^Meta$
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$

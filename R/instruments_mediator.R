@@ -24,12 +24,29 @@
 #' pure-R alternative to MatrixEQTL for preparing mediator-instrument
 #' candidate sets.
 #'
+#' Gene and variant coordinates are handled as
+#' [GenomicRanges::GRanges] and cis variants are resolved with
+#' [GenomicRanges::findOverlaps()] against symmetric windows of
+#' `cis_dist` bp around each gene's TSS. Chromosome naming styles are
+#' harmonised first, so `"chr1"` and `"1"` match.
+#'
 #' @param expression Numeric matrix, genes x samples (e.g.
-#' inverse-normal-transformed TPM).
-#' @param genotypes Numeric dosage matrix, variants x samples (0-2).
-#' @param gene_pos data.frame with columns `gene`, `chr`, and `tss`
-#' (or `start`; the gene start is used as the cis-window anchor).
-#' @param snp_pos data.frame with columns `snp`, `chr`, `pos`.
+#' inverse-normal-transformed TPM), or a
+#' [SummarizedExperiment::RangedSummarizedExperiment] whose
+#' `rowRanges()` supply gene coordinates (used when `gene_pos` is
+#' `NULL`).
+#' @param genotypes Numeric dosage matrix, variants x samples (0-2),
+#' or a `RangedSummarizedExperiment` whose `rowRanges()` supply
+#' variant positions (used when `snp_pos` is `NULL`).
+#' @param gene_pos Gene coordinates: a [GenomicRanges::GRanges] with
+#' gene IDs as `names()` or a `gene` metadata column (the TSS is the
+#' strand-aware 5' end of each range), or a data.frame with columns
+#' `gene`, `chr`, and `tss` (or `start`). May be `NULL` when
+#' `expression` is a `RangedSummarizedExperiment`.
+#' @param snp_pos Variant positions: a `GRanges` with variant IDs as
+#' `names()` or an `snp` metadata column, or a data.frame with columns
+#' `snp`, `chr`, `pos`. May be `NULL` when `genotypes` is a
+#' `RangedSummarizedExperiment`.
 #' @param covariates Optional data.frame or matrix (n rows) of
 #' covariates to partial out (e.g. ancestry PCs, technical factors).
 #' @param cis_snps Optional named list: gene name -> character vector
@@ -44,6 +61,8 @@
 #' the `best` table. Default 0.05.
 #' @param n_cores Integer: parallel workers via [parallel::mclapply()].
 #' Default 1.
+#' @param expr_assay,geno_assay Name or index of the assay to use when
+#' `expression` / `genotypes` is a SummarizedExperiment. Default `1`.
 #'
 #' @return A list with:
 #' \describe{
@@ -66,29 +85,38 @@
 #' sp <- data.frame(snp = rownames(dos), chr = "1", pos = 1:200)
 #' hits <- call_cis_eqtls(expr, dos, gp, sp)
 #' head(hits$best)
-call_cis_eqtls <- function(expression, genotypes, gene_pos, snp_pos,
+#'
+#' # Equivalent call with GRanges coordinates (UCSC-style "chr1" names
+#' # are harmonised with the Ensembl-style "1" used above)
+#' gp_gr <- GenomicRanges::GRanges("chr1",
+#'   IRanges::IRanges(seq(1, 191, by = 10), width = 1),
+#'   gene = paste0("Gene", 1:20))
+#' sp_gr <- GenomicRanges::GRanges("1", IRanges::IRanges(1:200, width = 1),
+#'   snp = rownames(dos))
+#' hits_gr <- call_cis_eqtls(expr, dos, gp_gr, sp_gr)
+#' identical(hits$best, hits_gr$best)
+call_cis_eqtls <- function(expression, genotypes, gene_pos = NULL,
+                           snp_pos = NULL,
                            covariates = NULL, cis_snps = NULL,
                            cis_dist = 1e6, min_maf = 0.01, fdr = 0.05,
-                           n_cores = 1) {
-  expression <- as.matrix(expression)
-  genotypes  <- as.matrix(genotypes)
+                           n_cores = 1, expr_assay = 1L, geno_assay = 1L) {
+  inp <- .prepare_cis_inputs(expression, genotypes, gene_pos, snp_pos,
+                             expr_assay = expr_assay,
+                             geno_assay = geno_assay, dup = "first")
+  expression <- inp$expression
+  genotypes  <- inp$genotypes
   if (ncol(expression) != ncol(genotypes))
     stop("expression and genotypes must have the same number of samples.")
-  if (!all(c("gene", "chr") %in% colnames(gene_pos)))
-    stop("gene_pos needs columns `gene` and `chr` (and `tss` or `start`).")
-  if (!all(c("snp", "chr", "pos") %in% colnames(snp_pos)))
-    stop("snp_pos needs columns `snp`, `chr`, `pos`.")
-  if (!"tss" %in% colnames(gene_pos)) {
-    if (!"start" %in% colnames(gene_pos))
-      stop("gene_pos needs a `tss` or `start` column.")
-    gene_pos$tss <- gene_pos$start
-  }
 
   n <- ncol(expression)
-  genes <- intersect(rownames(expression), gene_pos$gene)
+  gene_gr <- inp$gene_gr
+  genes <- intersect(rownames(expression), S4Vectors::mcols(gene_gr)$gene)
   if (length(genes) == 0)
-    stop("No overlap between expression rownames and gene_pos$gene.")
-  snp_pos <- snp_pos[snp_pos$snp %in% rownames(genotypes), , drop = FALSE]
+    stop("No overlap between expression rownames and gene_pos gene IDs.")
+  snp_gr <- inp$snp_gr
+  snp_gr <- snp_gr[S4Vectors::mcols(snp_gr)$snp %in% rownames(genotypes)]
+  gene_gr <- gene_gr[S4Vectors::mcols(gene_gr)$gene %in% genes]
+  cis_map <- .cis_snps_by_gene(gene_gr, snp_gr, cis_dist)
 
   ## FWL residualization on covariates
   qr_cvrt <- NULL
@@ -106,20 +134,14 @@ call_cis_eqtls <- function(expression, genotypes, gene_pos, snp_pos,
   colnames(expr_r) <- colnames(expression)
   colnames(geno_r) <- colnames(genotypes)
 
-  gp <- gene_pos[match(genes, gene_pos$gene), , drop = FALSE]
-
   scan_gene <- function(g) {
-    gpos <- gp[gp$gene == g, , drop = FALSE]
-    if (nrow(gpos) != 1) return(NULL)
-    cis <- which(snp_pos$chr == gpos$chr &
-                   abs(snp_pos$pos - gpos$tss) <= cis_dist)
+    snps <- cis_map[[g]]
     if (!is.null(cis_snps)) {
       cand <- cis_snps[[g]]
       if (is.null(cand)) return(NULL)
-      cis <- cis[snp_pos$snp[cis] %in% cand]
+      snps <- snps[snps %in% cand]
     }
-    if (length(cis) < 1) return(NULL)
-    snps <- snp_pos$snp[cis]
+    if (length(snps) < 1) return(NULL)
     X <- geno_r[snps, , drop = FALSE]
     ## MAF must come from the RAW genotypes: geno_r is residualized
     ## (mean ~0), so allele frequencies computed on it are meaningless.
@@ -155,7 +177,8 @@ call_cis_eqtls <- function(expression, genotypes, gene_pos, snp_pos,
   }
   res_list <- Filter(Negate(is.null), res_list)
   if (length(res_list) == 0)
-    stop("No testable gene-SNP pairs (check cis window, MAF, and IDs).")
+    stop("No testable gene-SNP pairs (check cis window, MAF, IDs, and that ",
+         "gene and variant coordinates use the same genome build).")
   all_hits <- do.call(rbind, res_list)
   rownames(all_hits) <- NULL
 
@@ -185,12 +208,11 @@ call_cis_eqtls <- function(expression, genotypes, gene_pos, snp_pos,
 #'
 #' Requires the glmnet package (listed under `Suggests`).
 #'
-#' @param expression Numeric matrix, genes x samples (e.g.
-#' inverse-normal-transformed TPM).
-#' @param genotypes Numeric dosage matrix, variants x samples (0-2).
-#' @param gene_pos data.frame with columns `gene`, `chr`, and `tss`
-#' (or `start`).
-#' @param snp_pos data.frame with columns `snp`, `chr`, `pos`.
+#' Coordinates are handled with GenomicRanges exactly as in
+#' [call_cis_eqtls()]; genes listed more than once in `gene_pos` are
+#' skipped.
+#'
+#' @inheritParams call_cis_eqtls
 #' @param covariates Optional data.frame or matrix (n rows) of
 #' covariates to partial out (ancestry PCs, technical factors, ...).
 #' @param cis_snps Optional named list: gene name -> character vector
@@ -242,40 +264,41 @@ call_cis_eqtls <- function(expression, genotypes, gene_pos, snp_pos,
 #'   fit <- build_mediator_instruments(expr, dos, gp, sp, seed = 1)
 #'   fit$qc
 #' }
-build_mediator_instruments <- function(expression, genotypes, gene_pos,
-                                       snp_pos, covariates = NULL,
+build_mediator_instruments <- function(expression, genotypes,
+                                       gene_pos = NULL, snp_pos = NULL,
+                                       covariates = NULL,
                                        cis_snps = NULL, alpha = 0.3,
                                        nfolds = 5, cis_dist = 1e6,
                                        cv_r2_min = 0.005, cv_p_max = 0.10,
                                        n_cores = 1, seed = NULL,
-                                       verbose = TRUE) {
+                                       verbose = TRUE, expr_assay = 1L,
+                                       geno_assay = 1L) {
   if (!requireNamespace("glmnet", quietly = TRUE))
     stop("build_mediator_instruments() requires the glmnet package. ",
          "Install with: install.packages('glmnet')")
   if (!is.null(seed)) withr::local_seed(seed)
 
-  expression <- as.matrix(expression)
-  genotypes  <- as.matrix(genotypes)
+  ## Genes listed more than once in gene_pos are skipped (ambiguous TSS).
+  inp <- .prepare_cis_inputs(expression, genotypes, gene_pos, snp_pos,
+                             expr_assay = expr_assay,
+                             geno_assay = geno_assay, dup = "drop")
+  expression <- inp$expression
+  genotypes  <- inp$genotypes
   if (ncol(expression) != ncol(genotypes))
     stop("expression and genotypes must have the same number of samples.")
-  if (!all(c("gene", "chr") %in% colnames(gene_pos)))
-    stop("gene_pos needs columns `gene` and `chr` (and `tss` or `start`).")
-  if (!all(c("snp", "chr", "pos") %in% colnames(snp_pos)))
-    stop("snp_pos needs columns `snp`, `chr`, `pos`.")
-  if (!"tss" %in% colnames(gene_pos)) {
-    if (!"start" %in% colnames(gene_pos))
-      stop("gene_pos needs a `tss` or `start` column.")
-    gene_pos$tss <- gene_pos$start
-  }
 
   n <- ncol(expression)
-  genes <- intersect(rownames(expression), gene_pos$gene)
+  gene_gr <- inp$gene_gr
+  genes <- intersect(rownames(expression), S4Vectors::mcols(gene_gr)$gene)
   if (!is.null(cis_snps))
     genes <- intersect(genes, names(cis_snps))
   if (length(genes) == 0)
     stop("No genes to test (check expression rownames, gene_pos, and ",
          "cis_snps names).")
-  snp_pos <- snp_pos[snp_pos$snp %in% rownames(genotypes), , drop = FALSE]
+  snp_gr <- inp$snp_gr
+  snp_gr <- snp_gr[S4Vectors::mcols(snp_gr)$snp %in% rownames(genotypes)]
+  gene_gr <- gene_gr[S4Vectors::mcols(gene_gr)$gene %in% genes]
+  cis_map <- .cis_snps_by_gene(gene_gr, snp_gr, cis_dist)
 
   ## FWL residualization: expression AND dosages on covariates
   qr_cvrt <- NULL
@@ -290,17 +313,13 @@ build_mediator_instruments <- function(expression, genotypes, gene_pos,
   }
 
   train_gene <- function(g) {
-    gpos <- gene_pos[gene_pos$gene == g, , drop = FALSE]
-    if (nrow(gpos) != 1) return(NULL)
-    cis <- which(snp_pos$chr == gpos$chr &
-                   abs(snp_pos$pos - gpos$tss) <= cis_dist)
+    snps <- cis_map[[g]]
     if (!is.null(cis_snps)) {
       cand <- cis_snps[[g]]
       if (is.null(cand)) return(NULL)
-      cis <- cis[snp_pos$snp[cis] %in% cand]
+      snps <- snps[snps %in% cand]
     }
-    if (length(cis) < 2) return(NULL)
-    snps <- snp_pos$snp[cis]
+    if (length(snps) < 2) return(NULL)
     X <- t(genotypes[snps, , drop = FALSE])          # samples x snps
     y_resid <- expr_resid[, g]
 

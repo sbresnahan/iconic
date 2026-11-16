@@ -119,13 +119,27 @@ An \code{iconic_data} S3 object: a named list with \verb{$X}, \verb{$Y}, \verb{$
 \verb{$n_mediators}, \verb{$has_instrument}, \verb{$has_mediator_instrument},
 \verb{$has_nc}, \verb{$has_path_nc}, \verb{$is_mediation}, \verb{$feature_names},
 \verb{$mediator_names}, \verb{$trained_gan}, \verb{$outcome_type}, and (when
-survival) \verb{$surv_time}, \verb{$surv_event}, or (when binary) \verb{$Y_bin}.
+survival) \verb{$surv_time}, \verb{$surv_event}, or (when binary) \verb{$Y_bin},
+plus \verb{$scaling} and \verb{$sample_names} (from \code{names(X)}, else the column
+names of \code{Y}/\code{M}/\code{W}, else \code{S1..Sn}).
 }
 \description{
 Creates an \code{iconic_data} S3 object from the user's real data,
 standardizing vectors and matrices into a consistent format that
 all downstream model selection functions consume.
 }
+\section{Bioconductor containers}{
+
+For Bioconductor workflows, the recommended entry point is a
+\link[MultiAssayExperiment:MultiAssayExperiment]{MultiAssayExperiment::MultiAssayExperiment} passed to
+\code{\link[=as_iconic_data]{as_iconic_data()}}: omics panels (outcome, mediator, negative
+controls, mediator instruments) are experiments and sample-level
+variables (exposure, instrument, covariates, survival / binary
+outcome) are \code{colData} columns. \code{\link[=as_MultiAssayExperiment]{as_MultiAssayExperiment()}} converts
+an \code{iconic_data} object back. \code{iconic_data} itself is the internal,
+standardised analysis view that the estimators consume.
+}
+
 \examples{
 # Total-effect only (no mediation)
 data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))

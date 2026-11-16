@@ -5,6 +5,12 @@
 #' @importFrom graphics abline axis barplot box boxplot grid image legend lines mtext par points polygon rect text
 #' @importFrom stats aggregate as.formula ave coef complete.cases cov dbeta density fitted integrate lm median p.adjust pnorm prcomp pt quantile rbinom residuals rnorm runif sd setNames vcov
 #' @importFrom utils modifyList tail
+#' @importFrom methods is
+#' @importFrom MultiAssayExperiment MultiAssayExperiment ExperimentList experiments sampleMap
+#' @importFrom SummarizedExperiment SummarizedExperiment assay colData rowRanges
+#' @importFrom S4Vectors DataFrame metadata mcols queryHits subjectHits
+#' @importFrom GenomicRanges GRanges seqnames strand start resize findOverlaps
+#' @importFrom IRanges IRanges ranges
 NULL
 
 # `self` is bound by torch::nn_module() inside the generator/discriminator

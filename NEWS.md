@@ -1,3 +1,49 @@
+# iconic 0.99.4
+
+## Bioconductor integration
+
+- **`MultiAssayExperiment` is now the primary data container.**
+  `MultiAssayExperiment`, `SummarizedExperiment`, `S4Vectors`,
+  `GenomicRanges`, and `IRanges` moved to `Imports`.
+- New `as_iconic_data()` method for `MultiAssayExperiment`. Each
+  analysis role (`exposure`, `outcome`, `mediator`, `instrument`,
+  `mediator_instrument`, `negative_controls`, `W1`, `W2`,
+  `covariates`, survival/binary outcomes) is given as the name of an
+  experiment or of `colData` column(s). Samples are aligned through
+  the `sampleMap` (primary samples present in every experiment used,
+  with complete `colData`), and a message reports how many were kept.
+- New exported `as_MultiAssayExperiment()` converts an `iconic_data`
+  object back into a `MultiAssayExperiment` (experiments for Y, M,
+  Gm, W/W1/W2; exposure, instrument, outcomes and covariates in
+  `colData`; scaling parameters, flags and roles in `metadata()`).
+  The result round-trips through `as_iconic_data()`.
+- `iconic_data` objects gain a `sample_names` field.
+- `call_cis_eqtls()` and `build_mediator_instruments()` accept
+  `GRanges` for gene and variant coordinates, or take them from the
+  `rowRanges()` of `RangedSummarizedExperiment` inputs (new
+  `expr_assay` / `geno_assay` arguments). Cis windows are computed with
+  `GenomicRanges::findOverlaps()` around the strand-aware TSS.
+  `data.frame` coordinates are still accepted and give identical
+  results.
+
+## Behavioural notes
+
+- Chromosome names are harmonised before cis-window matching
+  (`"chr1"` and `"1"` now match; `"M"`/`"chrM"`/`"MT"` are treated as
+  the mitochondrion). Previously mismatched naming styles silently
+  produced no gene-SNP pairs.
+- Vignettes now build analysis objects from `MultiAssayExperiment`
+  and `GRanges` inputs.
+
+## Package hygiene
+
+- Built vignettes (`inst/doc`) and `build/vignette.rds` are no longer
+  tracked and were removed from the git history; `.gitignore` and
+  `.Rbuildignore` were expanded.
+- Removed stray `Packaged`, `Author` and `Maintainer` fields from
+  `DESCRIPTION` (`Authors@R` is authoritative); `grDevices` and
+  `graphics` are now declared in `Imports`.
+
 # iconic 0.99.3
 
 ## New features

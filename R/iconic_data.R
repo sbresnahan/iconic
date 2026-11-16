@@ -96,7 +96,19 @@
 #' `$n_mediators`, `$has_instrument`, `$has_mediator_instrument`,
 #' `$has_nc`, `$has_path_nc`, `$is_mediation`, `$feature_names`,
 #' `$mediator_names`, `$trained_gan`, `$outcome_type`, and (when
-#' survival) `$surv_time`, `$surv_event`, or (when binary) `$Y_bin`.
+#' survival) `$surv_time`, `$surv_event`, or (when binary) `$Y_bin`,
+#' plus `$scaling` and `$sample_names` (from `names(X)`, else the column
+#' names of `Y`/`M`/`W`, else `S1..Sn`).
+#'
+#' @section Bioconductor containers:
+#' For Bioconductor workflows, the recommended entry point is a
+#' [MultiAssayExperiment::MultiAssayExperiment] passed to
+#' [as_iconic_data()]: omics panels (outcome, mediator, negative
+#' controls, mediator instruments) are experiments and sample-level
+#' variables (exposure, instrument, covariates, survival / binary
+#' outcome) are `colData` columns. [as_MultiAssayExperiment()] converts
+#' an `iconic_data` object back. `iconic_data` itself is the internal,
+#' standardised analysis view that the estimators consume.
 #' @export
 #'
 #' @examples
@@ -163,6 +175,7 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
 
   ## --- X: exposure ---
   if (missing(X) || is.null(X)) stop("X (exposure) is required.")
+  sample_names <- if (is.matrix(X)) colnames(X) else names(X)
   if (is.matrix(X)) {
     if (ncol(X) == 1) {
       X <- as.numeric(X)
@@ -436,6 +449,23 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     covariates <- data.frame(row.names = seq_len(n))[, 0, drop = FALSE]
   }
 
+  ## --- Sample identifiers ---
+  # Taken from names(X), else the column names of the first of Y / M / W
+  # that carries them, else S1..Sn. Used by as_MultiAssayExperiment().
+  if (is.null(sample_names) || length(sample_names) != n) {
+    sample_names <- NULL
+    for (cand in list(Y, M, W)) {
+      if (is.matrix(cand) && !is.null(colnames(cand)) &&
+          ncol(cand) == n) {
+        sample_names <- colnames(cand)
+        break
+      }
+    }
+  }
+  if (is.null(sample_names) || anyDuplicated(sample_names))
+    sample_names <- paste0("S", seq_len(n))
+  sample_names <- as.character(sample_names)
+
   ## --- Feature / mediator names ---
   if (is.null(feature_names)) {
     feature_names <- if (outcome_type == "survival") "survival"
@@ -475,7 +505,8 @@ iconic_data <- function(X, Y = NULL, M = NULL, G = NULL, Gm = NULL, W = NULL,
     surv_time = if (outcome_type == "survival") surv_time else NULL,
     surv_event = if (outcome_type == "survival") surv_event else NULL,
     Y_bin = if (outcome_type == "binary") Y_bin else NULL,
-    scaling = scaling
+    scaling = scaling,
+    sample_names = sample_names
   )
   validate_iconic_data(obj)
   class(obj) <- c("iconic_data", "list")
@@ -519,14 +550,21 @@ validate_iconic_data <- function(obj) {
 #'   vector `X` with named arguments matching [iconic_data()] (Y, M,
 #'   G, Gm, W, W1, W2, covariates, feature_names, mediator_names),
 #'   which delegates to [iconic_data()].
+#' * `MultiAssayExperiment` (recommended for multi-omic data): omics
+#'   panels (outcome, mediator, negative controls, mediator
+#'   instruments) are experiments, sample-level fields (exposure,
+#'   instrument, covariates, survival / binary outcome) are `colData`
+#'   columns, and samples are matched through the `sampleMap`. See
+#'   Details and [as_MultiAssayExperiment()] for the reverse
+#'   conversion.
 #' * `SummarizedExperiment`: extracts the outcome panel from an assay
 #'   and sample-level fields (exposure, instruments, negative
-#'   controls, covariates) from `colData`. Requires the
-#'   SummarizedExperiment package (listed under `Suggests`).
+#'   controls, covariates) from `colData`.
 #'
-#' @param input An object to convert: a list returned by
-#' [load_real_input_data()], an `iconic_data` object, an exposure
-#' vector (named-argument form), or a SummarizedExperiment.
+#' @param input An object to convert: a MultiAssayExperiment, a
+#' SummarizedExperiment, a list returned by [load_real_input_data()],
+#' an `iconic_data` object, or an exposure vector (named-argument
+#' form).
 #' @param ... Named arguments passed to [iconic_data()] when using
 #' the named-argument form, or to the method.
 #'
@@ -580,21 +618,31 @@ as_iconic_data.default <- function(input, ...) {
 
 
 #' @rdname as_iconic_data
-#' @param assay Name or index of the assay of `input` holding the
-#' outcome panel (features x samples). Default `1`. Set to `NULL` for
-#' survival outcomes (when `surv_time`/`surv_event` are colData
-#' columns and no continuous outcome panel is used).
+#' @param assay SummarizedExperiment method: name or index of the
+#' assay of `input` holding the outcome panel (features x samples).
+#' Default `1`. Set to `NULL` for survival outcomes (when
+#' `surv_time`/`surv_event` are colData columns and no continuous
+#' outcome panel is used). MultiAssayExperiment method: name or index
+#' of the assay used within each SummarizedExperiment experiment.
+#' Default `1`.
 #' @param mediator_assay Optional name or index of an assay holding
 #' the mediator panel (mediators x samples).
 #' @param exposure Character: name of the `colData` column holding the
-#' exposure X.
+#' exposure X (MultiAssayExperiment method: or of a single experiment).
+#' For the MultiAssayExperiment method, when `exposure` is missing and
+#' `input` was produced by [as_MultiAssayExperiment()], the roles
+#' recorded in `metadata(input)$iconic` are used (round trip).
 #' @param instrument Optional character: name of the `colData` column
 #' holding the exposure instrument G (e.g. a polygenic score).
 #' @param mediator_instrument Optional character vector of `colData`
 #' column names holding the mediator instrument(s) Gm (one column per
-#' mediator).
+#' mediator); for the MultiAssayExperiment method, alternatively the
+#' name of an experiment (instruments x samples).
 #' @param negative_controls Optional character vector of `colData`
-#' column names forming the negative-control panel W.
+#' column names forming the negative-control panel W; for the
+#' MultiAssayExperiment method, alternatively the name of an experiment
+#' (e.g. principal components from [build_w_pcs()], features x
+#' samples).
 #' @param covariates Optional character vector of `colData` column
 #' names to carry through as covariates.
 #' @param surv_time,surv_event Optional character: names of `colData`
@@ -609,21 +657,19 @@ as_iconic_data.default <- function(input, ...) {
 #' @export
 #'
 #' @examples
-#' if (requireNamespace("SummarizedExperiment", quietly = TRUE)) {
-#'   se <- SummarizedExperiment::SummarizedExperiment(
-#'     assays = list(expr = matrix(rnorm(20 * 60), 20, 60,
-#'                                 dimnames = list(paste0("gene", 1:20),
-#'                                                 paste0("S", 1:60)))),
-#'     colData = S4Vectors::DataFrame(
-#'       bmi = rnorm(60), prs = rnorm(60),
-#'       nc1 = rnorm(60), nc2 = rnorm(60), age = rnorm(60))
-#'   )
-#'   data <- as_iconic_data(se, assay = "expr", exposure = "bmi",
-#'                          instrument = "prs",
-#'                          negative_controls = c("nc1", "nc2"),
-#'                          covariates = "age")
-#'   print(data)
-#' }
+#' se <- SummarizedExperiment::SummarizedExperiment(
+#'   assays = list(expr = matrix(rnorm(20 * 60), 20, 60,
+#'                               dimnames = list(paste0("gene", 1:20),
+#'                                               paste0("S", 1:60)))),
+#'   colData = S4Vectors::DataFrame(
+#'     bmi = rnorm(60), prs = rnorm(60),
+#'     nc1 = rnorm(60), nc2 = rnorm(60), age = rnorm(60))
+#' )
+#' data <- as_iconic_data(se, assay = "expr", exposure = "bmi",
+#'                        instrument = "prs",
+#'                        negative_controls = c("nc1", "nc2"),
+#'                        covariates = "age")
+#' print(data)
 as_iconic_data.SummarizedExperiment <- function(input, assay = 1,
                                                 mediator_assay = NULL,
                                                 exposure,
@@ -636,10 +682,6 @@ as_iconic_data.SummarizedExperiment <- function(input, assay = 1,
                                                 bin_outcome = NULL,
                                                 outcome_type = c("continuous", "survival", "binary"),
                                                 ...) {
-  if (!requireNamespace("SummarizedExperiment", quietly = TRUE))
-    stop("The SummarizedExperiment method requires the ",
-         "SummarizedExperiment package. Install with: ",
-         "BiocManager::install('SummarizedExperiment')")
   outcome_type <- match.arg(outcome_type)
   cd <- SummarizedExperiment::colData(input)
   cd_names <- colnames(cd)

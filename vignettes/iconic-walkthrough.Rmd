@@ -73,7 +73,8 @@ manuscript and technical supplement.
 
 The workflow is six steps:
 
-1. **Standardize** your data with `iconic_data()`.
+1. **Standardize** your data: supply a `MultiAssayExperiment` to
+   `as_iconic_data()` (or plain vectors and matrices to `iconic_data()`).
 2. **Diagnose** which estimators are eligible with `iconic_diagnose()`.
 3. **Estimate** the NDE/NIE with all eligible estimators via `iconic_estimate()`.
 4. **Stress-test** robustness with `iconic_sensitivity()`.
@@ -84,17 +85,82 @@ We illustrate on a simulated mediation panel with a genetic instrument (`G`),
 an exposure (`X`), a mediator panel (`M`), an outcome panel (`Y`), and a panel
 of negative controls (`W`).
 
+## Input as a MultiAssayExperiment
+
+In a real study these components are measured on overlapping sets of samples
+and usually live in different assays: an expression matrix, a methylation
+matrix, a panel of negative-control features, plus sample-level phenotypes and
+genotype-derived scores. The Bioconductor container for exactly this layout is
+`MultiAssayExperiment`: each omics panel is an *experiment* (features x
+samples), and sample-level variables are columns of the shared `colData`. The
+`sampleMap` links each experiment's columns to the primary sample IDs, so
+experiments may cover different subsets of samples or name their columns
+differently.
+
 ```{r workflow-data}
+library(MultiAssayExperiment)
+library(SummarizedExperiment)
+
 set.seed(1)
 dat <- generate_toy_data(n = 200, n_features = 10, seed = 1)
+ids <- paste0("S", seq_len(200))
 
-# Assemble an iconic_data object. Y and M are features x samples matrices;
-# X is a length-n vector; G is an n x n_snps matrix; W is an n x n_ncs matrix.
-idat <- iconic_data(
-  X = dat$X, Y = dat$Y, M = dat$M,
-  G = dat$G, W = dat$W,
-  covariates = dat$synthetic_data
+# Omics panels: features x samples
+se_panel <- function(m, prefix) {
+    m <- as.matrix(m)
+    dimnames(m) <- list(paste0(prefix, seq_len(nrow(m))), ids)
+    SummarizedExperiment(assays = list(value = m))
+}
+mae <- MultiAssayExperiment(
+    experiments = ExperimentList(
+        transcriptome = se_panel(t(dat$Y), "feature_"),  # outcome panel Y
+        mediator      = se_panel(t(dat$M), "mediator_"), # mediator M
+        nc_panel      = se_panel(t(dat$W), "nc_")        # negative controls W
+    ),
+    # Sample-level variables: exposure, instrument (e.g. a PGS), covariates
+    colData = DataFrame(
+        exposure = dat$X,
+        pgs      = dat$G[, 1],
+        dat$synthetic_data,
+        row.names = ids
+    )
 )
+mae
+
+# Map experiments and colData columns to their causal roles
+idat <- as_iconic_data(
+    mae,
+    exposure = "exposure", outcome = "transcriptome", mediator = "mediator",
+    instrument = "pgs", negative_controls = "nc_panel",
+    covariates = c("fetal_sex", "gestational_age")
+)
+idat
+```
+
+`as_iconic_data()` keeps only the samples present in every experiment used
+(and complete for the `colData` columns used), aligns all components to the
+same sample order, and then centres, scales and validates them. The result is
+an `iconic_data` object: the standardised analysis view that every downstream
+function consumes. The same object can be built from plain vectors and
+matrices, which is convenient for simulation studies:
+
+```{r workflow-data-direct}
+idat_direct <- iconic_data(
+    X = dat$X, Y = dat$Y, M = dat$M,
+    G = dat$G[, 1], W = dat$W,
+    covariates = dat$synthetic_data
+)
+all.equal(idat$Y, idat_direct$Y, check.attributes = FALSE)
+```
+
+`as_MultiAssayExperiment()` converts an `iconic_data` object back to a
+`MultiAssayExperiment` (experiments `Y`, `M`, `W`, ...; `colData` columns `X`,
+`G`, covariates), so the exact analysis data can be stored, subset, or shared
+with standard Bioconductor tools and passed straight back to
+`as_iconic_data()`.
+
+```{r workflow-export}
+as_MultiAssayExperiment(idat)
 ```
 
 # Step 1: Diagnose

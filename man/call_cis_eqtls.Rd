@@ -7,26 +7,39 @@
 call_cis_eqtls(
   expression,
   genotypes,
-  gene_pos,
-  snp_pos,
+  gene_pos = NULL,
+  snp_pos = NULL,
   covariates = NULL,
   cis_snps = NULL,
   cis_dist = 1e+06,
   min_maf = 0.01,
   fdr = 0.05,
-  n_cores = 1
+  n_cores = 1,
+  expr_assay = 1L,
+  geno_assay = 1L
 )
 }
 \arguments{
 \item{expression}{Numeric matrix, genes x samples (e.g.
-inverse-normal-transformed TPM).}
+inverse-normal-transformed TPM), or a
+\link[SummarizedExperiment:RangedSummarizedExperiment]{SummarizedExperiment::RangedSummarizedExperiment} whose
+\code{rowRanges()} supply gene coordinates (used when \code{gene_pos} is
+\code{NULL}).}
 
-\item{genotypes}{Numeric dosage matrix, variants x samples (0-2).}
+\item{genotypes}{Numeric dosage matrix, variants x samples (0-2),
+or a \code{RangedSummarizedExperiment} whose \code{rowRanges()} supply
+variant positions (used when \code{snp_pos} is \code{NULL}).}
 
-\item{gene_pos}{data.frame with columns \code{gene}, \code{chr}, and \code{tss}
-(or \code{start}; the gene start is used as the cis-window anchor).}
+\item{gene_pos}{Gene coordinates: a \link[GenomicRanges:GRanges]{GenomicRanges::GRanges} with
+gene IDs as \code{names()} or a \code{gene} metadata column (the TSS is the
+strand-aware 5' end of each range), or a data.frame with columns
+\code{gene}, \code{chr}, and \code{tss} (or \code{start}). May be \code{NULL} when
+\code{expression} is a \code{RangedSummarizedExperiment}.}
 
-\item{snp_pos}{data.frame with columns \code{snp}, \code{chr}, \code{pos}.}
+\item{snp_pos}{Variant positions: a \code{GRanges} with variant IDs as
+\code{names()} or an \code{snp} metadata column, or a data.frame with columns
+\code{snp}, \code{chr}, \code{pos}. May be \code{NULL} when \code{genotypes} is a
+\code{RangedSummarizedExperiment}.}
 
 \item{covariates}{Optional data.frame or matrix (n rows) of
 covariates to partial out (e.g. ancestry PCs, technical factors).}
@@ -47,6 +60,9 @@ the \code{best} table. Default 0.05.}
 
 \item{n_cores}{Integer: parallel workers via \code{\link[parallel:mclapply]{parallel::mclapply()}}.
 Default 1.}
+
+\item{expr_assay, geno_assay}{Name or index of the assay to use when
+\code{expression} / \code{genotypes} is a SummarizedExperiment. Default \code{1}.}
 }
 \value{
 A list with:
@@ -65,6 +81,13 @@ and dosages on \code{covariates} (Frisch-Waugh-Lovell). A lightweight,
 pure-R alternative to MatrixEQTL for preparing mediator-instrument
 candidate sets.
 }
+\details{
+Gene and variant coordinates are handled as
+\link[GenomicRanges:GRanges]{GenomicRanges::GRanges} and cis variants are resolved with
+\code{\link[GenomicRanges:findOverlaps]{GenomicRanges::findOverlaps()}} against symmetric windows of
+\code{cis_dist} bp around each gene's TSS. Chromosome naming styles are
+harmonised first, so \code{"chr1"} and \code{"1"} match.
+}
 \examples{
 n <- 80
 dos <- matrix(rbinom(200 * n, 2, 0.3), nrow = 200,
@@ -77,4 +100,14 @@ gp <- data.frame(gene = paste0("Gene", 1:20), chr = "1",
 sp <- data.frame(snp = rownames(dos), chr = "1", pos = 1:200)
 hits <- call_cis_eqtls(expr, dos, gp, sp)
 head(hits$best)
+
+# Equivalent call with GRanges coordinates (UCSC-style "chr1" names
+# are harmonised with the Ensembl-style "1" used above)
+gp_gr <- GenomicRanges::GRanges("chr1",
+  IRanges::IRanges(seq(1, 191, by = 10), width = 1),
+  gene = paste0("Gene", 1:20))
+sp_gr <- GenomicRanges::GRanges("1", IRanges::IRanges(1:200, width = 1),
+  snp = rownames(dos))
+hits_gr <- call_cis_eqtls(expr, dos, gp_gr, sp_gr)
+identical(hits$best, hits_gr$best)
 }

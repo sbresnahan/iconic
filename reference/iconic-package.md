@@ -16,18 +16,21 @@ fit all eligible estimators, iconic_sensitivity() to sweep instrument
 exogeneity, iconic_recommend() to rank estimators by identification
 strength and robustness, and iconic_prospect() to plan future studies.
 infer_confounding() estimates held-fixed confounding parameters from the
-data. Helper functions construct exposure instruments (polygenic scores
-from GWAS summary statistics or PGS Catalog scoring files), mediator
-instruments (cis-eQTL scans and elastic-net predicted-expression
-composites), and negative-control panels (principal components of
-residualized omics matrices), and data can be imported directly from
-SummarizedExperiment objects. Time-to-event outcomes are supported on
-the Cox log-hazard-ratio and restricted-mean-survival-time scales.
-Binary outcomes are supported on the log-odds-ratio (logistic two-stage
-predictor-substitution outcome stage) and risk-difference (linear
-probability model) scales. The torch package is required for the
-generative texture model (sensitivity and prospective analysis); all
-other functionality works without it.
+data. Multi-omic cohorts are supplied as MultiAssayExperiment objects
+(omics panels as experiments, sample-level exposure, instruments and
+covariates as colData), and analysis data can be exported back to
+MultiAssayExperiment. Helper functions construct exposure instruments
+(polygenic scores from GWAS summary statistics or PGS Catalog scoring
+files), mediator instruments (GenomicRanges-based cis-eQTL scans and
+elastic-net predicted-expression composites from
+RangedSummarizedExperiment or matrix inputs), and negative-control
+panels (principal components of residualized omics matrices).
+Time-to-event outcomes are supported on the Cox log-hazard-ratio and
+restricted-mean-survival-time scales. Binary outcomes are supported on
+the log-odds-ratio (logistic two-stage predictor-substitution outcome
+stage) and risk-difference (linear probability model) scales. The torch
+package is required for the generative texture model (sensitivity and
+prospective analysis); all other functionality works without it.
 
 ## See also
 

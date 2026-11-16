@@ -17,7 +17,7 @@ candidate sets."><meta property="og:image" content="https://seantbresnahan.com/i
 
     <a class="navbar-brand me-2" href="../index.html">iconic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,14 +65,16 @@ candidate sets.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">call_cis_eqtls</span><span class="op">(</span></span>
 <span>  <span class="va">expression</span>,</span>
 <span>  <span class="va">genotypes</span>,</span>
-<span>  <span class="va">gene_pos</span>,</span>
-<span>  <span class="va">snp_pos</span>,</span>
+<span>  gene_pos <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  snp_pos <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cis_snps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cis_dist <span class="op">=</span> <span class="fl">1e+06</span>,</span>
 <span>  min_maf <span class="op">=</span> <span class="fl">0.01</span>,</span>
 <span>  fdr <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  n_cores <span class="op">=</span> <span class="fl">1</span></span>
+<span>  n_cores <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  expr_assay <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  geno_assay <span class="op">=</span> <span class="fl">1L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -82,20 +84,31 @@ candidate sets.</p>
 
 <dl><dt id="arg-expression">expression<a class="anchor" aria-label="anchor" href="#arg-expression"></a></dt>
 <dd><p>Numeric matrix, genes x samples (e.g.
-inverse-normal-transformed TPM).</p></dd>
+inverse-normal-transformed TPM), or a
+<a href="https://rdrr.io/pkg/SummarizedExperiment/man/RangedSummarizedExperiment-class.html" class="external-link">SummarizedExperiment::RangedSummarizedExperiment</a> whose
+<code>rowRanges()</code> supply gene coordinates (used when <code>gene_pos</code> is
+<code>NULL</code>).</p></dd>
 
 
 <dt id="arg-genotypes">genotypes<a class="anchor" aria-label="anchor" href="#arg-genotypes"></a></dt>
-<dd><p>Numeric dosage matrix, variants x samples (0-2).</p></dd>
+<dd><p>Numeric dosage matrix, variants x samples (0-2),
+or a <code>RangedSummarizedExperiment</code> whose <code>rowRanges()</code> supply
+variant positions (used when <code>snp_pos</code> is <code>NULL</code>).</p></dd>
 
 
 <dt id="arg-gene-pos">gene_pos<a class="anchor" aria-label="anchor" href="#arg-gene-pos"></a></dt>
-<dd><p>data.frame with columns <code>gene</code>, <code>chr</code>, and <code>tss</code>
-(or <code>start</code>; the gene start is used as the cis-window anchor).</p></dd>
+<dd><p>Gene coordinates: a <a href="https://rdrr.io/pkg/GenomicRanges/man/GRanges-class.html" class="external-link">GenomicRanges::GRanges</a> with
+gene IDs as <code><a href="https://rdrr.io/r/base/names.html" class="external-link">names()</a></code> or a <code>gene</code> metadata column (the TSS is the
+strand-aware 5' end of each range), or a data.frame with columns
+<code>gene</code>, <code>chr</code>, and <code>tss</code> (or <code>start</code>). May be <code>NULL</code> when
+<code>expression</code> is a <code>RangedSummarizedExperiment</code>.</p></dd>
 
 
 <dt id="arg-snp-pos">snp_pos<a class="anchor" aria-label="anchor" href="#arg-snp-pos"></a></dt>
-<dd><p>data.frame with columns <code>snp</code>, <code>chr</code>, <code>pos</code>.</p></dd>
+<dd><p>Variant positions: a <code>GRanges</code> with variant IDs as
+<code><a href="https://rdrr.io/r/base/names.html" class="external-link">names()</a></code> or an <code>snp</code> metadata column, or a data.frame with columns
+<code>snp</code>, <code>chr</code>, <code>pos</code>. May be <code>NULL</code> when <code>genotypes</code> is a
+<code>RangedSummarizedExperiment</code>.</p></dd>
 
 
 <dt id="arg-covariates">covariates<a class="anchor" aria-label="anchor" href="#arg-covariates"></a></dt>
@@ -129,6 +142,11 @@ the <code>best</code> table. Default 0.05.</p></dd>
 <dd><p>Integer: parallel workers via <code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">parallel::mclapply()</a></code>.
 Default 1.</p></dd>
 
+
+<dt id="arg-expr-assay-geno-assay">expr_assay, geno_assay<a class="anchor" aria-label="anchor" href="#arg-expr-assay-geno-assay"></a></dt>
+<dd><p>Name or index of the assay to use when
+<code>expression</code> / <code>genotypes</code> is a SummarizedExperiment. Default <code>1</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -142,6 +160,14 @@ Default 1.</p></dd>
 
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Gene and variant coordinates are handled as
+<a href="https://rdrr.io/pkg/GenomicRanges/man/GRanges-class.html" class="external-link">GenomicRanges::GRanges</a> and cis variants are resolved with
+<code><a href="https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html" class="external-link">GenomicRanges::findOverlaps()</a></code> against symmetric windows of
+<code>cis_dist</code> bp around each gene's TSS. Chromosome naming styles are
+harmonised first, so <code>"chr1"</code> and <code>"1"</code> match.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -163,6 +189,17 @@ Default 1.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4 Gene12 1:135:A:G -0.5341922 0.1539292 -3.470377 0.0008499441 0.1699888 FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 Gene13  1:84:A:G  0.6162287 0.2008581  3.067981 0.0029627583 0.5443979 FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6 Gene14 1:138:A:G -0.3848913 0.1576141 -2.441985 0.0168701271 0.9901600 FALSE</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Equivalent call with GRanges coordinates (UCSC-style "chr1" names</span></span></span>
+<span class="r-in"><span><span class="co"># are harmonised with the Ensembl-style "1" used above)</span></span></span>
+<span class="r-in"><span><span class="va">gp_gr</span> <span class="op">&lt;-</span> <span class="fu">GenomicRanges</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/GenomicRanges/man/GRanges-class.html" class="external-link">GRanges</a></span><span class="op">(</span><span class="st">"chr1"</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">IRanges</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/IRanges/man/IRanges-constructor.html" class="external-link">IRanges</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">191</span>, by <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>, width <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  gene <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">20</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sp_gr</span> <span class="op">&lt;-</span> <span class="fu">GenomicRanges</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/GenomicRanges/man/GRanges-class.html" class="external-link">GRanges</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="fu">IRanges</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/IRanges/man/IRanges-constructor.html" class="external-link">IRanges</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">200</span>, width <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  snp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">dos</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">hits_gr</span> <span class="op">&lt;-</span> <span class="fu">call_cis_eqtls</span><span class="op">(</span><span class="va">expr</span>, <span class="va">dos</span>, <span class="va">gp_gr</span>, <span class="va">sp_gr</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">hits</span><span class="op">$</span><span class="va">best</span>, <span class="va">hits_gr</span><span class="op">$</span><span class="va">best</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

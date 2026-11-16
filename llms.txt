@@ -194,10 +194,31 @@ set.seed(1)
 # Simulated mediation panel: exposure X, mediator M, outcome Y,
 # genetic instrument G, negative controls W.
 dat <- generate_toy_data(n = 200, n_features = 10, seed = 1)
-idat <- iconic_data(
-  X = dat$X, Y = dat$Y, M = dat$M,
-  G = dat$G, W = dat$W, covariates = dat$synthetic_data
+
+# Assemble the study as a MultiAssayExperiment: omics layers are
+# experiments (features x samples); per-sample variables live in colData.
+library(MultiAssayExperiment)
+ids <- sprintf("S%03d", seq_along(dat$X))
+mat <- function(x, prefix) {
+  x <- t(as.matrix(x))
+  dimnames(x) <- list(sprintf("%s%02d", prefix, seq_len(nrow(x))), ids)
+  x
+}
+mae <- MultiAssayExperiment(
+  experiments = list(transcriptome = mat(dat$Y, "gene"),
+                     nc_panel      = mat(dat$W, "nc")),
+  colData = S4Vectors::DataFrame(
+    exposure = dat$X, mediator = dat$M, pgs = dat$G[, 1],
+    dat$synthetic_data, row.names = ids
+  )
 )
+idat <- as_iconic_data(
+  mae, exposure = "exposure", outcome = "transcriptome",
+  mediator = "mediator", instrument = "pgs",
+  negative_controls = "nc_panel",
+  covariates = c("fetal_sex", "gestational_age")
+)
+# (Plain vectors/matrices work too: iconic_data(X = dat$X, Y = dat$Y, ...).)
 
 # 1. Diagnose which estimators are eligible.
 diag <- iconic_diagnose(idat)
@@ -232,7 +253,10 @@ pros <- iconic_prospect(idat, confounding = "inferred")
 
 | Function | Purpose |
 |----|----|
-| [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md) | Standardize exposure, outcome, mediator, instruments, and negative controls into one object. |
+| [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md) | Build the analysis object from a `MultiAssayExperiment` (recommended) or `SummarizedExperiment`; samples are aligned through the `sampleMap`. |
+| [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md) | Standardize exposure, outcome, mediator, instruments, and negative controls from plain vectors/matrices. |
+| [`as_MultiAssayExperiment()`](https://seantbresnahan.com/iconic/reference/as_MultiAssayExperiment.md) | Export an analysis object back to a `MultiAssayExperiment` (round-trips with [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)). |
+| [`call_cis_eqtls()`](https://seantbresnahan.com/iconic/reference/call_cis_eqtls.md), [`build_mediator_instruments()`](https://seantbresnahan.com/iconic/reference/build_mediator_instruments.md) | Mediator instruments; gene and variant coordinates may be `GRanges` (or the `rowRanges` of a `RangedSummarizedExperiment`). |
 | [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md) | Report instrument strength, negative-control validity (A1, A2, A2’), completeness, and estimator eligibility. |
 | [`iconic_estimate()`](https://seantbresnahan.com/iconic/reference/iconic_estimate.md) | Fit all eligible estimators; return per-feature NDE, NIE, SE, p-value. |
 | [`train_gan_on_real_data()`](https://seantbresnahan.com/iconic/reference/train_gan_on_real_data.md) | Train a hybrid GAN + copula texture model from your data. |
@@ -250,8 +274,9 @@ pros <- iconic_prospect(idat, confounding = "inferred")
 - **Building Instruments and Negative Controls**:
   [`vignette("iconic-instruments")`](https://seantbresnahan.com/iconic/articles/iconic-instruments.md)
   — constructing exposure instruments (GWAS QC, LDpred2, PGS panels),
-  mediator instruments (cis-eQTLs, elastic-net prediction), and
-  negative-control panels, plus SummarizedExperiment interop.
+  mediator instruments (cis-eQTLs, elastic-net prediction) with
+  `GRanges` cis windows, and negative-control panels, plus
+  `MultiAssayExperiment` / `SummarizedExperiment` import.
 - **Diagnosing Estimator Eligibility**:
   [`vignette("iconic-diagnose")`](https://seantbresnahan.com/iconic/articles/iconic-diagnose.md)
   — instrument strength, negative-control validity screens,
@@ -289,10 +314,12 @@ Standardise exposure, outcome, mediator, instrument, and
 negative-control data into the object used across the package, and
 simulate ground-truth panels.
 
-- [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
-  : Construct a standardized data object for ICONIC model selection
 - [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
   : Convert external data containers to iconic_data
+- [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  : Construct a standardized data object for ICONIC model selection
+- [`as_MultiAssayExperiment()`](https://seantbresnahan.com/iconic/reference/as_MultiAssayExperiment.md)
+  : Convert an iconic_data object to a MultiAssayExperiment
 - [`load_real_input_data()`](https://seantbresnahan.com/iconic/reference/load_real_input_data.md)
   : Load and standardise a real multi-omic dataset for GAN training
 - [`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)

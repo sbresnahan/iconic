@@ -170,9 +170,9 @@ calibrations under the stated assumptions.
 sessionInfo()
 ```
 
-    #> R version 4.6.1 (2026-06-24)
+    #> R version 4.6.2 (2026-10-29)
     #> Platform: x86_64-pc-linux-gnu
-    #> Running under: Ubuntu 24.04.4 LTS
+    #> Running under: Ubuntu 24.04.5 LTS
     #> 
     #> Matrix products: default
     #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -191,19 +191,35 @@ sessionInfo()
     #> [1] stats     graphics  grDevices utils     datasets  methods   base     
     #> 
     #> other attached packages:
-    #> [1] iconic_0.99.3    BiocStyle_2.40.0
+    #> [1] iconic_0.99.4    BiocStyle_2.40.0
     #> 
     #> loaded via a namespace (and not attached):
-    #>  [1] cli_3.6.6           knitr_1.51          rlang_1.3.0        
-    #>  [4] xfun_0.60           processx_3.9.0      otel_0.2.0         
-    #>  [7] torch_0.17.0        coro_1.1.0          textshaping_1.0.5  
-    #> [10] jsonlite_2.0.0      bit_4.6.0           htmltools_0.5.9    
-    #> [13] ps_1.9.3            ragg_1.5.2          sass_0.4.10        
-    #> [16] rmarkdown_2.31      evaluate_1.0.5      jquerylib_0.1.4    
-    #> [19] fastmap_1.2.0       yaml_2.3.12         lifecycle_1.0.5    
-    #> [22] bookdown_0.47       BiocManager_1.30.27 compiler_4.6.1     
-    #> [25] fs_2.1.0            Rcpp_1.1.2          systemfonts_1.3.2  
-    #> [28] digest_0.6.39       R6_2.6.1            magrittr_2.0.5     
-    #> [31] callr_3.8.0         bslib_0.12.0        withr_3.0.3        
-    #> [34] bit64_4.8.4         tools_4.6.1         pkgdown_2.2.1      
-    #> [37] cachem_1.1.0        desc_1.4.3
+    #>  [1] sass_0.4.10                 generics_0.1.4             
+    #>  [3] SparseArray_1.12.3          lattice_0.23-1             
+    #>  [5] magrittr_2.0.5              digest_0.6.39              
+    #>  [7] evaluate_1.0.5              grid_4.6.2                 
+    #>  [9] bookdown_0.48               fastmap_1.2.0              
+    #> [11] jsonlite_2.0.0              Matrix_1.7-6               
+    #> [13] processx_3.9.0              torch_0.17.0               
+    #> [15] ps_1.9.3                    BiocManager_1.30.27        
+    #> [17] coro_1.1.0                  textshaping_1.0.5          
+    #> [19] jquerylib_0.1.4             abind_1.4-8                
+    #> [21] cli_3.6.6                   rlang_1.3.0                
+    #> [23] XVector_0.52.0              Biobase_2.72.0             
+    #> [25] bit64_4.8.6                 withr_3.0.3                
+    #> [27] cachem_1.1.0                DelayedArray_0.38.2        
+    #> [29] yaml_2.3.12                 otel_0.3.0                 
+    #> [31] S4Arrays_1.12.1             tools_4.6.2                
+    #> [33] SummarizedExperiment_1.42.0 BiocGenerics_0.58.1        
+    #> [35] MultiAssayExperiment_1.38.0 R6_2.6.1                   
+    #> [37] matrixStats_1.5.0           stats4_4.6.2               
+    #> [39] lifecycle_1.0.5             Seqinfo_1.2.0              
+    #> [41] S4Vectors_0.50.3            fs_2.1.0                   
+    #> [43] IRanges_2.46.0              bit_4.6.0                  
+    #> [45] ragg_1.5.2                  desc_1.4.3                 
+    #> [47] callr_3.8.0                 pkgdown_2.2.1              
+    #> [49] bslib_0.12.0                Rcpp_1.1.2                 
+    #> [51] systemfonts_1.3.2           xfun_0.62                  
+    #> [53] GenomicRanges_1.64.0        MatrixGenerics_1.24.0      
+    #> [55] knitr_1.52                  htmltools_0.5.9            
+    #> [57] rmarkdown_2.32              compiler_4.6.2

@@ -21,7 +21,7 @@ instrument Gm consumed by iconic_data()."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">iconic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,8 +71,8 @@ instrument <code>Gm</code> consumed by <code><a href="iconic_data.html">iconic_d
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">build_mediator_instruments</span><span class="op">(</span></span>
 <span>  <span class="va">expression</span>,</span>
 <span>  <span class="va">genotypes</span>,</span>
-<span>  <span class="va">gene_pos</span>,</span>
-<span>  <span class="va">snp_pos</span>,</span>
+<span>  gene_pos <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  snp_pos <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cis_snps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.3</span>,</span>
@@ -82,7 +82,9 @@ instrument <code>Gm</code> consumed by <code><a href="iconic_data.html">iconic_d
 <span>  cv_p_max <span class="op">=</span> <span class="fl">0.1</span>,</span>
 <span>  n_cores <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  expr_assay <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  geno_assay <span class="op">=</span> <span class="fl">1L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -92,20 +94,31 @@ instrument <code>Gm</code> consumed by <code><a href="iconic_data.html">iconic_d
 
 <dl><dt id="arg-expression">expression<a class="anchor" aria-label="anchor" href="#arg-expression"></a></dt>
 <dd><p>Numeric matrix, genes x samples (e.g.
-inverse-normal-transformed TPM).</p></dd>
+inverse-normal-transformed TPM), or a
+<a href="https://rdrr.io/pkg/SummarizedExperiment/man/RangedSummarizedExperiment-class.html" class="external-link">SummarizedExperiment::RangedSummarizedExperiment</a> whose
+<code>rowRanges()</code> supply gene coordinates (used when <code>gene_pos</code> is
+<code>NULL</code>).</p></dd>
 
 
 <dt id="arg-genotypes">genotypes<a class="anchor" aria-label="anchor" href="#arg-genotypes"></a></dt>
-<dd><p>Numeric dosage matrix, variants x samples (0-2).</p></dd>
+<dd><p>Numeric dosage matrix, variants x samples (0-2),
+or a <code>RangedSummarizedExperiment</code> whose <code>rowRanges()</code> supply
+variant positions (used when <code>snp_pos</code> is <code>NULL</code>).</p></dd>
 
 
 <dt id="arg-gene-pos">gene_pos<a class="anchor" aria-label="anchor" href="#arg-gene-pos"></a></dt>
-<dd><p>data.frame with columns <code>gene</code>, <code>chr</code>, and <code>tss</code>
-(or <code>start</code>).</p></dd>
+<dd><p>Gene coordinates: a <a href="https://rdrr.io/pkg/GenomicRanges/man/GRanges-class.html" class="external-link">GenomicRanges::GRanges</a> with
+gene IDs as <code><a href="https://rdrr.io/r/base/names.html" class="external-link">names()</a></code> or a <code>gene</code> metadata column (the TSS is the
+strand-aware 5' end of each range), or a data.frame with columns
+<code>gene</code>, <code>chr</code>, and <code>tss</code> (or <code>start</code>). May be <code>NULL</code> when
+<code>expression</code> is a <code>RangedSummarizedExperiment</code>.</p></dd>
 
 
 <dt id="arg-snp-pos">snp_pos<a class="anchor" aria-label="anchor" href="#arg-snp-pos"></a></dt>
-<dd><p>data.frame with columns <code>snp</code>, <code>chr</code>, <code>pos</code>.</p></dd>
+<dd><p>Variant positions: a <code>GRanges</code> with variant IDs as
+<code><a href="https://rdrr.io/r/base/names.html" class="external-link">names()</a></code> or an <code>snp</code> metadata column, or a data.frame with columns
+<code>snp</code>, <code>chr</code>, <code>pos</code>. May be <code>NULL</code> when <code>genotypes</code> is a
+<code>RangedSummarizedExperiment</code>.</p></dd>
 
 
 <dt id="arg-covariates">covariates<a class="anchor" aria-label="anchor" href="#arg-covariates"></a></dt>
@@ -158,6 +171,11 @@ Default 1.</p></dd>
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Logical: print progress. Default <code>TRUE</code>.</p></dd>
 
+
+<dt id="arg-expr-assay-geno-assay">expr_assay, geno_assay<a class="anchor" aria-label="anchor" href="#arg-expr-assay-geno-assay"></a></dt>
+<dd><p>Name or index of the assay to use when
+<code>expression</code> / <code>genotypes</code> is a SummarizedExperiment. Default <code>1</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -180,6 +198,9 @@ expression for genes passing the quality filter. Pass to
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Requires the glmnet package (listed under <code>Suggests</code>).</p>
+<p>Coordinates are handled with GenomicRanges exactly as in
+<code><a href="call_cis_eqtls.html">call_cis_eqtls()</a></code>; genes listed more than once in <code>gene_pos</code> are
+skipped.</p>
     </div>
 
     <div class="section level2">

@@ -211,9 +211,9 @@ criteria as for continuous outcomes.
 sessionInfo()
 ```
 
-    #> R version 4.6.1 (2026-06-24)
+    #> R version 4.6.2 (2026-10-29)
     #> Platform: x86_64-pc-linux-gnu
-    #> Running under: Ubuntu 24.04.4 LTS
+    #> Running under: Ubuntu 24.04.5 LTS
     #> 
     #> Matrix products: default
     #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -232,18 +232,32 @@ sessionInfo()
     #> [1] stats     graphics  grDevices utils     datasets  methods   base     
     #> 
     #> other attached packages:
-    #> [1] iconic_0.99.3    BiocStyle_2.40.0
+    #> [1] iconic_0.99.4    BiocStyle_2.40.0
     #> 
     #> loaded via a namespace (and not attached):
-    #>  [1] cli_3.6.6           knitr_1.51          rlang_1.3.0        
-    #>  [4] xfun_0.60           otel_0.2.0          textshaping_1.0.5  
-    #>  [7] jsonlite_2.0.0      htmltools_0.5.9     ragg_1.5.2         
-    #> [10] sass_0.4.10         rmarkdown_2.31      grid_4.6.1         
-    #> [13] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      
-    #> [16] yaml_2.3.12         lifecycle_1.0.5     bookdown_0.47      
-    #> [19] BiocManager_1.30.27 compiler_4.6.1      fs_2.1.0           
-    #> [22] lattice_0.22-9      systemfonts_1.3.2   digest_0.6.39      
-    #> [25] R6_2.6.1            splines_4.6.1       Matrix_1.7-5       
-    #> [28] bslib_0.12.0        withr_3.0.3         tools_4.6.1        
-    #> [31] survival_3.8-6      pkgdown_2.2.1       cachem_1.1.0       
-    #> [34] desc_1.4.3
+    #>  [1] Matrix_1.7-6                jsonlite_2.0.0             
+    #>  [3] compiler_4.6.2              BiocManager_1.30.27        
+    #>  [5] SummarizedExperiment_1.42.0 Biobase_2.72.0             
+    #>  [7] GenomicRanges_1.64.0        jquerylib_0.1.4            
+    #>  [9] splines_4.6.2               systemfonts_1.3.2          
+    #> [11] IRanges_2.46.0              Seqinfo_1.2.0              
+    #> [13] textshaping_1.0.5           yaml_2.3.12                
+    #> [15] fastmap_1.2.0               lattice_0.23-1             
+    #> [17] XVector_0.52.0              R6_2.6.1                   
+    #> [19] S4Arrays_1.12.1             generics_0.1.4             
+    #> [21] MultiAssayExperiment_1.38.0 knitr_1.52                 
+    #> [23] BiocGenerics_0.58.1         DelayedArray_0.38.2        
+    #> [25] bookdown_0.48               desc_1.4.3                 
+    #> [27] MatrixGenerics_1.24.0       bslib_0.12.0               
+    #> [29] rlang_1.3.0                 cachem_1.1.0               
+    #> [31] xfun_0.62                   fs_2.1.0                   
+    #> [33] sass_0.4.10                 otel_0.3.0                 
+    #> [35] SparseArray_1.12.3          cli_3.6.6                  
+    #> [37] withr_3.0.3                 pkgdown_2.2.1              
+    #> [39] grid_4.6.2                  digest_0.6.39              
+    #> [41] lifecycle_1.0.5             S4Vectors_0.50.3           
+    #> [43] evaluate_1.0.5              ragg_1.5.2                 
+    #> [45] survival_3.8-12             abind_1.4-8                
+    #> [47] stats4_4.6.2                rmarkdown_2.32             
+    #> [49] matrixStats_1.5.0           tools_4.6.2                
+    #> [51] htmltools_0.5.9

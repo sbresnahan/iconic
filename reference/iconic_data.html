@@ -11,7 +11,7 @@ all downstream model selection functions consume."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">iconic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -209,7 +209,22 @@ catch and redirect old calls.</p></dd>
 <code>$n_mediators</code>, <code>$has_instrument</code>, <code>$has_mediator_instrument</code>,
 <code>$has_nc</code>, <code>$has_path_nc</code>, <code>$is_mediation</code>, <code>$feature_names</code>,
 <code>$mediator_names</code>, <code>$trained_gan</code>, <code>$outcome_type</code>, and (when
-survival) <code>$surv_time</code>, <code>$surv_event</code>, or (when binary) <code>$Y_bin</code>.</p>
+survival) <code>$surv_time</code>, <code>$surv_event</code>, or (when binary) <code>$Y_bin</code>,
+plus <code>$scaling</code> and <code>$sample_names</code> (from <code>names(X)</code>, else the column
+names of <code>Y</code>/<code>M</code>/<code>W</code>, else <code>S1..Sn</code>).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="bioconductor-containers">Bioconductor containers<a class="anchor" aria-label="anchor" href="#bioconductor-containers"></a></h2>
+
+
+<p>For Bioconductor workflows, the recommended entry point is a
+<a href="https://github.com/waldronlab/MultiAssayExperiment/reference/MultiAssayExperiment.html" class="external-link">MultiAssayExperiment::MultiAssayExperiment</a> passed to
+<code><a href="as_iconic_data.html">as_iconic_data()</a></code>: omics panels (outcome, mediator, negative
+controls, mediator instruments) are experiments and sample-level
+variables (exposure, instrument, covariates, survival / binary
+outcome) are <code>colData</code> columns. <code><a href="as_MultiAssayExperiment.html">as_MultiAssayExperiment()</a></code> converts
+an <code>iconic_data</code> object back. <code>iconic_data</code> itself is the internal,
+standardised analysis view that the estimators consume.</p>
     </div>
 
     <div class="section level2">

@@ -6,10 +6,12 @@ Standardise exposure, outcome, mediator, instrument, and
 negative-control data into the object used across the package, and
 simulate ground-truth panels.
 
-- [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
-  : Construct a standardized data object for ICONIC model selection
 - [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
   : Convert external data containers to iconic_data
+- [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)
+  : Construct a standardized data object for ICONIC model selection
+- [`as_MultiAssayExperiment()`](https://seantbresnahan.com/iconic/reference/as_MultiAssayExperiment.md)
+  : Convert an iconic_data object to a MultiAssayExperiment
 - [`load_real_input_data()`](https://seantbresnahan.com/iconic/reference/load_real_input_data.md)
   : Load and standardise a real multi-omic dataset for GAN training
 - [`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)

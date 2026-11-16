@@ -16,8 +16,8 @@ consumed by
 build_mediator_instruments(
   expression,
   genotypes,
-  gene_pos,
-  snp_pos,
+  gene_pos = NULL,
+  snp_pos = NULL,
   covariates = NULL,
   cis_snps = NULL,
   alpha = 0.3,
@@ -27,7 +27,9 @@ build_mediator_instruments(
   cv_p_max = 0.1,
   n_cores = 1,
   seed = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  expr_assay = 1L,
+  geno_assay = 1L
 )
 ```
 
@@ -35,19 +37,34 @@ build_mediator_instruments(
 
 - expression:
 
-  Numeric matrix, genes x samples (e.g. inverse-normal-transformed TPM).
+  Numeric matrix, genes x samples (e.g. inverse-normal-transformed TPM),
+  or a
+  [SummarizedExperiment::RangedSummarizedExperiment](https://rdrr.io/pkg/SummarizedExperiment/man/RangedSummarizedExperiment-class.html)
+  whose `rowRanges()` supply gene coordinates (used when `gene_pos` is
+  `NULL`).
 
 - genotypes:
 
-  Numeric dosage matrix, variants x samples (0-2).
+  Numeric dosage matrix, variants x samples (0-2), or a
+  `RangedSummarizedExperiment` whose `rowRanges()` supply variant
+  positions (used when `snp_pos` is `NULL`).
 
 - gene_pos:
 
-  data.frame with columns `gene`, `chr`, and `tss` (or `start`).
+  Gene coordinates: a
+  [GenomicRanges::GRanges](https://rdrr.io/pkg/GenomicRanges/man/GRanges-class.html)
+  with gene IDs as [`names()`](https://rdrr.io/r/base/names.html) or a
+  `gene` metadata column (the TSS is the strand-aware 5' end of each
+  range), or a data.frame with columns `gene`, `chr`, and `tss` (or
+  `start`). May be `NULL` when `expression` is a
+  `RangedSummarizedExperiment`.
 
 - snp_pos:
 
-  data.frame with columns `snp`, `chr`, `pos`.
+  Variant positions: a `GRanges` with variant IDs as
+  [`names()`](https://rdrr.io/r/base/names.html) or an `snp` metadata
+  column, or a data.frame with columns `snp`, `chr`, `pos`. May be
+  `NULL` when `genotypes` is a `RangedSummarizedExperiment`.
 
 - covariates:
 
@@ -99,6 +116,11 @@ build_mediator_instruments(
 
   Logical: print progress. Default `TRUE`.
 
+- expr_assay, geno_assay:
+
+  Name or index of the assay to use when `expression` / `genotypes` is a
+  SummarizedExperiment. Default `1`.
+
 ## Value
 
 A list with:
@@ -123,6 +145,10 @@ A list with:
 ## Details
 
 Requires the glmnet package (listed under `Suggests`).
+
+Coordinates are handled with GenomicRanges exactly as in
+[`call_cis_eqtls()`](https://seantbresnahan.com/iconic/reference/call_cis_eqtls.md);
+genes listed more than once in `gene_pos` are skipped.
 
 ## Examples
 

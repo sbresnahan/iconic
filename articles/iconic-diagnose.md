@@ -260,9 +260,9 @@ assumptions are met before proceeding.
 sessionInfo()
 ```
 
-    #> R version 4.6.1 (2026-06-24)
+    #> R version 4.6.2 (2026-10-29)
     #> Platform: x86_64-pc-linux-gnu
-    #> Running under: Ubuntu 24.04.4 LTS
+    #> Running under: Ubuntu 24.04.5 LTS
     #> 
     #> Matrix products: default
     #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -281,16 +281,31 @@ sessionInfo()
     #> [1] stats     graphics  grDevices utils     datasets  methods   base     
     #> 
     #> other attached packages:
-    #> [1] iconic_0.99.3    BiocStyle_2.40.0
+    #> [1] iconic_0.99.4    BiocStyle_2.40.0
     #> 
     #> loaded via a namespace (and not attached):
-    #>  [1] cli_3.6.6           knitr_1.51          rlang_1.3.0        
-    #>  [4] xfun_0.60           otel_0.2.0          textshaping_1.0.5  
-    #>  [7] jsonlite_2.0.0      htmltools_0.5.9     ragg_1.5.2         
-    #> [10] sass_0.4.10         rmarkdown_2.31      evaluate_1.0.5     
-    #> [13] jquerylib_0.1.4     fastmap_1.2.0       yaml_2.3.12        
-    #> [16] lifecycle_1.0.5     bookdown_0.47       BiocManager_1.30.27
-    #> [19] compiler_4.6.1      fs_2.1.0            systemfonts_1.3.2  
-    #> [22] digest_0.6.39       R6_2.6.1            bslib_0.12.0       
-    #> [25] withr_3.0.3         tools_4.6.1         pkgdown_2.2.1      
-    #> [28] cachem_1.1.0        desc_1.4.3
+    #>  [1] Matrix_1.7-6                jsonlite_2.0.0             
+    #>  [3] compiler_4.6.2              BiocManager_1.30.27        
+    #>  [5] SummarizedExperiment_1.42.0 Biobase_2.72.0             
+    #>  [7] GenomicRanges_1.64.0        jquerylib_0.1.4            
+    #>  [9] systemfonts_1.3.2           IRanges_2.46.0             
+    #> [11] Seqinfo_1.2.0               textshaping_1.0.5          
+    #> [13] yaml_2.3.12                 fastmap_1.2.0              
+    #> [15] lattice_0.23-1              XVector_0.52.0             
+    #> [17] R6_2.6.1                    S4Arrays_1.12.1            
+    #> [19] generics_0.1.4              MultiAssayExperiment_1.38.0
+    #> [21] knitr_1.52                  BiocGenerics_0.58.1        
+    #> [23] DelayedArray_0.38.2         bookdown_0.48              
+    #> [25] desc_1.4.3                  MatrixGenerics_1.24.0      
+    #> [27] bslib_0.12.0                rlang_1.3.0                
+    #> [29] cachem_1.1.0                xfun_0.62                  
+    #> [31] fs_2.1.0                    sass_0.4.10                
+    #> [33] otel_0.3.0                  SparseArray_1.12.3         
+    #> [35] cli_3.6.6                   withr_3.0.3                
+    #> [37] pkgdown_2.2.1               grid_4.6.2                 
+    #> [39] digest_0.6.39               lifecycle_1.0.5            
+    #> [41] S4Vectors_0.50.3            evaluate_1.0.5             
+    #> [43] ragg_1.5.2                  abind_1.4-8                
+    #> [45] stats4_4.6.2                rmarkdown_2.32             
+    #> [47] matrixStats_1.5.0           tools_4.6.2                
+    #> [49] htmltools_0.5.9

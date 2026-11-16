@@ -31,7 +31,12 @@ external resources into an `iconic_data` object:
   [`apply_fusion_weights()`](https://seantbresnahan.com/iconic/reference/apply_fusion_weights.md)
   for negative-control panel construction;
 - [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
-  for importing a `SummarizedExperiment` directly.
+  for importing a `MultiAssayExperiment` (or a single
+  `SummarizedExperiment`) directly.
+
+Genomic coordinates are handled with Bioconductor’s `GenomicRanges`:
+gene models and variant positions can be supplied as `GRanges`, or
+carried in the `rowRanges()` of a `RangedSummarizedExperiment`.
 
 All examples use small simulated inputs so the vignette builds quickly;
 on real data the same calls apply unchanged.
@@ -189,30 +194,76 @@ check_instrument_strength(G, X, covariates = pcs)
 
 [`call_cis_eqtls()`](https://seantbresnahan.com/iconic/reference/call_cis_eqtls.md)
 residualises expression and genotypes on covariates (FWL) and runs a
-per-gene cis scan with Benjamini-Hochberg correction within gene.
+per-gene cis scan with Benjamini-Hochberg correction within gene. Cis
+variants are found with
+[`GenomicRanges::findOverlaps()`](https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html)
+between variant positions and windows of `cis_dist` bp around each
+gene’s transcription start site (TSS; the strand-aware 5’ end of the
+gene model).
+
+The most natural inputs are `RangedSummarizedExperiment`s: an expression
+object whose `rowRanges()` are the gene models, and a dosage object
+whose `rowRanges()` are the variant positions. Chromosome naming styles
+are harmonised before overlapping, so UCSC-style (`"chr1"`) gene
+annotation and Ensembl/PLINK-style (`"1"`) genotypes can be combined
+directly.
 
 ``` r
 
+library(GenomicRanges)
+library(SummarizedExperiment)
+
+set.seed(7)
 n <- 80
 dos <- matrix(rbinom(200 * n, 2, 0.3), nrow = 200,
               dimnames = list(paste0("1:", 1:200, ":A:G"), NULL))
 expr <- matrix(rnorm(20 * n), nrow = 20,
                dimnames = list(paste0("Gene", 1:20), NULL))
 expr[1, ] <- expr[1, ] + 0.5 * dos[5, ]   # one true cis-eQTL
-gp <- data.frame(gene = paste0("Gene", 1:20), chr = "1",
-                 tss = seq(1, 191, by = 10))
-sp <- data.frame(snp = rownames(dos), chr = "1", pos = 1:200)
-hits <- call_cis_eqtls(expr, dos, gp, sp)
+
+# Gene models (UCSC style) and variant positions (Ensembl style)
+genes <- GRanges("chr1", IRanges(start = seq(1, 191, by = 10), width = 5),
+                 strand = "+")
+names(genes) <- rownames(expr)
+variants <- GRanges("1", IRanges(start = 1:200, width = 1))
+names(variants) <- rownames(dos)
+
+rse_expr <- SummarizedExperiment(assays = list(expr = expr),
+                                 rowRanges = genes)
+rse_geno <- SummarizedExperiment(assays = list(dosage = dos),
+                                 rowRanges = variants)
+hits <- call_cis_eqtls(rse_expr, rse_geno, cis_dist = 20)
 head(hits$best)
 ```
 
-    #>     gene       snp       beta        se         t            p          q  pass
-    #> 1  Gene1   1:5:A:G  0.7381040 0.1822037  4.050982 0.0001195414 0.02390828  TRUE
-    #> 2 Gene10  1:16:A:G -0.3992653 0.1416802 -2.818075 0.0061192857 0.65270286 FALSE
-    #> 3 Gene11   1:7:A:G  0.4951092 0.1624197  3.048331 0.0031411347 0.62822693 FALSE
-    #> 4 Gene12  1:18:A:G -0.6368031 0.2365183 -2.692406 0.0086788359 0.48041135 FALSE
-    #> 5 Gene13 1:175:A:G -0.6659835 0.2183781 -3.049682 0.0031285656 0.57001683 FALSE
-    #> 6 Gene14 1:115:A:G  0.5094369 0.1871389  2.722240 0.0079954784 0.61274755 FALSE
+    #>     gene       snp       beta        se         t            p           q
+    #> 1  Gene1   1:5:A:G  0.6181967 0.1640093  3.769278 0.0003165763 0.006648103
+    #> 2 Gene10  1:74:A:G -0.4362906 0.1768633 -2.466824 0.0158241401 0.504412540
+    #> 3 Gene11  1:92:A:G -0.3887910 0.1881792 -2.066068 0.0421420269 0.800644121
+    #> 4 Gene12 1:125:A:G -0.3453209 0.1819631 -1.897753 0.0614287383 0.754174506
+    #> 5 Gene13 1:125:A:G  0.3883823 0.1641637  2.365823 0.0204733125 0.465017272
+    #> 6 Gene14 1:122:A:G -0.3436106 0.1642469 -2.092037 0.0396884248 0.636760165
+    #>    pass
+    #> 1  TRUE
+    #> 2 FALSE
+    #> 3 FALSE
+    #> 4 FALSE
+    #> 5 FALSE
+    #> 6 FALSE
+
+Plain matrices with `GRanges` coordinates, or with the legacy data.frame
+coordinates (`gene`/`chr`/`tss` and `snp`/`chr`/`pos` columns), give
+identical results:
+
+``` r
+
+gp <- data.frame(gene = names(genes), chr = "1", tss = start(genes))
+sp <- data.frame(snp = names(variants), chr = "1", pos = start(variants))
+hits_df <- call_cis_eqtls(expr, dos, gp, sp, cis_dist = 20)
+identical(hits$best, hits_df$best)
+```
+
+    #> [1] TRUE
 
 ### Build a genetically predicted mediator (GReX-style)
 
@@ -233,10 +284,11 @@ dos <- matrix(rbinom(p * n, 2, 0.3), nrow = p,
 expr <- matrix(rnorm(4 * n), nrow = 4,
                dimnames = list(paste0("Gene", 1:4), paste0("S", 1:n)))
 expr[1, ] <- expr[1, ] + 0.9 * scale(dos[5, ]) + 0.9 * scale(dos[15, ])
-gp <- data.frame(gene = paste0("Gene", 1:4), chr = "1",
-                 tss = c(5, 25, 45, 65))
-sp <- data.frame(snp = rownames(dos), chr = "1", pos = 1:p)
-fit <- build_mediator_instruments(expr, dos, gp, sp, seed = 1)
+gene_tss <- GRanges("1", IRanges(start = c(5, 25, 45, 65), width = 1))
+names(gene_tss) <- rownames(expr)
+snp_pos <- GRanges("1", IRanges(start = 1:p, width = 1))
+names(snp_pos) <- rownames(dos)
+fit <- build_mediator_instruments(expr, dos, gene_tss, snp_pos, seed = 1)
 fit$qc
 ```
 
@@ -338,22 +390,80 @@ dim(out$predicted)
 
     #> [1]  2 50
 
-## Importing a SummarizedExperiment
+## Importing Bioconductor containers
 
-For Bioconductor-native workflows,
+### MultiAssayExperiment
+
+Multi-omic cohorts are best supplied as a `MultiAssayExperiment`. Each
+omics panel is an experiment (features x samples) and each sample-level
+variable is a `colData` column;
 [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
-dispatches on `SummarizedExperiment`: the primary assay becomes the
-outcome panel `Y`, an optional second assay becomes the mediator panel
-`M`, and `colData` columns supply the exposure, instruments, negative
-controls, covariates, and survival endpoints.
+maps them to their causal roles by name. Here the outcome is a
+transcriptome panel, the mediator is a methylation probe, the negative
+controls are principal components of a residualised panel (as returned
+by
+[`build_w_pcs()`](https://seantbresnahan.com/iconic/reference/build_w_pcs.md)),
+the exposure instrument is a polygenic score, and the mediator
+instrument is the genetically predicted mediator from
+[`build_mediator_instruments()`](https://seantbresnahan.com/iconic/reference/build_mediator_instruments.md).
+The methylation assay deliberately covers only 55 of the 60 samples:
+[`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
+uses the `sampleMap` to keep the 55 samples shared by every experiment
+used and to align their order.
 
 ``` r
 
-se <- SummarizedExperiment::SummarizedExperiment(
+library(MultiAssayExperiment)
+set.seed(3)
+ids <- paste0("S", 1:60)
+mk <- function(p, prefix, cols = ids) {
+    matrix(rnorm(p * length(cols)), p, length(cols),
+           dimnames = list(paste0(prefix, seq_len(p)), cols))
+}
+mae <- MultiAssayExperiment(
+    experiments = ExperimentList(
+        rna    = SummarizedExperiment(assays = list(expr = mk(20, "gene"))),
+        methyl = SummarizedExperiment(assays = list(m = mk(1, "cg", ids[6:60]))),
+        nc_pcs = SummarizedExperiment(assays = list(pcs = mk(5, "PC")))
+    ),
+    colData = DataFrame(bmi = rnorm(60), prs = rnorm(60),
+                        grex_cg1 = rnorm(60), age = rnorm(60),
+                        row.names = ids)
+)
+data <- as_iconic_data(mae, exposure = "bmi", outcome = "rna",
+                       mediator = "methyl", instrument = "prs",
+                       mediator_instrument = "grex_cg1",
+                       negative_controls = "nc_pcs", covariates = "age")
+print(data)
+```
+
+    #> <iconic_data> 55 samples, 20 outcome features, 1 mediator(s)
+    #>  Available: G (exposure instrument), Gm (mediator instrument), W (negative controls), W1/W2 (path-specific NCs) 
+    #>  Covariates: age 
+    #>  Mode: mediation
+
+Each role accepts either an experiment name or `colData` column name(s),
+so a small negative-control set can equally be given as `colData`
+columns, and path-specific negative-control panels are supplied with
+`W1 =` / `W2 =`.
+[`as_MultiAssayExperiment()`](https://seantbresnahan.com/iconic/reference/as_MultiAssayExperiment.md)
+performs the reverse conversion.
+
+### SummarizedExperiment
+
+A single-assay study can be supplied as a `SummarizedExperiment`: the
+selected assay becomes the outcome panel `Y`, an optional second assay
+becomes the mediator panel `M`, and `colData` columns supply the
+exposure, instruments, negative controls, covariates, and survival
+endpoints.
+
+``` r
+
+se <- SummarizedExperiment(
   assays = list(expr = matrix(rnorm(20 * 60), 20, 60,
                               dimnames = list(paste0("gene", 1:20),
                                               paste0("S", 1:60)))),
-  colData = S4Vectors::DataFrame(
+  colData = DataFrame(
     bmi = rnorm(60), prs = rnorm(60),
     nc1 = rnorm(60), nc2 = rnorm(60), age = rnorm(60))
 )
@@ -382,9 +492,9 @@ and the sensitivity machinery described in
 sessionInfo()
 ```
 
-    #> R version 4.6.1 (2026-06-24)
+    #> R version 4.6.2 (2026-10-29)
     #> Platform: x86_64-pc-linux-gnu
-    #> Running under: Ubuntu 24.04.4 LTS
+    #> Running under: Ubuntu 24.04.5 LTS
     #> 
     #> Matrix products: default
     #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -400,52 +510,42 @@ sessionInfo()
     #> tzcode source: system (glibc)
     #> 
     #> attached base packages:
-    #> [1] stats     graphics  grDevices utils     datasets  methods   base     
+    #> [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+    #> [8] base     
     #> 
     #> other attached packages:
-    #> [1] doRNG_1.8.6.3    rngtools_1.5.2   foreach_1.5.2    iconic_0.99.3   
-    #> [5] BiocStyle_2.40.0
+    #>  [1] MultiAssayExperiment_1.38.0 SummarizedExperiment_1.42.0
+    #>  [3] Biobase_2.72.0              MatrixGenerics_1.24.0      
+    #>  [5] matrixStats_1.5.0           GenomicRanges_1.64.0       
+    #>  [7] Seqinfo_1.2.0               IRanges_2.46.0             
+    #>  [9] S4Vectors_0.50.3            BiocGenerics_0.58.1        
+    #> [11] generics_0.1.4              doRNG_1.8.6.3              
+    #> [13] rngtools_1.5.2              foreach_1.5.2              
+    #> [15] iconic_0.99.4               BiocStyle_2.40.0           
     #> 
     #> loaded via a namespace (and not attached):
-    #>  [1] SummarizedExperiment_1.42.0 gtable_0.3.6               
-    #>  [3] shape_1.4.6.1               xfun_0.60                  
-    #>  [5] bslib_0.12.0                ggplot2_4.0.3              
-    #>  [7] Biobase_2.72.0              lattice_0.22-9             
-    #>  [9] bigassertr_0.2.0            ps_1.9.3                   
-    #> [11] vctrs_0.7.3                 tools_4.6.1                
-    #> [13] generics_0.1.4              stats4_4.6.1               
-    #> [15] parallel_4.6.1              tibble_3.3.1               
-    #> [17] pkgconfig_2.0.3             Matrix_1.7-5               
-    #> [19] data.table_1.18.6.1         RColorBrewer_1.1-3         
-    #> [21] bigstatsr_1.6.2             S7_0.2.2                   
-    #> [23] desc_1.4.3                  S4Vectors_0.50.1           
-    #> [25] lifecycle_1.0.5             compiler_4.6.1             
-    #> [27] farver_2.1.2                textshaping_1.0.5          
-    #> [29] bigparallelr_0.3.2          Seqinfo_1.2.0              
-    #> [31] codetools_0.2-20            htmltools_0.5.9            
-    #> [33] sass_0.4.10                 yaml_2.3.12                
-    #> [35] glmnet_5.0                  pillar_1.11.1              
-    #> [37] pkgdown_2.2.1               jquerylib_0.1.4            
-    #> [39] cachem_1.1.0                DelayedArray_0.38.2        
-    #> [41] iterators_1.0.14            abind_1.4-8                
-    #> [43] tidyselect_1.2.1            digest_0.6.39              
-    #> [45] dplyr_1.2.1                 bookdown_0.47              
-    #> [47] splines_4.6.1               cowplot_1.2.0              
-    #> [49] fastmap_1.2.0               grid_4.6.1                 
-    #> [51] cli_3.6.6                   SparseArray_1.12.2         
-    #> [53] magrittr_2.0.5              S4Arrays_1.12.0            
-    #> [55] survival_3.8-6              withr_3.0.3                
-    #> [57] scales_1.4.0                XVector_0.52.0             
-    #> [59] rmarkdown_2.31              bigsparser_0.7.3           
-    #> [61] matrixStats_1.5.0           rmio_0.4.0                 
-    #> [63] bit_4.6.0                   otel_0.2.0                 
-    #> [65] ragg_1.5.2                  evaluate_1.0.5             
-    #> [67] ff_4.5.3                    knitr_1.51                 
-    #> [69] GenomicRanges_1.64.0        IRanges_2.46.0             
-    #> [71] doParallel_1.0.17           irlba_2.3.7                
-    #> [73] rlang_1.3.0                 Rcpp_1.1.2                 
-    #> [75] glue_1.8.1                  BiocManager_1.30.27        
-    #> [77] BiocGenerics_0.58.1         jsonlite_2.0.0             
-    #> [79] R6_2.6.1                    bigsnpr_1.12.21            
-    #> [81] systemfonts_1.3.2           MatrixGenerics_1.24.0      
-    #> [83] fs_2.1.0                    flock_0.7
+    #>  [1] gtable_0.3.6        shape_1.4.6.1       xfun_0.62          
+    #>  [4] bslib_0.12.0        ggplot2_4.0.4       lattice_0.23-1     
+    #>  [7] bigassertr_0.2.0    ps_1.9.3            vctrs_0.7.3        
+    #> [10] tools_4.6.2         parallel_4.6.2      tibble_3.3.1       
+    #> [13] pkgconfig_2.0.3     Matrix_1.7-6        data.table_1.18.6.1
+    #> [16] RColorBrewer_1.1-3  bigstatsr_1.6.2     S7_0.2.2           
+    #> [19] desc_1.4.3          lifecycle_1.0.5     compiler_4.6.2     
+    #> [22] farver_2.1.2        textshaping_1.0.5   bigparallelr_0.3.2 
+    #> [25] codetools_0.2-20    htmltools_0.5.9     sass_0.4.10        
+    #> [28] yaml_2.3.12         glmnet_5.2          pillar_1.11.1      
+    #> [31] pkgdown_2.2.1       jquerylib_0.1.4     DelayedArray_0.38.2
+    #> [34] cachem_1.1.0        iterators_1.0.14    abind_1.4-8        
+    #> [37] tidyselect_1.2.1    digest_0.6.39       dplyr_1.2.1        
+    #> [40] bookdown_0.48       splines_4.6.2       cowplot_1.2.0      
+    #> [43] fastmap_1.2.0       grid_4.6.2          SparseArray_1.12.3 
+    #> [46] cli_3.6.6           magrittr_2.0.5      S4Arrays_1.12.1    
+    #> [49] survival_3.8-12     withr_3.0.3         scales_1.4.0       
+    #> [52] XVector_0.52.0      rmarkdown_2.32      bigsparser_0.7.3   
+    #> [55] rmio_0.4.0          bit_4.6.0           otel_0.3.0         
+    #> [58] ragg_1.5.2          evaluate_1.0.5      ff_4.5.3           
+    #> [61] knitr_1.52          doParallel_1.0.17   irlba_2.4.1        
+    #> [64] rlang_1.3.0         Rcpp_1.1.2          glue_1.8.1         
+    #> [67] BiocManager_1.30.27 jsonlite_2.0.0      R6_2.6.1           
+    #> [70] bigsnpr_1.12.21     systemfonts_1.3.2   fs_2.1.0           
+    #> [73] flock_0.7

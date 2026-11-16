@@ -161,7 +161,23 @@ An `iconic_data` S3 object: a named list with `$X`, `$Y`, `$M`, `$G`,
 `$n_mediators`, `$has_instrument`, `$has_mediator_instrument`,
 `$has_nc`, `$has_path_nc`, `$is_mediation`, `$feature_names`,
 `$mediator_names`, `$trained_gan`, `$outcome_type`, and (when survival)
-`$surv_time`, `$surv_event`, or (when binary) `$Y_bin`.
+`$surv_time`, `$surv_event`, or (when binary) `$Y_bin`, plus `$scaling`
+and `$sample_names` (from `names(X)`, else the column names of
+`Y`/`M`/`W`, else `S1..Sn`).
+
+## Bioconductor containers
+
+For Bioconductor workflows, the recommended entry point is a
+[MultiAssayExperiment::MultiAssayExperiment](https://github.com/waldronlab/MultiAssayExperiment/reference/MultiAssayExperiment.html)
+passed to
+[`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md):
+omics panels (outcome, mediator, negative controls, mediator
+instruments) are experiments and sample-level variables (exposure,
+instrument, covariates, survival / binary outcome) are `colData`
+columns.
+[`as_MultiAssayExperiment()`](https://seantbresnahan.com/iconic/reference/as_MultiAssayExperiment.md)
+converts an `iconic_data` object back. `iconic_data` itself is the
+internal, standardised analysis view that the estimators consume.
 
 ## Examples
 

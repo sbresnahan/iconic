@@ -38,5 +38,5 @@ b <- matrix(runif(200, 0.01, 0.99), nrow = 20,
             dimnames = list(paste0("cg", 1:20), paste0("S", 1:10)))
 m <- beta_to_m(b)
 range(m)
-#> [1] -6.061127  6.545274
+#> [1] -6.17742  6.46099
 ```

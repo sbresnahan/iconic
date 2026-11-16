@@ -53,8 +53,10 @@ accompanying manuscript and technical supplement.
 
 The workflow is six steps:
 
-1.  **Standardize** your data with
-    [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md).
+1.  **Standardize** your data: supply a `MultiAssayExperiment` to
+    [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
+    (or plain vectors and matrices to
+    [`iconic_data()`](https://seantbresnahan.com/iconic/reference/iconic_data.md)).
 2.  **Diagnose** which estimators are eligible with
     [`iconic_diagnose()`](https://seantbresnahan.com/iconic/reference/iconic_diagnose.md).
 3.  **Estimate** the NDE/NIE with all eligible estimators via
@@ -70,19 +72,128 @@ We illustrate on a simulated mediation panel with a genetic instrument
 (`G`), an exposure (`X`), a mediator panel (`M`), an outcome panel
 (`Y`), and a panel of negative controls (`W`).
 
+### Input as a MultiAssayExperiment
+
+In a real study these components are measured on overlapping sets of
+samples and usually live in different assays: an expression matrix, a
+methylation matrix, a panel of negative-control features, plus
+sample-level phenotypes and genotype-derived scores. The Bioconductor
+container for exactly this layout is `MultiAssayExperiment`: each omics
+panel is an *experiment* (features x samples), and sample-level
+variables are columns of the shared `colData`. The `sampleMap` links
+each experiment’s columns to the primary sample IDs, so experiments may
+cover different subsets of samples or name their columns differently.
+
 ``` r
+
+library(MultiAssayExperiment)
+library(SummarizedExperiment)
 
 set.seed(1)
 dat <- generate_toy_data(n = 200, n_features = 10, seed = 1)
+ids <- paste0("S", seq_len(200))
 
-# Assemble an iconic_data object. Y and M are features x samples matrices;
-# X is a length-n vector; G is an n x n_snps matrix; W is an n x n_ncs matrix.
-idat <- iconic_data(
-  X = dat$X, Y = dat$Y, M = dat$M,
-  G = dat$G, W = dat$W,
-  covariates = dat$synthetic_data
+# Omics panels: features x samples
+se_panel <- function(m, prefix) {
+    m <- as.matrix(m)
+    dimnames(m) <- list(paste0(prefix, seq_len(nrow(m))), ids)
+    SummarizedExperiment(assays = list(value = m))
+}
+mae <- MultiAssayExperiment(
+    experiments = ExperimentList(
+        transcriptome = se_panel(t(dat$Y), "feature_"),  # outcome panel Y
+        mediator      = se_panel(t(dat$M), "mediator_"), # mediator M
+        nc_panel      = se_panel(t(dat$W), "nc_")        # negative controls W
+    ),
+    # Sample-level variables: exposure, instrument (e.g. a PGS), covariates
+    colData = DataFrame(
+        exposure = dat$X,
+        pgs      = dat$G[, 1],
+        dat$synthetic_data,
+        row.names = ids
+    )
 )
+mae
 ```
+
+    #> A MultiAssayExperiment object of 3 listed
+    #>  experiments with user-defined names and respective classes.
+    #>  Containing an ExperimentList class object of length 3:
+    #>  [1] transcriptome: SummarizedExperiment with 10 rows and 200 columns
+    #>  [2] mediator: SummarizedExperiment with 1 rows and 200 columns
+    #>  [3] nc_panel: SummarizedExperiment with 10 rows and 200 columns
+    #> Functionality:
+    #>  experiments() - obtain the ExperimentList instance
+    #>  colData() - the primary/phenotype DataFrame
+    #>  sampleMap() - the sample coordination DataFrame
+    #>  `$`, `[`, `[[` - extract colData columns, subset, or experiment
+    #>  *Format() - convert into a long or wide DataFrame
+    #>  assays() - convert ExperimentList to a SimpleList of matrices
+    #>  exportClass() - save data to flat files
+
+``` r
+
+# Map experiments and colData columns to their causal roles
+idat <- as_iconic_data(
+    mae,
+    exposure = "exposure", outcome = "transcriptome", mediator = "mediator",
+    instrument = "pgs", negative_controls = "nc_panel",
+    covariates = c("fetal_sex", "gestational_age")
+)
+idat
+```
+
+    #> <iconic_data> 200 samples, 10 outcome features, 1 mediator(s)
+    #>  Available: G (exposure instrument), W (negative controls), W1/W2 (path-specific NCs) 
+    #>  Covariates: fetal_sex, gestational_age 
+    #>  Mode: mediation
+
+[`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
+keeps only the samples present in every experiment used (and complete
+for the `colData` columns used), aligns all components to the same
+sample order, and then centres, scales and validates them. The result is
+an `iconic_data` object: the standardised analysis view that every
+downstream function consumes. The same object can be built from plain
+vectors and matrices, which is convenient for simulation studies:
+
+``` r
+
+idat_direct <- iconic_data(
+    X = dat$X, Y = dat$Y, M = dat$M,
+    G = dat$G[, 1], W = dat$W,
+    covariates = dat$synthetic_data
+)
+all.equal(idat$Y, idat_direct$Y, check.attributes = FALSE)
+```
+
+    #> [1] TRUE
+
+[`as_MultiAssayExperiment()`](https://seantbresnahan.com/iconic/reference/as_MultiAssayExperiment.md)
+converts an `iconic_data` object back to a `MultiAssayExperiment`
+(experiments `Y`, `M`, `W`, …; `colData` columns `X`, `G`, covariates),
+so the exact analysis data can be stored, subset, or shared with
+standard Bioconductor tools and passed straight back to
+[`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md).
+
+``` r
+
+as_MultiAssayExperiment(idat)
+```
+
+    #> A MultiAssayExperiment object of 3 listed
+    #>  experiments with user-defined names and respective classes.
+    #>  Containing an ExperimentList class object of length 3:
+    #>  [1] Y: SummarizedExperiment with 10 rows and 200 columns
+    #>  [2] M: SummarizedExperiment with 1 rows and 200 columns
+    #>  [3] W: SummarizedExperiment with 10 rows and 200 columns
+    #> Functionality:
+    #>  experiments() - obtain the ExperimentList instance
+    #>  colData() - the primary/phenotype DataFrame
+    #>  sampleMap() - the sample coordination DataFrame
+    #>  `$`, `[`, `[[` - extract colData columns, subset, or experiment
+    #>  *Format() - convert into a long or wide DataFrame
+    #>  assays() - convert ExperimentList to a SimpleList of matrices
+    #>  exportClass() - save data to flat files
 
 ## Step 1: Diagnose
 
@@ -384,9 +495,9 @@ pros <- iconic_prospect(idat, confounding = "inferred")
 sessionInfo()
 ```
 
-    #> R version 4.6.1 (2026-06-24)
+    #> R version 4.6.2 (2026-10-29)
     #> Platform: x86_64-pc-linux-gnu
-    #> Running under: Ubuntu 24.04.4 LTS
+    #> Running under: Ubuntu 24.04.5 LTS
     #> 
     #> Matrix products: default
     #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -402,24 +513,32 @@ sessionInfo()
     #> tzcode source: system (glibc)
     #> 
     #> attached base packages:
-    #> [1] stats     graphics  grDevices utils     datasets  methods   base     
+    #> [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+    #> [8] base     
     #> 
     #> other attached packages:
-    #> [1] iconic_0.99.3    BiocStyle_2.40.0
+    #>  [1] MultiAssayExperiment_1.38.0 SummarizedExperiment_1.42.0
+    #>  [3] Biobase_2.72.0              GenomicRanges_1.64.0       
+    #>  [5] Seqinfo_1.2.0               IRanges_2.46.0             
+    #>  [7] S4Vectors_0.50.3            BiocGenerics_0.58.1        
+    #>  [9] generics_0.1.4              MatrixGenerics_1.24.0      
+    #> [11] matrixStats_1.5.0           iconic_0.99.4              
+    #> [13] BiocStyle_2.40.0           
     #> 
     #> loaded via a namespace (and not attached):
-    #>  [1] Matrix_1.7-5        bit_4.6.0           jsonlite_2.0.0     
-    #>  [4] compiler_4.6.1      BiocManager_1.30.27 Rcpp_1.1.2         
-    #>  [7] callr_3.8.0         jquerylib_0.1.4     splines_4.6.1      
-    #> [10] systemfonts_1.3.2   textshaping_1.0.5   yaml_2.3.12        
-    #> [13] fastmap_1.2.0       lattice_0.22-9      R6_2.6.1           
-    #> [16] knitr_1.51          bookdown_0.47       desc_1.4.3         
-    #> [19] bslib_0.12.0        rlang_1.3.0         cachem_1.1.0       
-    #> [22] xfun_0.60           fs_2.1.0            sass_0.4.10        
-    #> [25] bit64_4.8.4         otel_0.2.0          cli_3.6.6          
-    #> [28] pkgdown_2.2.1       withr_3.0.3         magrittr_2.0.5     
-    #> [31] ps_1.9.3            digest_0.6.39       grid_4.6.1         
-    #> [34] processx_3.9.0      torch_0.17.0        lifecycle_1.0.5    
-    #> [37] coro_1.1.0          evaluate_1.0.5      ragg_1.5.2         
-    #> [40] survival_3.8-6      rmarkdown_2.31      tools_4.6.1        
-    #> [43] htmltools_0.5.9
+    #>  [1] sass_0.4.10         SparseArray_1.12.3  lattice_0.23-1     
+    #>  [4] magrittr_2.0.5      digest_0.6.39       evaluate_1.0.5     
+    #>  [7] grid_4.6.2          bookdown_0.48       fastmap_1.2.0      
+    #> [10] jsonlite_2.0.0      Matrix_1.7-6        processx_3.9.0     
+    #> [13] survival_3.8-12     torch_0.17.0        ps_1.9.3           
+    #> [16] BiocManager_1.30.27 coro_1.1.0          textshaping_1.0.5  
+    #> [19] jquerylib_0.1.4     abind_1.4-8         cli_3.6.6          
+    #> [22] rlang_1.3.0         XVector_0.52.0      splines_4.6.2      
+    #> [25] bit64_4.8.6         withr_3.0.3         cachem_1.1.0       
+    #> [28] DelayedArray_0.38.2 yaml_2.3.12         otel_0.3.0         
+    #> [31] S4Arrays_1.12.1     tools_4.6.2         R6_2.6.1           
+    #> [34] lifecycle_1.0.5     fs_2.1.0            bit_4.6.0          
+    #> [37] ragg_1.5.2          desc_1.4.3          callr_3.8.0        
+    #> [40] pkgdown_2.2.1       bslib_0.12.0        Rcpp_1.1.2         
+    #> [43] systemfonts_1.3.2   xfun_0.62           knitr_1.52         
+    #> [46] htmltools_0.5.9     rmarkdown_2.32      compiler_4.6.2

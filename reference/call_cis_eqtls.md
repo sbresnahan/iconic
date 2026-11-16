@@ -12,14 +12,16 @@ MatrixEQTL for preparing mediator-instrument candidate sets.
 call_cis_eqtls(
   expression,
   genotypes,
-  gene_pos,
-  snp_pos,
+  gene_pos = NULL,
+  snp_pos = NULL,
   covariates = NULL,
   cis_snps = NULL,
   cis_dist = 1e+06,
   min_maf = 0.01,
   fdr = 0.05,
-  n_cores = 1
+  n_cores = 1,
+  expr_assay = 1L,
+  geno_assay = 1L
 )
 ```
 
@@ -27,20 +29,34 @@ call_cis_eqtls(
 
 - expression:
 
-  Numeric matrix, genes x samples (e.g. inverse-normal-transformed TPM).
+  Numeric matrix, genes x samples (e.g. inverse-normal-transformed TPM),
+  or a
+  [SummarizedExperiment::RangedSummarizedExperiment](https://rdrr.io/pkg/SummarizedExperiment/man/RangedSummarizedExperiment-class.html)
+  whose `rowRanges()` supply gene coordinates (used when `gene_pos` is
+  `NULL`).
 
 - genotypes:
 
-  Numeric dosage matrix, variants x samples (0-2).
+  Numeric dosage matrix, variants x samples (0-2), or a
+  `RangedSummarizedExperiment` whose `rowRanges()` supply variant
+  positions (used when `snp_pos` is `NULL`).
 
 - gene_pos:
 
-  data.frame with columns `gene`, `chr`, and `tss` (or `start`; the gene
-  start is used as the cis-window anchor).
+  Gene coordinates: a
+  [GenomicRanges::GRanges](https://rdrr.io/pkg/GenomicRanges/man/GRanges-class.html)
+  with gene IDs as [`names()`](https://rdrr.io/r/base/names.html) or a
+  `gene` metadata column (the TSS is the strand-aware 5' end of each
+  range), or a data.frame with columns `gene`, `chr`, and `tss` (or
+  `start`). May be `NULL` when `expression` is a
+  `RangedSummarizedExperiment`.
 
 - snp_pos:
 
-  data.frame with columns `snp`, `chr`, `pos`.
+  Variant positions: a `GRanges` with variant IDs as
+  [`names()`](https://rdrr.io/r/base/names.html) or an `snp` metadata
+  column, or a data.frame with columns `snp`, `chr`, `pos`. May be
+  `NULL` when `genotypes` is a `RangedSummarizedExperiment`.
 
 - covariates:
 
@@ -74,6 +90,11 @@ call_cis_eqtls(
   [`parallel::mclapply()`](https://rdrr.io/r/parallel/mclapply.html).
   Default 1.
 
+- expr_assay, geno_assay:
+
+  Name or index of the assay to use when `expression` / `genotypes` is a
+  SummarizedExperiment. Default `1`.
+
 ## Value
 
 A list with:
@@ -87,6 +108,16 @@ A list with:
 
   data.frame with the top SNP per gene (`gene`, `snp`, `beta`, `p`, `q`
   (BH within gene), `pass`).
+
+## Details
+
+Gene and variant coordinates are handled as
+[GenomicRanges::GRanges](https://rdrr.io/pkg/GenomicRanges/man/GRanges-class.html)
+and cis variants are resolved with
+[`GenomicRanges::findOverlaps()`](https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html)
+against symmetric windows of `cis_dist` bp around each gene's TSS.
+Chromosome naming styles are harmonised first, so `"chr1"` and `"1"`
+match.
 
 ## Examples
 
@@ -109,4 +140,15 @@ head(hits$best)
 #> 4 Gene12 1:135:A:G -0.5341922 0.1539292 -3.470377 0.0008499441 0.1699888 FALSE
 #> 5 Gene13  1:84:A:G  0.6162287 0.2008581  3.067981 0.0029627583 0.5443979 FALSE
 #> 6 Gene14 1:138:A:G -0.3848913 0.1576141 -2.441985 0.0168701271 0.9901600 FALSE
+
+# Equivalent call with GRanges coordinates (UCSC-style "chr1" names
+# are harmonised with the Ensembl-style "1" used above)
+gp_gr <- GenomicRanges::GRanges("chr1",
+  IRanges::IRanges(seq(1, 191, by = 10), width = 1),
+  gene = paste0("Gene", 1:20))
+sp_gr <- GenomicRanges::GRanges("1", IRanges::IRanges(1:200, width = 1),
+  snp = rownames(dos))
+hits_gr <- call_cis_eqtls(expr, dos, gp_gr, sp_gr)
+identical(hits$best, hits_gr$best)
+#> [1] TRUE
 ```

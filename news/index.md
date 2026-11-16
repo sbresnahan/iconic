@@ -1,5 +1,58 @@
 # Changelog
 
+## iconic 0.99.4
+
+### Bioconductor integration
+
+- **`MultiAssayExperiment` is now the primary data container.**
+  `MultiAssayExperiment`, `SummarizedExperiment`, `S4Vectors`,
+  `GenomicRanges`, and `IRanges` moved to `Imports`.
+- New
+  [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md)
+  method for `MultiAssayExperiment`. Each analysis role (`exposure`,
+  `outcome`, `mediator`, `instrument`, `mediator_instrument`,
+  `negative_controls`, `W1`, `W2`, `covariates`, survival/binary
+  outcomes) is given as the name of an experiment or of `colData`
+  column(s). Samples are aligned through the `sampleMap` (primary
+  samples present in every experiment used, with complete `colData`),
+  and a message reports how many were kept.
+- New exported
+  [`as_MultiAssayExperiment()`](https://seantbresnahan.com/iconic/reference/as_MultiAssayExperiment.md)
+  converts an `iconic_data` object back into a `MultiAssayExperiment`
+  (experiments for Y, M, Gm, W/W1/W2; exposure, instrument, outcomes and
+  covariates in `colData`; scaling parameters, flags and roles in
+  [`metadata()`](https://rdrr.io/pkg/S4Vectors/man/Annotated-class.html)).
+  The result round-trips through
+  [`as_iconic_data()`](https://seantbresnahan.com/iconic/reference/as_iconic_data.md).
+- `iconic_data` objects gain a `sample_names` field.
+- [`call_cis_eqtls()`](https://seantbresnahan.com/iconic/reference/call_cis_eqtls.md)
+  and
+  [`build_mediator_instruments()`](https://seantbresnahan.com/iconic/reference/build_mediator_instruments.md)
+  accept `GRanges` for gene and variant coordinates, or take them from
+  the `rowRanges()` of `RangedSummarizedExperiment` inputs (new
+  `expr_assay` / `geno_assay` arguments). Cis windows are computed with
+  [`GenomicRanges::findOverlaps()`](https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html)
+  around the strand-aware TSS. `data.frame` coordinates are still
+  accepted and give identical results.
+
+### Behavioural notes
+
+- Chromosome names are harmonised before cis-window matching (`"chr1"`
+  and `"1"` now match; `"M"`/`"chrM"`/`"MT"` are treated as the
+  mitochondrion). Previously mismatched naming styles silently produced
+  no gene-SNP pairs.
+- Vignettes now build analysis objects from `MultiAssayExperiment` and
+  `GRanges` inputs.
+
+### Package hygiene
+
+- Built vignettes (`inst/doc`) and `build/vignette.rds` are no longer
+  tracked and were removed from the git history; `.gitignore` and
+  `.Rbuildignore` were expanded.
+- Removed stray `Packaged`, `Author` and `Maintainer` fields from
+  `DESCRIPTION` (`Authors@R` is authoritative); `grDevices` and
+  `graphics` are now declared in `Imports`.
+
 ## iconic 0.99.3
 
 ### New features
@@ -195,7 +248,8 @@
   [`message()`](https://rdrr.io/r/base/message.html),
   [`seq_len()`](https://rdrr.io/r/base/seq.html)-style indexing, and
   signaler calls no longer use
-  [`paste()`](https://rdrr.io/r/base/paste.html) or message keywords.
+  [`paste()`](https://rdrr.io/pkg/BiocGenerics/man/paste.html) or
+  message keywords.
 - Every exported function now has a runnable `@examples` block and a
   documented `@return`; `\dontrun{}` removed (torch-dependent examples
   are guarded by
@@ -506,12 +560,12 @@
 - **`.extract_per_scenario()` robust to degenerate cells.** Per-scenario
   extraction now skips grid cells in which every estimator returned a
   non-finite bias/coverage metric (previously
-  [`which.min()`](https://rdrr.io/r/base/which.min.html) on an all-`NA`
-  distance vector returned `integer(0)`, and the
-  [`cbind()`](https://rdrr.io/r/base/cbind.html) of the cell metadata
-  with the length-0 result errored with “arguments imply differing
-  number of rows”). Within-cell normalization is now computed over
-  finite values only.
+  [`which.min()`](https://rdrr.io/pkg/BiocGenerics/man/which.min.html)
+  on an all-`NA` distance vector returned `integer(0)`, and the
+  [`cbind()`](https://rdrr.io/pkg/BiocGenerics/man/cbind.html) of the
+  cell metadata with the length-0 result errored with “arguments imply
+  differing number of rows”). Within-cell normalization is now computed
+  over finite values only.
 
 - **[`generate_toy_data()`](https://seantbresnahan.com/iconic/reference/generate_toy_data.md)
   DGP fix.** With path-specific loadings, the non-covered portion of
@@ -853,15 +907,15 @@
 - **[`switch()`](https://rdrr.io/r/base/switch.html) factor dispatch in
   survival mediation driver**: the mediation survival driver used
   `switch(method, ...)` where `method` came from
-  [`expand.grid()`](https://rdrr.io/r/base/expand.grid.html), which
-  converts strings to factors.
+  [`expand.grid()`](https://rdrr.io/pkg/S4Vectors/man/Vector-class.html),
+  which converts strings to factors.
   [`switch()`](https://rdrr.io/r/base/switch.html) treats factors as
   integers (positional matching), silently dispatching methods to the
   wrong estimators (e.g., PGC calling IV2SLS2, COCA calling IV2SLS).
   Fixed by wrapping in
   [`as.character()`](https://rdrr.io/r/base/character.html) and adding
   `stringsAsFactors = FALSE` to
-  [`expand.grid()`](https://rdrr.io/r/base/expand.grid.html).
+  [`expand.grid()`](https://rdrr.io/pkg/S4Vectors/man/Vector-class.html).
 
 - **`.find_tipping_points()` NA/NaN handling**: the tipping-point
   detection in

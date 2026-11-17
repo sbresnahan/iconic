@@ -1,3 +1,8 @@
+#' @references
+#' Bresnahan ST, Xiong C, Head ST, Chang Y-H, Bhattacharya A, Huang JY.
+#' ICONIC: An R Package for Integrating Instrumental Variable- and
+#' Negative-Control-Informed Causal Discovery and Diagnostics in Multiomic
+#' Studies. medRxiv (2026). \doi{10.64898/2026.08.26.26361466}
 #' @keywords internal
 "_PACKAGE"
 

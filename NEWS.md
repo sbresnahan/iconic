@@ -1,3 +1,24 @@
+# iconic 0.99.5
+
+## Bioconductor review
+
+- `sweep_nc_validity()` now has a small runnable example (about two
+  seconds) instead of a `\donttest{}` block.
+- `run_single_iteration()` and `iconic_sensitivity()` were split into
+  small internal helpers, one per stage of the simulator and of the
+  sensitivity sweep. Seeded results are identical to 0.99.4.
+- The maintainer's ORCID iD was added to `Authors@R`.
+- R, test and vignette code was reformatted with `styler` (4-space
+  indentation). Whitespace and line breaks only.
+
+## Documentation
+
+- The package logo is shown on the README.
+- The accompanying medRxiv preprint
+  (doi:10.64898/2026.08.26.26361466) is cited in the README, the
+  package help page, the walkthrough vignette, `DESCRIPTION`, and a new
+  `inst/CITATION` (`citation("iconic")`).
+
 # iconic 0.99.4
 
 ## Bioconductor integration

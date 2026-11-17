@@ -29,6 +29,8 @@ has_torch <- check_torch_setup()
 
 This vignette walks through the complete `iconic` workflow on a simulated dataset: assembling an `iconic_data` object, diagnosing estimator eligibility, estimating natural direct and indirect effects, stress-testing the result, and planning a prospective study.
 
+The estimators, diagnostics and the generative texture model are described in the accompanying preprint, which also applies `iconic` to two case studies (Bresnahan et al. 2026, [doi:10.64898/2026.08.26.26361466](https://doi.org/10.64898/2026.08.26.26361466)). Please cite it if you use the package; `citation("iconic")` gives the full reference.
+
 # Installation
 
 `iconic` is being submitted to Bioconductor. Once accepted, install the

@@ -1,13 +1,14 @@
 Package: iconic
 Title: Causal Model Selection with Genetic Instruments and Negative
         Controls
-Version: 0.99.4
+Version: 0.99.5
 biocViews: StatisticalMethod, Genetics, MultipleComparison, Regression,
         Transcriptomics, RNASeq, Survival, GeneExpression, SNP,
         GeneticVariability
 Authors@R: c(
     person("Sean T.", "Bresnahan", role = c("aut", "cre"),
-        email = "seantbresnahan3@gmail.com"),
+        email = "seantbresnahan3@gmail.com",
+        comment = c(ORCID = "0000-0001-6685-1930")),
     person("Charis", "Xiong", role = "aut",
         email = "charis.xiong@gmail.com"))
 Description: Provides a model selection workflow for causal inference
@@ -42,7 +43,8 @@ Description: Provides a model selection workflow for causal inference
     outcome stage) and risk-difference (linear probability model)
     scales. The torch package is required
     for the generative texture model (sensitivity and prospective
-    analysis); all other functionality works without it.
+    analysis); all other functionality works without it. The methods are
+    described in Bresnahan et al. (2026) <doi:10.64898/2026.08.26.26361466>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

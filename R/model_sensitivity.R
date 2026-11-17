@@ -268,22 +268,17 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
                                surv_event_frac = 0.6,
                                surv_censor_rate = NULL,
                                bin_prev = 0.5) {
-  if (!inherits(data, "iconic_data"))
-    stop("data must be an iconic_data object from iconic_data().")
-  if (!data$is_mediation)
-    stop("iconic_sensitivity requires mediation data (supply M). ",
-         "Use gan_sensitivity() for total-effect-only sensitivity.")
+  .sens_check_data(data)
 
-  # Capture which calibration arguments the user left at their defaults
+  # Record which calibration arguments the user left at their defaults
   # BEFORE any reassignment: inferred values may fill in defaults, but
   # user-supplied vectors (e.g. an omega sweep) always take precedence.
   omega_1_default <- missing(omega_1)
   omega_2_default <- missing(omega_2)
   mo_confounding_default <- missing(mo_confounding)
 
-  # `confounding` accepts a precomputed iconic_confounding object (from a
-  # prior infer_confounding() call) in addition to the character modes;
-  # supplying one reuses it as-is and skips any recomputation.
+  # `confounding` also accepts a precomputed iconic_confounding object
+  # (from infer_confounding()), which is reused as-is.
   precomputed_conf <- NULL
   if (inherits(confounding, "iconic_confounding")) {
     precomputed_conf <- confounding
@@ -292,158 +287,47 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     confounding <- match.arg(confounding)
   }
   effect_scale <- match.arg(effect_scale)
+  scale_res <- .sens_resolve_outcome_scale(outcome_type, effect_scale, data)
+  outcome_type <- scale_res$outcome_type
+  effect_scale <- scale_res$effect_scale
 
-  # resolve outcome_type — inherit from data if not explicitly set.
-  if (is.null(outcome_type)) {
-    outcome_type <- if (!is.null(data$outcome_type)) data$outcome_type else "continuous"
-  }
-  outcome_type <- match.arg(outcome_type, c("continuous", "survival", "binary"))
-  # remap an inert effect_scale default to the outcome-appropriate scale
-  if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
-    message("effect_scale = '", effect_scale,
-            "' is not defined for binary outcomes; using 'logor'.")
-    effect_scale <- "logor"
-  }
-  if (outcome_type == "survival" && effect_scale %in% c("logor", "riskdiff")) {
-    message("effect_scale = '", effect_scale,
-            "' is not defined for survival outcomes; using 'loghr'.")
-    effect_scale <- "loghr"
-  }
-
-  # ── Resolve the texture model ──
   gan_res <- .resolve_gan(trained_gan, data, epochs = gan_epochs)
-  gan <- gan_res$gan
-  texture_source <- gan_res$source
 
-  # ── Resolve confounding parameters ──
-  inferred_conf <- NULL
+  conf <- list(inferred = NULL, mo_confounding = mo_confounding,
+               omega_1 = omega_1, omega_2 = omega_2)
   if (confounding == "inferred") {
-    if (!is.null(precomputed_conf)) {
-      # Reuse a caller-supplied infer_confounding() result as-is.
-      inferred_conf <- precomputed_conf
-    } else {
-      # estimate = NULL lets infer_confounding() use its documented random
-      # subset (max_infer_tasks mediators/features) for the gap-based
-      # calibration -- an unbiased Monte Carlo estimate at a fraction of the
-      # cost of running iconic_estimate() on the full mediator panel.
-      inferred_conf <- infer_confounding(data, diagnosis = diagnosis,
-                                         estimate = NULL,
-                                         n_cores = n_cores)
-    }
-    # Use inferred values where available, but ONLY to fill in arguments the
-    # user left at their defaults; explicit user-supplied values (e.g. an
-    # omega sweep) always take precedence over the inferred scalars.
-    if (mo_confounding_default && inferred_conf$mo_confounding$available)
-      mo_confounding <- inferred_conf$mo_confounding$estimate
-    if (omega_1_default && inferred_conf$omega_1$available)
-      omega_1 <- inferred_conf$omega_1$estimate
-    if (omega_2_default && inferred_conf$omega_2$available)
-      omega_2 <- inferred_conf$omega_2$estimate
+    conf <- .sens_infer_confounding(
+      conf, data, diagnosis, precomputed_conf, n_cores,
+      use = c(mo_confounding = mo_confounding_default,
+              omega_1 = omega_1_default, omega_2 = omega_2_default)
+    )
   }
-  # "default" and "manual" use the explicitly supplied arguments as before
+  # "default" and "manual" use the explicitly supplied arguments.
 
-  # ── Build the omega sweep ──
-  # omega_1/omega_2 may be vectors; the sweep crosses rho_G1 x rho_G2 x
-  # omega_1 x omega_2. When confounding = "inferred" supplied a scalar
-  # omega, the sweep reduces to that single value.
-  omega_1_grid <- sort(unique(omega_1))
-  omega_2_grid <- sort(unique(omega_2))
+  omega_1_grid <- sort(unique(conf$omega_1))
+  omega_2_grid <- sort(unique(conf$omega_2))
   omega_swept <- length(omega_1_grid) > 1 || length(omega_2_grid) > 1
-
-  # Calibrate to user data
   if (is.null(n_samples)) n_samples <- data$n
-  if (is.null(phi)) {
-    if (!is.null(diagnosis) && !all(is.na(diagnosis$instrument_strength$F_Gm))) {
-      # Strong Gm -> phi = 0.8; weak -> phi = 0.3; none -> phi = 0
-      F_gm <- diagnosis$instrument_strength$F_Gm
-      # F_Gm can be a vector (panel); use median as scalar summary
-      if (length(F_gm) > 1)
-        F_gm <- diagnosis$instrument_strength$F_Gm_median
-      phi <- if (is.na(F_gm)) 0 else if (F_gm >= 100) 0.8 else if (F_gm >= 10) 0.5 else 0.3
-    } else {
-      phi <- if (data$has_mediator_instrument) 0.8 else 0
-    }
-  }
+  if (is.null(phi)) phi <- .sens_calibrate_phi(diagnosis, data)
+  grid <- .sens_build_grid(rho_G1_grid, rho_G2_grid, omega_1_grid,
+                           omega_2_grid, omega_swept)
 
-  # Build the sweep: rho_G1 x rho_G2 x omega_1 x omega_2. When the two omega
-  # vectors are identical (the default), sweep coverage on the diagonal
-  # (omega_1 == omega_2), matching the manuscript's degradation-surface
-  # design; distinct omega vectors cross the full omega_1 x omega_2 grid.
-  grid <- expand.grid(rho_G1 = rho_G1_grid, rho_G2 = rho_G2_grid,
-                      omega_1 = omega_1_grid, omega_2 = omega_2_grid,
-                      KEEP.OUT.ATTRS = FALSE)
-  if (identical(omega_1_grid, omega_2_grid) && omega_swept)
-    grid <- grid[grid$omega_1 == grid$omega_2, , drop = FALSE]
+  sim <- list(
+    gan = gan_res$gan, n_samples = n_samples, n_features = n_features,
+    mo_confounding = conf$mo_confounding, phi = phi,
+    lambda_XM = lambda_XM, lambda_MY = lambda_MY, base_seed = base_seed,
+    outcome_type = outcome_type, effect_scale = effect_scale,
+    surv_h0 = surv_h0, surv_event_frac = surv_event_frac,
+    surv_censor_rate = surv_censor_rate, bin_prev = bin_prev,
+    n_iter = n_iter, n_cores = n_cores, verbose = verbose,
+    omega_swept = omega_swept, true_NDE = 0.10, true_NIE = 0.15
+  )
+  smry <- lapply(seq_len(nrow(grid)), .sens_run_cell, grid = grid, sim = sim)
+  surface <- .sens_annotate_surface(do.call(rbind, smry), bias_threshold)
 
-  true_NDE <- 0.10 # beta_X default
-  true_NIE <- 0.15 # alpha_M * beta_M default
-
-  n_grid <- nrow(grid)
-  smry <- lapply(seq_len(n_grid), function(gi) {
-    r1 <- grid$rho_G1[gi]
-    r2 <- grid$rho_G2[gi]
-    o1 <- grid$omega_1[gi]
-    o2 <- grid$omega_2[gi]
-    if (n_grid > 1 && isTRUE(verbose)) {
-      omega_txt <- if (omega_swept) paste0(", omega_1=", o1, ", omega_2=", o2) else ""
-      message("Sensitivity grid cell ", gi, "/", n_grid,
-              " (rho_G1=", r1, ", rho_G2=", r2, omega_txt, ")")
-    }
-
-    worker <- function(i) {
-      dat <- run_single_iteration(
-        trained_gan = gan,
-        n_synthetic_samples = n_samples, n_features = n_features,
-        mo_confounding = mo_confounding, phi = phi,
-        rho_G1 = r1, rho_G2 = r2, rho_pop = 0,
-        lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = o1, omega_2 = o2,
-        seed = base_seed + gi * 1000L + i,
-        outcome_type = outcome_type, surv_h0 = surv_h0,
-        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
-        bin_prev = bin_prev)
-      if (outcome_type == "survival") {
-        res <- .run_surv_methods(dat, effect_scale = effect_scale,
-                                 is_mediation = TRUE)
-      } else if (outcome_type == "binary") {
-        res <- .run_bin_methods(dat, effect_scale = effect_scale,
-                                is_mediation = TRUE)
-      } else {
-        res <- run_mediation_methods(dat, n_features)
-      }
-      res$iter <- i
-      res
-    }
-
-    combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker,
-                                                n_cores = n_cores,
-                                                progress = if (isTRUE(verbose)) " Replicates" else NULL))
-    s <- summarise_mediation_results(combined, true_NDE, true_NIE)
-    s$rho_G1 <- r1
-    s$rho_G2 <- r2
-    s$omega_1 <- o1
-    s$omega_2 <- o2
-    s
-  })
-
-  surface <- do.call(rbind, smry)
-
-  # Tipping-point annotation: flag cells where |bias| exceeds threshold
-  surface$tipped_NDE <- abs(surface$NDE_bias) > bias_threshold
-  surface$tipped_NIE <- abs(surface$NIE_bias) > bias_threshold
-  surface$tipped <- surface$tipped_NDE | surface$tipped_NIE
-
-  # Reorder columns
-  front <- c("rho_G1", "rho_G2", "omega_1", "omega_2", "method")
-  surface <- surface[, c(front, setdiff(names(surface), front))]
-
-  # Find tipping points: first rho_G2 (along each rho_G1 row) where a
-  # method tips, for each method
+  # First rho_G2 (along each rho_G1 row) at which each method tips.
   tipping <- .find_tipping_points(surface, rho_G1_grid, rho_G2_grid,
                                   bias_threshold)
-
-  # Summary
-  summary_txt <- .build_sensitivity_summary(surface, tipping, bias_threshold,
-                                            n_iter)
 
   obj <- list(
     surface = surface,
@@ -453,31 +337,207 @@ iconic_sensitivity <- function(data, diagnosis = NULL,
     n_iter = n_iter,
     n_samples = n_samples,
     phi = phi,
-    mo_confounding = mo_confounding,
+    mo_confounding = conf$mo_confounding,
     omega_1 = omega_1_grid,
     omega_2 = omega_2_grid,
     omega_swept = omega_swept,
-    texture_source = texture_source,
-    inferred_confounding = inferred_conf,
-    summary = summary_txt,
-    # scenario manifest for reader orientation.
-    manifest = scenario_manifest(
-      list(beta_X = true_NDE, alpha_M = 0.50, beta_M = 0.30,
-           n_mediators = 1, n = n_samples, n_features = n_features,
-           lambda_XM = lambda_XM, lambda_MY = lambda_MY, feat_cor = 0,
-           conf_str = NA, mo_confounding = mo_confounding, phi = phi,
-           w_signal = omega_1_grid[1], rho_G1 = NA, rho_G2 = NA, rho_pop = NA),
-      rho_G1_grid = rho_G1_grid, rho_G2_grid = rho_G2_grid,
-      omega_1_grid = if (omega_swept) omega_1_grid else NULL,
-      omega_2_grid = if (omega_swept) omega_2_grid else NULL,
-      mo_confounding_grid = if (length(unique(mo_confounding)) > 1) mo_confounding else NULL,
-      phi_grid = if (length(unique(phi)) > 1) phi else NULL
-    )
+    texture_source = gan_res$source,
+    inferred_confounding = conf$inferred,
+    summary = .build_sensitivity_summary(surface, tipping, bias_threshold,
+                                         n_iter),
+    manifest = .sens_manifest(sim, lambda_XM, lambda_MY, omega_1_grid,
+                              omega_2_grid, rho_G1_grid, rho_G2_grid)
   )
   class(obj) <- "iconic_sensitivity"
   if (isTRUE(verbose))
     message("iconic_sensitivity complete. Call summary() or print() on the result for the full sensitivity summary.")
   obj
+}
+
+# ------------------------------------------------------------
+# Internal helpers for iconic_sensitivity(), one per stage.
+# ------------------------------------------------------------
+
+#' Validate the data argument of iconic_sensitivity() (internal)
+#' @keywords internal
+#' @noRd
+.sens_check_data <- function(data) {
+  if (!inherits(data, "iconic_data"))
+    stop("data must be an iconic_data object from iconic_data().")
+  if (!data$is_mediation)
+    stop("iconic_sensitivity requires mediation data (supply M). ",
+         "Use gan_sensitivity() for total-effect-only sensitivity.")
+  invisible(NULL)
+}
+
+#' Resolve outcome type and effect scale for a sensitivity run (internal)
+#'
+#' The outcome type is inherited from the data unless set explicitly. An
+#' effect scale that is not defined for the outcome type is remapped to the
+#' outcome-appropriate default, with a message.
+#' @keywords internal
+#' @noRd
+.sens_resolve_outcome_scale <- function(outcome_type, effect_scale, data) {
+  if (is.null(outcome_type))
+    outcome_type <- data$outcome_type %||% "continuous"
+  outcome_type <- match.arg(outcome_type,
+                            c("continuous", "survival", "binary"))
+  if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for binary outcomes; using 'logor'.")
+    effect_scale <- "logor"
+  }
+  if (outcome_type == "survival" &&
+      effect_scale %in% c("logor", "riskdiff")) {
+    message("effect_scale = '", effect_scale,
+            "' is not defined for survival outcomes; using 'loghr'.")
+    effect_scale <- "loghr"
+  }
+  list(outcome_type = outcome_type, effect_scale = effect_scale)
+}
+
+#' Fill confounding parameters from infer_confounding() (internal)
+#'
+#' Reuses a precomputed iconic_confounding object when given; otherwise
+#' calls infer_confounding() with estimate = NULL (its documented random
+#' subset for the gap-based calibration). Inferred values replace only the
+#' arguments flagged in `use` (those the user left at their defaults).
+#' @keywords internal
+#' @noRd
+.sens_infer_confounding <- function(conf, data, diagnosis, precomputed,
+                                    n_cores, use) {
+  inferred <- precomputed
+  if (is.null(inferred)) {
+    inferred <- infer_confounding(data, diagnosis = diagnosis,
+                                  estimate = NULL, n_cores = n_cores)
+  }
+  conf$inferred <- inferred
+  for (nm in c("mo_confounding", "omega_1", "omega_2")) {
+    if (use[[nm]] && inferred[[nm]]$available)
+      conf[[nm]] <- inferred[[nm]]$estimate
+  }
+  conf
+}
+
+#' Calibrate the mediator-instrument strength phi (internal)
+#'
+#' From the diagnosed F-statistic for Gm when available (strong -> 0.8,
+#' moderate -> 0.5, weak -> 0.3; the panel median is used for a vector), else
+#' 0.8 when the data carry a mediator instrument and 0 otherwise.
+#' @keywords internal
+#' @noRd
+.sens_calibrate_phi <- function(diagnosis, data) {
+  if (is.null(diagnosis) ||
+      all(is.na(diagnosis$instrument_strength$F_Gm))) {
+    return(if (data$has_mediator_instrument) 0.8 else 0)
+  }
+  F_gm <- diagnosis$instrument_strength$F_Gm
+  if (length(F_gm) > 1) F_gm <- diagnosis$instrument_strength$F_Gm_median
+  if (is.na(F_gm)) 0 else if (F_gm >= 100) 0.8 else if (F_gm >= 10) 0.5 else
+    0.3
+}
+
+#' Build the rho_G1 x rho_G2 x omega_1 x omega_2 sweep grid (internal)
+#'
+#' When the two omega vectors are identical (the default) coverage is swept
+#' on the diagonal (omega_1 == omega_2), matching the manuscript's
+#' degradation-surface design; distinct vectors cross the full grid.
+#' @keywords internal
+#' @noRd
+.sens_build_grid <- function(rho_G1_grid, rho_G2_grid, omega_1_grid,
+                             omega_2_grid, omega_swept) {
+  grid <- expand.grid(rho_G1 = rho_G1_grid, rho_G2 = rho_G2_grid,
+                      omega_1 = omega_1_grid, omega_2 = omega_2_grid,
+                      KEEP.OUT.ATTRS = FALSE)
+  if (identical(omega_1_grid, omega_2_grid) && omega_swept)
+    grid <- grid[grid$omega_1 == grid$omega_2, , drop = FALSE]
+  grid
+}
+
+#' Simulate and fit one replicate of a sensitivity grid cell (internal)
+#' @keywords internal
+#' @noRd
+.sens_replicate <- function(i, gi, cell, sim) {
+  dat <- run_single_iteration(
+    trained_gan = sim$gan,
+    n_synthetic_samples = sim$n_samples, n_features = sim$n_features,
+    mo_confounding = sim$mo_confounding, phi = sim$phi,
+    rho_G1 = cell$rho_G1, rho_G2 = cell$rho_G2, rho_pop = 0,
+    lambda_XM = sim$lambda_XM, lambda_MY = sim$lambda_MY,
+    omega_1 = cell$omega_1, omega_2 = cell$omega_2,
+    seed = sim$base_seed + gi * 1000L + i,
+    outcome_type = sim$outcome_type, surv_h0 = sim$surv_h0,
+    surv_event_frac = sim$surv_event_frac,
+    surv_censor_rate = sim$surv_censor_rate, bin_prev = sim$bin_prev)
+  res <- switch(
+    sim$outcome_type,
+    survival = .run_surv_methods(dat, effect_scale = sim$effect_scale,
+                                 is_mediation = TRUE),
+    binary = .run_bin_methods(dat, effect_scale = sim$effect_scale,
+                              is_mediation = TRUE),
+    run_mediation_methods(dat, sim$n_features)
+  )
+  res$iter <- i
+  res
+}
+
+#' Run all replicates of one sensitivity grid cell and summarise (internal)
+#' @keywords internal
+#' @noRd
+.sens_run_cell <- function(gi, grid, sim) {
+  cell <- grid[gi, , drop = FALSE]
+  n_grid <- nrow(grid)
+  if (n_grid > 1 && isTRUE(sim$verbose)) {
+    omega_txt <- if (sim$omega_swept) {
+      paste0(", omega_1=", cell$omega_1, ", omega_2=", cell$omega_2)
+    } else ""
+    message("Sensitivity grid cell ", gi, "/", n_grid,
+            " (rho_G1=", cell$rho_G1, ", rho_G2=", cell$rho_G2,
+            omega_txt, ")")
+  }
+  combined <- do.call(rbind, .parallel_lapply(
+    seq_len(sim$n_iter),
+    function(i) .sens_replicate(i, gi, cell, sim),
+    n_cores = sim$n_cores,
+    progress = if (isTRUE(sim$verbose)) " Replicates" else NULL))
+  s <- summarise_mediation_results(combined, sim$true_NDE, sim$true_NIE)
+  s$rho_G1 <- cell$rho_G1
+  s$rho_G2 <- cell$rho_G2
+  s$omega_1 <- cell$omega_1
+  s$omega_2 <- cell$omega_2
+  s
+}
+
+#' Flag tipped cells and order the columns of a sensitivity surface (internal)
+#' @keywords internal
+#' @noRd
+.sens_annotate_surface <- function(surface, bias_threshold) {
+  surface$tipped_NDE <- abs(surface$NDE_bias) > bias_threshold
+  surface$tipped_NIE <- abs(surface$NIE_bias) > bias_threshold
+  surface$tipped <- surface$tipped_NDE | surface$tipped_NIE
+  front <- c("rho_G1", "rho_G2", "omega_1", "omega_2", "method")
+  surface[, c(front, setdiff(names(surface), front))]
+}
+
+#' Scenario manifest for an iconic_sensitivity result (internal)
+#' @keywords internal
+#' @noRd
+.sens_manifest <- function(sim, lambda_XM, lambda_MY, omega_1_grid,
+                           omega_2_grid, rho_G1_grid, rho_G2_grid) {
+  mo <- sim$mo_confounding
+  phi <- sim$phi
+  scenario_manifest(
+    list(beta_X = sim$true_NDE, alpha_M = 0.50, beta_M = 0.30,
+         n_mediators = 1, n = sim$n_samples, n_features = sim$n_features,
+         lambda_XM = lambda_XM, lambda_MY = lambda_MY, feat_cor = 0,
+         conf_str = NA, mo_confounding = mo, phi = phi,
+         w_signal = omega_1_grid[1], rho_G1 = NA, rho_G2 = NA, rho_pop = NA),
+    rho_G1_grid = rho_G1_grid, rho_G2_grid = rho_G2_grid,
+    omega_1_grid = if (sim$omega_swept) omega_1_grid else NULL,
+    omega_2_grid = if (sim$omega_swept) omega_2_grid else NULL,
+    mo_confounding_grid = if (length(unique(mo)) > 1) mo else NULL,
+    phi_grid = if (length(unique(phi)) > 1) phi else NULL
+  )
 }
 
 

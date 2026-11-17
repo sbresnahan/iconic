@@ -204,9 +204,9 @@ dat <- generate_toy_data(n = 200, n_features = 10, seed = 42)
 
 # Mediation with mediator instrument and path-specific NCs
 dat <- generate_toy_data(n = 200, n_features = 10, phi = 0.8,
-mo_confounding = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
-omega_1 = 0.7, omega_2 = 0.7, seed = 42)
+    mo_confounding = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
+    omega_1 = 0.7, omega_2 = 0.7, seed = 42)
 idata <- iconic_data(X = dat$X, Y = dat$Y, M = dat$M,
-G = dat$G[, 1], Gm = dat$Gm,
-W1 = dat$W1, W2 = dat$W2)
+    G = dat$G[, 1], Gm = dat$Gm,
+    W1 = dat$W1, W2 = dat$W2)
 }

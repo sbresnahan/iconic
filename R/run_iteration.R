@@ -134,7 +134,7 @@
 #'
 #' @examples
 #' dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
-#'   n_features = 5, n_confounders = 1, seed = 1)
+#'     n_features = 5, n_confounders = 1, seed = 1)
 #' analyze_methods_robust(dat)
 run_single_iteration <- function(trained_gan = NULL,
                                  n_synthetic_samples = 500,
@@ -176,106 +176,106 @@ run_single_iteration <- function(trained_gan = NULL,
                                  surv_censor_rate = NULL,
                                  bin_prev = 0.5,
                                  seed = NULL) {
-  if (!is.null(seed)) withr::local_seed(seed)
-  outcome_type <- match.arg(outcome_type)
-  .rsi_check_defunct(separate_U)
+    if (!is.null(seed)) withr::local_seed(seed)
+    outcome_type <- match.arg(outcome_type)
+    .rsi_check_defunct(separate_U)
 
-  if (!is.null(effect_size)) {
-    beta_X <- effect_size
-    alpha_M <- 0
-    beta_M <- 0
-  }
-  true_NDE <- beta_X
-  true_NIE <- n_mediators * alpha_M * beta_M
-  true_total <- true_NDE + true_NIE
+    if (!is.null(effect_size)) {
+        beta_X <- effect_size
+        alpha_M <- 0
+        beta_M <- 0
+    }
+    true_NDE <- beta_X
+    true_NIE <- n_mediators * alpha_M * beta_M
+    true_total <- true_NDE + true_NIE
 
-  n <- n_synthetic_samples
-  p <- n_features
-  k <- max(1L, as.integer(n_confounders))
-  nc <- .resolve_nc_model(nc_model)
-  wcp <- .rsi_coverage_profile(w_coverage_profile, p)
+    n <- n_synthetic_samples
+    p <- n_features
+    k <- max(1L, as.integer(n_confounders))
+    nc <- .resolve_nc_model(nc_model)
+    wcp <- .rsi_coverage_profile(w_coverage_profile, p)
 
-  # Is the imperfect-independence DGP active?
-  v05_active <- rho_G1 != 0 || rho_G2 != 0 || rho_pop != 0 ||
-    !is.null(lambda_XM) || !is.null(lambda_MY) ||
-    !is.null(omega_1) || !is.null(omega_2)
+    # Is the imperfect-independence DGP active?
+    v05_active <- rho_G1 != 0 || rho_G2 != 0 || rho_pop != 0 ||
+        !is.null(lambda_XM) || !is.null(lambda_MY) ||
+        !is.null(omega_1) || !is.null(omega_2)
 
-  # Latent confounders and per-path composites (conf_XM, conf_MY).
-  u_strength <- .rsi_u_strength(u_strength, k)
-  U <- matrix(rnorm(n * k), n, k)
-  lambda_XM <- .rsi_resolve_lambda(lambda_XM, k, u_strength)
-  lambda_MY <- .rsi_resolve_lambda(lambda_MY, k, u_strength)
-  conf_XM <- as.numeric(U %*% lambda_XM)
-  conf_MY <- as.numeric(U %*% lambda_MY)
+    # Latent confounders and per-path composites (conf_XM, conf_MY).
+    u_strength <- .rsi_u_strength(u_strength, k)
+    U <- matrix(rnorm(n * k), n, k)
+    lambda_XM <- .rsi_resolve_lambda(lambda_XM, k, u_strength)
+    lambda_MY <- .rsi_resolve_lambda(lambda_MY, k, u_strength)
+    conf_XM <- as.numeric(U %*% lambda_XM)
+    conf_MY <- as.numeric(U %*% lambda_MY)
 
-  # Realistic covariate / outcome / mediator texture, independent of U.
-  cov_df <- .iteration_covariates(trained_gan, n)
-  exo_Y <- .iteration_outcome_texture(trained_gan, n)
-  exo_M_features <- .iteration_mediator_texture_features(trained_gan, n, p)
-  noise_cor <- .rsi_noise_cor(trained_gan, p, feat_cor)
+    # Realistic covariate / outcome / mediator texture, independent of U.
+    cov_df <- .iteration_covariates(trained_gan, n)
+    exo_Y <- .iteration_outcome_texture(trained_gan, n)
+    exo_M_features <- .iteration_mediator_texture_features(trained_gan, n, p)
+    noise_cor <- .rsi_noise_cor(trained_gan, p, feat_cor)
 
-  inst <- .rsi_instruments(v05_active, n, n_mediators, phi, rho_G1, rho_G2,
-                           rho_pop, conf_XM, conf_MY)
+    inst <- .rsi_instruments(v05_active, n, n_mediators, phi, rho_G1, rho_G2,
+        rho_pop, conf_XM, conf_MY)
 
-  # Structural exposure, scaled to unit variance before building M and Y
-  # (mirrors generate_toy_data()).
-  aX <- conf_strength * MMExp * u_strength / sqrt(k)
-  X <- as.numeric(scale(gamma_G * inst$G + as.numeric(U %*% aX) +
-                          rnorm(n, 0, 0.5)))
+    # Structural exposure, scaled to unit variance before building M and Y
+    # (mirrors generate_toy_data()).
+    aX <- conf_strength * MMExp * u_strength / sqrt(k)
+    X <- as.numeric(scale(gamma_G * inst$G + as.numeric(U %*% aX) +
+        rnorm(n, 0, 0.5)))
 
-  M <- .rsi_mediator(X, n, n_mediators, alpha_M, mo_confounding, conf_MY,
-                     phi, inst$Gm, exo_M_features)
-  yy <- .rsi_outcome(X, M, U, inst$G, exo_Y, n, p, k, beta_X, beta_M,
-                     conf_strength, MMOut, u_strength, pleio, noise_cor$Y)
+    M <- .rsi_mediator(X, n, n_mediators, alpha_M, mo_confounding, conf_MY,
+        phi, inst$Gm, exo_M_features)
+    yy <- .rsi_outcome(X, M, U, inst$G, exo_Y, n, p, k, beta_X, beta_M,
+        conf_strength, MMOut, u_strength, pleio, noise_cor$Y)
 
-  ncp <- .rsi_negative_controls(
-    v05_active, nc, U, conf_XM, conf_MY, cov_df, n, p, coverage, captured,
-    omega_1, omega_2, wcp, lambda_XM, lambda_MY, MMCon, MMCpG,
-    noise_cor$W, nc_params
-  )
-
-  # Features with strong vs weak confounding (reference-compatible
-  # bookkeeping).
-  thr <- stats::median(yy$gY_norm)
-
-  out <- list(
-    X = X, G = matrix(rep(inst$G, p), n, p), Y = yy$Y, W = ncp$W,
-    U1 = U[, 1], M = M, synthetic_data = cov_df,
-    true_total = true_total, true_NDE = true_NDE, true_NIE = true_NIE,
-    U = U, genetic_instrument = inst$gi,
-    successful_features = which(yy$gY_norm >= thr),
-    failed_features = which(yy$gY_norm < thr),
-    params = list(
-      n = n, n_features = p, n_confounders = k, n_mediators = n_mediators,
-      beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
-      conf_strength = conf_strength, coverage = coverage,
-      mo_confounding = mo_confounding, pleio = pleio, phi = phi,
-      gamma_G = gamma_G, rho_G1 = rho_G1, rho_G2 = rho_G2, rho_pop = rho_pop,
-      lambda_XM = lambda_XM, lambda_MY = lambda_MY,
-      omega_1 = omega_1, omega_2 = omega_2,
-      nc_model = if (is.character(nc_model)) nc_model else "custom",
-      u_strength = u_strength,
-      w_coverage_profile = if (!is.null(wcp)) wcp else
-        list(w1 = ncp$om1_vec, w2 = ncp$om2_vec),
-      outcome_type = outcome_type,
-      surv_h0 = surv_h0, surv_event_frac = surv_event_frac,
-      surv_censor_rate = surv_censor_rate, bin_prev = bin_prev
+    ncp <- .rsi_negative_controls(
+        v05_active, nc, U, conf_XM, conf_MY, cov_df, n, p, coverage, captured,
+        omega_1, omega_2, wcp, lambda_XM, lambda_MY, MMCon, MMCpG,
+        noise_cor$W, nc_params
     )
-  )
-  out <- .rsi_add_outcome(out, outcome_type, yy$Y[, 1], surv_h0,
-                          surv_event_frac, surv_censor_rate, bin_prev)
-  if (phi > 0) out$Gm <- inst$Gm
-  out$n_mediators <- n_mediators
-  if (v05_active) {
-    out$G1 <- inst$G1
-    out$G2 <- inst$G2
-    out$W1 <- ncp$W1
-    out$W2 <- ncp$W2
-    out$conf_XM <- conf_XM
-    out$conf_MY <- conf_MY
-    if (rho_pop > 0) out$P <- inst$P
-  }
-  out
+
+    # Features with strong vs weak confounding (reference-compatible
+    # bookkeeping).
+    thr <- stats::median(yy$gY_norm)
+
+    out <- list(
+        X = X, G = matrix(rep(inst$G, p), n, p), Y = yy$Y, W = ncp$W,
+        U1 = U[, 1], M = M, synthetic_data = cov_df,
+        true_total = true_total, true_NDE = true_NDE, true_NIE = true_NIE,
+        U = U, genetic_instrument = inst$gi,
+        successful_features = which(yy$gY_norm >= thr),
+        failed_features = which(yy$gY_norm < thr),
+        params = list(
+            n = n, n_features = p, n_confounders = k, n_mediators = n_mediators,
+            beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
+            conf_strength = conf_strength, coverage = coverage,
+            mo_confounding = mo_confounding, pleio = pleio, phi = phi,
+            gamma_G = gamma_G, rho_G1 = rho_G1, rho_G2 = rho_G2, rho_pop = rho_pop,
+            lambda_XM = lambda_XM, lambda_MY = lambda_MY,
+            omega_1 = omega_1, omega_2 = omega_2,
+            nc_model = if (is.character(nc_model)) nc_model else "custom",
+            u_strength = u_strength,
+            w_coverage_profile = if (!is.null(wcp)) wcp else
+                list(w1 = ncp$om1_vec, w2 = ncp$om2_vec),
+            outcome_type = outcome_type,
+            surv_h0 = surv_h0, surv_event_frac = surv_event_frac,
+            surv_censor_rate = surv_censor_rate, bin_prev = bin_prev
+        )
+    )
+    out <- .rsi_add_outcome(out, outcome_type, yy$Y[, 1], surv_h0,
+        surv_event_frac, surv_censor_rate, bin_prev)
+    if (phi > 0) out$Gm <- inst$Gm
+    out$n_mediators <- n_mediators
+    if (v05_active) {
+        out$G1 <- inst$G1
+        out$G2 <- inst$G2
+        out$W1 <- ncp$W1
+        out$W2 <- ncp$W2
+        out$conf_XM <- conf_XM
+        out$conf_MY <- conf_MY
+        if (rho_pop > 0) out$P <- inst$P
+    }
+    out
 }
 
 # ------------------------------------------------------------
@@ -289,15 +289,15 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @keywords internal
 #' @noRd
 .rsi_check_defunct <- function(separate_U) {
-  # The separate_U toggle was replaced by per-path confounder loading
-  # vectors lambda_XM / lambda_MY.
-  if (!is.null(separate_U))
-    stop("argument `separate_U` was removed. Confounding is now ",
-         "specified by per-path loading vectors `lambda_XM` and `lambda_MY` ",
-         "over a k-dimensional confounder space. Shared loadings (the default) ",
-         "reproduce the old separate_U = FALSE; lambda_XM = e1, lambda_MY = e2 ",
-         "at k = 2 reproduce the old separate_U = TRUE.", call. = FALSE)
-  invisible(NULL)
+    # The separate_U toggle was replaced by per-path confounder loading
+    # vectors lambda_XM / lambda_MY.
+    if (!is.null(separate_U))
+        stop("argument `separate_U` was removed. Confounding is now ",
+            "specified by per-path loading vectors `lambda_XM` and `lambda_MY` ",
+            "over a k-dimensional confounder space. Shared loadings (the default) ",
+            "reproduce the old separate_U = FALSE; lambda_XM = e1, lambda_MY = e2 ",
+            "at k = 2 reproduce the old separate_U = TRUE.", call. = FALSE)
+    invisible(NULL)
 }
 
 #' Validate and recycle a per-control coverage profile (internal)
@@ -308,11 +308,11 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @keywords internal
 #' @noRd
 .rsi_coverage_profile <- function(wcp, p) {
-  if (is.null(wcp)) return(NULL)
-  if (!is.list(wcp)) stop("w_coverage_profile must be a list with 'w1'/'w2'")
-  if (!is.null(wcp$w1)) wcp$w1 <- rep_len(as.numeric(wcp$w1), p)
-  if (!is.null(wcp$w2)) wcp$w2 <- rep_len(as.numeric(wcp$w2), p)
-  wcp
+    if (is.null(wcp)) return(NULL)
+    if (!is.list(wcp)) stop("w_coverage_profile must be a list with 'w1'/'w2'")
+    if (!is.null(wcp$w1)) wcp$w1 <- rep_len(as.numeric(wcp$w1), p)
+    if (!is.null(wcp$w2)) wcp$w2 <- rep_len(as.numeric(wcp$w2), p)
+    wcp
 }
 
 #' Resolve the per-confounder strength profile to length k (internal)
@@ -323,9 +323,9 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @keywords internal
 #' @noRd
 .rsi_u_strength <- function(u_strength, k) {
-  if (is.null(u_strength)) return(rep(1, k))
-  u_strength <- rep_len(as.numeric(u_strength), k)
-  u_strength * k / sum(u_strength)
+    if (is.null(u_strength)) return(rep(1, k))
+    u_strength <- rep_len(as.numeric(u_strength), k)
+    u_strength * k / sum(u_strength)
 }
 
 #' Resolve a per-path confounder loading vector (internal)
@@ -336,11 +336,11 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @keywords internal
 #' @noRd
 .rsi_resolve_lambda <- function(lam, k, u_strength) {
-  if (is.null(lam)) return(u_strength / sqrt(sum(u_strength^2)))
-  lam <- rep_len(as.numeric(lam), k)
-  nrm <- sqrt(sum(lam^2))
-  if (nrm == 0) stop("lambda vectors must have nonzero norm.", call. = FALSE)
-  lam / nrm
+    if (is.null(lam)) return(u_strength / sqrt(sum(u_strength^2)))
+    lam <- rep_len(as.numeric(lam), k)
+    nrm <- sqrt(sum(lam^2))
+    if (nrm == 0) stop("lambda vectors must have nonzero norm.", call. = FALSE)
+    lam / nrm
 }
 
 #' Feature-level noise correlation matrices for W and Y (internal)
@@ -351,11 +351,11 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @keywords internal
 #' @noRd
 .rsi_noise_cor <- function(trained_gan, p, feat_cor) {
-  gan_feat_cor <- trained_gan$feature_correlations %||% list()
-  out <- list(W = gan_feat_cor$W, Y = gan_feat_cor$Y)
-  if (is.null(out$W) && feat_cor > 0) out$W <- .block_diag_cor(p, feat_cor)
-  if (is.null(out$Y) && feat_cor > 0) out$Y <- .block_diag_cor(p, feat_cor)
-  out
+    gan_feat_cor <- trained_gan$feature_correlations %||% list()
+    out <- list(W = gan_feat_cor$W, Y = gan_feat_cor$Y)
+    if (is.null(out$W) && feat_cor > 0) out$W <- .block_diag_cor(p, feat_cor)
+    if (is.null(out$Y) && feat_cor > 0) out$Y <- .block_diag_cor(p, feat_cor)
+    out
 }
 
 #' Exposure (G) and mediator (Gm) instruments for one iteration (internal)
@@ -369,38 +369,38 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @noRd
 .rsi_instruments <- function(v05_active, n, n_mediators, phi, rho_G1, rho_G2,
                              rho_pop, conf_XM, conf_MY) {
-  if (!v05_active) {
-    gi <- simulate_single_genetic_instrument(n)
-    Gm <- NULL
+    if (!v05_active) {
+        gi <- simulate_single_genetic_instrument(n)
+        Gm <- NULL
+        if (phi > 0) {
+            Gm <- if (n_mediators > 1) {
+                matrix(rnorm(n_mediators * n), n_mediators, n)
+            } else {
+                rnorm(n)
+            }
+        }
+        return(list(G = gi$G, Gm = Gm, G1 = gi$G, G2 = Gm, P = NULL, gi = gi))
+    }
+    P <- rnorm(n) # shared population structure
+    resid_var_G1 <- max(1 - rho_G1^2 - rho_pop^2, 0)
+    G1 <- as.numeric(scale(rho_G1 * conf_XM + rho_pop * P +
+        sqrt(resid_var_G1) * rnorm(n)))
+    G2 <- NULL
     if (phi > 0) {
-      Gm <- if (n_mediators > 1) {
-        matrix(rnorm(n_mediators * n), n_mediators, n)
-      } else {
-        rnorm(n)
-      }
+        resid_var_G2 <- max(1 - rho_G2^2 - rho_pop^2, 0)
+        draw_g2 <- function() {
+            as.numeric(scale(rho_G2 * conf_MY + rho_pop * P +
+                sqrt(resid_var_G2) * rnorm(n)))
+        }
+        if (n_mediators > 1) {
+            G2 <- matrix(NA_real_, n_mediators, n)
+            for (mm in seq_len(n_mediators)) G2[mm, ] <- draw_g2()
+        } else {
+            G2 <- draw_g2()
+        }
     }
-    return(list(G = gi$G, Gm = Gm, G1 = gi$G, G2 = Gm, P = NULL, gi = gi))
-  }
-  P <- rnorm(n) # shared population structure
-  resid_var_G1 <- max(1 - rho_G1^2 - rho_pop^2, 0)
-  G1 <- as.numeric(scale(rho_G1 * conf_XM + rho_pop * P +
-                           sqrt(resid_var_G1) * rnorm(n)))
-  G2 <- NULL
-  if (phi > 0) {
-    resid_var_G2 <- max(1 - rho_G2^2 - rho_pop^2, 0)
-    draw_g2 <- function() {
-      as.numeric(scale(rho_G2 * conf_MY + rho_pop * P +
-                         sqrt(resid_var_G2) * rnorm(n)))
-    }
-    if (n_mediators > 1) {
-      G2 <- matrix(NA_real_, n_mediators, n)
-      for (mm in seq_len(n_mediators)) G2[mm, ] <- draw_g2()
-    } else {
-      G2 <- draw_g2()
-    }
-  }
-  list(G = G1, Gm = G2, G1 = G1, G2 = G2, P = P,
-       gi = list(G = G1, dosages = NULL, maf = NULL))
+    list(G = G1, Gm = G2, G1 = G1, G2 = G2, P = P,
+        gi = list(G = G1, dosages = NULL, maf = NULL))
 }
 
 #' Simulate the mediator(s) for one iteration (internal)
@@ -413,29 +413,29 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @noRd
 .rsi_mediator <- function(X, n, n_mediators, alpha_M, mo_confounding, conf_MY,
                           phi, Gm, exo_M_features) {
-  one_mediator <- function(gm, tex) {
-    m <- alpha_M * X
-    if (mo_confounding > 0) m <- m + mo_confounding * 0.5 * conf_MY
-    if (phi > 0) m <- m + phi * gm
-    if (!is.null(exo_M_features)) {
-      m + tex + rnorm(n, 0, 0.02)
-    } else {
-      m + 0.3 * rnorm(n) + rnorm(n, 0, 0.05)
+    one_mediator <- function(gm, tex) {
+        m <- alpha_M * X
+        if (mo_confounding > 0) m <- m + mo_confounding * 0.5 * conf_MY
+        if (phi > 0) m <- m + phi * gm
+        if (!is.null(exo_M_features)) {
+            m + tex + rnorm(n, 0, 0.02)
+        } else {
+            m + 0.3 * rnorm(n) + rnorm(n, 0, 0.05)
+        }
     }
-  }
-  if (n_mediators == 1) {
-    tex <- if (is.matrix(exo_M_features)) exo_M_features[1, ] else
-      exo_M_features
-    return(one_mediator(Gm, tex))
-  }
-  M <- matrix(NA_real_, n_mediators, n)
-  for (mm in seq_len(n_mediators)) {
-    gm <- if (is.matrix(Gm)) Gm[mm, ] else Gm
-    tex <- if (is.matrix(exo_M_features)) exo_M_features[mm, ] else
-      exo_M_features
-    M[mm, ] <- one_mediator(gm, tex)
-  }
-  M
+    if (n_mediators == 1) {
+        tex <- if (is.matrix(exo_M_features)) exo_M_features[1, ] else
+            exo_M_features
+        return(one_mediator(Gm, tex))
+    }
+    M <- matrix(NA_real_, n_mediators, n)
+    for (mm in seq_len(n_mediators)) {
+        gm <- if (is.matrix(Gm)) Gm[mm, ] else Gm
+        tex <- if (is.matrix(exo_M_features)) exo_M_features[mm, ] else
+            exo_M_features
+        M[mm, ] <- one_mediator(gm, tex)
+    }
+    M
 }
 
 #' Simulate the outcome panel for one iteration (internal)
@@ -450,16 +450,16 @@ run_single_iteration <- function(trained_gan = NULL,
 .rsi_outcome <- function(X, M, U, G, exo_Y, n, p, k, beta_X, beta_M,
                          conf_strength, MMOut, u_strength, pleio,
                          noise_cor_Y) {
-  Y <- matrix(NA_real_, n, p)
-  gY_norm <- numeric(p)
-  M_eff <- if (is.matrix(M)) colSums(M) else M
-  for (f in seq_len(p)) {
-    gY <- conf_strength * MMOut * u_strength * runif(k, 0.4, 0.8) / sqrt(k)
-    gY_norm[f] <- sqrt(sum(gY^2))
-    Y[, f] <- beta_M * M_eff + beta_X * X + as.numeric(U %*% gY) +
-      pleio * G + 0.4 * exo_Y
-  }
-  list(Y = Y + .generate_outcome_noise(n, p, noise_cor_Y), gY_norm = gY_norm)
+    Y <- matrix(NA_real_, n, p)
+    gY_norm <- numeric(p)
+    M_eff <- if (is.matrix(M)) colSums(M) else M
+    for (f in seq_len(p)) {
+        gY <- conf_strength * MMOut * u_strength * runif(k, 0.4, 0.8) / sqrt(k)
+        gY_norm[f] <- sqrt(sum(gY^2))
+        Y[, f] <- beta_M * M_eff + beta_X * X + as.numeric(U %*% gY) +
+            pleio * G + 0.4 * exo_Y
+    }
+    list(Y = Y + .generate_outcome_noise(n, p, noise_cor_Y), gY_norm = gY_norm)
 }
 
 #' Build an n x p NC panel with per-column coverage (internal)
@@ -470,28 +470,28 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @noRd
 .rsi_nc_panel_per_coverage <- function(nc, U_col, om_vec, cov_df, n, p,
                                        MMCon, MMCpG, noise_cor_W, nc_params) {
-  U_mat <- matrix(U_col, n, 1)
-  out <- matrix(NA_real_, n, p)
-  for (ov in unique(om_vec)) {
-    cols <- which(om_vec == ov)
-    nc_p <- utils::modifyList(
-      list(n_features = length(cols), coverage = ov, captured = 1,
-           MMCon = MMCon, MMCpG = MMCpG,
-           noise_cor = .match_cor(noise_cor_W, length(cols))), nc_params)
-    Wc <- .rsi_fit_nc_columns(nc(U_mat, cov_df, nc_p), length(cols))
-    out[, cols] <- Wc
-  }
-  out
+    U_mat <- matrix(U_col, n, 1)
+    out <- matrix(NA_real_, n, p)
+    for (ov in unique(om_vec)) {
+        cols <- which(om_vec == ov)
+        nc_p <- utils::modifyList(
+            list(n_features = length(cols), coverage = ov, captured = 1,
+                MMCon = MMCon, MMCpG = MMCpG,
+                noise_cor = .match_cor(noise_cor_W, length(cols))), nc_params)
+        Wc <- .rsi_fit_nc_columns(nc(U_mat, cov_df, nc_p), length(cols))
+        out[, cols] <- Wc
+    }
+    out
 }
 
 #' Coerce an nc_model result to a matrix with exactly `p` columns (internal)
 #' @keywords internal
 #' @noRd
 .rsi_fit_nc_columns <- function(W, p) {
-  if (!is.matrix(W)) W <- as.matrix(W)
-  if (ncol(W) != p) W <- W[, rep(seq_len(ncol(W)), length.out = p),
-                           drop = FALSE]
-  W
+    if (!is.matrix(W)) W <- as.matrix(W)
+    if (ncol(W) != p) W <- W[, rep(seq_len(ncol(W)), length.out = p),
+        drop = FALSE]
+    W
 }
 
 #' Negative-control panels for one iteration (internal)
@@ -507,29 +507,29 @@ run_single_iteration <- function(trained_gan = NULL,
                                    omega_1, omega_2, wcp, lambda_XM,
                                    lambda_MY, MMCon, MMCpG, noise_cor_W,
                                    nc_params) {
-  om1 <- if (is.null(omega_1)) coverage else omega_1
-  om2 <- if (is.null(omega_2)) coverage else omega_2
-  om1_vec <- if (!is.null(wcp$w1)) wcp$w1 else rep(om1, p)
-  om2_vec <- if (!is.null(wcp$w2)) wcp$w2 else rep(om2, p)
+    om1 <- if (is.null(omega_1)) coverage else omega_1
+    om2 <- if (is.null(omega_2)) coverage else omega_2
+    om1_vec <- if (!is.null(wcp$w1)) wcp$w1 else rep(om1, p)
+    om2_vec <- if (!is.null(wcp$w2)) wcp$w2 else rep(om2, p)
 
-  if (v05_active) {
-    panel <- function(U_col, om_vec) {
-      .rsi_nc_panel_per_coverage(nc, U_col, om_vec, cov_df, n, p, MMCon,
-                                 MMCpG, noise_cor_W, nc_params)
+    if (v05_active) {
+        panel <- function(U_col, om_vec) {
+            .rsi_nc_panel_per_coverage(nc, U_col, om_vec, cov_df, n, p, MMCon,
+                MMCpG, noise_cor_W, nc_params)
+        }
+        W1 <- panel(conf_XM, om1_vec)
+        W2 <- panel(conf_MY, om2_vec)
+        W <- if (identical(lambda_XM, lambda_MY)) W1 else scale((W1 + W2) / 2)
+    } else {
+        nc_p <- utils::modifyList(
+            list(n_features = p, coverage = coverage, captured = captured,
+                MMCon = MMCon, MMCpG = MMCpG,
+                noise_cor = .match_cor(noise_cor_W, p)), nc_params)
+        W <- .rsi_fit_nc_columns(nc(U, cov_df, nc_p), p)
+        W1 <- W
+        W2 <- W
     }
-    W1 <- panel(conf_XM, om1_vec)
-    W2 <- panel(conf_MY, om2_vec)
-    W <- if (identical(lambda_XM, lambda_MY)) W1 else scale((W1 + W2) / 2)
-  } else {
-    nc_p <- utils::modifyList(
-      list(n_features = p, coverage = coverage, captured = captured,
-           MMCon = MMCon, MMCpG = MMCpG,
-           noise_cor = .match_cor(noise_cor_W, p)), nc_params)
-    W <- .rsi_fit_nc_columns(nc(U, cov_df, nc_p), p)
-    W1 <- W
-    W2 <- W
-  }
-  list(W = W, W1 = W1, W2 = W2, om1_vec = om1_vec, om2_vec = om2_vec)
+    list(W = W, W1 = W1, W2 = W2, om1_vec = om1_vec, om2_vec = om2_vec)
 }
 
 #' Attach the survival or binary outcome to a simulated dataset (internal)
@@ -541,17 +541,17 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @noRd
 .rsi_add_outcome <- function(out, outcome_type, linpred, surv_h0,
                              surv_event_frac, surv_censor_rate, bin_prev) {
-  if (outcome_type == "survival") {
-    surv <- .linpred_to_surv(linpred, h0 = surv_h0,
-                             event_frac = surv_event_frac,
-                             censor_rate = surv_censor_rate)
-    out$surv_time <- surv$surv_time
-    out$surv_event <- surv$surv_event
-  } else if (outcome_type == "binary") {
-    out$y_bin <- .linpred_to_binary(linpred, prev = bin_prev)$y_bin
-  }
-  out$outcome_type <- outcome_type
-  out
+    if (outcome_type == "survival") {
+        surv <- .linpred_to_surv(linpred, h0 = surv_h0,
+            event_frac = surv_event_frac,
+            censor_rate = surv_censor_rate)
+        out$surv_time <- surv$surv_time
+        out$surv_event <- surv$surv_event
+    } else if (outcome_type == "binary") {
+        out$y_bin <- .linpred_to_binary(linpred, prev = bin_prev)$y_bin
+    }
+    out$outcome_type <- outcome_type
+    out
 }
 
 
@@ -559,16 +559,16 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @keywords internal
 #' @noRd
 .iteration_covariates <- function(trained_gan, n) {
-  default <- data.frame(fetal_sex = rbinom(n, 1, 0.5),
-                        gestational_age = rnorm(n))
-  if (is.null(trained_gan)) return(default)
+    default <- data.frame(fetal_sex = rbinom(n, 1, 0.5),
+        gestational_age = rnorm(n))
+    if (is.null(trained_gan)) return(default)
 
-  tex <- tryCatch(sample_texture(trained_gan, n), error = function(e) NULL)
-  if (is.null(tex)) return(default)
-  drop <- c("exposure_level", "outcome_level", "mediator_level")
-  cv <- tex[, setdiff(names(tex), drop), drop = FALSE]
-  if (!ncol(cv)) return(default)
-  cv
+    tex <- tryCatch(sample_texture(trained_gan, n), error = function(e) NULL)
+    if (is.null(tex)) return(default)
+    drop <- c("exposure_level", "outcome_level", "mediator_level")
+    cv <- tex[, setdiff(names(tex), drop), drop = FALSE]
+    if (!ncol(cv)) return(default)
+    cv
 }
 
 #' Exogenous, outcome-only texture component for one iteration (internal)
@@ -579,10 +579,10 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @keywords internal
 #' @noRd
 .iteration_outcome_texture <- function(trained_gan, n) {
-  if (is.null(trained_gan)) return(rnorm(n))
-  tex <- tryCatch(sample_texture(trained_gan, n), error = function(e) NULL)
-  if (is.null(tex) || !"outcome_level" %in% names(tex)) return(rnorm(n))
-  as.numeric(scale(tex$outcome_level))
+    if (is.null(trained_gan)) return(rnorm(n))
+    tex <- tryCatch(sample_texture(trained_gan, n), error = function(e) NULL)
+    if (is.null(tex) || !"outcome_level" %in% names(tex)) return(rnorm(n))
+    as.numeric(scale(tex$outcome_level))
 }
 
 #' Exogenous, mediator-only texture component for one iteration (internal)
@@ -604,11 +604,11 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @return A p x n matrix, or NULL.
 #' @keywords internal
 .iteration_mediator_texture_features <- function(trained_gan, n, p) {
-  if (is.null(trained_gan)) return(NULL)
-  ft <- trained_gan$feature_texture %||% NULL
-  if (is.null(ft)) return(NULL)
-  tryCatch(sample_feature_texture(ft, n_samples = n, n_features = p),
-           error = function(e) NULL)
+    if (is.null(trained_gan)) return(NULL)
+    ft <- trained_gan$feature_texture %||% NULL
+    if (is.null(ft)) return(NULL)
+    tryCatch(sample_feature_texture(ft, n_samples = n, n_features = p),
+        error = function(e) NULL)
 }
 
 #' Match a correlation matrix to the target feature count (internal)
@@ -623,10 +623,10 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @return A `p_target x p_target` correlation matrix, or NULL.
 #' @keywords internal
 .match_cor <- function(cor_mat, p_target) {
-  if (is.null(cor_mat)) return(NULL)
-  if (!is.matrix(cor_mat)) return(NULL)
-  if (nrow(cor_mat) != p_target || ncol(cor_mat) != p_target) return(NULL)
-  cor_mat
+    if (is.null(cor_mat)) return(NULL)
+    if (!is.matrix(cor_mat)) return(NULL)
+    if (nrow(cor_mat) != p_target || ncol(cor_mat) != p_target) return(NULL)
+    cor_mat
 }
 
 #' Generate outcome noise, optionally correlated across features (internal)
@@ -641,13 +641,13 @@ run_single_iteration <- function(trained_gan = NULL,
 #' @return An `n x p` numeric matrix of outcome noise.
 #' @keywords internal
 .generate_outcome_noise <- function(n, p, noise_cor) {
-  if (!is.null(noise_cor) && is.matrix(noise_cor) &&
-      nrow(noise_cor) == p && ncol(noise_cor) == p) {
-    Sigma <- noise_cor * (0.2^2)
-    noise <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sigma)
-    if (n == 1) noise <- matrix(noise, nrow = 1)
-    noise
-  } else {
-    matrix(rnorm(n * p, 0, 0.2), n, p)
-  }
+    if (!is.null(noise_cor) && is.matrix(noise_cor) &&
+        nrow(noise_cor) == p && ncol(noise_cor) == p) {
+        Sigma <- noise_cor * (0.2^2)
+        noise <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sigma)
+        if (n == 1) noise <- matrix(noise, nrow = 1)
+        noise
+    } else {
+        matrix(rnorm(n * p, 0, 0.2), n, p)
+    }
 }

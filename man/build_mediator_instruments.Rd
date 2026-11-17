@@ -111,18 +111,18 @@ skipped.
 }
 \examples{
 if (requireNamespace("glmnet", quietly = TRUE)) {
-  set.seed(42)
-  n <- 150; p <- 80
-  dos <- matrix(rbinom(p * n, 2, 0.3), nrow = p,
-                dimnames = list(paste0("1:", 1:p, ":A:G"),
-                                paste0("S", 1:n)))
-  expr <- matrix(rnorm(4 * n), nrow = 4,
-                 dimnames = list(paste0("Gene", 1:4), paste0("S", 1:n)))
-  expr[1, ] <- expr[1, ] + 0.9 * scale(dos[5, ]) + 0.9 * scale(dos[15, ])
-  gp <- data.frame(gene = paste0("Gene", 1:4), chr = "1",
-                   tss = c(5, 25, 45, 65))
-  sp <- data.frame(snp = rownames(dos), chr = "1", pos = 1:p)
-  fit <- build_mediator_instruments(expr, dos, gp, sp, seed = 1)
-  fit$qc
+    set.seed(42)
+    n <- 150; p <- 80
+    dos <- matrix(rbinom(p * n, 2, 0.3), nrow = p,
+        dimnames = list(paste0("1:", 1:p, ":A:G"),
+            paste0("S", 1:n)))
+    expr <- matrix(rnorm(4 * n), nrow = 4,
+        dimnames = list(paste0("Gene", 1:4), paste0("S", 1:n)))
+    expr[1, ] <- expr[1, ] + 0.9 * scale(dos[5, ]) + 0.9 * scale(dos[15, ])
+    gp <- data.frame(gene = paste0("Gene", 1:4), chr = "1",
+        tss = c(5, 25, 45, 65))
+    sp <- data.frame(snp = rownames(dos), chr = "1", pos = 1:p)
+    fit <- build_mediator_instruments(expr, dos, gp, sp, seed = 1)
+    fit$qc
 }
 }

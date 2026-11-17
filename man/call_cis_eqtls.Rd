@@ -91,12 +91,12 @@ harmonised first, so \code{"chr1"} and \code{"1"} match.
 \examples{
 n <- 80
 dos <- matrix(rbinom(200 * n, 2, 0.3), nrow = 200,
-              dimnames = list(paste0("1:", 1:200, ":A:G"), NULL))
+    dimnames = list(paste0("1:", 1:200, ":A:G"), NULL))
 expr <- matrix(rnorm(20 * n), nrow = 20,
-               dimnames = list(paste0("Gene", 1:20), NULL))
-expr[1, ] <- expr[1, ] + 0.5 * dos[5, ]   # one true cis-eQTL
+    dimnames = list(paste0("Gene", 1:20), NULL))
+expr[1, ] <- expr[1, ] + 0.5 * dos[5, ] # one true cis-eQTL
 gp <- data.frame(gene = paste0("Gene", 1:20), chr = "1",
-                 tss = seq(1, 191, by = 10))
+    tss = seq(1, 191, by = 10))
 sp <- data.frame(snp = rownames(dos), chr = "1", pos = 1:200)
 hits <- call_cis_eqtls(expr, dos, gp, sp)
 head(hits$best)
@@ -104,10 +104,10 @@ head(hits$best)
 # Equivalent call with GRanges coordinates (UCSC-style "chr1" names
 # are harmonised with the Ensembl-style "1" used above)
 gp_gr <- GenomicRanges::GRanges("chr1",
-  IRanges::IRanges(seq(1, 191, by = 10), width = 1),
-  gene = paste0("Gene", 1:20))
+    IRanges::IRanges(seq(1, 191, by = 10), width = 1),
+    gene = paste0("Gene", 1:20))
 sp_gr <- GenomicRanges::GRanges("1", IRanges::IRanges(1:200, width = 1),
-  snp = rownames(dos))
+    snp = rownames(dos))
 hits_gr <- call_cis_eqtls(expr, dos, gp_gr, sp_gr)
 identical(hits$best, hits_gr$best)
 }

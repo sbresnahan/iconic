@@ -59,15 +59,15 @@ captures confounding structure without direct exposure mediation.
 \examples{
 # Simulate two FUSION-style weight objects in memory
 dos <- matrix(rbinom(10 * 50, 2, 0.3), nrow = 10,
-              dimnames = list(paste0("rs", 1:10), paste0("S", 1:50)))
+    dimnames = list(paste0("rs", 1:10), paste0("S", 1:50)))
 mk_wgt <- function(snps, w) {
-  list(wgt.matrix = matrix(w, ncol = 1, dimnames = list(NULL, "enet")),
-       snps = data.frame(V2 = snps),
-       cv.performance = matrix(0.2, nrow = 1,
-                               dimnames = list("rsq", "enet")))
+    list(wgt.matrix = matrix(w, ncol = 1, dimnames = list(NULL, "enet")),
+        snps = data.frame(V2 = snps),
+        cv.performance = matrix(0.2, nrow = 1,
+            dimnames = list("rsq", "enet")))
 }
 wlist <- list(GeneA = mk_wgt(paste0("rs", 1:5), rep(0.1, 5)),
-              GeneB = mk_wgt(paste0("rs", 6:10), rep(-0.2, 5)))
+    GeneB = mk_wgt(paste0("rs", 6:10), rep(-0.2, 5)))
 pos <- data.frame(ID = c("GeneA", "GeneB"), WGT = c("a.wgt.RDat", "b.wgt.RDat"))
 out <- apply_fusion_weights(dos, pos = pos, weights = wlist)
 dim(out$predicted)

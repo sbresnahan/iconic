@@ -71,8 +71,8 @@ R2(Utilde | W) versus omega.
 ## replicates) so the example runs in a few seconds. Real sweeps use
 ## the defaults (n_samples = 500, n_iter = 50, n_perm = 200).
 panels <- sweep_nc_validity(n_samples = 60, n_iter = 2,
-  contam_grid = c(0, 0.3), meqtl_grid = c(0, 0.3),
-  eqtl_grid = c(0, 0.3), omega_grid = c(0, 0.8), n_perm = 10)
+    contam_grid = c(0, 0.3), meqtl_grid = c(0, 0.3),
+    eqtl_grid = c(0, 0.3), omega_grid = c(0, 0.8), n_perm = 10)
 panels$panel_a
 head(panels$panel_capture_support)
 }

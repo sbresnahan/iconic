@@ -28,6 +28,6 @@ Type I error rate vs confounding strength
 }
 \examples{
 t1e <- sweep_null_by_conf(c(0.5, 0.8), n_iter = 2, n_samples = 100,
-  n_features = 5)
+    n_features = 5)
 plot_type1_vs_conf(t1e)
 }

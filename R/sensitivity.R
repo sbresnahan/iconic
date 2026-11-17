@@ -39,28 +39,28 @@
 # summarise_mediation_results() consume it unchanged.
 .run_surv_methods <- function(dat, effect_scale = "loghr", tau = NULL,
                               is_mediation = FALSE) {
-  G_vec <- if (!is.null(dat$G)) {
-    if (is.matrix(dat$G)) dat$G[, 1] else dat$G
-  } else NULL
-  Gm_vec <- if (!is.null(dat$Gm)) {
-    if (is.matrix(dat$Gm)) dat$Gm[1, ] else dat$Gm
-  } else NULL
+    G_vec <- if (!is.null(dat$G)) {
+        if (is.matrix(dat$G)) dat$G[, 1] else dat$G
+    } else NULL
+    Gm_vec <- if (!is.null(dat$Gm)) {
+        if (is.matrix(dat$Gm)) dat$Gm[1, ] else dat$Gm
+    } else NULL
 
-  if (is_mediation) {
-    sdat <- iconic_data(
-      X = dat$X, outcome_type = "survival",
-      surv_time = dat$surv_time, surv_event = dat$surv_event,
-      M = dat$M, G = G_vec, Gm = Gm_vec,
-      W = t(dat$W),
-      W1 = if (!is.null(dat$W1)) t(dat$W1) else NULL,
-      W2 = if (!is.null(dat$W2)) t(dat$W2) else NULL)
-  } else {
-    sdat <- iconic_data(
-      X = dat$X, outcome_type = "survival",
-      surv_time = dat$surv_time, surv_event = dat$surv_event,
-      G = G_vec, W = t(dat$W))
-  }
-  iconic_estimate(sdat, effect_scale = effect_scale, tau = tau)
+    if (is_mediation) {
+        sdat <- iconic_data(
+            X = dat$X, outcome_type = "survival",
+            surv_time = dat$surv_time, surv_event = dat$surv_event,
+            M = dat$M, G = G_vec, Gm = Gm_vec,
+            W = t(dat$W),
+            W1 = if (!is.null(dat$W1)) t(dat$W1) else NULL,
+            W2 = if (!is.null(dat$W2)) t(dat$W2) else NULL)
+    } else {
+        sdat <- iconic_data(
+            X = dat$X, outcome_type = "survival",
+            surv_time = dat$surv_time, surv_event = dat$surv_event,
+            G = G_vec, W = t(dat$W))
+    }
+    iconic_estimate(sdat, effect_scale = effect_scale, tau = tau)
 }
 
 # Run binary estimators on a dat list from run_single_iteration().
@@ -70,26 +70,26 @@
 # summarise_mediation_results() consume it unchanged.
 .run_bin_methods <- function(dat, effect_scale = "logor",
                              is_mediation = FALSE) {
-  G_vec <- if (!is.null(dat$G)) {
-    if (is.matrix(dat$G)) dat$G[, 1] else dat$G
-  } else NULL
-  Gm_vec <- if (!is.null(dat$Gm)) {
-    if (is.matrix(dat$Gm)) dat$Gm[1, ] else dat$Gm
-  } else NULL
+    G_vec <- if (!is.null(dat$G)) {
+        if (is.matrix(dat$G)) dat$G[, 1] else dat$G
+    } else NULL
+    Gm_vec <- if (!is.null(dat$Gm)) {
+        if (is.matrix(dat$Gm)) dat$Gm[1, ] else dat$Gm
+    } else NULL
 
-  if (is_mediation) {
-    bdat <- iconic_data(
-      X = dat$X, Y = dat$y_bin, outcome_type = "binary",
-      M = dat$M, G = G_vec, Gm = Gm_vec,
-      W = t(dat$W),
-      W1 = if (!is.null(dat$W1)) t(dat$W1) else NULL,
-      W2 = if (!is.null(dat$W2)) t(dat$W2) else NULL)
-  } else {
-    bdat <- iconic_data(
-      X = dat$X, Y = dat$y_bin, outcome_type = "binary",
-      G = G_vec, W = t(dat$W))
-  }
-  iconic_estimate(bdat, effect_scale = effect_scale)
+    if (is_mediation) {
+        bdat <- iconic_data(
+            X = dat$X, Y = dat$y_bin, outcome_type = "binary",
+            M = dat$M, G = G_vec, Gm = Gm_vec,
+            W = t(dat$W),
+            W1 = if (!is.null(dat$W1)) t(dat$W1) else NULL,
+            W2 = if (!is.null(dat$W2)) t(dat$W2) else NULL)
+    } else {
+        bdat <- iconic_data(
+            X = dat$X, Y = dat$y_bin, outcome_type = "binary",
+            G = G_vec, W = t(dat$W))
+    }
+    iconic_estimate(bdat, effect_scale = effect_scale)
 }
 
 #' Benchmark estimators across confounding scenarios on synthetic data
@@ -134,7 +134,7 @@
 #' @export
 #' @examples
 #' sens <- gan_sensitivity(NULL, conf_grid = 0.8, coverage_grid = 0.7,
-#'   n_iter = 2, n_samples = 100, n_features = 5)
+#'     n_iter = 2, n_samples = 100, n_features = 5)
 #' head(sens$summary)
 gan_sensitivity <- function(trained_gan = NULL,
                             conf_grid = c(0.2, 0.5, 0.8),
@@ -154,59 +154,59 @@ gan_sensitivity <- function(trained_gan = NULL,
                             surv_event_frac = 0.6,
                             surv_censor_rate = NULL,
                             bin_prev = 0.5) {
-  outcome_type <- match.arg(outcome_type)
-  effect_scale <- match.arg(effect_scale)
-  if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
-    message("effect_scale = '", effect_scale,
+    outcome_type <- match.arg(outcome_type)
+    effect_scale <- match.arg(effect_scale)
+    if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
+        message("effect_scale = '", effect_scale,
             "' is not defined for binary outcomes; using 'logor'.")
-    effect_scale <- "logor"
-  }
-  if (outcome_type == "survival" && effect_scale %in% c("logor", "riskdiff")) {
-    message("effect_scale = '", effect_scale,
+        effect_scale <- "logor"
+    }
+    if (outcome_type == "survival" && effect_scale %in% c("logor", "riskdiff")) {
+        message("effect_scale = '", effect_scale,
             "' is not defined for survival outcomes; using 'loghr'.")
-    effect_scale <- "loghr"
-  }
-
-  grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
-                      k = k_grid, KEEP.OUT.ATTRS = FALSE)
-
-  true_total <- if (is.null(effect_size)) beta_X + alpha_M * beta_M else effect_size
-
-  smry <- lapply(seq_len(nrow(grid)), function(gi) {
-    cs <- grid$conf_strength[gi]; cov <- grid$coverage[gi]; kk <- grid$k[gi]
-
-    worker <- function(i) {
-      dat <- run_single_iteration(
-        trained_gan, n_synthetic_samples = n_samples, n_features = n_features,
-        n_confounders = kk, beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
-        effect_size = effect_size, conf_strength = cs, coverage = cov,
-        nc_model = nc_model, seed = base_seed + gi * 1000L + i,
-        outcome_type = outcome_type, surv_h0 = surv_h0,
-        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
-        bin_prev = bin_prev)
-      if (outcome_type == "survival") {
-        res <- .run_surv_methods(dat, effect_scale = effect_scale,
-                                 is_mediation = FALSE)
-      } else if (outcome_type == "binary") {
-        res <- .run_bin_methods(dat, effect_scale = effect_scale,
-                                is_mediation = FALSE)
-      } else {
-        res <- run_methods(dat, n_features)
-      }
-      res$iter <- i
-      res
+        effect_scale <- "loghr"
     }
 
-    combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker, n_cores))
-    s <- summarise_results(combined, true_total)
-    s$conf_strength <- cs; s$coverage <- cov; s$k <- kk; s$true_total <- true_total
-    s
-  })
+    grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
+        k = k_grid, KEEP.OUT.ATTRS = FALSE)
 
-  summary <- do.call(rbind, smry)
-  front <- c("conf_strength", "coverage", "k", "true_total", "method")
-  summary <- summary[, c(front, setdiff(names(summary), front))]
-  list(summary = summary, grid = grid)
+    true_total <- if (is.null(effect_size)) beta_X + alpha_M * beta_M else effect_size
+
+    smry <- lapply(seq_len(nrow(grid)), function(gi) {
+        cs <- grid$conf_strength[gi]; cov <- grid$coverage[gi]; kk <- grid$k[gi]
+
+        worker <- function(i) {
+            dat <- run_single_iteration(
+                trained_gan, n_synthetic_samples = n_samples, n_features = n_features,
+                n_confounders = kk, beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
+                effect_size = effect_size, conf_strength = cs, coverage = cov,
+                nc_model = nc_model, seed = base_seed + gi * 1000L + i,
+                outcome_type = outcome_type, surv_h0 = surv_h0,
+                surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
+                bin_prev = bin_prev)
+            if (outcome_type == "survival") {
+                res <- .run_surv_methods(dat, effect_scale = effect_scale,
+                    is_mediation = FALSE)
+            } else if (outcome_type == "binary") {
+                res <- .run_bin_methods(dat, effect_scale = effect_scale,
+                    is_mediation = FALSE)
+            } else {
+                res <- run_methods(dat, n_features)
+            }
+            res$iter <- i
+            res
+        }
+
+        combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker, n_cores))
+        s <- summarise_results(combined, true_total)
+        s$conf_strength <- cs; s$coverage <- cov; s$k <- kk; s$true_total <- true_total
+        s
+    })
+
+    summary <- do.call(rbind, smry)
+    front <- c("conf_strength", "coverage", "k", "true_total", "method")
+    summary <- summary[, c(front, setdiff(names(summary), front))]
+    list(summary = summary, grid = grid)
 }
 
 
@@ -226,32 +226,32 @@ gan_sensitivity <- function(trained_gan = NULL,
 #' @export
 #' @examples
 #' sens <- gan_sensitivity(NULL, conf_grid = 0.8, coverage_grid = 0.7,
-#'   n_iter = 2, n_samples = 100, n_features = 5)
+#'     n_iter = 2, n_samples = 100, n_features = 5)
 #' recommend_estimator(sens)
 recommend_estimator <- function(sens, exclude = c("UNADJ")) {
-  s <- sens$summary
-  s <- s[!s$method %in% exclude, , drop = FALSE]
+    s <- sens$summary
+    s <- s[!s$method %in% exclude, , drop = FALSE]
 
-  scen <- interaction(s$conf_strength, s$coverage, s$k, drop = TRUE)
-  per_scenario <- do.call(rbind, lapply(split(s, scen), function(d) {
-    d <- d[is.finite(d$rmse), , drop = FALSE]
-    if (!nrow(d)) return(NULL)
-    best <- d[which.min(d$rmse), ]
-    data.frame(conf_strength = best$conf_strength, coverage = best$coverage,
-               k = best$k, best_method = best$method, rmse = best$rmse,
-               stringsAsFactors = FALSE)
-  }))
+    scen <- interaction(s$conf_strength, s$coverage, s$k, drop = TRUE)
+    per_scenario <- do.call(rbind, lapply(split(s, scen), function(d) {
+        d <- d[is.finite(d$rmse), , drop = FALSE]
+        if (!nrow(d)) return(NULL)
+        best <- d[which.min(d$rmse), ]
+        data.frame(conf_strength = best$conf_strength, coverage = best$coverage,
+            k = best$k, best_method = best$method, rmse = best$rmse,
+            stringsAsFactors = FALSE)
+    }))
 
-  worst <- vapply(split(s$rmse, s$method), function(v) max(v, na.rm = TRUE), numeric(1))
-  worst <- worst[is.finite(worst)]
-  overall <- if (length(worst)) names(worst)[which.min(worst)] else NA_character_
+    worst <- vapply(split(s$rmse, s$method), function(v) max(v, na.rm = TRUE), numeric(1))
+    worst <- worst[is.finite(worst)]
+    overall <- if (length(worst)) names(worst)[which.min(worst)] else NA_character_
 
-  list(
-    per_scenario = per_scenario,
-    worst_case = data.frame(method = names(worst), worst_rmse = as.numeric(worst),
-                              row.names = NULL, stringsAsFactors = FALSE),
-    overall = overall
-  )
+    list(
+        per_scenario = per_scenario,
+        worst_case = data.frame(method = names(worst), worst_rmse = as.numeric(worst),
+            row.names = NULL, stringsAsFactors = FALSE),
+        overall = overall
+    )
 }
 
 
@@ -282,7 +282,7 @@ recommend_estimator <- function(sens, exclude = c("UNADJ")) {
 #' @export
 #' @examples
 #' chk <- nc_validity_check(NULL, coverage_grid = 0.7, k_grid = 1,
-#'   n_iter = 2, n_samples = 100, n_features = 5)
+#'     n_iter = 2, n_samples = 100, n_features = 5)
 #' chk$verdict
 nc_validity_check <- function(trained_gan = NULL,
                               coverage_grid = c(0.2, 0.5, 0.8, 1),
@@ -296,53 +296,53 @@ nc_validity_check <- function(trained_gan = NULL,
                               base_seed = 800,
                               n_cores = 1) {
 
-  sens <- gan_sensitivity(trained_gan, conf_grid = conf_strength,
-                          coverage_grid = coverage_grid, k_grid = k_grid,
-                          nc_model = nc_model, n_iter = n_iter,
-                          n_samples = n_samples, n_features = n_features,
-                          base_seed = base_seed, n_cores = n_cores)
+    sens <- gan_sensitivity(trained_gan, conf_grid = conf_strength,
+        coverage_grid = coverage_grid, k_grid = k_grid,
+        nc_model = nc_model, n_iter = n_iter,
+        n_samples = n_samples, n_features = n_features,
+        base_seed = base_seed, n_cores = n_cores)
 
-  s <- sens$summary
-  keep <- s$method %in% c("COCA", "PGC", "IV2SLS")
-  s <- s[keep, c("coverage", "k", "method", "bias", "abs_bias", "rmse", "power"), drop = FALSE]
+    s <- sens$summary
+    keep <- s$method %in% c("COCA", "PGC", "IV2SLS")
+    s <- s[keep, c("coverage", "k", "method", "bias", "abs_bias", "rmse", "power"), drop = FALSE]
 
-  # Proximal identifiability: need at least as many valid controls as confounders.
-  s$identified <- s$k <= n_valid_controls
+    # Proximal identifiability: need at least as many valid controls as confounders.
+    s$identified <- s$k <= n_valid_controls
 
-  # Best-case (highest-coverage) negative-control bias for each k, used as the
-  # reference for judging whether controls *degrade* as coverage drops.
-  # Only COCA and matrix-bridge PGC are NC-dependent; IV2SLS is
-  # instrument-based and not affected by completeness.
-  nc_bias <- function(d) mean(d$abs_bias[d$method %in% c("COCA", "PGC")], na.rm = TRUE)
-  base_by_k <- vapply(split(s, s$k), function(dk) {
-    top <- dk[dk$coverage == max(dk$coverage), , drop = FALSE]
-    nc_bias(top)
-  }, numeric(1))
+    # Best-case (highest-coverage) negative-control bias for each k, used as the
+    # reference for judging whether controls *degrade* as coverage drops.
+    # Only COCA and matrix-bridge PGC are NC-dependent; IV2SLS is
+    # instrument-based and not affected by completeness.
+    nc_bias <- function(d) mean(d$abs_bias[d$method %in% c("COCA", "PGC")], na.rm = TRUE)
+    base_by_k <- vapply(split(s, s$k), function(dk) {
+        top <- dk[dk$coverage == max(dk$coverage), , drop = FALSE]
+        nc_bias(top)
+    }, numeric(1))
 
-  verdict <- do.call(rbind, lapply(split(s, interaction(s$coverage, s$k, drop = TRUE)),
-    function(d) {
-      kk <- d$k[1]
-      here <- nc_bias(d)
-      baseline <- base_by_k[[as.character(kk)]]
-      degrading <- is.finite(here) && is.finite(baseline) && here > 1.5 * baseline + 1e-8
-      data.frame(
-        coverage = d$coverage[1], k = kk, identified = d$identified[1],
-        nc_abs_bias = round(here, 3),
-        diagnosis = if (!d$identified[1])
-                      "under-identified: #confounders > #valid controls"
-                    else if (degrading)
-                      "negative controls degrading (low coverage)"
-                    else "negative controls holding",
-        stringsAsFactors = FALSE)
-    }))
+    verdict <- do.call(rbind, lapply(split(s, interaction(s$coverage, s$k, drop = TRUE)),
+        function(d) {
+            kk <- d$k[1]
+            here <- nc_bias(d)
+            baseline <- base_by_k[[as.character(kk)]]
+            degrading <- is.finite(here) && is.finite(baseline) && here > 1.5 * baseline + 1e-8
+            data.frame(
+                coverage = d$coverage[1], k = kk, identified = d$identified[1],
+                nc_abs_bias = round(here, 3),
+                diagnosis = if (!d$identified[1])
+                    "under-identified: #confounders > #valid controls"
+                else if (degrading)
+                    "negative controls degrading (low coverage)"
+                else "negative controls holding",
+                stringsAsFactors = FALSE)
+        }))
 
-  if (any(!s$identified))
-    warning("Some scenarios have more confounders than valid negative controls; ",
+    if (any(!s$identified))
+        warning("Some scenarios have more confounders than valid negative controls; ",
             "the matrix-bridge PGC and COCA are not point-identified there ",
             "(proximal completeness fails). IV2SLS remains valid as it does ",
             "not depend on NC completeness.")
 
-  list(summary = s, verdict = verdict)
+    list(summary = s, verdict = verdict)
 }
 
 
@@ -409,8 +409,8 @@ nc_validity_check <- function(trained_gan = NULL,
 #'
 #' @examples
 #' sens <- gan_mediation_sensitivity(NULL, conf_grid = 0.8,
-#'   coverage_grid = 0.7, mo_confounding = 0.8,
-#'   n_iter = 2, n_samples = 100, n_features = 5)
+#'     coverage_grid = 0.7, mo_confounding = 0.8,
+#'     n_iter = 2, n_samples = 100, n_features = 5)
 #' head(sens$summary)
 gan_mediation_sensitivity <- function(trained_gan = NULL,
                                       conf_grid = c(0.2, 0.5, 0.8),
@@ -438,92 +438,92 @@ gan_mediation_sensitivity <- function(trained_gan = NULL,
                                       surv_event_frac = 0.6,
                                       surv_censor_rate = NULL,
                                       bin_prev = 0.5) {
-  outcome_type <- match.arg(outcome_type)
-  effect_scale <- match.arg(effect_scale)
-  if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
-    message("effect_scale = '", effect_scale,
+    outcome_type <- match.arg(outcome_type)
+    effect_scale <- match.arg(effect_scale)
+    if (outcome_type == "binary" && effect_scale %in% c("loghr", "rmst")) {
+        message("effect_scale = '", effect_scale,
             "' is not defined for binary outcomes; using 'logor'.")
-    effect_scale <- "logor"
-  }
-  if (outcome_type == "survival" && effect_scale %in% c("logor", "riskdiff")) {
-    message("effect_scale = '", effect_scale,
+        effect_scale <- "logor"
+    }
+    if (outcome_type == "survival" && effect_scale %in% c("logor", "riskdiff")) {
+        message("effect_scale = '", effect_scale,
             "' is not defined for survival outcomes; using 'loghr'.")
-    effect_scale <- "loghr"
-  }
-
-  grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
-                      k = k_grid, KEEP.OUT.ATTRS = FALSE)
-
-  true_NDE <- beta_X
-  true_NIE <- alpha_M * beta_M
-
-  smry <- lapply(seq_len(nrow(grid)), function(gi) {
-    cs <- grid$conf_strength[gi]; cov <- grid$coverage[gi]; kk <- grid$k[gi]
-
-    worker <- function(i) {
-      dat <- run_single_iteration(
-        trained_gan, n_synthetic_samples = n_samples, n_features = n_features,
-        n_confounders = kk, beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
-        conf_strength = cs, coverage = cov, nc_model = nc_model,
-        mo_confounding = mo_confounding, phi = phi,
-        rho_G1 = rho_G1, rho_G2 = rho_G2, rho_pop = rho_pop,
-        lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = omega_1, omega_2 = omega_2,
-        seed = base_seed + gi * 1000L + i,
-        outcome_type = outcome_type, surv_h0 = surv_h0,
-        surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
-        bin_prev = bin_prev)
-      if (outcome_type == "survival") {
-        res <- .run_surv_methods(dat, effect_scale = effect_scale,
-                                 is_mediation = TRUE)
-      } else if (outcome_type == "binary") {
-        res <- .run_bin_methods(dat, effect_scale = effect_scale,
-                                is_mediation = TRUE)
-      } else {
-        res <- run_mediation_methods(dat, n_features)
-      }
-      res$iter <- i
-      res
+        effect_scale <- "loghr"
     }
 
-    combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker, n_cores))
-    s <- summarise_mediation_results(combined, true_NDE, true_NIE)
-    s$conf_strength <- cs
-    s$coverage <- cov
-    s$k <- kk
-    s$mo_confounding <- mo_confounding
-    s$phi <- phi
-    s$rho_G1 <- rho_G1
-    s$rho_G2 <- rho_G2
-    s$rho_pop <- rho_pop
-    s$lambda_XM <- list(lambda_XM)
-    s$lambda_MY <- list(lambda_MY)
-    s$true_NDE <- true_NDE
-    s$true_NIE <- true_NIE
-    s
-  })
+    grid <- expand.grid(conf_strength = conf_grid, coverage = coverage_grid,
+        k = k_grid, KEEP.OUT.ATTRS = FALSE)
 
-  summary <- do.call(rbind, smry)
-  front <- c("conf_strength", "coverage", "k", "mo_confounding", "phi",
-               "rho_G1", "rho_G2", "rho_pop",
-               "true_NDE", "true_NIE", "method")
-  summary <- summary[, c(front, setdiff(names(summary), front))]
+    true_NDE <- beta_X
+    true_NIE <- alpha_M * beta_M
 
-  # attach a scenario manifest so the manuscript
-  # can render the truth + parameter ranges as an orientation table.
-  manifest <- scenario_manifest(
-    list(beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
-         n_mediators = 1, n = n_samples, n_features = n_features,
-         lambda_XM = lambda_XM, lambda_MY = lambda_MY, feat_cor = 0,
-         conf_str = NA, mo_confounding = mo_confounding, phi = phi,
-         w_signal = NA, rho_G1 = rho_G1, rho_G2 = rho_G2,
-         rho_pop = rho_pop),
-    conf_grid = conf_grid, coverage_grid = coverage_grid,
-    mo_confounding_grid = if (length(unique(mo_confounding)) > 1) mo_confounding else NULL,
-    phi_grid = if (length(unique(phi)) > 1) phi else NULL,
-    rho_G1_grid = if (length(unique(rho_G1)) > 1) rho_G1 else NULL,
-    rho_G2_grid = if (length(unique(rho_G2)) > 1) rho_G2 else NULL,
-    rho_pop_grid = if (length(unique(rho_pop)) > 1) rho_pop else NULL
-  )
+    smry <- lapply(seq_len(nrow(grid)), function(gi) {
+        cs <- grid$conf_strength[gi]; cov <- grid$coverage[gi]; kk <- grid$k[gi]
 
-  list(summary = summary, grid = grid, manifest = manifest)
+        worker <- function(i) {
+            dat <- run_single_iteration(
+                trained_gan, n_synthetic_samples = n_samples, n_features = n_features,
+                n_confounders = kk, beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
+                conf_strength = cs, coverage = cov, nc_model = nc_model,
+                mo_confounding = mo_confounding, phi = phi,
+                rho_G1 = rho_G1, rho_G2 = rho_G2, rho_pop = rho_pop,
+                lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = omega_1, omega_2 = omega_2,
+                seed = base_seed + gi * 1000L + i,
+                outcome_type = outcome_type, surv_h0 = surv_h0,
+                surv_event_frac = surv_event_frac, surv_censor_rate = surv_censor_rate,
+                bin_prev = bin_prev)
+            if (outcome_type == "survival") {
+                res <- .run_surv_methods(dat, effect_scale = effect_scale,
+                    is_mediation = TRUE)
+            } else if (outcome_type == "binary") {
+                res <- .run_bin_methods(dat, effect_scale = effect_scale,
+                    is_mediation = TRUE)
+            } else {
+                res <- run_mediation_methods(dat, n_features)
+            }
+            res$iter <- i
+            res
+        }
+
+        combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker, n_cores))
+        s <- summarise_mediation_results(combined, true_NDE, true_NIE)
+        s$conf_strength <- cs
+        s$coverage <- cov
+        s$k <- kk
+        s$mo_confounding <- mo_confounding
+        s$phi <- phi
+        s$rho_G1 <- rho_G1
+        s$rho_G2 <- rho_G2
+        s$rho_pop <- rho_pop
+        s$lambda_XM <- list(lambda_XM)
+        s$lambda_MY <- list(lambda_MY)
+        s$true_NDE <- true_NDE
+        s$true_NIE <- true_NIE
+        s
+    })
+
+    summary <- do.call(rbind, smry)
+    front <- c("conf_strength", "coverage", "k", "mo_confounding", "phi",
+        "rho_G1", "rho_G2", "rho_pop",
+        "true_NDE", "true_NIE", "method")
+    summary <- summary[, c(front, setdiff(names(summary), front))]
+
+    # attach a scenario manifest so the manuscript
+    # can render the truth + parameter ranges as an orientation table.
+    manifest <- scenario_manifest(
+        list(beta_X = beta_X, alpha_M = alpha_M, beta_M = beta_M,
+            n_mediators = 1, n = n_samples, n_features = n_features,
+            lambda_XM = lambda_XM, lambda_MY = lambda_MY, feat_cor = 0,
+            conf_str = NA, mo_confounding = mo_confounding, phi = phi,
+            w_signal = NA, rho_G1 = rho_G1, rho_G2 = rho_G2,
+            rho_pop = rho_pop),
+        conf_grid = conf_grid, coverage_grid = coverage_grid,
+        mo_confounding_grid = if (length(unique(mo_confounding)) > 1) mo_confounding else NULL,
+        phi_grid = if (length(unique(phi)) > 1) phi else NULL,
+        rho_G1_grid = if (length(unique(rho_G1)) > 1) rho_G1 else NULL,
+        rho_G2_grid = if (length(unique(rho_G2)) > 1) rho_G2 else NULL,
+        rho_pop_grid = if (length(unique(rho_pop)) > 1) rho_pop else NULL
+    )
+
+    list(summary = summary, grid = grid, manifest = manifest)
 }

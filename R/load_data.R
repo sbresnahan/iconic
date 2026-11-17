@@ -97,121 +97,121 @@ load_real_input_data <- function(X_matrix = NULL,
                                  residualize_on = c("XC", "XCW"),
                                  Z_matrix = NULL) {
 
-  # Deprecated-argument trap: renamed Z_matrix -> X_matrix.
-  if (!is.null(Z_matrix))
-    stop("argument `Z_matrix` was renamed to `X_matrix`; please use `X_matrix = ...`.",
-         call. = FALSE)
+    # Deprecated-argument trap: renamed Z_matrix -> X_matrix.
+    if (!is.null(Z_matrix))
+        stop("argument `Z_matrix` was renamed to `X_matrix`; please use `X_matrix = ...`.",
+            call. = FALSE)
 
-  if (is.null(X_matrix) && is.null(Y_matrix) && is.null(covariates_df))
-    example <- TRUE
+    if (is.null(X_matrix) && is.null(Y_matrix) && is.null(covariates_df))
+        example <- TRUE
 
-  if (example) {
-    ex <- .make_example_input()
-    X_matrix <- ex$X_matrix
-    Y_matrix <- ex$Y_matrix
-    M_matrix <- ex$M_matrix
-    W_matrix <- ex$W_matrix
-    covariates_df <- ex$covariates_df
-  }
+    if (example) {
+        ex <- .make_example_input()
+        X_matrix <- ex$X_matrix
+        Y_matrix <- ex$Y_matrix
+        M_matrix <- ex$M_matrix
+        W_matrix <- ex$W_matrix
+        covariates_df <- ex$covariates_df
+    }
 
-  if (is.null(Y_matrix)) stop("Y_matrix (outcome) is required.")
-  Y_matrix <- as.matrix(Y_matrix)
-  if (is.null(X_matrix)) stop("X_matrix (exposure panel) is required.")
-  X_matrix <- as.matrix(X_matrix)
+    if (is.null(Y_matrix)) stop("Y_matrix (outcome) is required.")
+    Y_matrix <- as.matrix(Y_matrix)
+    if (is.null(X_matrix)) stop("X_matrix (exposure panel) is required.")
+    X_matrix <- as.matrix(X_matrix)
 
-  # Y can be a scalar vector (1 x n) or a features x samples matrix.
-  # When scalar (e.g. a clinical trait), n_features is determined by M or W.
-  if (nrow(Y_matrix) == 1) {
-    n_samples <- ncol(Y_matrix)
-    n_features <- if (!is.null(M_matrix)) nrow(as.matrix(M_matrix))
-                  else if (!is.null(W_matrix)) nrow(as.matrix(W_matrix))
-                  else 20L
-  } else {
-    n_samples <- ncol(Y_matrix)
-    n_features <- nrow(Y_matrix)
-  }
+    # Y can be a scalar vector (1 x n) or a features x samples matrix.
+    # When scalar (e.g. a clinical trait), n_features is determined by M or W.
+    if (nrow(Y_matrix) == 1) {
+        n_samples <- ncol(Y_matrix)
+        n_features <- if (!is.null(M_matrix)) nrow(as.matrix(M_matrix))
+        else if (!is.null(W_matrix)) nrow(as.matrix(W_matrix))
+        else 20L
+    } else {
+        n_samples <- ncol(Y_matrix)
+        n_features <- nrow(Y_matrix)
+    }
 
-  if (ncol(X_matrix) != n_samples)
-    stop("X_matrix and Y_matrix must have the same number of samples (columns).")
-  if (!is.null(M_matrix)) {
-    M_matrix <- as.matrix(M_matrix)
-    if (ncol(M_matrix) != n_samples)
-      stop("M_matrix must have the same number of samples (columns) as Y_matrix.")
-  }
-  if (!is.null(W_matrix)) {
-    W_matrix <- as.matrix(W_matrix)
-    if (ncol(W_matrix) != n_samples)
-      stop("W_matrix must have the same number of samples (columns) as Y_matrix.")
-  }
+    if (ncol(X_matrix) != n_samples)
+        stop("X_matrix and Y_matrix must have the same number of samples (columns).")
+    if (!is.null(M_matrix)) {
+        M_matrix <- as.matrix(M_matrix)
+        if (ncol(M_matrix) != n_samples)
+            stop("M_matrix must have the same number of samples (columns) as Y_matrix.")
+    }
+    if (!is.null(W_matrix)) {
+        W_matrix <- as.matrix(W_matrix)
+        if (ncol(W_matrix) != n_samples)
+            stop("W_matrix must have the same number of samples (columns) as Y_matrix.")
+    }
 
-  sample_names <- colnames(Y_matrix)
-  if (is.null(sample_names)) sample_names <- paste0("sample_", seq_len(n_samples))
-  feature_names <- rownames(Y_matrix)
-  if (is.null(feature_names)) feature_names <- paste0("feature_", seq_len(n_features))
+    sample_names <- colnames(Y_matrix)
+    if (is.null(sample_names)) sample_names <- paste0("sample_", seq_len(n_samples))
+    feature_names <- rownames(Y_matrix)
+    if (is.null(feature_names)) feature_names <- paste0("feature_", seq_len(n_features))
 
-  covars <- .encode_covariates(covariates_df, n_samples, sample_names)
+    covars <- .encode_covariates(covariates_df, n_samples, sample_names)
 
-  # Per-sample summaries (mean across features), standardised. This is the
-  # tabular signal the generator learns: exposure level, outcome level,
-  # mediator level, and the encoded covariates, jointly, one row per sample.
-  pfas_z <- as.numeric(scale(colMeans(X_matrix, na.rm = TRUE)))
+    # Per-sample summaries (mean across features), standardised. This is the
+    # tabular signal the generator learns: exposure level, outcome level,
+    # mediator level, and the encoded covariates, jointly, one row per sample.
+    pfas_z <- as.numeric(scale(colMeans(X_matrix, na.rm = TRUE)))
 
-  # Y: scalar outcome (e.g. a clinical trait) — one value per sample.
-  # When Y_matrix is 1 x n, take the single row; otherwise column means.
-  outcome_vec <- if (nrow(Y_matrix) == 1) as.numeric(Y_matrix[1, ])
-                  else as.numeric(scale(colMeans(Y_matrix, na.rm = TRUE)))
-  outcome_vec <- as.numeric(scale(outcome_vec))
+    # Y: scalar outcome (e.g. a clinical trait) — one value per sample.
+    # When Y_matrix is 1 x n, take the single row; otherwise column means.
+    outcome_vec <- if (nrow(Y_matrix) == 1) as.numeric(Y_matrix[1, ])
+    else as.numeric(scale(colMeans(Y_matrix, na.rm = TRUE)))
+    outcome_vec <- as.numeric(scale(outcome_vec))
 
-  # M: mediator panel (e.g. gene or transcript expression) — per-sample
-  # mean added to the GAN training frame so the generator learns the
-  # mediator's marginal distribution, not just its correlation structure.
-  mediator_vec <- if (!is.null(M_matrix))
-                    as.numeric(scale(colMeans(as.matrix(M_matrix), na.rm = TRUE)))
-                  else NULL
+    # M: mediator panel (e.g. gene or transcript expression) — per-sample
+    # mean added to the GAN training frame so the generator learns the
+    # mediator's marginal distribution, not just its correlation structure.
+    mediator_vec <- if (!is.null(M_matrix))
+        as.numeric(scale(colMeans(as.matrix(M_matrix), na.rm = TRUE)))
+    else NULL
 
-  gan_training_data <- data.frame(exposure_level = pfas_z,
-                                  outcome_level = outcome_vec)
-  if (!is.null(mediator_vec))
-    gan_training_data$mediator_level <- mediator_vec
-  if (ncol(covars)) gan_training_data <- cbind(gan_training_data, covars)
+    gan_training_data <- data.frame(exposure_level = pfas_z,
+        outcome_level = outcome_vec)
+    if (!is.null(mediator_vec))
+        gan_training_data$mediator_level <- mediator_vec
+    if (ncol(covars)) gan_training_data <- cbind(gan_training_data, covars)
 
-  # ── Feature-level texture models ──
-  # Residual correlation matrices for Y and W panels (used by
-  # run_single_iteration() to inject correlated noise into the outcome and
-  # negative-control equations). The mediator (M) panel is modelled by a
-  # Gaussian copula with flexible marginals (train_feature_texture()), which
-  # captures both the marginal shapes and the cross-feature dependence —
-  # replacing the residual-correlation-only approach for M.
-  # when residualize_on = "XCW", the Y residual
-  # correlation additionally partials out the W bridge proxy Ŵ, reducing
-  # the double-counting of U's cross-feature signature.
-  feature_correlations <- list(
-    Y = if (nrow(Y_matrix) > 1)
-          .residual_correlation(Y_matrix, pfas_z, covars,
-                                residualize_on = residualize_on,
-                                W_mat = W_matrix)
+    # ── Feature-level texture models ──
+    # Residual correlation matrices for Y and W panels (used by
+    # run_single_iteration() to inject correlated noise into the outcome and
+    # negative-control equations). The mediator (M) panel is modelled by a
+    # Gaussian copula with flexible marginals (train_feature_texture()), which
+    # captures both the marginal shapes and the cross-feature dependence —
+    # replacing the residual-correlation-only approach for M.
+    # when residualize_on = "XCW", the Y residual
+    # correlation additionally partials out the W bridge proxy Ŵ, reducing
+    # the double-counting of U's cross-feature signature.
+    feature_correlations <- list(
+        Y = if (nrow(Y_matrix) > 1)
+            .residual_correlation(Y_matrix, pfas_z, covars,
+                residualize_on = residualize_on,
+                W_mat = W_matrix)
         else NULL,
-    W = if (!is.null(W_matrix))
-          .residual_correlation(W_matrix, pfas_z, covars)
+        W = if (!is.null(W_matrix))
+            .residual_correlation(W_matrix, pfas_z, covars)
         else NULL
-  )
+    )
 
-  # Feature-level copula texture model for the mediator panel.
-  feature_texture <- if (!is.null(M_matrix))
-                       train_feature_texture(M_matrix, marginal_method = marginal_method)
-                     else NULL
+    # Feature-level copula texture model for the mediator panel.
+    feature_texture <- if (!is.null(M_matrix))
+        train_feature_texture(M_matrix, marginal_method = marginal_method)
+    else NULL
 
-  list(
-    gan_training_data = gan_training_data,
-    original_matrices = list(X = X_matrix, Y = Y_matrix, M = M_matrix, W = W_matrix),
-    covariates = covars,
-    feature_correlations = feature_correlations,
-    feature_texture = feature_texture,
-    sample_names = sample_names,
-    feature_names = feature_names,
-    n_samples = n_samples,
-    n_features = n_features
-  )
+    list(
+        gan_training_data = gan_training_data,
+        original_matrices = list(X = X_matrix, Y = Y_matrix, M = M_matrix, W = W_matrix),
+        covariates = covars,
+        feature_correlations = feature_correlations,
+        feature_texture = feature_texture,
+        sample_names = sample_names,
+        feature_names = feature_names,
+        n_samples = n_samples,
+        n_features = n_features
+    )
 }
 
 
@@ -240,69 +240,69 @@ load_real_input_data <- function(X_matrix = NULL,
 .residual_correlation <- function(mat, exposure, covars,
                                   residualize_on = c("XC", "XCW"),
                                   W_mat = NULL) {
-  residualize_on <- match.arg(residualize_on)
-  if (is.null(mat)) return(NULL)
-  mat <- as.matrix(mat)
-  p <- nrow(mat)
-  n <- ncol(mat)
-  if (p < 2 || n < 5) return(NULL)
+    residualize_on <- match.arg(residualize_on)
+    if (is.null(mat)) return(NULL)
+    mat <- as.matrix(mat)
+    p <- nrow(mat)
+    n <- ncol(mat)
+    if (p < 2 || n < 5) return(NULL)
 
-  # build the bridge proxy Ŵ from the W panel.
-  # W captures U; residualizing Y on W's U-direction partials out the
-  # U-signature that X alone misses, reducing double-counting. We use the
-  # PC1 of the raw W panel (the dominant U-capturing direction). We do NOT
-  # residualize W on X + C first, because X already proxies U and would
-  # strip W's U-signal — defeating the purpose. The bridge is then
-  # included alongside X + C in the Y residualization, so any U-variance
-  # W captures beyond what X + C explain is partialled out.
-  # Only active when W_mat is supplied and residualize_on = "ZCW".
-  bridge <- NULL
-  if (residualize_on == "XCW" && !is.null(W_mat)) {
-    Wm <- as.matrix(W_mat)
-    if (nrow(Wm) >= 2 && ncol(Wm) == n) {
-      Wc <- t(Wm) # n x p
-      Wc[is.na(Wc)] <- 0
-      # PC1 of the W panel = dominant U-capturing direction
-      sv <- svd(Wc, nu = 1, nv = 0)
-      bridge <- as.numeric(scale(sv$u[, 1]))
+    # build the bridge proxy Ŵ from the W panel.
+    # W captures U; residualizing Y on W's U-direction partials out the
+    # U-signature that X alone misses, reducing double-counting. We use the
+    # PC1 of the raw W panel (the dominant U-capturing direction). We do NOT
+    # residualize W on X + C first, because X already proxies U and would
+    # strip W's U-signal — defeating the purpose. The bridge is then
+    # included alongside X + C in the Y residualization, so any U-variance
+    # W captures beyond what X + C explain is partialled out.
+    # Only active when W_mat is supplied and residualize_on = "ZCW".
+    bridge <- NULL
+    if (residualize_on == "XCW" && !is.null(W_mat)) {
+        Wm <- as.matrix(W_mat)
+        if (nrow(Wm) >= 2 && ncol(Wm) == n) {
+            Wc <- t(Wm) # n x p
+            Wc[is.na(Wc)] <- 0
+            # PC1 of the W panel = dominant U-capturing direction
+            sv <- svd(Wc, nu = 1, nv = 0)
+            bridge <- as.numeric(scale(sv$u[, 1]))
+        }
     }
-  }
 
-  # Residualize each feature on exposure + covariates (+ bridge when ZCW)
-  resid_mat <- matrix(NA_real_, p, n)
-  for (f in seq_len(p)) {
-    y <- as.numeric(mat[f, ])
-    d <- data.frame(y = y, exposure = exposure)
-    if (!is.null(bridge)) d$bridge <- bridge
-    if (!is.null(covars) && ncol(covars) > 0)
-      d <- cbind(d, covars)
-    fit <- tryCatch(
-      lm(y ~ ., data = d),
-      error = function(e) NULL
+    # Residualize each feature on exposure + covariates (+ bridge when ZCW)
+    resid_mat <- matrix(NA_real_, p, n)
+    for (f in seq_len(p)) {
+        y <- as.numeric(mat[f, ])
+        d <- data.frame(y = y, exposure = exposure)
+        if (!is.null(bridge)) d$bridge <- bridge
+        if (!is.null(covars) && ncol(covars) > 0)
+            d <- cbind(d, covars)
+        fit <- tryCatch(
+            lm(y ~ ., data = d),
+            error = function(e) NULL
+        )
+        resid_mat[f, ] <- if (!is.null(fit)) as.numeric(residuals(fit)) else y
+    }
+
+    # Correlation matrix of the residuals
+    cor_mat <- tryCatch(
+        cor(t(resid_mat), use = "pairwise.complete.obs"),
+        error = function(e) NULL
     )
-    resid_mat[f, ] <- if (!is.null(fit)) as.numeric(residuals(fit)) else y
-  }
+    if (is.null(cor_mat)) return(NULL)
 
-  # Correlation matrix of the residuals
-  cor_mat <- tryCatch(
-    cor(t(resid_mat), use = "pairwise.complete.obs"),
-    error = function(e) NULL
-  )
-  if (is.null(cor_mat)) return(NULL)
+    # Ensure it's a valid correlation matrix: symmetric, positive-definite
+    cor_mat[is.na(cor_mat)] <- 0
+    diag(cor_mat) <- 1
+    # Near-PD correction via eigenvalue clipping
+    eig <- eigen(cor_mat, symmetric = TRUE)
+    eig_vals <- pmax(eig$values, 1e-6)
+    cor_mat <- eig$vectors %*% diag(eig_vals) %*% t(eig$vectors)
+    # Re-normalize to unit diagonal
+    dd <- sqrt(diag(cor_mat))
+    cor_mat <- cor_mat / outer(dd, dd)
+    diag(cor_mat) <- 1
 
-  # Ensure it's a valid correlation matrix: symmetric, positive-definite
-  cor_mat[is.na(cor_mat)] <- 0
-  diag(cor_mat) <- 1
-  # Near-PD correction via eigenvalue clipping
-  eig <- eigen(cor_mat, symmetric = TRUE)
-  eig_vals <- pmax(eig$values, 1e-6)
-  cor_mat <- eig$vectors %*% diag(eig_vals) %*% t(eig$vectors)
-  # Re-normalize to unit diagonal
-  dd <- sqrt(diag(cor_mat))
-  cor_mat <- cor_mat / outer(dd, dd)
-  diag(cor_mat) <- 1
-
-  cor_mat
+    cor_mat
 }
 
 
@@ -314,47 +314,47 @@ load_real_input_data <- function(X_matrix = NULL,
 #' @keywords internal
 #' @noRd
 .encode_covariates <- function(covariates_df, n_samples, sample_names) {
-  if (is.null(covariates_df) || !ncol(as.data.frame(covariates_df)))
-    return(data.frame(row.names = seq_len(n_samples))[, 0, drop = FALSE])
+    if (is.null(covariates_df) || !ncol(as.data.frame(covariates_df)))
+        return(data.frame(row.names = seq_len(n_samples))[, 0, drop = FALSE])
 
-  df <- as.data.frame(covariates_df, stringsAsFactors = FALSE)
-  df$sample_id <- NULL
+    df <- as.data.frame(covariates_df, stringsAsFactors = FALSE)
+    df$sample_id <- NULL
 
-  # Dimension check: covariates must have one row per sample. A transposed
-  # input (n_samples columns x p rows) is a common mistake; catch it here
-  # with a clear message instead of letting lm() fail downstream.
-  if (nrow(df) != n_samples) {
-    stop("covariates has ", nrow(df), " rows but the data has ", n_samples,
-         " samples. covariates must be a data frame with one row per sample",
-         " (n rows x p columns). If your covariates are stored transposed",
-         " (p x n), wrap them in as.data.frame(t(...)) before passing",
-         " to iconic_data().")
-  }
-
-  out <- list()
-  for (nm in names(df)) {
-    col <- df[[nm]]
-    if (nm == "sex") {
-      out[["sex"]] <- as.numeric(tolower(as.character(col)) %in% c("male", "m", "1"))
-    } else if (nm == "mother_ethnicity" || is.character(col) || is.factor(col)) {
-      lv <- sort(unique(as.character(col)))
-      lv <- lv[-1] # drop first level as reference
-      for (l in lv)
-        out[[paste0(make.names(nm), "_", make.names(l))]] <-
-          as.numeric(as.character(col) == l)
-    } else {
-      out[[nm]] <- as.numeric(scale(as.numeric(col)))
+    # Dimension check: covariates must have one row per sample. A transposed
+    # input (n_samples columns x p rows) is a common mistake; catch it here
+    # with a clear message instead of letting lm() fail downstream.
+    if (nrow(df) != n_samples) {
+        stop("covariates has ", nrow(df), " rows but the data has ", n_samples,
+            " samples. covariates must be a data frame with one row per sample",
+            " (n rows x p columns). If your covariates are stored transposed",
+            " (p x n), wrap them in as.data.frame(t(...)) before passing",
+            " to iconic_data().")
     }
-  }
 
-  enc <- if (length(out)) as.data.frame(out, stringsAsFactors = FALSE)
-         else data.frame(row.names = seq_len(n_samples))[, 0, drop = FALSE]
+    out <- list()
+    for (nm in names(df)) {
+        col <- df[[nm]]
+        if (nm == "sex") {
+            out[["sex"]] <- as.numeric(tolower(as.character(col)) %in% c("male", "m", "1"))
+        } else if (nm == "mother_ethnicity" || is.character(col) || is.factor(col)) {
+            lv <- sort(unique(as.character(col)))
+            lv <- lv[-1] # drop first level as reference
+            for (l in lv)
+                out[[paste0(make.names(nm), "_", make.names(l))]] <-
+                    as.numeric(as.character(col) == l)
+        } else {
+            out[[nm]] <- as.numeric(scale(as.numeric(col)))
+        }
+    }
 
-  # Guard against collisions with estimator-reserved formula tokens.
-  clash <- names(enc) %in% .reserved_covar_tokens
-  if (any(clash)) names(enc)[clash] <- paste0("cov_", names(enc)[clash])
-  names(enc) <- make.names(names(enc), unique = TRUE)
-  enc
+    enc <- if (length(out)) as.data.frame(out, stringsAsFactors = FALSE)
+    else data.frame(row.names = seq_len(n_samples))[, 0, drop = FALSE]
+
+    # Guard against collisions with estimator-reserved formula tokens.
+    clash <- names(enc) %in% .reserved_covar_tokens
+    if (any(clash)) names(enc)[clash] <- paste0("cov_", names(enc)[clash])
+    names(enc) <- make.names(names(enc), unique = TRUE)
+    enc
 }
 
 
@@ -367,49 +367,49 @@ load_real_input_data <- function(X_matrix = NULL,
 #' @keywords internal
 #' @noRd
 .make_example_input <- function(n_samples = 200, n_features = 30, seed = 1) {
-  withr::local_seed(seed)
-  U <- rnorm(n_samples) # shared confounder
-  sex <- rbinom(n_samples, 1, 0.5)
-  GA <- rnorm(n_samples, 39, 1.5)
-  eth <- sample(c("chinese", "indian", "malay"), n_samples, replace = TRUE)
+    withr::local_seed(seed)
+    U <- rnorm(n_samples) # shared confounder
+    sex <- rbinom(n_samples, 1, 0.5)
+    GA <- rnorm(n_samples, 39, 1.5)
+    eth <- sample(c("chinese", "indian", "malay"), n_samples, replace = TRUE)
 
-  # block-diagonal co-expression modules (within-block r = 0.5)
-  # so that .residual_correlation() has genuine cross-feature structure
-  # to learn, not just the shared confounder (which gets residualized away).
-  block_cor <- .block_diag_cor(n_features, 0.5)
+    # block-diagonal co-expression modules (within-block r = 0.5)
+    # so that .residual_correlation() has genuine cross-feature structure
+    # to learn, not just the shared confounder (which gets residualized away).
+    block_cor <- .block_diag_cor(n_features, 0.5)
 
-  Zm <- matrix(rnorm(n_features * n_samples), n_features, n_samples) +
+    Zm <- matrix(rnorm(n_features * n_samples), n_features, n_samples) +
         matrix(rep(0.8 * U, each = n_features), n_features, n_samples)
-  # Y: scalar outcome — confounder + sex + noise
-  Ym <- matrix(3000 + 200 * U + 100 * sex + rnorm(n_samples, 0, 300),
-               nrow = 1, ncol = n_samples)
-  # Mediator panel: shared confounder + co-expression module noise
-  M_noise <- if (!is.null(block_cor))
-      MASS::mvrnorm(n_samples, rep(0, n_features), block_cor * 0.5^2) else
-      matrix(rnorm(n_features * n_samples), n_samples, n_features)
-  Mm <- t(M_noise + matrix(rep(0.5 * U, n_features),
-                           n_samples, n_features, byrow = FALSE))
-  # Negative-control panel: shared confounder + co-expression module noise
-  W_noise <- if (!is.null(block_cor))
-      MASS::mvrnorm(n_samples, rep(0, n_features), block_cor * 0.5^2) else
-      matrix(rnorm(n_features * n_samples), n_samples, n_features)
-  Wm <- t(W_noise + matrix(rep(0.7 * U, n_features),
-                           n_samples, n_features, byrow = FALSE))
+    # Y: scalar outcome — confounder + sex + noise
+    Ym <- matrix(3000 + 200 * U + 100 * sex + rnorm(n_samples, 0, 300),
+        nrow = 1, ncol = n_samples)
+    # Mediator panel: shared confounder + co-expression module noise
+    M_noise <- if (!is.null(block_cor))
+        MASS::mvrnorm(n_samples, rep(0, n_features), block_cor * 0.5^2) else
+        matrix(rnorm(n_features * n_samples), n_samples, n_features)
+    Mm <- t(M_noise + matrix(rep(0.5 * U, n_features),
+        n_samples, n_features, byrow = FALSE))
+    # Negative-control panel: shared confounder + co-expression module noise
+    W_noise <- if (!is.null(block_cor))
+        MASS::mvrnorm(n_samples, rep(0, n_features), block_cor * 0.5^2) else
+        matrix(rnorm(n_features * n_samples), n_samples, n_features)
+    Wm <- t(W_noise + matrix(rep(0.7 * U, n_features),
+        n_samples, n_features, byrow = FALSE))
 
-  colnames(Zm) <- colnames(Ym) <- colnames(Mm) <- colnames(Wm) <- paste0("S", seq_len(n_samples))
-  rownames(Ym) <- "birth_weight"
-  rownames(Mm) <- paste0("transcript", seq_len(n_features))
-  rownames(Zm) <- paste0("pfas", seq_len(n_features))
-  rownames(Wm) <- paste0("nc", seq_len(n_features))
+    colnames(Zm) <- colnames(Ym) <- colnames(Mm) <- colnames(Wm) <- paste0("S", seq_len(n_samples))
+    rownames(Ym) <- "birth_weight"
+    rownames(Mm) <- paste0("transcript", seq_len(n_features))
+    rownames(Zm) <- paste0("pfas", seq_len(n_features))
+    rownames(Wm) <- paste0("nc", seq_len(n_features))
 
-  list(
-    X_matrix = Zm, Y_matrix = Ym, M_matrix = Mm, W_matrix = Wm,
-    covariates_df = data.frame(
-      sample_id = paste0("S", seq_len(n_samples)),
-      sex = ifelse(sex == 1, "Male", "Female"),
-      GA = GA,
-      mother_ethnicity = eth,
-      stringsAsFactors = FALSE
+    list(
+        X_matrix = Zm, Y_matrix = Ym, M_matrix = Mm, W_matrix = Wm,
+        covariates_df = data.frame(
+            sample_id = paste0("S", seq_len(n_samples)),
+            sex = ifelse(sex == 1, "Male", "Female"),
+            GA = GA,
+            mother_ethnicity = eth,
+            stringsAsFactors = FALSE
+        )
     )
-  )
 }

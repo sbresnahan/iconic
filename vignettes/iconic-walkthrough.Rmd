@@ -16,8 +16,8 @@ subtitle: Model selection, sensitivity analysis, and prospective design for obse
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE, message = FALSE, warning = FALSE,
-  fig.width = 7, fig.height = 4.5, comment = "#>"
+    echo = TRUE, message = FALSE, warning = FALSE,
+    fig.width = 7, fig.height = 4.5, comment = "#>"
 )
 
 set.seed(1)
@@ -115,14 +115,14 @@ se_panel <- function(m, prefix) {
 }
 mae <- MultiAssayExperiment(
     experiments = ExperimentList(
-        transcriptome = se_panel(t(dat$Y), "feature_"),  # outcome panel Y
+        transcriptome = se_panel(t(dat$Y), "feature_"), # outcome panel Y
         mediator      = se_panel(t(dat$M), "mediator_"), # mediator M
-        nc_panel      = se_panel(t(dat$W), "nc_")        # negative controls W
+        nc_panel      = se_panel(t(dat$W), "nc_") # negative controls W
     ),
     # Sample-level variables: exposure, instrument (e.g. a PGS), covariates
     colData = DataFrame(
         exposure = dat$X,
-        pgs      = dat$G[, 1],
+        pgs = dat$G[, 1],
         dat$synthetic_data,
         row.names = ids
     )
@@ -212,16 +212,16 @@ would train for more epochs on your own cohort with `train_gan_on_real_data()`
 ```{r workflow-gan, eval=has_torch}
 # Train a texture model once (few epochs for the vignette).
 input <- load_real_input_data(
-  X_matrix = matrix(dat$X, nrow = 1),
-  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
-  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
+    X_matrix = matrix(dat$X, nrow = 1),
+    Y_matrix = t(dat$Y), M_matrix = t(dat$M),
+    W_matrix = t(dat$W), covariates_df = dat$synthetic_data
 )
 
 gan <- train_gan_on_real_data(
-  input$gan_training_data,
-  feature_correlations = input$feature_correlations,
-  feature_texture = input$feature_texture,
-  epochs = 5, seed = 1, verbose = FALSE
+    input$gan_training_data,
+    feature_correlations = input$feature_correlations,
+    feature_texture = input$feature_texture,
+    epochs = 5, seed = 1, verbose = FALSE
 )
 
 # Attach it: iconic_sensitivity() and iconic_prospect() will now reuse it.
@@ -230,9 +230,9 @@ idat$trained_gan <- gan
 
 ```{r workflow-no-torch, eval=!has_torch, echo=FALSE, results="asis"}
 cat(
-"The sensitivity, recommendation, and prospective chunks in this vignette ",
-"are skipped because torch is not available. Install torch with ",
-"`install.packages(\"torch\")` and run `torch::install_torch()` to run them."
+    "The sensitivity, recommendation, and prospective chunks in this vignette ",
+    "are skipped because torch is not available. Install torch with ",
+    "`install.packages(\"torch\")` and run `torch::install_torch()` to run them."
 )
 ```
 
@@ -307,17 +307,17 @@ familiarity.
 ```{r workflow-survival}
 set.seed(1)
 sdat <- generate_toy_data(
-  n = 100, n_features = 3,
-  outcome_type = "survival", seed = 1
+    n = 100, n_features = 3,
+    outcome_type = "survival", seed = 1
 )
 
 # For survival, pass surv_time + surv_event instead of Y.
 sdata <- iconic_data(
-  X = sdat$X,
-  surv_time = sdat$surv_time, surv_event = sdat$surv_event,
-  G = sdat$G, W = sdat$W,
-  outcome_type = "survival",
-  covariates = sdat$synthetic_data
+    X = sdat$X,
+    surv_time = sdat$surv_time, surv_event = sdat$surv_event,
+    G = sdat$G, W = sdat$W,
+    outcome_type = "survival",
+    covariates = sdat$synthetic_data
 )
 
 sest <- iconic_estimate(sdata)

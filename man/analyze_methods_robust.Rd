@@ -43,6 +43,6 @@ use but is not included in the default pipeline.
 }
 \examples{
 dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
-  n_features = 5, n_confounders = 1, seed = 1)
+    n_features = 5, n_confounders = 1, seed = 1)
 analyze_methods_robust(dat)
 }

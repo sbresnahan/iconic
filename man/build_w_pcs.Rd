@@ -38,7 +38,7 @@ Uses irlba for fast truncated PCA when available, falling back to
 }
 \examples{
 x <- matrix(rnorm(500 * 60), nrow = 500,
-            dimnames = list(paste0("f", 1:500), paste0("S", 1:60)))
+    dimnames = list(paste0("f", 1:500), paste0("S", 1:60)))
 w <- build_w_pcs(x, n_pcs = 5)
 dim(w$W)
 w$variance_explained

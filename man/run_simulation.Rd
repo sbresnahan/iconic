@@ -50,6 +50,6 @@ Run repeated simulations for a single parameter configuration
 }
 \examples{
 res <- run_simulation(n_iter = 3, n_samples = 100, beta_X = 0.1,
-                      conf_str = 0.8)
+    conf_str = 0.8)
 res$summary
 }

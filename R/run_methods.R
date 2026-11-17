@@ -45,67 +45,67 @@
                                     W_avg = NULL, covars = NULL,
                                     methods = .methods_all,
                                     feature_idx = 1L, min_f = 10) {
-  na <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  row <- function(m, r) data.frame(feature = feature_idx, method = m,
-                                   beta = as.numeric(r$beta),
-                                   se = as.numeric(r$se),
-                                   pvalue = as.numeric(r$pvalue),
-                                   stringsAsFactors = FALSE)
+    na <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    row <- function(m, r) data.frame(feature = feature_idx, method = m,
+        beta = as.numeric(r$beta),
+        se = as.numeric(r$se),
+        pvalue = as.numeric(r$pvalue),
+        stringsAsFactors = FALSE)
 
-  # Determine which methods can actually run given available inputs
-  can_run <- character(0)
-  if ("UNADJ" %in% methods) can_run <- c(can_run, "UNADJ")
-  if ("DIRECT" %in% methods && !is.null(g) && !is.null(w)) can_run <- c(can_run, "DIRECT")
-  if ("COCA" %in% methods && !is.null(w)) can_run <- c(can_run, "COCA")
-  if ("IV2SLS" %in% methods && !is.null(g)) can_run <- c(can_run, "IV2SLS")
-  if ("PGC" %in% methods && !is.null(g) && !is.null(W_mat)) can_run <- c(can_run, "PGC")
+    # Determine which methods can actually run given available inputs
+    can_run <- character(0)
+    if ("UNADJ" %in% methods) can_run <- c(can_run, "UNADJ")
+    if ("DIRECT" %in% methods && !is.null(g) && !is.null(w)) can_run <- c(can_run, "DIRECT")
+    if ("COCA" %in% methods && !is.null(w)) can_run <- c(can_run, "COCA")
+    if ("IV2SLS" %in% methods && !is.null(g)) can_run <- c(can_run, "IV2SLS")
+    if ("PGC" %in% methods && !is.null(g) && !is.null(W_mat)) can_run <- c(can_run, "PGC")
 
-  if (!length(can_run)) return(NULL)
+    if (!length(can_run)) return(NULL)
 
-  # Complete cases across all needed variables
-  needed <- cbind(y, X)
-  if (!is.null(g)) needed <- cbind(needed, g)
-  if (!is.null(w)) needed <- cbind(needed, as.matrix(w))
-  if (!is.null(covars) && ncol(covars) > 0) needed <- cbind(needed, covars)
-  ok <- stats::complete.cases(needed)
-  if (sum(ok) < 20) return(NULL)
+    # Complete cases across all needed variables
+    needed <- cbind(y, X)
+    if (!is.null(g)) needed <- cbind(needed, g)
+    if (!is.null(w)) needed <- cbind(needed, as.matrix(w))
+    if (!is.null(covars) && ncol(covars) > 0) needed <- cbind(needed, covars)
+    ok <- stats::complete.cases(needed)
+    if (sum(ok) < 20) return(NULL)
 
-  X_f <- X[ok]
-  y_f <- y[ok]
-  g_f <- if (!is.null(g)) g[ok] else NULL
-  w_f <- if (!is.null(w)) as.matrix(w)[ok, , drop = FALSE] else NULL
-  cv_f <- if (!is.null(covars)) covars[ok, , drop = FALSE] else NULL
-  W_mat_f <- if (!is.null(W_mat)) W_mat[ok, , drop = FALSE] else NULL
-  Wa_f <- if (!is.null(W_avg)) W_avg[ok] else if (!is.null(W_mat_f)) rowMeans(W_mat_f) else NULL
+    X_f <- X[ok]
+    y_f <- y[ok]
+    g_f <- if (!is.null(g)) g[ok] else NULL
+    w_f <- if (!is.null(w)) as.matrix(w)[ok, , drop = FALSE] else NULL
+    cv_f <- if (!is.null(covars)) covars[ok, , drop = FALSE] else NULL
+    W_mat_f <- if (!is.null(W_mat)) W_mat[ok, , drop = FALSE] else NULL
+    Wa_f <- if (!is.null(W_avg)) W_avg[ok] else if (!is.null(W_mat_f)) rowMeans(W_mat_f) else NULL
 
-  rows <- list()
+    rows <- list()
 
-  if ("UNADJ" %in% can_run) {
-    r <- tryCatch({
-      fit <- lm(y_f ~ X_f); sm <- summary(fit)$coefficients
-      list(beta = coef(fit)["X_f"], se = sm["X_f", 2], pvalue = sm["X_f", 4])
-    }, error = function(e) na)
-    rows[["UNADJ"]] <- row("UNADJ", r)
-  }
-  if ("DIRECT" %in% can_run) {
-    r <- tryCatch(fit_direct(y_f, X_f, g_f, w_f, cv_f), error = function(e) na)
-    rows[["DIRECT"]] <- row("DIRECT", r)
-  }
-  if ("COCA" %in% can_run) {
-    r <- tryCatch(fit_coca(y_f, X_f, Wa_f, cv_f), error = function(e) na)
-    rows[["COCA"]] <- row("COCA", r)
-  }
-  if ("IV2SLS" %in% can_run) {
-    r <- tryCatch(fit_iv2sls(y_f, X_f, g_f, w_f, cv_f, min_f = min_f),
-                  error = function(e) na)
-    rows[["IV2SLS"]] <- row("IV2SLS", r)
-  }
-  if ("PGC" %in% can_run) {
-    r <- tryCatch(fit_pgc(y_f, X_f, g_f, W_mat_f, cv_f), error = function(e) na)
-    rows[["PGC"]] <- row("PGC", r)
-  }
+    if ("UNADJ" %in% can_run) {
+        r <- tryCatch({
+            fit <- lm(y_f ~ X_f); sm <- summary(fit)$coefficients
+            list(beta = coef(fit)["X_f"], se = sm["X_f", 2], pvalue = sm["X_f", 4])
+        }, error = function(e) na)
+        rows[["UNADJ"]] <- row("UNADJ", r)
+    }
+    if ("DIRECT" %in% can_run) {
+        r <- tryCatch(fit_direct(y_f, X_f, g_f, w_f, cv_f), error = function(e) na)
+        rows[["DIRECT"]] <- row("DIRECT", r)
+    }
+    if ("COCA" %in% can_run) {
+        r <- tryCatch(fit_coca(y_f, X_f, Wa_f, cv_f), error = function(e) na)
+        rows[["COCA"]] <- row("COCA", r)
+    }
+    if ("IV2SLS" %in% can_run) {
+        r <- tryCatch(fit_iv2sls(y_f, X_f, g_f, w_f, cv_f, min_f = min_f),
+            error = function(e) na)
+        rows[["IV2SLS"]] <- row("IV2SLS", r)
+    }
+    if ("PGC" %in% can_run) {
+        r <- tryCatch(fit_pgc(y_f, X_f, g_f, W_mat_f, cv_f), error = function(e) na)
+        rows[["PGC"]] <- row("PGC", r)
+    }
 
-  do.call(rbind, rows)
+    do.call(rbind, rows)
 }
 
 #' Analyse a single outcome feature with all estimators (internal)
@@ -121,20 +121,20 @@
 #' @return Data frame of five rows (one per method) or `NULL` if too few cases.
 #' @keywords internal
 .analyze_feature <- function(dat, f, W_avg, W_valid = NULL) {
-  X <- dat$X
-  cv <- dat$synthetic_data
-  y <- dat$Y[, f]
-  g <- if (!is.null(dat$G)) dat$G[, f] else NULL
+    X <- dat$X
+    cv <- dat$synthetic_data
+    y <- dat$Y[, f]
+    g <- if (!is.null(dat$G)) dat$G[, f] else NULL
 
-  W_mat <- if (!is.null(W_valid)) W_valid else dat$W
-  # pass the full W panel (n x q) to all estimators.
-  w <- W_mat # full matrix (NULL when no W)
+    W_mat <- if (!is.null(W_valid)) W_valid else dat$W
+    # pass the full W panel (n x q) to all estimators.
+    w <- W_mat # full matrix (NULL when no W)
 
-  .estimate_total_feature(
-    X = X, y = y, g = g, w = w, W_mat = W_mat,
-    W_avg = W_avg, covars = cv,
-    methods = .methods_all, feature_idx = f
-  )
+    .estimate_total_feature(
+        X = X, y = y, g = g, w = w, W_mat = W_mat,
+        W_avg = W_avg, covars = cv,
+        methods = .methods_all, feature_idx = f
+    )
 }
 
 
@@ -148,11 +148,11 @@
 #' @keywords internal
 run_methods <- function(dat, n_features = ncol(dat$Y), W_valid = NULL,
                         n_cores = 1) {
-  W_avg <- rowMeans(dat$W)
-  results <- .parallel_lapply(seq_len(n_features),
-                    function(f) .analyze_feature(dat, f, W_avg, W_valid),
-                    n_cores = n_cores)
-  do.call(rbind, Filter(Negate(is.null), results))
+    W_avg <- rowMeans(dat$W)
+    results <- .parallel_lapply(seq_len(n_features),
+        function(f) .analyze_feature(dat, f, W_avg, W_valid),
+        n_cores = n_cores)
+    do.call(rbind, Filter(Negate(is.null), results))
 }
 
 
@@ -181,20 +181,20 @@ run_methods <- function(dat, n_features = ncol(dat$Y), W_valid = NULL,
 #' @export
 #' @examples
 #' dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
-#'   n_features = 5, n_confounders = 1, seed = 1)
+#'     n_features = 5, n_confounders = 1, seed = 1)
 #' analyze_methods_robust(dat)
 analyze_methods_robust <- function(iteration_data, test_features = NULL,
                                    alpha = 0.05, debug = FALSE, n_cores = 1) {
-  feats <- if (is.null(test_features)) seq_len(ncol(iteration_data$Y)) else test_features
-  W_avg <- rowMeans(iteration_data$W)
-  res <- .parallel_lapply(feats, function(f) {
-    if (debug) message("feature ", f)
-    .analyze_feature(iteration_data, f, W_avg)
-  }, n_cores = n_cores, progress = if (debug) "analyze_methods_robust" else NULL)
-  out <- do.call(rbind, Filter(Negate(is.null), res))
-  if (is.null(out)) return(out)
-  out$significant <- out$pvalue < alpha
-  out
+    feats <- if (is.null(test_features)) seq_len(ncol(iteration_data$Y)) else test_features
+    W_avg <- rowMeans(iteration_data$W)
+    res <- .parallel_lapply(feats, function(f) {
+        if (debug) message("feature ", f)
+        .analyze_feature(iteration_data, f, W_avg)
+    }, n_cores = n_cores, progress = if (debug) "analyze_methods_robust" else NULL)
+    out <- do.call(rbind, Filter(Negate(is.null), res))
+    if (is.null(out)) return(out)
+    out$significant <- out$pvalue < alpha
+    out
 }
 
 #' Parallel version of [analyze_methods_robust()]
@@ -208,18 +208,18 @@ analyze_methods_robust <- function(iteration_data, test_features = NULL,
 #' @export
 #' @examples
 #' dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
-#'   n_features = 5, n_confounders = 1, seed = 1)
+#'     n_features = 5, n_confounders = 1, seed = 1)
 #' analyze_methods_parallel(dat, n_cores = 1)
 analyze_methods_parallel <- function(iteration_data, test_features = NULL,
                                      alpha = 0.05, debug = FALSE, n_cores = 1) {
-  feats <- if (is.null(test_features)) seq_len(ncol(iteration_data$Y)) else test_features
-  W_avg <- rowMeans(iteration_data$W)
-  res <- .parallel_lapply(feats, function(f) .analyze_feature(iteration_data, f, W_avg),
-                          n_cores = n_cores, progress = "analyze_methods_parallel")
-  out <- do.call(rbind, Filter(Negate(is.null), res))
-  if (is.null(out)) return(out)
-  out$significant <- out$pvalue < alpha
-  out
+    feats <- if (is.null(test_features)) seq_len(ncol(iteration_data$Y)) else test_features
+    W_avg <- rowMeans(iteration_data$W)
+    res <- .parallel_lapply(feats, function(f) .analyze_feature(iteration_data, f, W_avg),
+        n_cores = n_cores, progress = "analyze_methods_parallel")
+    out <- do.call(rbind, Filter(Negate(is.null), res))
+    if (is.null(out)) return(out)
+    out$significant <- out$pvalue < alpha
+    out
 }
 
 
@@ -231,23 +231,23 @@ analyze_methods_parallel <- function(iteration_data, test_features = NULL,
 #' abs_bias, rmse, power, n.
 #' @keywords internal
 summarise_results <- function(combined, true_total) {
-  methods <- .methods_all
+    methods <- .methods_all
 
-  rows <- lapply(methods, function(m) {
-    x <- combined$beta[combined$method == m]
-    p <- combined$pvalue[combined$method == m]
-    data.frame(
-      method = m,
-      mean = mean(x, na.rm = TRUE),
-      median = median(x, na.rm = TRUE),
-      sd = sd(x, na.rm = TRUE),
-      bias = mean(x, na.rm = TRUE) - true_total,
-      abs_bias = abs(mean(x, na.rm = TRUE) - true_total),
-      rmse = sqrt(mean((x - true_total)^2, na.rm = TRUE)),
-      power = mean(p < 0.05, na.rm = TRUE),
-      n = sum(!is.na(x)),
-      stringsAsFactors = FALSE
-    )
-  })
-  do.call(rbind, rows)
+    rows <- lapply(methods, function(m) {
+        x <- combined$beta[combined$method == m]
+        p <- combined$pvalue[combined$method == m]
+        data.frame(
+            method = m,
+            mean = mean(x, na.rm = TRUE),
+            median = median(x, na.rm = TRUE),
+            sd = sd(x, na.rm = TRUE),
+            bias = mean(x, na.rm = TRUE) - true_total,
+            abs_bias = abs(mean(x, na.rm = TRUE) - true_total),
+            rmse = sqrt(mean((x - true_total)^2, na.rm = TRUE)),
+            power = mean(p < 0.05, na.rm = TRUE),
+            n = sum(!is.na(x)),
+            stringsAsFactors = FALSE
+        )
+    })
+    do.call(rbind, rows)
 }

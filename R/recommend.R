@@ -16,17 +16,17 @@
 # gate that was actually applied.
 # COCA requires valid negative controls (A1) but not completeness (A2).
 .estimator_requirements <- function(min_f = 10) {
-  f <- sprintf("F>=%s", min_f)
-  c(
-    UNADJ = "no assumptions (naive OLS)",
-    DIRECT = "G + W as covariates (no causal identification)",
-    COCA = "valid NCs (A1), completeness (A2 not required)",
-    IV2SLS = sprintf("valid G (%s), exclusion restriction", f),
-    PGC = sprintf("valid G (%s), valid NCs (A2), completeness", f),
-    IV2SLS2 = sprintf("valid G + Gm (%s), exclusion for both; optional path-specific NCs (W1/W2)", f),
-    PGC2 = sprintf("valid G (%s), path-specific NCs (W1/W2), completeness", f),
-    PGC2Gm = sprintf("valid G + Gm (%s), path-specific NCs (W1/W2), completeness", f)
-  )
+    f <- sprintf("F>=%s", min_f)
+    c(
+        UNADJ = "no assumptions (naive OLS)",
+        DIRECT = "G + W as covariates (no causal identification)",
+        COCA = "valid NCs (A1), completeness (A2 not required)",
+        IV2SLS = sprintf("valid G (%s), exclusion restriction", f),
+        PGC = sprintf("valid G (%s), valid NCs (A2), completeness", f),
+        IV2SLS2 = sprintf("valid G + Gm (%s), exclusion for both; optional path-specific NCs (W1/W2)", f),
+        PGC2 = sprintf("valid G (%s), path-specific NCs (W1/W2), completeness", f),
+        PGC2Gm = sprintf("valid G + Gm (%s), path-specific NCs (W1/W2), completeness", f)
+    )
 }
 
 
@@ -106,20 +106,20 @@
 #' @export
 #'
 #' @examples
-#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-#' G = rnorm(100), W = matrix(rnorm(100*10), 10, 100))
+#' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+#'     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' diag <- iconic_diagnose(data)
 #' est <- iconic_estimate(data, diagnosis = diag)
 #' rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
-#'                         auto_sensitivity = FALSE)
+#'     auto_sensitivity = FALSE)
 #' print(rec)
 iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
                              sensitivity = NULL,
-                             criterion = c("combined","minimax_bias","ci_coverage"),
+                             criterion = c("combined", "minimax_bias", "ci_coverage"),
                              completeness_penalty = c("satisfied" = 1.0,
-                                                      "borderline" = 0.7,
-                                                      "weak-capture" = 0.5,
-                                                      "under-identified" = 0),
+                                 "borderline" = 0.7,
+                                 "weak-capture" = 0.5,
+                                 "under-identified" = 0),
                              min_f = 10,
                              g_threshold = NULL,
                              gm_threshold = NULL,
@@ -132,188 +132,188 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
                              gan_epochs = 100,
                              n_cores = 1,
                              verbose = FALSE) {
-  criterion <- match.arg(criterion)
-  if (!inherits(data, "iconic_data"))
-    stop("data must be an iconic_data object from iconic_data().")
+    criterion <- match.arg(criterion)
+    if (!inherits(data, "iconic_data"))
+        stop("data must be an iconic_data object from iconic_data().")
 
-  # Auto-run the sensitivity suite when no surface is supplied, so the
-  # recommendation is robustness-based by default (max |bias| per estimand
-  # over the joint rho x omega grid). Requires the torch backend to train the
-  # texture model; without it, fall back to eligibility-only ranking.
-  if (is.null(sensitivity) && isTRUE(auto_sensitivity)) {
-    if (isTRUE(check_torch_setup())) {
-      if (isTRUE(verbose))
-        message("iconic_recommend: no sensitivity surface supplied; running ",
-                "iconic_sensitivity() (rho x omega grid) for robustness ranking.")
-      sensitivity <- tryCatch(
-        iconic_sensitivity(data, diagnosis = diagnosis,
-                           rho_G1_grid = rho_G1_grid, rho_G2_grid = rho_G2_grid,
-                           omega_1 = omega_1, omega_2 = omega_2,
-                           n_iter = n_iter_sens, gan_epochs = gan_epochs,
-                           n_cores = n_cores, verbose = verbose),
-        error = function(e) {
-          warning("auto-sensitivity failed (", e$message,
-                  "); falling back to eligibility-only ranking.")
-          NULL
-        })
+    # Auto-run the sensitivity suite when no surface is supplied, so the
+    # recommendation is robustness-based by default (max |bias| per estimand
+    # over the joint rho x omega grid). Requires the torch backend to train the
+    # texture model; without it, fall back to eligibility-only ranking.
+    if (is.null(sensitivity) && isTRUE(auto_sensitivity)) {
+        if (isTRUE(check_torch_setup())) {
+            if (isTRUE(verbose))
+                message("iconic_recommend: no sensitivity surface supplied; running ",
+                    "iconic_sensitivity() (rho x omega grid) for robustness ranking.")
+            sensitivity <- tryCatch(
+                iconic_sensitivity(data, diagnosis = diagnosis,
+                    rho_G1_grid = rho_G1_grid, rho_G2_grid = rho_G2_grid,
+                    omega_1 = omega_1, omega_2 = omega_2,
+                    n_iter = n_iter_sens, gan_epochs = gan_epochs,
+                    n_cores = n_cores, verbose = verbose),
+                error = function(e) {
+                    warning("auto-sensitivity failed (", e$message,
+                        "); falling back to eligibility-only ranking.")
+                    NULL
+                })
+        } else {
+            if (isTRUE(verbose))
+                message("iconic_recommend: torch backend unavailable; skipping ",
+                    "auto-sensitivity and using eligibility-only ranking.")
+        }
+    }
+
+    # Get eligibility (and keep the diagnosis object so the composite
+    # confidence multiplier can read the graded completeness verdict).
+    # When the caller does not supply a diagnosis, auto-diagnose using the
+    # SAME instrument-strength thresholds the caller specified -- otherwise a
+    # non-default min_f would be silently discarded here.
+    if (!is.null(diagnosis)) {
+        diag_obj <- diagnosis
     } else {
-      if (isTRUE(verbose))
-        message("iconic_recommend: torch backend unavailable; skipping ",
-                "auto-sensitivity and using eligibility-only ranking.")
+        diag_obj <- iconic_diagnose(data, min_f = min_f,
+            g_threshold = g_threshold,
+            gm_threshold = gm_threshold)
     }
-  }
+    elig <- diag_obj$eligibility
+    # Use the threshold actually applied in the diagnosis for the rationale
+    # labels (falls back to the min_f argument if the diagnosis predates the
+    # stored field).
+    min_f_used <- if (!is.null(diag_obj$min_f)) diag_obj$min_f else min_f
 
-  # Get eligibility (and keep the diagnosis object so the composite
-  # confidence multiplier can read the graded completeness verdict).
-  # When the caller does not supply a diagnosis, auto-diagnose using the
-  # SAME instrument-strength thresholds the caller specified -- otherwise a
-  # non-default min_f would be silently discarded here.
-  if (!is.null(diagnosis)) {
-    diag_obj <- diagnosis
-  } else {
-    diag_obj <- iconic_diagnose(data, min_f = min_f,
-                                g_threshold = g_threshold,
-                                gm_threshold = gm_threshold)
-  }
-  elig <- diag_obj$eligibility
-  # Use the threshold actually applied in the diagnosis for the rationale
-  # labels (falls back to the min_f argument if the diagnosis predates the
-  # stored field).
-  min_f_used <- if (!is.null(diag_obj$min_f)) diag_obj$min_f else min_f
+    # Build ranking table
+    all_methods <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
+        "IV2SLS2", "PGC2", "PGC2Gm")
+    eligible <- elig$eligible[match(all_methods, elig$estimator)]
 
-  # Build ranking table
-  all_methods <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
-                   "IV2SLS2", "PGC2", "PGC2Gm")
-  eligible <- elig$eligible[match(all_methods, elig$estimator)]
+    ranking <- data.frame(
+        estimator = all_methods,
+        eligible = eligible,
+        stringsAsFactors = FALSE
+    )
 
-  ranking <- data.frame(
-    estimator = all_methods,
-    eligible = eligible,
-    stringsAsFactors = FALSE
-  )
-
-  # Add point estimates if available
-  if (!is.null(estimate)) {
-    if (data$is_mediation && "NDE" %in% names(estimate)) {
-      # Mediation: use mean NDE across features/mediators per method
-      est_summary <- aggregate(cbind(NDE, NIE) ~ method,
-                               data = estimate, FUN = mean, na.rm = TRUE)
-      ranking$mean_NDE <- est_summary$NDE[match(ranking$estimator, est_summary$method)]
-      ranking$mean_NIE <- est_summary$NIE[match(ranking$estimator, est_summary$method)]
-    } else if ("beta" %in% names(estimate)) {
-      # Total effect: mean beta per method
-      est_summary <- aggregate(beta ~ method,
-                               data = estimate, FUN = mean, na.rm = TRUE)
-      ranking$mean_beta <- est_summary$beta[match(ranking$estimator, est_summary$method)]
+    # Add point estimates if available
+    if (!is.null(estimate)) {
+        if (data$is_mediation && "NDE" %in% names(estimate)) {
+            # Mediation: use mean NDE across features/mediators per method
+            est_summary <- aggregate(cbind(NDE, NIE) ~ method,
+                data = estimate, FUN = mean, na.rm = TRUE)
+            ranking$mean_NDE <- est_summary$NDE[match(ranking$estimator, est_summary$method)]
+            ranking$mean_NIE <- est_summary$NIE[match(ranking$estimator, est_summary$method)]
+        } else if ("beta" %in% names(estimate)) {
+            # Total effect: mean beta per method
+            est_summary <- aggregate(beta ~ method,
+                data = estimate, FUN = mean, na.rm = TRUE)
+            ranking$mean_beta <- est_summary$beta[match(ranking$estimator, est_summary$method)]
+        }
     }
-  }
 
-  # Add sensitivity-based robustness if available (per estimand)
-  if (!is.null(sensitivity)) {
-    robustness <- .extract_robustness(sensitivity, criterion = criterion)
-    ranking$max_bias_NDE <- robustness$max_bias_NDE[match(ranking$estimator, robustness$method)]
-    ranking$max_bias_NIE <- robustness$max_bias_NIE[match(ranking$estimator, robustness$method)]
-    ranking$coverage_dist_NDE <- robustness$coverage_dist_NDE[match(ranking$estimator, robustness$method)]
-    ranking$coverage_dist_NIE <- robustness$coverage_dist_NIE[match(ranking$estimator, robustness$method)]
-    ranking$robustness_NDE <- robustness$score_NDE[match(ranking$estimator, robustness$method)]
-    ranking$robustness_NIE <- robustness$score_NIE[match(ranking$estimator, robustness$method)]
-  }
+    # Add sensitivity-based robustness if available (per estimand)
+    if (!is.null(sensitivity)) {
+        robustness <- .extract_robustness(sensitivity, criterion = criterion)
+        ranking$max_bias_NDE <- robustness$max_bias_NDE[match(ranking$estimator, robustness$method)]
+        ranking$max_bias_NIE <- robustness$max_bias_NIE[match(ranking$estimator, robustness$method)]
+        ranking$coverage_dist_NDE <- robustness$coverage_dist_NDE[match(ranking$estimator, robustness$method)]
+        ranking$coverage_dist_NIE <- robustness$coverage_dist_NIE[match(ranking$estimator, robustness$method)]
+        ranking$robustness_NDE <- robustness$score_NDE[match(ranking$estimator, robustness$method)]
+        ranking$robustness_NIE <- robustness$score_NIE[match(ranking$estimator, robustness$method)]
+    }
 
-  # Rank: eligible first, then by a data-driven composite robustness score.
-  # The composite is the WORST-estimand robustness (min of NDE and NIE), so an
-  # estimator is only as trustworthy as its weakest estimand, multiplied by a
-  # confidence factor derived from the graded diagnostic verdict for the
-  # assumptions that estimator depends on (e.g. path completeness for the
-  # bridge estimators). robustness scores may be absent when no sensitivity
-  # analysis is supplied; then rank on eligibility alone (stable order).
-  if ("robustness_NDE" %in% names(ranking)) {
-    ranking$robustness_NDE[is.na(ranking$robustness_NDE)] <- -Inf
-    ranking$robustness_NIE[is.na(ranking$robustness_NIE)] <- -Inf
-    comp <- .composite_robustness(ranking, diag_obj, completeness_penalty)
-    ranking$composite <- comp$composite
-    ranking$confidence_mult <- comp$confidence_mult
-    ranking$final_score <- comp$final_score
-    # Structural-naive estimators (UNADJ, DIRECT) assume no unmeasured
-    # confounding -- the very problem this package exists to solve -- so they
-    # must never out-rank an eligible instrument/NC-based estimator merely
-    # because they dodge the completeness discount. Demote them below the
-    # IV/NC-based estimators; among the latter, rank by final_score.
-    is_naive <- ranking$estimator %in% c("UNADJ", "DIRECT")
-    ranking <- ranking[order(!ranking$eligible,
-                             is_naive,
-                             -ranking$final_score), ]
-  } else {
-    # No sensitivity surface: there is no valid data-driven robustness proxy
-    # (the truth is unknown, and deviation from the confounded UNADJ estimate
-    # is not evidence of bias). The only defensible tie-break is structural:
-    # UNADJ and DIRECT assume no unmeasured confounding -- the very problem
-    # this package exists to solve -- so they must never be surface as the
-    # top recommendation merely because they appear first in the method list.
-    # Demote them below the instrument/NC-based estimators; among the latter,
-    # keep the stable (eligibility) order. This is a last-resort ordering used
-    # only when the caller supplied no sensitivity analysis.
-    is_naive <- ranking$estimator %in% c("UNADJ", "DIRECT")
-    ranking <- ranking[order(!ranking$eligible, is_naive), ]
-  }
-  ranking$rank <- seq_len(nrow(ranking))
-
-  # Build rationale for each (threshold-aware requirement labels)
-  reqs <- .estimator_requirements(min_f_used)
-  ranking$rationale <- vapply(seq_len(nrow(ranking)), function(i) {
-    m <- ranking$estimator[i]
-    e <- ranking$eligible[i]
-    req <- reqs[m]
-    if (!e) {
-      paste0("ineligible -- ", elig$reason[elig$estimator == m])
+    # Rank: eligible first, then by a data-driven composite robustness score.
+    # The composite is the WORST-estimand robustness (min of NDE and NIE), so an
+    # estimator is only as trustworthy as its weakest estimand, multiplied by a
+    # confidence factor derived from the graded diagnostic verdict for the
+    # assumptions that estimator depends on (e.g. path completeness for the
+    # bridge estimators). robustness scores may be absent when no sensitivity
+    # analysis is supplied; then rank on eligibility alone (stable order).
+    if ("robustness_NDE" %in% names(ranking)) {
+        ranking$robustness_NDE[is.na(ranking$robustness_NDE)] <- -Inf
+        ranking$robustness_NIE[is.na(ranking$robustness_NIE)] <- -Inf
+        comp <- .composite_robustness(ranking, diag_obj, completeness_penalty)
+        ranking$composite <- comp$composite
+        ranking$confidence_mult <- comp$confidence_mult
+        ranking$final_score <- comp$final_score
+        # Structural-naive estimators (UNADJ, DIRECT) assume no unmeasured
+        # confounding -- the very problem this package exists to solve -- so they
+        # must never out-rank an eligible instrument/NC-based estimator merely
+        # because they dodge the completeness discount. Demote them below the
+        # IV/NC-based estimators; among the latter, rank by final_score.
+        is_naive <- ranking$estimator %in% c("UNADJ", "DIRECT")
+        ranking <- ranking[order(!ranking$eligible,
+            is_naive,
+            -ranking$final_score), ]
     } else {
-      paste0("requires: ", req)
+        # No sensitivity surface: there is no valid data-driven robustness proxy
+        # (the truth is unknown, and deviation from the confounded UNADJ estimate
+        # is not evidence of bias). The only defensible tie-break is structural:
+        # UNADJ and DIRECT assume no unmeasured confounding -- the very problem
+        # this package exists to solve -- so they must never be surface as the
+        # top recommendation merely because they appear first in the method list.
+        # Demote them below the instrument/NC-based estimators; among the latter,
+        # keep the stable (eligibility) order. This is a last-resort ordering used
+        # only when the caller supplied no sensitivity analysis.
+        is_naive <- ranking$estimator %in% c("UNADJ", "DIRECT")
+        ranking <- ranking[order(!ranking$eligible, is_naive), ]
     }
-  }, character(1))
+    ranking$rank <- seq_len(nrow(ranking))
 
-  # Recommended estimator: the top eligible, non-naive estimator by the
-  # data-driven composite robustness score (worst-estimand x confidence
-  # multiplier). The ranking is already sorted eligible-first, naive-last,
-  # final_score descending, so the first eligible non-naive row is the
-  # recommendation. When no sensitivity surface is available there is no
-  # composite; fall back to the top eligible non-naive estimator.
-  elig_ranking <- ranking[ranking$eligible, ]
-  elig_nonnaive <- elig_ranking[!elig_ranking$estimator %in% c("UNADJ", "DIRECT"), ]
-  recommended <- if (nrow(elig_nonnaive) > 0) elig_nonnaive$estimator[1] else
-    (if (nrow(elig_ranking) > 0) elig_ranking$estimator[1] else NA)
-  # Per-estimand recommendations: the top eligible estimator for each
-  # estimand may differ when their robustness profiles differ.
-  recommended_NDE <- if (nrow(elig_ranking) > 0 && "robustness_NDE" %in% names(ranking)) {
-    elig_nde <- elig_ranking[order(-elig_ranking$robustness_NDE), ]
-    elig_nde$estimator[1]
-  } else recommended
-  recommended_NIE <- if (nrow(elig_ranking) > 0 && "robustness_NIE" %in% names(ranking)) {
-    elig_nie <- elig_ranking[order(-elig_ranking$robustness_NIE), ]
-    elig_nie$estimator[1]
-  } else recommended
+    # Build rationale for each (threshold-aware requirement labels)
+    reqs <- .estimator_requirements(min_f_used)
+    ranking$rationale <- vapply(seq_len(nrow(ranking)), function(i) {
+        m <- ranking$estimator[i]
+        e <- ranking$eligible[i]
+        req <- reqs[m]
+        if (!e) {
+            paste0("ineligible -- ", elig$reason[elig$estimator == m])
+        } else {
+            paste0("requires: ", req)
+        }
+    }, character(1))
 
-  # per-scenario top estimator.
-  per_scenario <- if (!is.null(sensitivity))
-    .extract_per_scenario(sensitivity, criterion = criterion) else NULL
+    # Recommended estimator: the top eligible, non-naive estimator by the
+    # data-driven composite robustness score (worst-estimand x confidence
+    # multiplier). The ranking is already sorted eligible-first, naive-last,
+    # final_score descending, so the first eligible non-naive row is the
+    # recommendation. When no sensitivity surface is available there is no
+    # composite; fall back to the top eligible non-naive estimator.
+    elig_ranking <- ranking[ranking$eligible, ]
+    elig_nonnaive <- elig_ranking[!elig_ranking$estimator %in% c("UNADJ", "DIRECT"), ]
+    recommended <- if (nrow(elig_nonnaive) > 0) elig_nonnaive$estimator[1] else
+        (if (nrow(elig_ranking) > 0) elig_ranking$estimator[1] else NA)
+    # Per-estimand recommendations: the top eligible estimator for each
+    # estimand may differ when their robustness profiles differ.
+    recommended_NDE <- if (nrow(elig_ranking) > 0 && "robustness_NDE" %in% names(ranking)) {
+        elig_nde <- elig_ranking[order(-elig_ranking$robustness_NDE), ]
+        elig_nde$estimator[1]
+    } else recommended
+    recommended_NIE <- if (nrow(elig_ranking) > 0 && "robustness_NIE" %in% names(ranking)) {
+        elig_nie <- elig_ranking[order(-elig_ranking$robustness_NIE), ]
+        elig_nie$estimator[1]
+    } else recommended
 
-  # Summary
-  summary_txt <- .build_recommendation_summary(ranking, recommended,
-                                               recommended_NDE, recommended_NIE,
-                                               data)
+    # per-scenario top estimator.
+    per_scenario <- if (!is.null(sensitivity))
+        .extract_per_scenario(sensitivity, criterion = criterion) else NULL
 
-  obj <- list(
-    ranking = ranking,
-    recommended = recommended,
-    recommended_NDE = recommended_NDE,
-    recommended_NIE = recommended_NIE,
-    per_scenario = per_scenario,
-    criterion = criterion,
-    completeness_penalty = completeness_penalty,
-    summary = summary_txt
-  )
-  class(obj) <- c("iconic_recommendation", "list")
-  if (isTRUE(verbose))
-    message("iconic_recommend complete. Call summary() or print() on the result for the full recommendation.")
-  obj
+    # Summary
+    summary_txt <- .build_recommendation_summary(ranking, recommended,
+        recommended_NDE, recommended_NIE,
+        data)
+
+    obj <- list(
+        ranking = ranking,
+        recommended = recommended,
+        recommended_NDE = recommended_NDE,
+        recommended_NIE = recommended_NIE,
+        per_scenario = per_scenario,
+        criterion = criterion,
+        completeness_penalty = completeness_penalty,
+        summary = summary_txt
+    )
+    class(obj) <- c("iconic_recommendation", "list")
+    if (isTRUE(verbose))
+        message("iconic_recommend complete. Call summary() or print() on the result for the full recommendation.")
+    obj
 }
 
 
@@ -348,43 +348,43 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 #'   \code{final_score} aligned to \code{ranking$estimator}.
 #' @keywords internal
 .composite_robustness <- function(ranking, diagnosis, completeness_penalty) {
-  n <- nrow(ranking)
-  # Worst-estimand composite. Treat non-finite (all-NA bias, e.g. COCA on
-  # survival) as worst so such estimators rank last.
-  nde <- ranking$robustness_NDE
-  nie <- ranking$robustness_NIE
-  composite <- pmin(nde, nie)
-  composite[!is.finite(composite)] <- -Inf
+    n <- nrow(ranking)
+    # Worst-estimand composite. Treat non-finite (all-NA bias, e.g. COCA on
+    # survival) as worst so such estimators rank last.
+    nde <- ranking$robustness_NDE
+    nie <- ranking$robustness_NIE
+    composite <- pmin(nde, nie)
+    composite[!is.finite(composite)] <- -Inf
 
-  # Confidence multiplier from the graded completeness verdict.
-  bridge_dep <- ranking$estimator %in% c("DIRECT", "COCA", "PGC", "PGC2", "PGC2Gm")
-  verdict <- if (!is.null(diagnosis) && !is.null(diagnosis$completeness) &&
-                 !is.null(diagnosis$completeness$completeness))
-    diagnosis$completeness$completeness else NA_character_
-  # Default penalties; honour user overrides via completeness_penalty.
-  pen <- c("satisfied" = 1.0, "borderline" = 0.7,
-           "weak-capture" = 0.5, "under-identified" = 0)
-  if (!is.null(completeness_penalty)) {
-    nm <- names(completeness_penalty)
-    pen[nm] <- completeness_penalty
-  }
-  mult <- rep(1.0, n)
-  if (!is.na(verdict) && verdict %in% names(pen)) {
-    mult[bridge_dep] <- pen[[verdict]]
-  } else if (!is.na(verdict)) {
-    # Unrecognised verdict: be conservative for bridge-dependent estimators.
-    mult[bridge_dep] <- 0.5
-  }
-  # If there is no completeness verdict at all, bridge-dependent estimators
-  # are already ineligible; leave their multiplier at 1 (moot).
+    # Confidence multiplier from the graded completeness verdict.
+    bridge_dep <- ranking$estimator %in% c("DIRECT", "COCA", "PGC", "PGC2", "PGC2Gm")
+    verdict <- if (!is.null(diagnosis) && !is.null(diagnosis$completeness) &&
+        !is.null(diagnosis$completeness$completeness))
+        diagnosis$completeness$completeness else NA_character_
+    # Default penalties; honour user overrides via completeness_penalty.
+    pen <- c("satisfied" = 1.0, "borderline" = 0.7,
+        "weak-capture" = 0.5, "under-identified" = 0)
+    if (!is.null(completeness_penalty)) {
+        nm <- names(completeness_penalty)
+        pen[nm] <- completeness_penalty
+    }
+    mult <- rep(1.0, n)
+    if (!is.na(verdict) && verdict %in% names(pen)) {
+        mult[bridge_dep] <- pen[[verdict]]
+    } else if (!is.na(verdict)) {
+        # Unrecognised verdict: be conservative for bridge-dependent estimators.
+        mult[bridge_dep] <- 0.5
+    }
+    # If there is no completeness verdict at all, bridge-dependent estimators
+    # are already ineligible; leave their multiplier at 1 (moot).
 
-  final_score <- composite * mult
-  final_score[!is.finite(final_score)] <- -Inf
+    final_score <- composite * mult
+    final_score[!is.finite(final_score)] <- -Inf
 
-  data.frame(composite = composite,
-             confidence_mult = mult,
-             final_score = final_score,
-             stringsAsFactors = FALSE)
+    data.frame(composite = composite,
+        confidence_mult = mult,
+        final_score = final_score,
+        stringsAsFactors = FALSE)
 }
 
 
@@ -401,102 +401,102 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 #' tradeoff.
 #' @keywords internal
 #' @noRd
-.extract_robustness <- function(sensitivity, criterion = c("combined","minimax_bias","ci_coverage")) {
-  criterion <- match.arg(criterion)
-  empty <- data.frame(method = character(0), max_bias_NDE = numeric(0),
-                      max_bias_NIE = numeric(0), coverage_dist_NDE = numeric(0),
-                      coverage_dist_NIE = numeric(0), score_NDE = numeric(0),
-                      score_NIE = numeric(0), stringsAsFactors = FALSE)
-  if (is.null(sensitivity) || is.null(sensitivity$surface))
-    return(empty)
+.extract_robustness <- function(sensitivity, criterion = c("combined", "minimax_bias", "ci_coverage")) {
+    criterion <- match.arg(criterion)
+    empty <- data.frame(method = character(0), max_bias_NDE = numeric(0),
+        max_bias_NIE = numeric(0), coverage_dist_NDE = numeric(0),
+        coverage_dist_NIE = numeric(0), score_NDE = numeric(0),
+        score_NIE = numeric(0), stringsAsFactors = FALSE)
+    if (is.null(sensitivity) || is.null(sensitivity$surface))
+        return(empty)
 
-  surface <- sensitivity$surface
+    surface <- sensitivity$surface
 
-  # Determine which bias columns exist
-  is_mediation <- "NDE_bias" %in% names(surface)
-  if (!is_mediation && !"bias" %in% names(surface)) return(empty)
+    # Determine which bias columns exist
+    is_mediation <- "NDE_bias" %in% names(surface)
+    if (!is_mediation && !"bias" %in% names(surface)) return(empty)
 
-  has_cov <- "NDE_coverage" %in% names(surface) && "NIE_coverage" %in% names(surface)
-  methods <- unique(surface$method)
+    has_cov <- "NDE_coverage" %in% names(surface) && "NIE_coverage" %in% names(surface)
+    methods <- unique(surface$method)
 
-  # Per-estimand max absolute bias and coverage distance.
-  # For total-effect surfaces (single "bias" column), NDE = the total
-  # effect and NIE is NA.
-  per_estimand <- function(bias_col, cov_col) {
-    mb <- vapply(methods, function(m) {
-      sub <- surface[surface$method == m, ]
-      max(abs(sub[[bias_col]]), na.rm = TRUE)
-    }, numeric(1))
-    cd <- if (has_cov && !is.null(cov_col)) {
-      vapply(methods, function(m) {
-        sub <- surface[surface$method == m, ]
-        mean(abs(sub[[cov_col]] - 0.95), na.rm = TRUE)
-      }, numeric(1))
-    } else rep(NA_real_, length(methods))
-    list(max_bias = mb, coverage_dist = cd)
-  }
+    # Per-estimand max absolute bias and coverage distance.
+    # For total-effect surfaces (single "bias" column), NDE = the total
+    # effect and NIE is NA.
+    per_estimand <- function(bias_col, cov_col) {
+        mb <- vapply(methods, function(m) {
+            sub <- surface[surface$method == m, ]
+            max(abs(sub[[bias_col]]), na.rm = TRUE)
+        }, numeric(1))
+        cd <- if (has_cov && !is.null(cov_col)) {
+            vapply(methods, function(m) {
+                sub <- surface[surface$method == m, ]
+                mean(abs(sub[[cov_col]] - 0.95), na.rm = TRUE)
+            }, numeric(1))
+        } else rep(NA_real_, length(methods))
+        list(max_bias = mb, coverage_dist = cd)
+    }
 
-  if (is_mediation) {
-    nde <- per_estimand("NDE_bias", if (has_cov) "NDE_coverage" else NULL)
-    nie <- per_estimand("NIE_bias", if (has_cov) "NIE_coverage" else NULL)
-  } else {
-    nde <- per_estimand("bias", NULL)
-    nie <- list(max_bias = rep(NA_real_, length(methods)),
-                coverage_dist = rep(NA_real_, length(methods)))
-  }
+    if (is_mediation) {
+        nde <- per_estimand("NDE_bias", if (has_cov) "NDE_coverage" else NULL)
+        nie <- per_estimand("NIE_bias", if (has_cov) "NIE_coverage" else NULL)
+    } else {
+        nde <- per_estimand("bias", NULL)
+        nie <- list(max_bias = rep(NA_real_, length(methods)),
+            coverage_dist = rep(NA_real_, length(methods)))
+    }
 
-  # Score by criterion, computed per estimand (higher = better).
-  # Normalize over finite values only: an estimator with an all-NA bias
-  # column (e.g. COCA on survival outcomes, where it is structurally
-  # incompatible) yields max_bias = -Inf, which would otherwise poison the
-  # min-max scaling for every estimator (min = -Inf -> NaN throughout).
-  # Non-finite scores are set to -Inf (worst) so such estimators rank last.
-  score_one <- function(mb, cd) {
-    switch(criterion,
-      minimax_bias = {
-        s <- 1 / (1 + mb)
-        s[!is.finite(s)] <- -Inf
-        s
-      },
-      ci_coverage = {
-        if (!has_cov || all(is.na(cd))) rep(NA_real_, length(methods))
-        else {
-          s <- 1 / (1 + cd)
-          s[!is.finite(s)] <- -Inf
-          s
-        }
-      },
-      combined = {
-        norm <- function(v) {
-          vf <- v[is.finite(v)]
-          if (length(vf) < 2 || diff(range(vf)) == 0)
-            return(ifelse(is.finite(v), 0, NA_real_))
-          out <- (v - min(vf)) / (diff(range(vf)) + 1e-8)
-          out[!is.finite(out)] <- NA_real_
-          out
-        }
-        n_bias <- norm(mb)
-        s <- if (has_cov && !all(is.na(cd))) {
-          n_cov <- norm(cd)
-          # if exactly one of n_bias/n_cov is NA, treat the NA as worst (1)
-          nb <- ifelse(is.na(n_bias), 1, n_bias)
-          nc <- ifelse(is.na(n_cov), 1, n_cov)
-          1 / (1 + nb + nc)
-        } else {
-          1 / (1 + ifelse(is.na(n_bias), 1, n_bias))
-        }
-        # estimators with non-finite bias get the worst score
-        s[!is.finite(mb)] <- -Inf
-        s
-      })
-  }
+    # Score by criterion, computed per estimand (higher = better).
+    # Normalize over finite values only: an estimator with an all-NA bias
+    # column (e.g. COCA on survival outcomes, where it is structurally
+    # incompatible) yields max_bias = -Inf, which would otherwise poison the
+    # min-max scaling for every estimator (min = -Inf -> NaN throughout).
+    # Non-finite scores are set to -Inf (worst) so such estimators rank last.
+    score_one <- function(mb, cd) {
+        switch(criterion,
+            minimax_bias = {
+                s <- 1 / (1 + mb)
+                s[!is.finite(s)] <- -Inf
+                s
+            },
+            ci_coverage = {
+                if (!has_cov || all(is.na(cd))) rep(NA_real_, length(methods))
+                else {
+                    s <- 1 / (1 + cd)
+                    s[!is.finite(s)] <- -Inf
+                    s
+                }
+            },
+            combined = {
+                norm <- function(v) {
+                    vf <- v[is.finite(v)]
+                    if (length(vf) < 2 || diff(range(vf)) == 0)
+                        return(ifelse(is.finite(v), 0, NA_real_))
+                    out <- (v - min(vf)) / (diff(range(vf)) + 1e-8)
+                    out[!is.finite(out)] <- NA_real_
+                    out
+                }
+                n_bias <- norm(mb)
+                s <- if (has_cov && !all(is.na(cd))) {
+                    n_cov <- norm(cd)
+                    # if exactly one of n_bias/n_cov is NA, treat the NA as worst (1)
+                    nb <- ifelse(is.na(n_bias), 1, n_bias)
+                    nc <- ifelse(is.na(n_cov), 1, n_cov)
+                    1 / (1 + nb + nc)
+                } else {
+                    1 / (1 + ifelse(is.na(n_bias), 1, n_bias))
+                }
+                # estimators with non-finite bias get the worst score
+                s[!is.finite(mb)] <- -Inf
+                s
+        })
+    }
 
-  data.frame(method = methods,
-             max_bias_NDE = nde$max_bias, max_bias_NIE = nie$max_bias,
-             coverage_dist_NDE = nde$coverage_dist, coverage_dist_NIE = nie$coverage_dist,
-             score_NDE = score_one(nde$max_bias, nde$coverage_dist),
-             score_NIE = score_one(nie$max_bias, nie$coverage_dist),
-             stringsAsFactors = FALSE)
+    data.frame(method = methods,
+        max_bias_NDE = nde$max_bias, max_bias_NIE = nie$max_bias,
+        coverage_dist_NDE = nde$coverage_dist, coverage_dist_NIE = nie$coverage_dist,
+        score_NDE = score_one(nde$max_bias, nde$coverage_dist),
+        score_NIE = score_one(nie$max_bias, nie$coverage_dist),
+        stringsAsFactors = FALSE)
 }
 
 
@@ -508,77 +508,77 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 #' insufficient; some scenarios favor IV, others PGC).
 #' @keywords internal
 #' @noRd
-.extract_per_scenario <- function(sensitivity, criterion = c("combined","minimax_bias","ci_coverage")) {
-  criterion <- match.arg(criterion)
-  if (is.null(sensitivity) || is.null(sensitivity$surface)) return(NULL)
-  surface <- sensitivity$surface
+.extract_per_scenario <- function(sensitivity, criterion = c("combined", "minimax_bias", "ci_coverage")) {
+    criterion <- match.arg(criterion)
+    if (is.null(sensitivity) || is.null(sensitivity$surface)) return(NULL)
+    surface <- sensitivity$surface
 
-  # Identify the cell-defining columns (rho_G1/rho_G2/omega for the
-  # degradation surface; conf_strength/coverage/k for the total-effect
-  # surface).
-  cell_cols <- intersect(c("rho_G1","rho_G2","omega_1","omega_2",
-                           "conf_strength","coverage","k"),
-                         names(surface))
-  if (length(cell_cols) == 0) return(NULL)
+    # Identify the cell-defining columns (rho_G1/rho_G2/omega for the
+    # degradation surface; conf_strength/coverage/k for the total-effect
+    # surface).
+    cell_cols <- intersect(c("rho_G1", "rho_G2", "omega_1", "omega_2",
+        "conf_strength", "coverage", "k"),
+    names(surface))
+    if (length(cell_cols) == 0) return(NULL)
 
-  bias_cols <- if ("NDE_bias" %in% names(surface)) c("NDE_bias","NIE_bias")
-               else if ("bias" %in% names(surface)) "bias" else return(NULL)
-  has_cov <- "NDE_coverage" %in% names(surface) && "NIE_coverage" %in% names(surface)
-  cov_cols <- if (has_cov) c("NDE_coverage","NIE_coverage") else NULL
+    bias_cols <- if ("NDE_bias" %in% names(surface)) c("NDE_bias", "NIE_bias")
+    else if ("bias" %in% names(surface)) "bias" else return(NULL)
+    has_cov <- "NDE_coverage" %in% names(surface) && "NIE_coverage" %in% names(surface)
+    cov_cols <- if (has_cov) c("NDE_coverage", "NIE_coverage") else NULL
 
-  cells <- unique(surface[, cell_cols, drop = FALSE])
-  rows <- vector("list", nrow(cells))
-  for (i in seq_len(nrow(cells))) {
-    cell <- cells[i, , drop = FALSE]
-    sub <- surface[do.call(paste, surface[, cell_cols, drop=FALSE]) ==
-                   do.call(paste, cell), , drop = FALSE]
-    if (nrow(sub) == 0) next
-    methods <- unique(sub$method)
-    methods <- methods[!is.na(methods)]
-    if (length(methods) == 0) next
-    # Per-method metric for this cell.
-    mb <- vapply(methods, function(m) {
-      mm <- sub[sub$method == m, ]
-      v <- abs(unlist(mm[, bias_cols, drop = FALSE]))
-      v <- v[is.finite(v)]
-      if (length(v) == 0) NA_real_ else max(v)
-    }, numeric(1))
-    if (has_cov) {
-      cd <- vapply(methods, function(m) {
-        mm <- sub[sub$method == m, ]
-        v <- abs(unlist(mm[, cov_cols, drop = FALSE]) - 0.95)
-        v <- v[is.finite(v)]
-        if (length(v) == 0) NA_real_ else mean(v)
-      }, numeric(1))
-    } else cd <- rep(NA_real_, length(methods))
-    # Skip degenerate cells where every method returned a non-finite metric
-    # (e.g. all estimators failed in this scenario); which.min() on an all-NA
-    # vector returns integer(0) and breaks the cbind below.
-    if (all(!is.finite(mb))) next
-    # Pick top by criterion (lower distance = better). Normalise within the
-    # cell using only finite values so a subset of failed estimators (NA)
-    # does not poison the scaling.
-    mb_f <- mb[is.finite(mb)]; cd_f <- cd[is.finite(cd)]
-    norm <- function(v, vf) if (length(vf) > 1 && diff(range(vf)) > 0)
-      (v - min(vf)) / (diff(range(vf)) + 1e-8) else rep(0, length(v))
-    dist <- switch(criterion,
-      minimax_bias = mb,
-      ci_coverage = if (has_cov) cd else mb,
-      combined = {
-        nmb <- norm(mb, mb_f)
-        if (has_cov) nmb + norm(cd, cd_f) else nmb
-      })
-    # Treat non-finite distances as worst so they are never picked as top.
-    dist[!is.finite(dist)] <- Inf
-    wi <- which.min(dist)
-    if (length(wi) == 0 || !is.finite(dist[wi])) next
-    top <- methods[wi]
-    rows[[i]] <- cbind(cell, data.frame(top_estimator = top,
-                                        top_bias = mb[wi],
-                                        top_coverage_dist = cd[wi],
-                                        stringsAsFactors = FALSE))
-  }
-  do.call(rbind, rows[!vapply(rows, is.null, logical(1))])
+    cells <- unique(surface[, cell_cols, drop = FALSE])
+    rows <- vector("list", nrow(cells))
+    for (i in seq_len(nrow(cells))) {
+        cell <- cells[i, , drop = FALSE]
+        sub <- surface[do.call(paste, surface[, cell_cols, drop = FALSE]) ==
+            do.call(paste, cell), , drop = FALSE]
+        if (nrow(sub) == 0) next
+        methods <- unique(sub$method)
+        methods <- methods[!is.na(methods)]
+        if (length(methods) == 0) next
+        # Per-method metric for this cell.
+        mb <- vapply(methods, function(m) {
+            mm <- sub[sub$method == m, ]
+            v <- abs(unlist(mm[, bias_cols, drop = FALSE]))
+            v <- v[is.finite(v)]
+            if (length(v) == 0) NA_real_ else max(v)
+        }, numeric(1))
+        if (has_cov) {
+            cd <- vapply(methods, function(m) {
+                mm <- sub[sub$method == m, ]
+                v <- abs(unlist(mm[, cov_cols, drop = FALSE]) - 0.95)
+                v <- v[is.finite(v)]
+                if (length(v) == 0) NA_real_ else mean(v)
+            }, numeric(1))
+        } else cd <- rep(NA_real_, length(methods))
+        # Skip degenerate cells where every method returned a non-finite metric
+        # (e.g. all estimators failed in this scenario); which.min() on an all-NA
+        # vector returns integer(0) and breaks the cbind below.
+        if (all(!is.finite(mb))) next
+        # Pick top by criterion (lower distance = better). Normalise within the
+        # cell using only finite values so a subset of failed estimators (NA)
+        # does not poison the scaling.
+        mb_f <- mb[is.finite(mb)]; cd_f <- cd[is.finite(cd)]
+        norm <- function(v, vf) if (length(vf) > 1 && diff(range(vf)) > 0)
+            (v - min(vf)) / (diff(range(vf)) + 1e-8) else rep(0, length(v))
+        dist <- switch(criterion,
+            minimax_bias = mb,
+            ci_coverage = if (has_cov) cd else mb,
+            combined = {
+                nmb <- norm(mb, mb_f)
+                if (has_cov) nmb + norm(cd, cd_f) else nmb
+        })
+        # Treat non-finite distances as worst so they are never picked as top.
+        dist[!is.finite(dist)] <- Inf
+        wi <- which.min(dist)
+        if (length(wi) == 0 || !is.finite(dist[wi])) next
+        top <- methods[wi]
+        rows[[i]] <- cbind(cell, data.frame(top_estimator = top,
+            top_bias = mb[wi],
+            top_coverage_dist = cd[wi],
+            stringsAsFactors = FALSE))
+    }
+    do.call(rbind, rows[!vapply(rows, is.null, logical(1))])
 }
 
 
@@ -588,60 +588,60 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 .build_recommendation_summary <- function(ranking, recommended,
                                           recommended_NDE, recommended_NIE,
                                           data) {
-  lines <- character(0)
+    lines <- character(0)
 
-  if (is.na(recommended)) {
-    lines <- c(lines, " No eligible estimators beyond UNADJ.",
-               " Consider supplying instruments (G) or negative controls (W).")
-  } else {
-    lines <- c(lines,
-      sprintf(" Recommended (composite): %s", recommended))
-    # Per-estimand detail, shown when a sensitivity surface was used.
-    if ("robustness_NDE" %in% names(ranking)) {
-      if (!is.null(recommended_NDE) && !is.na(recommended_NDE))
+    if (is.na(recommended)) {
+        lines <- c(lines, " No eligible estimators beyond UNADJ.",
+            " Consider supplying instruments (G) or negative controls (W).")
+    } else {
         lines <- c(lines,
-          sprintf("   (by NDE robustness: %s)", recommended_NDE))
-      if (!is.null(recommended_NIE) && !is.na(recommended_NIE))
-        lines <- c(lines,
-          sprintf("   (by NIE robustness: %s)", recommended_NIE))
+            sprintf(" Recommended (composite): %s", recommended))
+        # Per-estimand detail, shown when a sensitivity surface was used.
+        if ("robustness_NDE" %in% names(ranking)) {
+            if (!is.null(recommended_NDE) && !is.na(recommended_NDE))
+                lines <- c(lines,
+                    sprintf("   (by NDE robustness: %s)", recommended_NDE))
+            if (!is.null(recommended_NIE) && !is.na(recommended_NIE))
+                lines <- c(lines,
+                    sprintf("   (by NIE robustness: %s)", recommended_NIE))
+        }
+
+        # Report point estimate if available
+        if ("mean_beta" %in% names(ranking)) {
+            val <- ranking$mean_beta[ranking$estimator == recommended]
+            if (!is.na(val))
+                lines <- c(lines, sprintf(" Estimated total effect (mean): %.4f", val))
+        }
+        if ("mean_NDE" %in% names(ranking)) {
+            nde <- ranking$mean_NDE[ranking$estimator == recommended]
+            nie <- ranking$mean_NIE[ranking$estimator == recommended]
+            if (!is.na(nde))
+                lines <- c(lines, sprintf(" Estimated NDE (mean): %.4f", nde))
+            if (!is.na(nie))
+                lines <- c(lines, sprintf(" Estimated NIE (mean): %.4f", nie))
+        }
+
+        # Robustness info (per estimand)
+        if ("max_bias_NDE" %in% names(ranking)) {
+            mb_nde <- ranking$max_bias_NDE[ranking$estimator == recommended]
+            mb_nie <- ranking$max_bias_NIE[ranking$estimator == recommended]
+            if (!is.na(mb_nde))
+                lines <- c(lines, sprintf(" Max |NDE bias| across sensitivity surface: %.4f", mb_nde))
+            if (!is.na(mb_nie))
+                lines <- c(lines, sprintf(" Max |NIE bias| across sensitivity surface: %.4f", mb_nie))
+        }
+
+        # List eligible alternatives
+        elig <- ranking[ranking$eligible, ]
+        if (nrow(elig) > 1) {
+            alts <- elig$estimator[-1]
+            lines <- c(lines, "",
+                sprintf(" Eligible alternatives: %s",
+                    paste(alts, collapse = ", ")))
+        }
     }
 
-    # Report point estimate if available
-    if ("mean_beta" %in% names(ranking)) {
-      val <- ranking$mean_beta[ranking$estimator == recommended]
-      if (!is.na(val))
-        lines <- c(lines, sprintf(" Estimated total effect (mean): %.4f", val))
-    }
-    if ("mean_NDE" %in% names(ranking)) {
-      nde <- ranking$mean_NDE[ranking$estimator == recommended]
-      nie <- ranking$mean_NIE[ranking$estimator == recommended]
-      if (!is.na(nde))
-        lines <- c(lines, sprintf(" Estimated NDE (mean): %.4f", nde))
-      if (!is.na(nie))
-        lines <- c(lines, sprintf(" Estimated NIE (mean): %.4f", nie))
-    }
-
-    # Robustness info (per estimand)
-    if ("max_bias_NDE" %in% names(ranking)) {
-      mb_nde <- ranking$max_bias_NDE[ranking$estimator == recommended]
-      mb_nie <- ranking$max_bias_NIE[ranking$estimator == recommended]
-      if (!is.na(mb_nde))
-        lines <- c(lines, sprintf(" Max |NDE bias| across sensitivity surface: %.4f", mb_nde))
-      if (!is.na(mb_nie))
-        lines <- c(lines, sprintf(" Max |NIE bias| across sensitivity surface: %.4f", mb_nie))
-    }
-
-    # List eligible alternatives
-    elig <- ranking[ranking$eligible, ]
-    if (nrow(elig) > 1) {
-      alts <- elig$estimator[-1]
-      lines <- c(lines, "",
-                 sprintf(" Eligible alternatives: %s",
-                         paste(alts, collapse = ", ")))
-    }
-  }
-
-  paste(lines, collapse = "\n")
+    paste(lines, collapse = "\n")
 }
 
 
@@ -653,39 +653,39 @@ iconic_recommend <- function(data, diagnosis = NULL, estimate = NULL,
 #' @export
 #' @examples
 #' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-#'   G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#'     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' diag <- iconic_diagnose(data)
 #' est <- iconic_estimate(data, diagnosis = diag)
 #' rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
-#'   auto_sensitivity = FALSE)
+#'     auto_sensitivity = FALSE)
 #' print(rec)
 print.iconic_recommendation <- function(x, ...) {
-  cat("<iconic_recommendation>\n")
-  cat(x$summary, "\n")
-  cat("\n Full ranking:\n")
-  e <- x$ranking[x$ranking$eligible, ]
-  if (nrow(e) > 0) {
-    has_rob <- "robustness_NDE" %in% names(e)
-    has_fin <- "final_score" %in% names(e)
-    for (i in seq_len(nrow(e))) {
-      rob <- if (has_rob && is.finite(e$robustness_NDE[i]))
-        sprintf(" NDE %.3f, NIE %.3f;",
-                e$robustness_NDE[i], e$robustness_NIE[i]) else ""
-      fin <- if (has_fin && is.finite(e$final_score[i]))
-        sprintf(" composite %.3f (x%.2f) = %.3f;",
-                e$composite[i], e$confidence_mult[i], e$final_score[i]) else ""
-      cat(sprintf(" %d. %s --%s%s %s\n",
-                  e$rank[i], e$estimator[i], rob, fin, e$rationale[i]))
+    cat("<iconic_recommendation>\n")
+    cat(x$summary, "\n")
+    cat("\n Full ranking:\n")
+    e <- x$ranking[x$ranking$eligible, ]
+    if (nrow(e) > 0) {
+        has_rob <- "robustness_NDE" %in% names(e)
+        has_fin <- "final_score" %in% names(e)
+        for (i in seq_len(nrow(e))) {
+            rob <- if (has_rob && is.finite(e$robustness_NDE[i]))
+                sprintf(" NDE %.3f, NIE %.3f;",
+                    e$robustness_NDE[i], e$robustness_NIE[i]) else ""
+            fin <- if (has_fin && is.finite(e$final_score[i]))
+                sprintf(" composite %.3f (x%.2f) = %.3f;",
+                    e$composite[i], e$confidence_mult[i], e$final_score[i]) else ""
+            cat(sprintf(" %d. %s --%s%s %s\n",
+                e$rank[i], e$estimator[i], rob, fin, e$rationale[i]))
+        }
     }
-  }
-  inelig <- x$ranking[!x$ranking$eligible, ]
-  if (nrow(inelig) > 0) {
-    cat("\n Ineligible:\n")
-    for (i in seq_len(nrow(inelig))) {
-      cat(sprintf(" %s -- %s\n", inelig$estimator[i], inelig$rationale[i]))
+    inelig <- x$ranking[!x$ranking$eligible, ]
+    if (nrow(inelig) > 0) {
+        cat("\n Ineligible:\n")
+        for (i in seq_len(nrow(inelig))) {
+            cat(sprintf(" %s -- %s\n", inelig$estimator[i], inelig$rationale[i]))
+        }
     }
-  }
-  invisible(x)
+    invisible(x)
 }
 
 #' Summary method for iconic_recommendation objects
@@ -697,13 +697,13 @@ print.iconic_recommendation <- function(x, ...) {
 #' @export
 #' @examples
 #' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-#'   G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#'     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' diag <- iconic_diagnose(data)
 #' est <- iconic_estimate(data, diagnosis = diag)
 #' rec <- iconic_recommend(data, diagnosis = diag, estimate = est,
-#'   auto_sensitivity = FALSE)
+#'     auto_sensitivity = FALSE)
 #' summary(rec)
 summary.iconic_recommendation <- function(object, ...) {
-  print.iconic_recommendation(object, ...)
-  invisible(object)
+    print.iconic_recommendation(object, ...)
+    invisible(object)
 }

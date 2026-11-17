@@ -22,7 +22,7 @@
 
 # Canonical method order
 .mediation_method_order <- c("UNADJ", "DIRECT", "COCA", "IV2SLS", "PGC",
-                             "IV2SLS2", "PGC2", "PGC2Gm")
+    "IV2SLS2", "PGC2", "PGC2Gm")
 
 
 #' Run repeated mediation simulations for a single parameter configuration
@@ -72,7 +72,7 @@
 #'
 #' @examples
 #' res <- run_mediation_sim(n_iter = 3, n_samples = 100,
-#'                          mo_confounding = 0.8)
+#'     mo_confounding = 0.8)
 #' res$summary
 run_mediation_sim <- function(n_iter = 100,
                               n_samples = 500,
@@ -96,44 +96,44 @@ run_mediation_sim <- function(n_iter = 100,
                               base_seed = 100,
                               n_cores = 1) {
 
-  true_NDE <- beta_X
-  true_NIE <- alpha_M * beta_M # per-mediator NIE
+    true_NDE <- beta_X
+    true_NIE <- alpha_M * beta_M # per-mediator NIE
 
-  worker <- function(i) {
-    dat <- generate_toy_data(n = n_samples, n_features = n_features,
-                             n_mediators = n_mediators,
-                             beta_X = beta_X, alpha_M = alpha_M,
-                             beta_M = beta_M, conf_str = conf_str,
-                             w_signal = w_signal, mo_confounding = mo_confounding,
-                             phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
-                             rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
-                             omega_1 = omega_1, omega_2 = omega_2,
-                             feat_cor = feat_cor,
-                             seed = base_seed + i)
-    res <- run_mediation_methods(dat, n_features)
-    res$iter <- i
-    res
-  }
+    worker <- function(i) {
+        dat <- generate_toy_data(n = n_samples, n_features = n_features,
+            n_mediators = n_mediators,
+            beta_X = beta_X, alpha_M = alpha_M,
+            beta_M = beta_M, conf_str = conf_str,
+            w_signal = w_signal, mo_confounding = mo_confounding,
+            phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
+            rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
+            omega_1 = omega_1, omega_2 = omega_2,
+            feat_cor = feat_cor,
+            seed = base_seed + i)
+        res <- run_mediation_methods(dat, n_features)
+        res$iter <- i
+        res
+    }
 
-  iter_results <- .parallel_lapply(seq_len(n_iter), worker, n_cores)
-  combined <- do.call(rbind, iter_results)
+    iter_results <- .parallel_lapply(seq_len(n_iter), worker, n_cores)
+    combined <- do.call(rbind, iter_results)
 
-  list(
-    summary = summarise_mediation_results(combined, true_NDE, true_NIE),
-    raw = combined,
-    true_NDE = true_NDE,
-    true_NIE = true_NIE,
-    params = list(n_iter = n_iter, n_samples = n_samples,
-                    n_features = n_features, n_mediators = n_mediators,
-                    beta_X = beta_X,
-                    alpha_M = alpha_M, beta_M = beta_M,
-                    conf_str = conf_str, w_signal = w_signal,
-                    mo_confounding = mo_confounding, phi = phi,
-                    rho_G1 = rho_G1, rho_G2 = rho_G2,
-                    rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
-                    omega_1 = omega_1, omega_2 = omega_2,
-                    feat_cor = feat_cor)
-  )
+    list(
+        summary = summarise_mediation_results(combined, true_NDE, true_NIE),
+        raw = combined,
+        true_NDE = true_NDE,
+        true_NIE = true_NIE,
+        params = list(n_iter = n_iter, n_samples = n_samples,
+            n_features = n_features, n_mediators = n_mediators,
+            beta_X = beta_X,
+            alpha_M = alpha_M, beta_M = beta_M,
+            conf_str = conf_str, w_signal = w_signal,
+            mo_confounding = mo_confounding, phi = phi,
+            rho_G1 = rho_G1, rho_G2 = rho_G2,
+            rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
+            omega_1 = omega_1, omega_2 = omega_2,
+            feat_cor = feat_cor)
+    )
 }
 
 
@@ -179,7 +179,7 @@ run_mediation_sim <- function(n_iter = 100,
 #'
 #' @examples
 #' res <- sweep_mediation_param("conf_str", c(0.2, 0.8), n_iter = 3,
-#'                              n_samples = 100)
+#'     n_samples = 100)
 #' res$summary
 sweep_mediation_param <- function(param,
                                   param_grid,
@@ -207,85 +207,85 @@ sweep_mediation_param <- function(param,
                                   base_seed = 0,
                                   n_cores = 1) {
 
-  allowed <- c("beta_X", "conf_str", "w_signal", "alpha_M", "beta_M",
-               "n_samples", "mo_confounding", "phi",
-               "rho_G1", "rho_G2", "rho_pop", "omega_1", "omega_2",
-               "feat_cor")
-  param <- match.arg(param, allowed)
+    allowed <- c("beta_X", "conf_str", "w_signal", "alpha_M", "beta_M",
+        "n_samples", "mo_confounding", "phi",
+        "rho_G1", "rho_G2", "rho_pop", "omega_1", "omega_2",
+        "feat_cor")
+    param <- match.arg(param, allowed)
 
-  # Build base args using 'n' (the generate_toy_data parameter name)
-  base_args <- list(n = n_samples, n_features = n_features,
-                    n_mediators = n_mediators,
-                    beta_X = beta_X, alpha_M = alpha_M,
-                    beta_M = beta_M, conf_str = conf_str, w_signal = w_signal,
-                    mo_confounding = mo_confounding, phi = phi,
-                    rho_G1 = rho_G1, rho_G2 = rho_G2, rho_pop = rho_pop,
-                    lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = omega_1, omega_2 = omega_2,
-                    feat_cor = feat_cor,
-                    u_strength = u_strength,
-                    w_coverage_profile = w_coverage_profile)
+    # Build base args using 'n' (the generate_toy_data parameter name)
+    base_args <- list(n = n_samples, n_features = n_features,
+        n_mediators = n_mediators,
+        beta_X = beta_X, alpha_M = alpha_M,
+        beta_M = beta_M, conf_str = conf_str, w_signal = w_signal,
+        mo_confounding = mo_confounding, phi = phi,
+        rho_G1 = rho_G1, rho_G2 = rho_G2, rho_pop = rho_pop,
+        lambda_XM = lambda_XM, lambda_MY = lambda_MY, omega_1 = omega_1, omega_2 = omega_2,
+        feat_cor = feat_cor,
+        u_strength = u_strength,
+        w_coverage_profile = w_coverage_profile)
 
-  smry_list <- list()
-  ibias_list <- list()
+    smry_list <- list()
+    ibias_list <- list()
 
-  for (gi in seq_along(param_grid)) {
-    pval <- param_grid[gi]
-    args <- base_args
+    for (gi in seq_along(param_grid)) {
+        pval <- param_grid[gi]
+        args <- base_args
 
-    # Map the user-facing param name to the generate_toy_data arg name
-    if (param == "n_samples") {
-      args$n <- pval
-    } else {
-      args[[param]] <- pval
+        # Map the user-facing param name to the generate_toy_data arg name
+        if (param == "n_samples") {
+            args$n <- pval
+        } else {
+            args[[param]] <- pval
+        }
+
+        true_NDE <- args$beta_X
+        true_NIE <- args$alpha_M * args$beta_M # per-mediator NIE
+
+        worker <- function(i) {
+            dat <- do.call(generate_toy_data,
+                c(args, list(seed = base_seed + gi * 1000L + i)))
+            res <- run_mediation_methods(dat, args$n_features)
+            res$iter <- i
+            res
+        }
+
+        iter_results <- .parallel_lapply(seq_len(n_iter), worker, n_cores)
+        combined <- do.call(rbind, iter_results)
+        smry <- summarise_mediation_results(combined, true_NDE, true_NIE)
+        smry$param_value <- pval
+        smry$true_NDE <- true_NDE
+        smry$true_NIE <- true_NIE
+        smry_list[[gi]] <- smry
+
+        # Per-iteration bias -- iterate over methods present in the data
+        methods_present <- unique(combined$method)
+        methods <- intersect(.mediation_method_order, methods_present)
+
+        iters <- sort(unique(combined$iter))
+        ibias <- do.call(rbind, lapply(iters, function(ii) {
+            sub <- combined[combined$iter == ii, ]
+            do.call(rbind, lapply(methods, function(m) {
+                x <- sub[sub$method == m, ]
+                data.frame(iter = ii, method = m,
+                    NDE_bias = mean(x$NDE, na.rm = TRUE) - true_NDE,
+                    NIE_bias = mean(x$NIE, na.rm = TRUE) - true_NIE,
+                    stringsAsFactors = FALSE)
+            }))
+        }))
+        ibias$pval <- pval
+        ibias_list[[gi]] <- ibias
     }
 
-    true_NDE <- args$beta_X
-    true_NIE <- args$alpha_M * args$beta_M # per-mediator NIE
-
-    worker <- function(i) {
-      dat <- do.call(generate_toy_data,
-                     c(args, list(seed = base_seed + gi * 1000L + i)))
-      res <- run_mediation_methods(dat, args$n_features)
-      res$iter <- i
-      res
-    }
-
-    iter_results <- .parallel_lapply(seq_len(n_iter), worker, n_cores)
-    combined <- do.call(rbind, iter_results)
-    smry <- summarise_mediation_results(combined, true_NDE, true_NIE)
-    smry$param_value <- pval
-    smry$true_NDE <- true_NDE
-    smry$true_NIE <- true_NIE
-    smry_list[[gi]] <- smry
-
-    # Per-iteration bias -- iterate over methods present in the data
-    methods_present <- unique(combined$method)
-    methods <- intersect(.mediation_method_order, methods_present)
-
-    iters <- sort(unique(combined$iter))
-    ibias <- do.call(rbind, lapply(iters, function(ii) {
-      sub <- combined[combined$iter == ii, ]
-      do.call(rbind, lapply(methods, function(m) {
-        x <- sub[sub$method == m, ]
-        data.frame(iter = ii, method = m,
-                   NDE_bias = mean(x$NDE, na.rm = TRUE) - true_NDE,
-                   NIE_bias = mean(x$NIE, na.rm = TRUE) - true_NIE,
-                   stringsAsFactors = FALSE)
-      }))
-    }))
-    ibias$pval <- pval
-    ibias_list[[gi]] <- ibias
-  }
-
-  smry_all <- do.call(rbind, smry_list)
-  smry_all$param <- param
-  smry_all <- smry_all[, c("param", "param_value", "true_NDE", "true_NIE",
-                           setdiff(names(smry_all),
-                                   c("param", "param_value", "true_NDE", "true_NIE")))]
-  list(
-    summary = smry_all,
-    iter_bias = do.call(rbind, ibias_list)
-  )
+    smry_all <- do.call(rbind, smry_list)
+    smry_all$param <- param
+    smry_all <- smry_all[, c("param", "param_value", "true_NDE", "true_NIE",
+        setdiff(names(smry_all),
+            c("param", "param_value", "true_NDE", "true_NIE")))]
+    list(
+        summary = smry_all,
+        iter_bias = do.call(rbind, ibias_list)
+    )
 }
 
 
@@ -323,7 +323,7 @@ sweep_mediation_param <- function(param,
 #' @export
 #' @examples
 #' null <- run_null_mediation_sim(n_iter = 2, n_samples = 100,
-#'   n_features = 5, mo_confounding = 0.8, phi = 0.8)
+#'     n_features = 5, mo_confounding = 0.8, phi = 0.8)
 #' null$rates
 run_null_mediation_sim <- function(n_iter = 200,
                                    n_samples = 500,
@@ -345,39 +345,39 @@ run_null_mediation_sim <- function(n_iter = 200,
                                    n_cores = 1,
                                    alpha = 0.05) {
 
-  worker <- function(i) {
-    dat <- generate_toy_data(n = n_samples, n_features = n_features,
-                             beta_X = beta_X, alpha_M = 0, beta_M = 0,
-                             conf_str = conf_str, w_signal = w_signal,
-                             mo_confounding = mo_confounding,
-                             phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
-                             rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
-                             omega_1 = omega_1, omega_2 = omega_2,
-                             feat_cor = feat_cor,
-                             seed = base_seed + i)
-    res <- run_mediation_methods(dat, n_features)
-    res$iter <- i
-    res
-  }
+    worker <- function(i) {
+        dat <- generate_toy_data(n = n_samples, n_features = n_features,
+            beta_X = beta_X, alpha_M = 0, beta_M = 0,
+            conf_str = conf_str, w_signal = w_signal,
+            mo_confounding = mo_confounding,
+            phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
+            rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
+            omega_1 = omega_1, omega_2 = omega_2,
+            feat_cor = feat_cor,
+            seed = base_seed + i)
+        res <- run_mediation_methods(dat, n_features)
+        res$iter <- i
+        res
+    }
 
-  iter_results <- .parallel_lapply(seq_len(n_iter), worker, n_cores)
-  null_combined <- do.call(rbind, iter_results)
+    iter_results <- .parallel_lapply(seq_len(n_iter), worker, n_cores)
+    null_combined <- do.call(rbind, iter_results)
 
-  # Iterate over methods present in the data
-  methods_present <- unique(null_combined$method)
-  methods <- intersect(.mediation_method_order, methods_present)
+    # Iterate over methods present in the data
+    methods_present <- unique(null_combined$method)
+    methods <- intersect(.mediation_method_order, methods_present)
 
-  rates <- do.call(rbind, lapply(methods, function(m) {
-    sub <- null_combined[null_combined$method == m, ]
-    data.frame(
-      method = m,
-      NIE_type1 = mean(sub$NIE_p < alpha, na.rm = TRUE),
-      NDE_type1 = mean(sub$NDE_p < alpha, na.rm = TRUE),
-      stringsAsFactors = FALSE
-    )
-  }))
+    rates <- do.call(rbind, lapply(methods, function(m) {
+        sub <- null_combined[null_combined$method == m, ]
+        data.frame(
+            method = m,
+            NIE_type1 = mean(sub$NIE_p < alpha, na.rm = TRUE),
+            NDE_type1 = mean(sub$NDE_p < alpha, na.rm = TRUE),
+            stringsAsFactors = FALSE
+        )
+    }))
 
-  list(rates = rates, raw = null_combined)
+    list(rates = rates, raw = null_combined)
 }
 
 
@@ -409,7 +409,7 @@ run_null_mediation_sim <- function(n_iter = 200,
 #'
 #' @examples
 #' t1e <- sweep_mediation_null_by_conf(c(0.2, 0.8), n_iter = 3,
-#'                                     n_samples = 100)
+#'     n_samples = 100)
 #' head(t1e)
 sweep_mediation_null_by_conf <- function(conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),
                                          n_iter = 100,
@@ -430,48 +430,48 @@ sweep_mediation_null_by_conf <- function(conf_grid = c(0.2, 0.4, 0.6, 0.8, 1.0),
                                          n_cores = 1,
                                          alpha = 0.05) {
 
-  # Determine methods from a pilot run (handles phi > 0 and cases)
-  pilot <- generate_toy_data(n = n_samples, n_features = n_features,
-                             beta_X = 0, alpha_M = 0, beta_M = 0,
-                             conf_str = conf_grid[1], w_signal = w_signal,
-                             mo_confounding = mo_confounding,
-                             phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
-                             rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
-                             omega_1 = omega_1, omega_2 = omega_2,
-                             feat_cor = feat_cor,
-                             seed = base_seed)
-  pilot_res <- run_mediation_methods(pilot, n_features)
-  methods_present <- unique(pilot_res$method)
-  methods <- intersect(.mediation_method_order, methods_present)
+    # Determine methods from a pilot run (handles phi > 0 and cases)
+    pilot <- generate_toy_data(n = n_samples, n_features = n_features,
+        beta_X = 0, alpha_M = 0, beta_M = 0,
+        conf_str = conf_grid[1], w_signal = w_signal,
+        mo_confounding = mo_confounding,
+        phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
+        rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
+        omega_1 = omega_1, omega_2 = omega_2,
+        feat_cor = feat_cor,
+        seed = base_seed)
+    pilot_res <- run_mediation_methods(pilot, n_features)
+    methods_present <- unique(pilot_res$method)
+    methods <- intersect(.mediation_method_order, methods_present)
 
-  do.call(rbind, lapply(seq_along(conf_grid), function(ci) {
-    cs <- conf_grid[ci]
+    do.call(rbind, lapply(seq_along(conf_grid), function(ci) {
+        cs <- conf_grid[ci]
 
-    worker <- function(i) {
-      dat <- generate_toy_data(n = n_samples, n_features = n_features,
-                               beta_X = 0, alpha_M = 0, beta_M = 0,
-                               conf_str = cs, w_signal = w_signal,
-                               mo_confounding = mo_confounding,
-                               phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
-                               rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
-                               omega_1 = omega_1, omega_2 = omega_2,
-                               feat_cor = feat_cor,
-                               seed = base_seed + ci * 1000L + i)
-      res <- run_mediation_methods(dat, n_features)
-      res$iter <- i
-      res
-    }
+        worker <- function(i) {
+            dat <- generate_toy_data(n = n_samples, n_features = n_features,
+                beta_X = 0, alpha_M = 0, beta_M = 0,
+                conf_str = cs, w_signal = w_signal,
+                mo_confounding = mo_confounding,
+                phi = phi, rho_G1 = rho_G1, rho_G2 = rho_G2,
+                rho_pop = rho_pop, lambda_XM = lambda_XM, lambda_MY = lambda_MY,
+                omega_1 = omega_1, omega_2 = omega_2,
+                feat_cor = feat_cor,
+                seed = base_seed + ci * 1000L + i)
+            res <- run_mediation_methods(dat, n_features)
+            res$iter <- i
+            res
+        }
 
-    iter_results <- .parallel_lapply(seq_len(n_iter), worker, n_cores)
-    combined <- do.call(rbind, iter_results)
+        iter_results <- .parallel_lapply(seq_len(n_iter), worker, n_cores)
+        combined <- do.call(rbind, iter_results)
 
-    do.call(rbind, lapply(methods, function(m) {
-      sub <- combined[combined$method == m, ]
-      data.frame(conf_str = cs,
-                 method = m,
-                 NIE_type1 = mean(sub$NIE_p < alpha, na.rm = TRUE),
-                 NDE_type1 = mean(sub$NDE_p < alpha, na.rm = TRUE),
-                 stringsAsFactors = FALSE)
+        do.call(rbind, lapply(methods, function(m) {
+            sub <- combined[combined$method == m, ]
+            data.frame(conf_str = cs,
+                method = m,
+                NIE_type1 = mean(sub$NIE_p < alpha, na.rm = TRUE),
+                NDE_type1 = mean(sub$NDE_p < alpha, na.rm = TRUE),
+                stringsAsFactors = FALSE)
+        }))
     }))
-  }))
 }

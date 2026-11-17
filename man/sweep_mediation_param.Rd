@@ -100,6 +100,6 @@ Sweep a single mediation simulation parameter across a grid
 }
 \examples{
 res <- sweep_mediation_param("conf_str", c(0.2, 0.8), n_iter = 3,
-                             n_samples = 100)
+    n_samples = 100)
 res$summary
 }

@@ -43,12 +43,12 @@ orientation, the weight is negated) or by rsID when present.
 \examples{
 # Toy dosage matrix: 4 variants x 50 samples
 dos <- matrix(rbinom(4 * 50, 2, 0.3), nrow = 4,
-              dimnames = list(c("1:100:A:G", "1:200:C:T",
-                                "1:300:G:A", "2:400:T:C"),
-                              paste0("S", 1:50)))
+    dimnames = list(c("1:100:A:G", "1:200:C:T",
+        "1:300:G:A", "2:400:T:C"),
+    paste0("S", 1:50)))
 wts <- data.frame(chr = c(1, 1, 2), pos = c(100, 300, 400),
-                  a1 = c("A", "G", "T"), a0 = c("G", "A", "C"),
-                  weight = c(0.1, -0.2, 0.05))
+    a1 = c("A", "G", "T"), a0 = c("G", "A", "C"),
+    weight = c(0.1, -0.2, 0.05))
 out <- score_pgs_panel(wts, dos)
 plot(out$score)
 }

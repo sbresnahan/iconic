@@ -26,23 +26,23 @@
 #' @return list(y_bin, p, intercept, prev)
 #' @keywords internal
 .linpred_to_binary <- function(eta, prev = 0.5) {
-  if (is.matrix(eta)) eta <- eta[, 1]
-  n <- length(eta)
-  if (!is.numeric(prev) || length(prev) != 1L || !is.finite(prev) ||
-      prev <= 0 || prev >= 1)
-    stop("bin_prev must be a single number strictly between 0 and 1.",
-         call. = FALSE)
+    if (is.matrix(eta)) eta <- eta[, 1]
+    n <- length(eta)
+    if (!is.numeric(prev) || length(prev) != 1L || !is.finite(prev) ||
+        prev <= 0 || prev >= 1)
+        stop("bin_prev must be a single number strictly between 0 and 1.",
+            call. = FALSE)
 
-  # Center eta so the intercept corresponds to the mean subject.
-  eta_c <- eta - mean(eta)
+    # Center eta so the intercept corresponds to the mean subject.
+    eta_c <- eta - mean(eta)
 
-  # Solve the intercept e0 so that mean(plogis(e0 + eta_c)) = prev.
-  # plogis is monotone in e0, so the root is unique and bracketed.
-  f <- function(e0) mean(stats::plogis(e0 + eta_c)) - prev
-  e0 <- stats::uniroot(f, interval = c(-50, 50), tol = 1e-10)$root
+    # Solve the intercept e0 so that mean(plogis(e0 + eta_c)) = prev.
+    # plogis is monotone in e0, so the root is unique and bracketed.
+    f <- function(e0) mean(stats::plogis(e0 + eta_c)) - prev
+    e0 <- stats::uniroot(f, interval = c(-50, 50), tol = 1e-10)$root
 
-  p <- stats::plogis(e0 + eta_c)
-  y_bin <- as.numeric(stats::rbinom(n, 1L, p))
+    p <- stats::plogis(e0 + eta_c)
+    y_bin <- as.numeric(stats::rbinom(n, 1L, p))
 
-  list(y_bin = y_bin, p = p, intercept = e0, prev = mean(y_bin))
+    list(y_bin = y_bin, p = p, intercept = e0, prev = mean(y_bin))
 }

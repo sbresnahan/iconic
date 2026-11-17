@@ -89,7 +89,7 @@ only (no range).
 }
 \examples{
 dat <- generate_toy_data(n = 200, phi = 0.8, lambda_XM = c(1, 0), lambda_MY = c(0, 1),
-omega_1 = 0.7, omega_2 = 0.7, seed = 42)
+    omega_1 = 0.7, omega_2 = 0.7, seed = 42)
 scenario_manifest(dat, conf_grid = c(0.3, 0.8),
-coverage_grid = c(0.3, 0.7, 1))
+    coverage_grid = c(0.3, 0.7, 1))
 }

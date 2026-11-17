@@ -65,10 +65,10 @@ tutorial.
 }
 \examples{
 ss <- data.frame(
-  chromosome = 1, base_pair_location = 1000 + 0:9 * 1000L,
-  effect_allele = rep(c("A", "C"), 5), other_allele = rep(c("G", "T"), 5),
-  beta = rnorm(10, 0, 0.05), standard_error = 0.01,
-  effect_allele_frequency = runif(10, 0.1, 0.5)
+    chromosome = 1, base_pair_location = 1000 + 0:9 * 1000L,
+    effect_allele = rep(c("A", "C"), 5), other_allele = rep(c("G", "T"), 5),
+    beta = rnorm(10, 0, 0.05), standard_error = 0.01,
+    effect_allele_frequency = runif(10, 0.1, 0.5)
 )
 out <- qc_gwas_sumstats(ss, n_eff = 50000)
 str(out$sumstats)

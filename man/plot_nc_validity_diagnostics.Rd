@@ -30,21 +30,21 @@ replicates with permutation p < 0.05 on a secondary axis), and
 \examples{
 # Toy panels standing in for sweep_nc_validity() output
 panels <- list(
-  panel_a = data.frame(contamination = c(0, 0.1),
-    violated_mean = c(0.1, 0.3), violated_sd = 0.05,
-    confounding_mean = c(0.1, 0.12), confounding_sd = 0.05),
-  panel_b = data.frame(meqtl = c(0, 0.1),
-    violated_mean = c(0.1, 0.3), violated_sd = 0.05,
-    clean_mean = c(0.1, 0.12), clean_sd = 0.05),
-  panel_d = data.frame(eqtl = c(0, 0.1),
-    violated_mean = c(0.1, 0.3), violated_sd = 0.05,
-    clean_mean = c(0.1, 0.12), clean_sd = 0.05),
-  panel_capture_support = data.frame(
-    omega = rep(c(0, 0.5), each = 2), rep = 1:2,
-    capture_R2 = c(0.02, 0.03, 0.25, 0.30),
-    capture_p = c(0.40, 0.60, 0.01, 0.02),
-    null_R2 = 0.02,
-    support_R2 = c(0.02, 0.03, 0.35, 0.40),
-    frac_adds_coverage = 1))
+    panel_a = data.frame(contamination = c(0, 0.1),
+        violated_mean = c(0.1, 0.3), violated_sd = 0.05,
+        confounding_mean = c(0.1, 0.12), confounding_sd = 0.05),
+    panel_b = data.frame(meqtl = c(0, 0.1),
+        violated_mean = c(0.1, 0.3), violated_sd = 0.05,
+        clean_mean = c(0.1, 0.12), clean_sd = 0.05),
+    panel_d = data.frame(eqtl = c(0, 0.1),
+        violated_mean = c(0.1, 0.3), violated_sd = 0.05,
+        clean_mean = c(0.1, 0.12), clean_sd = 0.05),
+    panel_capture_support = data.frame(
+        omega = rep(c(0, 0.5), each = 2), rep = 1:2,
+        capture_R2 = c(0.02, 0.03, 0.25, 0.30),
+        capture_p = c(0.40, 0.60, 0.01, 0.02),
+        null_R2 = 0.02,
+        support_R2 = c(0.02, 0.03, 0.35, 0.40),
+        frac_adds_coverage = 1))
 plot_nc_validity_diagnostics(panels)
 }

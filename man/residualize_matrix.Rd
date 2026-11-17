@@ -30,9 +30,9 @@ technical factors before extracting negative-control PCs.
 }
 \examples{
 x <- matrix(rnorm(100 * 40), nrow = 100,
-            dimnames = list(paste0("f", 1:100), paste0("S", 1:40)))
+    dimnames = list(paste0("f", 1:100), paste0("S", 1:40)))
 batch <- factor(rep(c("A", "B"), each = 20))
-cv <- model.matrix(~ batch)[, -1, drop = FALSE]
+cv <- model.matrix(~batch)[, -1, drop = FALSE]
 xr <- residualize_matrix(x, cv)
 cor(as.numeric(xr[1, ]), as.numeric(cv))
 }

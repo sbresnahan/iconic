@@ -31,6 +31,6 @@ Plot detection rate (power) vs a swept parameter
 }
 \examples{
 sweep <- sweep_param("conf_str", c(0.5, 0.8), n_iter = 2,
-  n_samples = 100, n_features = 5)
+    n_samples = 100, n_features = 5)
 plot_power(sweep$summary)
 }

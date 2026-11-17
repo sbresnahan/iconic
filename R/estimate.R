@@ -89,22 +89,22 @@
 #' @examples
 #' set.seed(1)
 #' data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-#' G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#'     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' diag <- iconic_diagnose(data)
 #' est <- iconic_estimate(data, diagnosis = diag)
 #' head(est)
 #'
 #' # Survival outcome
 #' sdat <- iconic_data(X = rnorm(100), outcome_type = "survival",
-#' surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
-#' G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#'     surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+#'     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' est <- iconic_estimate(sdat, effect_scale = "loghr")
 #' est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
 #'
 #' # Binary outcome
 #' bdat <- iconic_data(X = rnorm(100), Y = rbinom(100, 1, 0.4),
-#' outcome_type = "binary",
-#' G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+#'     outcome_type = "binary",
+#'     G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 #' est <- iconic_estimate(bdat, effect_scale = "logor")
 #' est_rd <- iconic_estimate(bdat, effect_scale = "riskdiff")
 iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
@@ -114,83 +114,83 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
                             n_boot = 500,
                             effect_scale = c("loghr", "rmst", "logor", "riskdiff"),
                             tau = NULL) {
-  se_method <- match.arg(se_method)
-  effect_scale <- match.arg(effect_scale)
-  if (!inherits(data, "iconic_data"))
-    stop("data must be an iconic_data object from iconic_data().")
+    se_method <- match.arg(se_method)
+    effect_scale <- match.arg(effect_scale)
+    if (!inherits(data, "iconic_data"))
+        stop("data must be an iconic_data object from iconic_data().")
 
-  # effect_scale applies only to non-continuous outcomes. An inert
-  # default (or a scale meant for the other non-continuous type) is
-  # remapped to the appropriate default with a message.
-  if (data$outcome_type == "continuous" && effect_scale != "loghr") {
-    message("effect_scale = '", effect_scale,
+    # effect_scale applies only to non-continuous outcomes. An inert
+    # default (or a scale meant for the other non-continuous type) is
+    # remapped to the appropriate default with a message.
+    if (data$outcome_type == "continuous" && effect_scale != "loghr") {
+        message("effect_scale = '", effect_scale,
             "' is ignored for continuous outcomes.")
-  } else if (data$outcome_type == "survival" &&
-             effect_scale %in% c("logor", "riskdiff")) {
-    message("effect_scale = '", effect_scale,
+    } else if (data$outcome_type == "survival" &&
+        effect_scale %in% c("logor", "riskdiff")) {
+        message("effect_scale = '", effect_scale,
             "' is not defined for survival outcomes; using 'loghr'.")
-    effect_scale <- "loghr"
-  } else if (data$outcome_type == "binary" &&
-             effect_scale %in% c("loghr", "rmst")) {
-    message("effect_scale = '", effect_scale,
+        effect_scale <- "loghr"
+    } else if (data$outcome_type == "binary" &&
+        effect_scale %in% c("loghr", "rmst")) {
+        message("effect_scale = '", effect_scale,
             "' is not defined for binary outcomes; using 'logor'.")
-    effect_scale <- "logor"
-  }
-
-  # Inherit min_f from diagnosis when not explicitly set; fall back to 10.
-  if (is.null(min_f)) {
-    min_f <- if (!is.null(diagnosis) && !is.null(diagnosis$min_f))
-      diagnosis$min_f else 10
-  }
-
-  # Determine which methods to run
-  # run_all overrides diagnosis eligibility (runs every method whose data
-  # exists) but the per-transcript min_f gate still applies.
-  if (run_all) {
-    methods_to_run <- .auto_eligible_methods(data)
-  } else if (!is.null(methods)) {
-    methods_to_run <- methods
-  } else if (!is.null(diagnosis)) {
-    elig <- diagnosis$eligibility
-    methods_to_run <- elig$estimator[elig$eligible]
-  } else {
-    # Auto-eligibility: run all whose inputs are present
-    methods_to_run <- .auto_eligible_methods(data)
-  }
-
-  if (!length(methods_to_run))
-    stop("No eligible estimators for this data. ",
-         "Supply instruments (G) or negative controls (W) ",
-         "or specify methods explicitly.")
-
-  # branch on outcome_type. Survival and binary outcomes use dedicated
-  # drivers that call the fit_*_surv / fit_*_mediation_surv and
-  # fit_*_bin / fit_*_mediation_bin estimators. Continuous outcomes use
-  # the existing drivers unchanged.
-  if (data$outcome_type == "survival") {
-    if (data$is_mediation) {
-      .estimate_mediation_surv_driver(data, methods_to_run, alpha, n_cores,
-                                      min_f, se_method, n_boot,
-                                      effect_scale, tau)
-    } else {
-      .estimate_total_surv_driver(data, methods_to_run, alpha, n_cores,
-                                  min_f, effect_scale, tau)
+        effect_scale <- "logor"
     }
-  } else if (data$outcome_type == "binary") {
-    if (data$is_mediation) {
-      .estimate_mediation_bin_driver(data, methods_to_run, alpha, n_cores,
-                                     min_f, se_method, n_boot,
-                                     effect_scale)
-    } else {
-      .estimate_total_bin_driver(data, methods_to_run, alpha, n_cores,
-                                 min_f, effect_scale)
+
+    # Inherit min_f from diagnosis when not explicitly set; fall back to 10.
+    if (is.null(min_f)) {
+        min_f <- if (!is.null(diagnosis) && !is.null(diagnosis$min_f))
+            diagnosis$min_f else 10
     }
-  } else if (data$is_mediation) {
-    .estimate_mediation_driver(data, methods_to_run, alpha, n_cores, min_f,
-                               se_method = se_method, n_boot = n_boot)
-  } else {
-    .estimate_total_driver(data, methods_to_run, alpha, n_cores, min_f)
-  }
+
+    # Determine which methods to run
+    # run_all overrides diagnosis eligibility (runs every method whose data
+    # exists) but the per-transcript min_f gate still applies.
+    if (run_all) {
+        methods_to_run <- .auto_eligible_methods(data)
+    } else if (!is.null(methods)) {
+        methods_to_run <- methods
+    } else if (!is.null(diagnosis)) {
+        elig <- diagnosis$eligibility
+        methods_to_run <- elig$estimator[elig$eligible]
+    } else {
+        # Auto-eligibility: run all whose inputs are present
+        methods_to_run <- .auto_eligible_methods(data)
+    }
+
+    if (!length(methods_to_run))
+        stop("No eligible estimators for this data. ",
+            "Supply instruments (G) or negative controls (W) ",
+            "or specify methods explicitly.")
+
+    # branch on outcome_type. Survival and binary outcomes use dedicated
+    # drivers that call the fit_*_surv / fit_*_mediation_surv and
+    # fit_*_bin / fit_*_mediation_bin estimators. Continuous outcomes use
+    # the existing drivers unchanged.
+    if (data$outcome_type == "survival") {
+        if (data$is_mediation) {
+            .estimate_mediation_surv_driver(data, methods_to_run, alpha, n_cores,
+                min_f, se_method, n_boot,
+                effect_scale, tau)
+        } else {
+            .estimate_total_surv_driver(data, methods_to_run, alpha, n_cores,
+                min_f, effect_scale, tau)
+        }
+    } else if (data$outcome_type == "binary") {
+        if (data$is_mediation) {
+            .estimate_mediation_bin_driver(data, methods_to_run, alpha, n_cores,
+                min_f, se_method, n_boot,
+                effect_scale)
+        } else {
+            .estimate_total_bin_driver(data, methods_to_run, alpha, n_cores,
+                min_f, effect_scale)
+        }
+    } else if (data$is_mediation) {
+        .estimate_mediation_driver(data, methods_to_run, alpha, n_cores, min_f,
+            se_method = se_method, n_boot = n_boot)
+    } else {
+        .estimate_total_driver(data, methods_to_run, alpha, n_cores, min_f)
+    }
 }
 
 
@@ -201,27 +201,27 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 #' @return Character vector of method names.
 #' @keywords internal
 .auto_eligible_methods <- function(data) {
-  # IV estimators (IV2SLS, IV2SLS2) are identified by the instrument(s) alone;
-  # W is an optional proximal augmentation. Proximal bridge estimators (PGC,
-  # PGC2, PGC2Gm) and COCA/DIRECT require W.
-  methods <- "UNADJ"
-  if (data$has_instrument)
-    methods <- c(methods, "IV2SLS")
-  if (data$has_instrument && data$has_nc)
-    methods <- c(methods, "DIRECT")
-  if (data$has_nc)
-    methods <- c(methods, "COCA")
-  if (data$has_instrument && data$has_nc)
-    methods <- c(methods, "PGC")
-  if (data$is_mediation && data$has_instrument &&
-      data$has_mediator_instrument)
-    methods <- c(methods, "IV2SLS2")
-  if (data$is_mediation && data$has_instrument && data$has_path_nc)
-    methods <- c(methods, "PGC2")
-  if (data$is_mediation && data$has_instrument &&
-      data$has_path_nc && data$has_mediator_instrument)
-    methods <- c(methods, "PGC2Gm")
-  methods
+    # IV estimators (IV2SLS, IV2SLS2) are identified by the instrument(s) alone;
+    # W is an optional proximal augmentation. Proximal bridge estimators (PGC,
+    # PGC2, PGC2Gm) and COCA/DIRECT require W.
+    methods <- "UNADJ"
+    if (data$has_instrument)
+        methods <- c(methods, "IV2SLS")
+    if (data$has_instrument && data$has_nc)
+        methods <- c(methods, "DIRECT")
+    if (data$has_nc)
+        methods <- c(methods, "COCA")
+    if (data$has_instrument && data$has_nc)
+        methods <- c(methods, "PGC")
+    if (data$is_mediation && data$has_instrument &&
+        data$has_mediator_instrument)
+        methods <- c(methods, "IV2SLS2")
+    if (data$is_mediation && data$has_instrument && data$has_path_nc)
+        methods <- c(methods, "PGC2")
+    if (data$is_mediation && data$has_instrument &&
+        data$has_path_nc && data$has_mediator_instrument)
+        methods <- c(methods, "PGC2Gm")
+    methods
 }
 
 
@@ -232,43 +232,43 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 #' @noRd
 .estimate_total_driver <- function(data, methods, alpha, n_cores = 1,
                                    min_f = 10) {
-  n <- data$n
-  nf <- data$n_features
-  X <- data$X
-  cv <- data$covariates
-  G <- data$G
-  W <- data$W
-  # iconic_data stores W as q x n (features x samples); estimation functions
-  # expect n x q (samples x NC features), matching the simulation pipeline.
-  W_mat <- if (!is.null(W)) t(W) else NULL
-  W_avg <- if (!is.null(W)) colMeans(W) else NULL # per-sample averages
+    n <- data$n
+    nf <- data$n_features
+    X <- data$X
+    cv <- data$covariates
+    G <- data$G
+    W <- data$W
+    # iconic_data stores W as q x n (features x samples); estimation functions
+    # expect n x q (samples x NC features), matching the simulation pipeline.
+    W_mat <- if (!is.null(W)) t(W) else NULL
+    W_avg <- if (!is.null(W)) colMeans(W) else NULL # per-sample averages
 
-  results <- .parallel_lapply(seq_len(nf), function(f) {
-    y <- data$Y[f, ] # features x samples -> row f is feature f
-    # pass the full W panel (n x q) to all estimators.
-    # DIRECT, IV2SLS, and IV2SLS2 now use all NC features as covariates.
-    w <- W_mat # full n x q matrix (NULL when no W)
-    .estimate_total_feature(
-      X = X, y = y, g = G, w = w, W_mat = W_mat,
-      W_avg = W_avg, covars = cv,
-      methods = methods, feature_idx = f, min_f = min_f
-    )
-  }, n_cores = n_cores, progress = "Estimating features")
+    results <- .parallel_lapply(seq_len(nf), function(f) {
+        y <- data$Y[f, ] # features x samples -> row f is feature f
+        # pass the full W panel (n x q) to all estimators.
+        # DIRECT, IV2SLS, and IV2SLS2 now use all NC features as covariates.
+        w <- W_mat # full n x q matrix (NULL when no W)
+        .estimate_total_feature(
+            X = X, y = y, g = G, w = w, W_mat = W_mat,
+            W_avg = W_avg, covars = cv,
+            methods = methods, feature_idx = f, min_f = min_f
+        )
+    }, n_cores = n_cores, progress = "Estimating features")
 
-  # mclapply swallows errors as try-error objects; surface the first one.
-  err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
-  if (length(err_idx)) {
-    stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
-         conditionMessage(attr(results[[err_idx[1]]], "condition")))
-  }
+    # mclapply swallows errors as try-error objects; surface the first one.
+    err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
+    if (length(err_idx)) {
+        stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
+            conditionMessage(attr(results[[err_idx[1]]], "condition")))
+    }
 
-  out <- do.call(rbind, Filter(Negate(is.null), results))
-  if (is.null(out)) return(out)
+    out <- do.call(rbind, Filter(Negate(is.null), results))
+    if (is.null(out)) return(out)
 
-  out$significant <- out$pvalue < alpha
-  # Map feature indices to names
-  out$feature <- data$feature_names[out$feature]
-  out
+    out$significant <- out$pvalue < alpha
+    # Map feature indices to names
+    out$feature <- data$feature_names[out$feature]
+    out
 }
 
 
@@ -281,87 +281,87 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 .estimate_mediation_driver <- function(data, methods, alpha, n_cores = 1,
                                        min_f = 10, se_method = "delta",
                                        n_boot = 500) {
-  n <- data$n
-  nf <- data$n_features
-  nm <- data$n_mediators
-  X <- data$X
-  cv <- data$covariates
-  G <- data$G
-  W <- data$W
-  # Transpose from q x n to n x q (see .estimate_total_driver)
-  W_mat <- if (!is.null(W)) t(W) else NULL
-  W_avg <- if (!is.null(W)) colMeans(W) else NULL
-  W1_mat <- if (!is.null(data$W1)) t(data$W1) else NULL
-  W2_mat <- if (!is.null(data$W2)) t(data$W2) else NULL
+    n <- data$n
+    nf <- data$n_features
+    nm <- data$n_mediators
+    X <- data$X
+    cv <- data$covariates
+    G <- data$G
+    W <- data$W
+    # Transpose from q x n to n x q (see .estimate_total_driver)
+    W_mat <- if (!is.null(W)) t(W) else NULL
+    W_avg <- if (!is.null(W)) colMeans(W) else NULL
+    W1_mat <- if (!is.null(data$W1)) t(data$W1) else NULL
+    W2_mat <- if (!is.null(data$W2)) t(data$W2) else NULL
 
-  # Flatten the mediator x feature grid into a single task list so it
-  # can be parallelised in one .parallel_lapply() call.
-  pairs <- expand.grid(m = seq_len(nm), f = seq_len(nf),
-                        KEEP.OUT.ATTRS = FALSE)
+    # Flatten the mediator x feature grid into a single task list so it
+    # can be parallelised in one .parallel_lapply() call.
+    pairs <- expand.grid(m = seq_len(nm), f = seq_len(nf),
+        KEEP.OUT.ATTRS = FALSE)
 
-  results <- .parallel_lapply(seq_len(nrow(pairs)), function(idx) {
-    m <- pairs$m[idx]
-    f <- pairs$f[idx]
-    M_vec <- data$M[m, ]
-    gm <- if (!is.null(data$Gm)) {
-      if (is.matrix(data$Gm) && nrow(data$Gm) == nm) data$Gm[m, ]
-      else if (is.matrix(data$Gm) && ncol(data$Gm) == 1) rep(data$Gm[1, ], n)
-      else if (is.matrix(data$Gm)) data$Gm[min(m, nrow(data$Gm)), ] # clamp
-      else data$Gm # scalar vector
-    } else NULL
+    results <- .parallel_lapply(seq_len(nrow(pairs)), function(idx) {
+        m <- pairs$m[idx]
+        f <- pairs$f[idx]
+        M_vec <- data$M[m, ]
+        gm <- if (!is.null(data$Gm)) {
+            if (is.matrix(data$Gm) && nrow(data$Gm) == nm) data$Gm[m, ]
+            else if (is.matrix(data$Gm) && ncol(data$Gm) == 1) rep(data$Gm[1, ], n)
+            else if (is.matrix(data$Gm)) data$Gm[min(m, nrow(data$Gm)), ] # clamp
+            else data$Gm # scalar vector
+        } else NULL
 
-    y <- data$Y[f, ]
-    # pass the full W panel (n x q) to all estimators.
-    w <- W_mat # full n x q matrix (NULL when no W)
+        y <- data$Y[f, ]
+        # pass the full W panel (n x q) to all estimators.
+        w <- W_mat # full n x q matrix (NULL when no W)
 
-    res <- .estimate_mediation_feature(
-      X = X, y = y, M_vec = M_vec, g = G, gm = gm,
-      w = w, W_mat = W_mat, W1_mat = W1_mat, W2_mat = W2_mat,
-      W_avg = W_avg, covars = cv,
-      methods = methods, feature_idx = f, min_f = min_f,
-      se_method = se_method, n_boot = n_boot
-    )
-    if (!is.null(res)) {
-      res$mediator <- m
-      res
-    } else {
-      NULL
+        res <- .estimate_mediation_feature(
+            X = X, y = y, M_vec = M_vec, g = G, gm = gm,
+            w = w, W_mat = W_mat, W1_mat = W1_mat, W2_mat = W2_mat,
+            W_avg = W_avg, covars = cv,
+            methods = methods, feature_idx = f, min_f = min_f,
+            se_method = se_method, n_boot = n_boot
+        )
+        if (!is.null(res)) {
+            res$mediator <- m
+            res
+        } else {
+            NULL
+        }
+    }, n_cores = n_cores, progress = "Estimating mediation effects")
+
+    # mclapply swallows errors as try-error objects; surface the first one
+    # instead of producing a confusing downstream error.
+    err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
+    if (length(err_idx)) {
+        stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
+            conditionMessage(attr(results[[err_idx[1]]], "condition")))
     }
-  }, n_cores = n_cores, progress = "Estimating mediation effects")
 
-  # mclapply swallows errors as try-error objects; surface the first one
-  # instead of producing a confusing downstream error.
-  err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
-  if (length(err_idx)) {
-    stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
-         conditionMessage(attr(results[[err_idx[1]]], "condition")))
-  }
+    results <- Filter(Negate(is.null), results)
 
-  results <- Filter(Negate(is.null), results)
+    out <- do.call(rbind, results)
+    if (is.null(out)) return(out)
 
-  out <- do.call(rbind, results)
-  if (is.null(out)) return(out)
+    # when se_method == "composite", replace NIE_p with the
+    # Huang (2019) JT-comp composite null p-value. This is a two-pass
+    # operation: the per-feature fits above already collected the
+    # z-statistics (alpha_M/alpha_se, beta_M/beta_M_se); here we estimate
+    # Var(a)/Var(b) per method (and per mediator) across features and
+    # compute the composite p-value.
+    if (se_method == "composite")
+        out <- .apply_composite_pvalues(out)
 
-  # when se_method == "composite", replace NIE_p with the
-  # Huang (2019) JT-comp composite null p-value. This is a two-pass
-  # operation: the per-feature fits above already collected the
-  # z-statistics (alpha_M/alpha_se, beta_M/beta_M_se); here we estimate
-  # Var(a)/Var(b) per method (and per mediator) across features and
-  # compute the composite p-value.
-  if (se_method == "composite")
-    out <- .apply_composite_pvalues(out)
+    out$NDE_significant <- out$NDE_p < alpha
+    out$NIE_significant <- out$NIE_p < alpha
 
-  out$NDE_significant <- out$NDE_p < alpha
-  out$NIE_significant <- out$NIE_p < alpha
+    # Map indices to names
+    out$feature <- data$feature_names[out$feature]
+    out$mediator <- data$mediator_names[out$mediator]
 
-  # Map indices to names
-  out$feature <- data$feature_names[out$feature]
-  out$mediator <- data$mediator_names[out$mediator]
-
-  # Reorder columns
-  front <- c("feature", "mediator", "method")
-  out <- out[, c(front, setdiff(names(out), front))]
-  out
+    # Reorder columns
+    front <- c("feature", "mediator", "method")
+    out <- out[, c(front, setdiff(names(out), front))]
+    out
 }
 
 
@@ -385,36 +385,36 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 .estimate_total_surv_driver <- function(data, methods, alpha, n_cores = 1,
                                         min_f = 10, effect_scale = "loghr",
                                         tau = NULL) {
-  time <- data$surv_time
-  event <- data$surv_event
-  X <- data$X
-  cv <- data$covariates
-  G <- data$G
-  W <- data$W
-  W_mat <- if (!is.null(W)) t(W) else NULL # n x q
+    time <- data$surv_time
+    event <- data$surv_event
+    X <- data$X
+    cv <- data$covariates
+    G <- data$G
+    W <- data$W
+    W_mat <- if (!is.null(W)) t(W) else NULL # n x q
 
-  run_one <- function(method) {
-    r <- switch(method,
-      UNADJ = fit_unadj_surv(time, event, X, cv, effect_scale, tau),
-      DIRECT = fit_direct_surv(time, event, X, G, W_mat, cv, effect_scale, tau),
-      COCA = fit_coca_surv(time, event, X, if (!is.null(W_mat)) W_mat[, 1] else NULL, cv),
-      IV2SLS = fit_iv2sls_surv(time, event, X, G, W_mat, cv, min_f, effect_scale, tau),
-      PGC = fit_pgc_surv(time, event, X, G, W_mat, cv, effect_scale, tau),
-      NULL
-    )
-    if (is.null(r)) return(NULL)
-    data.frame(feature = 1L, method = method,
-               beta = r$beta, se = r$se, pvalue = r$pvalue,
-               stringsAsFactors = FALSE)
-  }
+    run_one <- function(method) {
+        r <- switch(method,
+            UNADJ = fit_unadj_surv(time, event, X, cv, effect_scale, tau),
+            DIRECT = fit_direct_surv(time, event, X, G, W_mat, cv, effect_scale, tau),
+            COCA = fit_coca_surv(time, event, X, if (!is.null(W_mat)) W_mat[, 1] else NULL, cv),
+            IV2SLS = fit_iv2sls_surv(time, event, X, G, W_mat, cv, min_f, effect_scale, tau),
+            PGC = fit_pgc_surv(time, event, X, G, W_mat, cv, effect_scale, tau),
+            NULL
+        )
+        if (is.null(r)) return(NULL)
+        data.frame(feature = 1L, method = method,
+            beta = r$beta, se = r$se, pvalue = r$pvalue,
+            stringsAsFactors = FALSE)
+    }
 
-  results <- lapply(methods, run_one)
-  out <- do.call(rbind, Filter(Negate(is.null), results))
-  if (is.null(out)) return(out)
+    results <- lapply(methods, run_one)
+    out <- do.call(rbind, Filter(Negate(is.null), results))
+    if (is.null(out)) return(out)
 
-  out$significant <- out$pvalue < alpha
-  out$feature <- data$feature_names[out$feature]
-  out
+    out$significant <- out$pvalue < alpha
+    out$feature <- data$feature_names[out$feature]
+    out
 }
 
 
@@ -431,102 +431,102 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
                                             n_boot = 500,
                                             effect_scale = "loghr",
                                             tau = NULL) {
-  time <- data$surv_time
-  event <- data$surv_event
-  n <- data$n
-  nm <- data$n_mediators
-  X <- data$X
-  cv <- data$covariates
-  G <- data$G
-  W <- data$W
-  W_mat <- if (!is.null(W)) t(W) else NULL
-  W1_mat <- if (!is.null(data$W1)) t(data$W1) else NULL
-  W2_mat <- if (!is.null(data$W2)) t(data$W2) else NULL
+    time <- data$surv_time
+    event <- data$surv_event
+    n <- data$n
+    nm <- data$n_mediators
+    X <- data$X
+    cv <- data$covariates
+    G <- data$G
+    W <- data$W
+    W_mat <- if (!is.null(W)) t(W) else NULL
+    W1_mat <- if (!is.null(data$W1)) t(data$W1) else NULL
+    W2_mat <- if (!is.null(data$W2)) t(data$W2) else NULL
 
-  run_one <- function(m, method) {
-    M_vec <- data$M[m, ]
-    gm <- if (!is.null(data$Gm)) {
-      if (is.matrix(data$Gm) && nrow(data$Gm) == nm) data$Gm[m, ]
-      else if (is.matrix(data$Gm) && ncol(data$Gm) == 1) rep(data$Gm[1, ], n)
-      else if (is.matrix(data$Gm)) data$Gm[min(m, nrow(data$Gm)), ]
-      else data$Gm
-    } else NULL
+    run_one <- function(m, method) {
+        M_vec <- data$M[m, ]
+        gm <- if (!is.null(data$Gm)) {
+            if (is.matrix(data$Gm) && nrow(data$Gm) == nm) data$Gm[m, ]
+            else if (is.matrix(data$Gm) && ncol(data$Gm) == 1) rep(data$Gm[1, ], n)
+            else if (is.matrix(data$Gm)) data$Gm[min(m, nrow(data$Gm)), ]
+            else data$Gm
+        } else NULL
 
-    w <- W_mat
-    w1 <- W1_mat
-    w2 <- W2_mat
+        w <- W_mat
+        w1 <- W1_mat
+        w2 <- W2_mat
 
-    r <- switch(as.character(method),
-      UNADJ = fit_unadj_mediation_surv(time, event, X, M_vec, cv,
-                                         effect_scale, tau),
-      DIRECT = fit_direct_mediation_surv(time, event, X, M_vec, G, w, cv,
-                                          effect_scale, tau),
-      COCA = fit_coca_mediation_surv(time, event, X, M_vec,
-                                        if (!is.null(w)) w[, 1] else NULL, cv),
-      IV2SLS = fit_iv2sls_mediation_surv(time, event, X, M_vec, G, w,
-                                          cv, min_f, effect_scale, tau),
-      IV2SLS2 = fit_iv2sls_mediation2_surv(time, event, X, M_vec, G, gm,
-                                           covars = cv, min_f = min_f,
-                                           W1 = w1, W2 = w2,
-                                           effect_scale = effect_scale,
-                                           tau = tau),
-      PGC = fit_pgc_mediation_surv(time, event, X, M_vec, G, w,
-                                       cv, min_f, effect_scale, tau),
-      PGC2 = fit_pgc_mediation2_surv(time, event, X, M_vec, G, w1, w2,
-                                        gm = NULL, cv, min_f,
-                                        effect_scale, tau),
-      PGC2Gm = fit_pgc_mediation2_surv(time, event, X, M_vec, G, w1, w2,
-                                        gm = gm, cv, min_f,
-                                        effect_scale, tau),
-      NULL
-    )
-    if (is.null(r)) return(NULL)
-    TE <- if (!is.na(r$NDE) && !is.na(r$NIE)) r$NDE + r$NIE else NA_real_
-    TE_se <- if (!is.na(r$NDE_se) && !is.na(r$NIE_se))
-      sqrt(r$NDE_se^2 + r$NIE_se^2) else NA_real_
-    TE_p <- if (!is.na(TE) && !is.na(TE_se) && TE_se > 0)
-      2 * pnorm(-abs(TE / TE_se)) else NA_real_
-    data.frame(
-      feature = 1L, mediator = m, method = method,
-      NDE = r$NDE, NDE_se = r$NDE_se, NDE_p = r$NDE_p,
-      NIE = r$NIE, NIE_se = r$NIE_se, NIE_p = r$NIE_p,
-      TE = TE, TE_se = TE_se, TE_p = TE_p,
-      alpha_M = r$alpha_M, alpha_se = r$alpha_se,
-      beta_M = r$beta_M, beta_M_se = r$beta_M_se,
-      stringsAsFactors = FALSE
-    )
-  }
+        r <- switch(as.character(method),
+            UNADJ = fit_unadj_mediation_surv(time, event, X, M_vec, cv,
+                effect_scale, tau),
+            DIRECT = fit_direct_mediation_surv(time, event, X, M_vec, G, w, cv,
+                effect_scale, tau),
+            COCA = fit_coca_mediation_surv(time, event, X, M_vec,
+                if (!is.null(w)) w[, 1] else NULL, cv),
+            IV2SLS = fit_iv2sls_mediation_surv(time, event, X, M_vec, G, w,
+                cv, min_f, effect_scale, tau),
+            IV2SLS2 = fit_iv2sls_mediation2_surv(time, event, X, M_vec, G, gm,
+                covars = cv, min_f = min_f,
+                W1 = w1, W2 = w2,
+                effect_scale = effect_scale,
+                tau = tau),
+            PGC = fit_pgc_mediation_surv(time, event, X, M_vec, G, w,
+                cv, min_f, effect_scale, tau),
+            PGC2 = fit_pgc_mediation2_surv(time, event, X, M_vec, G, w1, w2,
+                gm = NULL, cv, min_f,
+                effect_scale, tau),
+            PGC2Gm = fit_pgc_mediation2_surv(time, event, X, M_vec, G, w1, w2,
+                gm = gm, cv, min_f,
+                effect_scale, tau),
+            NULL
+        )
+        if (is.null(r)) return(NULL)
+        TE <- if (!is.na(r$NDE) && !is.na(r$NIE)) r$NDE + r$NIE else NA_real_
+        TE_se <- if (!is.na(r$NDE_se) && !is.na(r$NIE_se))
+            sqrt(r$NDE_se^2 + r$NIE_se^2) else NA_real_
+        TE_p <- if (!is.na(TE) && !is.na(TE_se) && TE_se > 0)
+            2 * pnorm(-abs(TE / TE_se)) else NA_real_
+        data.frame(
+            feature = 1L, mediator = m, method = method,
+            NDE = r$NDE, NDE_se = r$NDE_se, NDE_p = r$NDE_p,
+            NIE = r$NIE, NIE_se = r$NIE_se, NIE_p = r$NIE_p,
+            TE = TE, TE_se = TE_se, TE_p = TE_p,
+            alpha_M = r$alpha_M, alpha_se = r$alpha_se,
+            beta_M = r$beta_M, beta_M_se = r$beta_M_se,
+            stringsAsFactors = FALSE
+        )
+    }
 
-  # Flatten mediator x method grid
-  grid <- expand.grid(m = seq_len(nm), method = methods,
-                      KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
-  results <- .parallel_lapply(seq_len(nrow(grid)), function(i) {
-    run_one(grid$m[i], grid$method[i])
-  }, n_cores = n_cores, progress = "Estimating survival mediation effects")
+    # Flatten mediator x method grid
+    grid <- expand.grid(m = seq_len(nm), method = methods,
+        KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
+    results <- .parallel_lapply(seq_len(nrow(grid)), function(i) {
+        run_one(grid$m[i], grid$method[i])
+    }, n_cores = n_cores, progress = "Estimating survival mediation effects")
 
-  err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
-  if (length(err_idx)) {
-    stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
-         conditionMessage(attr(results[[err_idx[1]]], "condition")))
-  }
+    err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
+    if (length(err_idx)) {
+        stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
+            conditionMessage(attr(results[[err_idx[1]]], "condition")))
+    }
 
-  results <- Filter(Negate(is.null), results)
-  out <- do.call(rbind, results)
-  if (is.null(out)) return(out)
+    results <- Filter(Negate(is.null), results)
+    out <- do.call(rbind, results)
+    if (is.null(out)) return(out)
 
-  # Composite p-values (same two-pass logic as continuous driver)
-  if (se_method == "composite")
-    out <- .apply_composite_pvalues(out)
+    # Composite p-values (same two-pass logic as continuous driver)
+    if (se_method == "composite")
+        out <- .apply_composite_pvalues(out)
 
-  out$NDE_significant <- out$NDE_p < alpha
-  out$NIE_significant <- out$NIE_p < alpha
+    out$NDE_significant <- out$NDE_p < alpha
+    out$NIE_significant <- out$NIE_p < alpha
 
-  out$feature <- data$feature_names[out$feature]
-  out$mediator <- data$mediator_names[out$mediator]
+    out$feature <- data$feature_names[out$feature]
+    out$mediator <- data$mediator_names[out$mediator]
 
-  front <- c("feature", "mediator", "method")
-  out <- out[, c(front, setdiff(names(out), front))]
-  out
+    front <- c("feature", "mediator", "method")
+    out <- out[, c(front, setdiff(names(out), front))]
+    out
 }
 
 
@@ -550,35 +550,35 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
 #' @noRd
 .estimate_total_bin_driver <- function(data, methods, alpha, n_cores = 1,
                                        min_f = 10, effect_scale = "logor") {
-  y <- data$Y_bin
-  X <- data$X
-  cv <- data$covariates
-  G <- data$G
-  W <- data$W
-  W_mat <- if (!is.null(W)) t(W) else NULL # n x q
+    y <- data$Y_bin
+    X <- data$X
+    cv <- data$covariates
+    G <- data$G
+    W <- data$W
+    W_mat <- if (!is.null(W)) t(W) else NULL # n x q
 
-  run_one <- function(method) {
-    r <- switch(method,
-      UNADJ = fit_unadj_bin(y, X, cv, effect_scale),
-      DIRECT = fit_direct_bin(y, X, G, W_mat, cv, effect_scale),
-      COCA = fit_coca_bin(y, X, if (!is.null(W_mat)) W_mat[, 1] else NULL, cv),
-      IV2SLS = fit_iv2sls_bin(y, X, G, W_mat, cv, min_f, effect_scale),
-      PGC = fit_pgc_bin(y, X, G, W_mat, cv, effect_scale),
-      NULL
-    )
-    if (is.null(r)) return(NULL)
-    data.frame(feature = 1L, method = method,
-               beta = r$beta, se = r$se, pvalue = r$pvalue,
-               stringsAsFactors = FALSE)
-  }
+    run_one <- function(method) {
+        r <- switch(method,
+            UNADJ = fit_unadj_bin(y, X, cv, effect_scale),
+            DIRECT = fit_direct_bin(y, X, G, W_mat, cv, effect_scale),
+            COCA = fit_coca_bin(y, X, if (!is.null(W_mat)) W_mat[, 1] else NULL, cv),
+            IV2SLS = fit_iv2sls_bin(y, X, G, W_mat, cv, min_f, effect_scale),
+            PGC = fit_pgc_bin(y, X, G, W_mat, cv, effect_scale),
+            NULL
+        )
+        if (is.null(r)) return(NULL)
+        data.frame(feature = 1L, method = method,
+            beta = r$beta, se = r$se, pvalue = r$pvalue,
+            stringsAsFactors = FALSE)
+    }
 
-  results <- lapply(methods, run_one)
-  out <- do.call(rbind, Filter(Negate(is.null), results))
-  if (is.null(out)) return(out)
+    results <- lapply(methods, run_one)
+    out <- do.call(rbind, Filter(Negate(is.null), results))
+    if (is.null(out)) return(out)
 
-  out$significant <- out$pvalue < alpha
-  out$feature <- data$feature_names[out$feature]
-  out
+    out$significant <- out$pvalue < alpha
+    out$feature <- data$feature_names[out$feature]
+    out
 }
 
 
@@ -594,97 +594,97 @@ iconic_estimate <- function(data, methods = NULL, diagnosis = NULL,
                                            se_method = "delta",
                                            n_boot = 500,
                                            effect_scale = "logor") {
-  y <- data$Y_bin
-  n <- data$n
-  nm <- data$n_mediators
-  X <- data$X
-  cv <- data$covariates
-  G <- data$G
-  W <- data$W
-  W_mat <- if (!is.null(W)) t(W) else NULL
-  W1_mat <- if (!is.null(data$W1)) t(data$W1) else NULL
-  W2_mat <- if (!is.null(data$W2)) t(data$W2) else NULL
+    y <- data$Y_bin
+    n <- data$n
+    nm <- data$n_mediators
+    X <- data$X
+    cv <- data$covariates
+    G <- data$G
+    W <- data$W
+    W_mat <- if (!is.null(W)) t(W) else NULL
+    W1_mat <- if (!is.null(data$W1)) t(data$W1) else NULL
+    W2_mat <- if (!is.null(data$W2)) t(data$W2) else NULL
 
-  run_one <- function(m, method) {
-    M_vec <- data$M[m, ]
-    gm <- if (!is.null(data$Gm)) {
-      if (is.matrix(data$Gm) && nrow(data$Gm) == nm) data$Gm[m, ]
-      else if (is.matrix(data$Gm) && ncol(data$Gm) == 1) rep(data$Gm[1, ], n)
-      else if (is.matrix(data$Gm)) data$Gm[min(m, nrow(data$Gm)), ]
-      else data$Gm
-    } else NULL
+    run_one <- function(m, method) {
+        M_vec <- data$M[m, ]
+        gm <- if (!is.null(data$Gm)) {
+            if (is.matrix(data$Gm) && nrow(data$Gm) == nm) data$Gm[m, ]
+            else if (is.matrix(data$Gm) && ncol(data$Gm) == 1) rep(data$Gm[1, ], n)
+            else if (is.matrix(data$Gm)) data$Gm[min(m, nrow(data$Gm)), ]
+            else data$Gm
+        } else NULL
 
-    w <- W_mat
-    w1 <- W1_mat
-    w2 <- W2_mat
+        w <- W_mat
+        w1 <- W1_mat
+        w2 <- W2_mat
 
-    r <- switch(as.character(method),
-      UNADJ = fit_unadj_mediation_bin(y, X, M_vec, cv, effect_scale),
-      DIRECT = fit_direct_mediation_bin(y, X, M_vec, G, w, cv,
-                                        effect_scale),
-      COCA = fit_coca_mediation_bin(y, X, M_vec,
-                                    if (!is.null(w)) w[, 1] else NULL, cv),
-      IV2SLS = fit_iv2sls_mediation_bin(y, X, M_vec, G, w,
-                                        cv, min_f, effect_scale),
-      IV2SLS2 = fit_iv2sls_mediation2_bin(y, X, M_vec, G, gm,
-                                          covars = cv, min_f = min_f,
-                                          W1 = w1, W2 = w2,
-                                          effect_scale = effect_scale),
-      PGC = fit_pgc_mediation_bin(y, X, M_vec, G, w,
-                                  cv, min_f, effect_scale),
-      PGC2 = fit_pgc_mediation2_bin(y, X, M_vec, G, w1, w2,
-                                    gm = NULL, cv, min_f,
-                                    effect_scale),
-      PGC2Gm = fit_pgc_mediation2_bin(y, X, M_vec, G, w1, w2,
-                                      gm = gm, cv, min_f,
-                                      effect_scale),
-      NULL
-    )
-    if (is.null(r)) return(NULL)
-    TE <- if (!is.na(r$NDE) && !is.na(r$NIE)) r$NDE + r$NIE else NA_real_
-    TE_se <- if (!is.na(r$NDE_se) && !is.na(r$NIE_se))
-      sqrt(r$NDE_se^2 + r$NIE_se^2) else NA_real_
-    TE_p <- if (!is.na(TE) && !is.na(TE_se) && TE_se > 0)
-      2 * pnorm(-abs(TE / TE_se)) else NA_real_
-    data.frame(
-      feature = 1L, mediator = m, method = method,
-      NDE = r$NDE, NDE_se = r$NDE_se, NDE_p = r$NDE_p,
-      NIE = r$NIE, NIE_se = r$NIE_se, NIE_p = r$NIE_p,
-      TE = TE, TE_se = TE_se, TE_p = TE_p,
-      alpha_M = r$alpha_M, alpha_se = r$alpha_se,
-      beta_M = r$beta_M, beta_M_se = r$beta_M_se,
-      stringsAsFactors = FALSE
-    )
-  }
+        r <- switch(as.character(method),
+            UNADJ = fit_unadj_mediation_bin(y, X, M_vec, cv, effect_scale),
+            DIRECT = fit_direct_mediation_bin(y, X, M_vec, G, w, cv,
+                effect_scale),
+            COCA = fit_coca_mediation_bin(y, X, M_vec,
+                if (!is.null(w)) w[, 1] else NULL, cv),
+            IV2SLS = fit_iv2sls_mediation_bin(y, X, M_vec, G, w,
+                cv, min_f, effect_scale),
+            IV2SLS2 = fit_iv2sls_mediation2_bin(y, X, M_vec, G, gm,
+                covars = cv, min_f = min_f,
+                W1 = w1, W2 = w2,
+                effect_scale = effect_scale),
+            PGC = fit_pgc_mediation_bin(y, X, M_vec, G, w,
+                cv, min_f, effect_scale),
+            PGC2 = fit_pgc_mediation2_bin(y, X, M_vec, G, w1, w2,
+                gm = NULL, cv, min_f,
+                effect_scale),
+            PGC2Gm = fit_pgc_mediation2_bin(y, X, M_vec, G, w1, w2,
+                gm = gm, cv, min_f,
+                effect_scale),
+            NULL
+        )
+        if (is.null(r)) return(NULL)
+        TE <- if (!is.na(r$NDE) && !is.na(r$NIE)) r$NDE + r$NIE else NA_real_
+        TE_se <- if (!is.na(r$NDE_se) && !is.na(r$NIE_se))
+            sqrt(r$NDE_se^2 + r$NIE_se^2) else NA_real_
+        TE_p <- if (!is.na(TE) && !is.na(TE_se) && TE_se > 0)
+            2 * pnorm(-abs(TE / TE_se)) else NA_real_
+        data.frame(
+            feature = 1L, mediator = m, method = method,
+            NDE = r$NDE, NDE_se = r$NDE_se, NDE_p = r$NDE_p,
+            NIE = r$NIE, NIE_se = r$NIE_se, NIE_p = r$NIE_p,
+            TE = TE, TE_se = TE_se, TE_p = TE_p,
+            alpha_M = r$alpha_M, alpha_se = r$alpha_se,
+            beta_M = r$beta_M, beta_M_se = r$beta_M_se,
+            stringsAsFactors = FALSE
+        )
+    }
 
-  # Flatten mediator x method grid
-  grid <- expand.grid(m = seq_len(nm), method = methods,
-                      KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
-  results <- .parallel_lapply(seq_len(nrow(grid)), function(i) {
-    run_one(grid$m[i], grid$method[i])
-  }, n_cores = n_cores, progress = "Estimating binary mediation effects")
+    # Flatten mediator x method grid
+    grid <- expand.grid(m = seq_len(nm), method = methods,
+        KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
+    results <- .parallel_lapply(seq_len(nrow(grid)), function(i) {
+        run_one(grid$m[i], grid$method[i])
+    }, n_cores = n_cores, progress = "Estimating binary mediation effects")
 
-  err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
-  if (length(err_idx)) {
-    stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
-         conditionMessage(attr(results[[err_idx[1]]], "condition")))
-  }
+    err_idx <- which(vapply(results, inherits, logical(1), "try-error"))
+    if (length(err_idx)) {
+        stop("Estimation failed for task ", err_idx[1], ". Underlying cause:\n",
+            conditionMessage(attr(results[[err_idx[1]]], "condition")))
+    }
 
-  results <- Filter(Negate(is.null), results)
-  out <- do.call(rbind, results)
-  if (is.null(out)) return(out)
+    results <- Filter(Negate(is.null), results)
+    out <- do.call(rbind, results)
+    if (is.null(out)) return(out)
 
-  # Composite p-values (same two-pass logic as continuous driver)
-  if (se_method == "composite")
-    out <- .apply_composite_pvalues(out)
+    # Composite p-values (same two-pass logic as continuous driver)
+    if (se_method == "composite")
+        out <- .apply_composite_pvalues(out)
 
-  out$NDE_significant <- out$NDE_p < alpha
-  out$NIE_significant <- out$NIE_p < alpha
+    out$NDE_significant <- out$NDE_p < alpha
+    out$NIE_significant <- out$NIE_p < alpha
 
-  out$feature <- data$feature_names[out$feature]
-  out$mediator <- data$mediator_names[out$mediator]
+    out$feature <- data$feature_names[out$feature]
+    out$mediator <- data$mediator_names[out$mediator]
 
-  front <- c("feature", "mediator", "method")
-  out <- out[, c(front, setdiff(names(out), front))]
-  out
+    front <- c("feature", "mediator", "method")
+    out <- out[, c(front, setdiff(names(out), front))]
+    out
 }

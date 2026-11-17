@@ -79,6 +79,6 @@ reflect power for the direct effect).
 }
 \examples{
 null <- run_null_mediation_sim(n_iter = 2, n_samples = 100,
-  n_features = 5, mo_confounding = 0.8, phi = 0.8)
+    n_features = 5, mo_confounding = 0.8, phi = 0.8)
 null$rates
 }

@@ -163,42 +163,42 @@ data <- as_iconic_data(input)
 print(data)
 
 # From named components (delegates to iconic_data())
-data <- as_iconic_data(rnorm(100), Y = matrix(rnorm(100*10), 10, 100),
-G = rnorm(100), Gm = rnorm(100),
-W = matrix(rnorm(100*10), 10, 100))
+data <- as_iconic_data(rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+    G = rnorm(100), Gm = rnorm(100),
+    W = matrix(rnorm(100 * 10), 10, 100))
 se <- SummarizedExperiment::SummarizedExperiment(
-  assays = list(expr = matrix(rnorm(20 * 60), 20, 60,
-                              dimnames = list(paste0("gene", 1:20),
-                                              paste0("S", 1:60)))),
-  colData = S4Vectors::DataFrame(
-    bmi = rnorm(60), prs = rnorm(60),
-    nc1 = rnorm(60), nc2 = rnorm(60), age = rnorm(60))
+    assays = list(expr = matrix(rnorm(20 * 60), 20, 60,
+        dimnames = list(paste0("gene", 1:20),
+            paste0("S", 1:60)))),
+    colData = S4Vectors::DataFrame(
+        bmi = rnorm(60), prs = rnorm(60),
+        nc1 = rnorm(60), nc2 = rnorm(60), age = rnorm(60))
 )
 data <- as_iconic_data(se, assay = "expr", exposure = "bmi",
-                       instrument = "prs",
-                       negative_controls = c("nc1", "nc2"),
-                       covariates = "age")
+    instrument = "prs",
+    negative_controls = c("nc1", "nc2"),
+    covariates = "age")
 print(data)
 # From a MultiAssayExperiment: omics panels are experiments,
 # sample-level variables are colData columns
 set.seed(1)
 ids <- paste0("S", 1:80)
 mk <- function(p, pre) matrix(rnorm(p * 80), p, 80,
-  dimnames = list(paste0(pre, seq_len(p)), ids))
+    dimnames = list(paste0(pre, seq_len(p)), ids))
 mae <- MultiAssayExperiment::MultiAssayExperiment(
-  experiments = list(
-    rna = SummarizedExperiment::SummarizedExperiment(
-      assays = list(expr = mk(10, "gene"))),
-    methyl = SummarizedExperiment::SummarizedExperiment(
-      assays = list(m = mk(1, "cg"))),
-    nc = SummarizedExperiment::SummarizedExperiment(
-      assays = list(pcs = mk(10, "PC")))),
-  colData = S4Vectors::DataFrame(
-    bmi = rnorm(80), prs = rnorm(80), cis_score = rnorm(80),
-    age = rnorm(80), row.names = ids))
+    experiments = list(
+        rna = SummarizedExperiment::SummarizedExperiment(
+            assays = list(expr = mk(10, "gene"))),
+        methyl = SummarizedExperiment::SummarizedExperiment(
+            assays = list(m = mk(1, "cg"))),
+        nc = SummarizedExperiment::SummarizedExperiment(
+            assays = list(pcs = mk(10, "PC")))),
+    colData = S4Vectors::DataFrame(
+        bmi = rnorm(80), prs = rnorm(80), cis_score = rnorm(80),
+        age = rnorm(80), row.names = ids))
 data <- as_iconic_data(mae, exposure = "bmi", outcome = "rna",
-  mediator = "methyl", instrument = "prs",
-  mediator_instrument = "cis_score", negative_controls = "nc",
-  covariates = "age")
+    mediator = "methyl", instrument = "prs",
+    mediator_instrument = "cis_score", negative_controls = "nc",
+    covariates = "age")
 print(data)
 }

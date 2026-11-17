@@ -31,30 +31,30 @@
 #' @keywords internal
 .linpred_to_surv <- function(eta, h0 = 0.1, event_frac = 0.6,
                              censor_rate = NULL) {
-  if (is.matrix(eta)) eta <- eta[, 1]
-  n <- length(eta)
+    if (is.matrix(eta)) eta <- eta[, 1]
+    n <- length(eta)
 
-  # Center eta so the baseline hazard corresponds to the mean subject.
-  eta_c <- eta - mean(eta)
+    # Center eta so the baseline hazard corresponds to the mean subject.
+    eta_c <- eta - mean(eta)
 
-  # True event times under exponential PH
-  U <- stats::runif(n)
-  T_true <- -log(U) / (h0 * exp(eta_c))
+    # True event times under exponential PH
+    U <- stats::runif(n)
+    T_true <- -log(U) / (h0 * exp(eta_c))
 
-  # Censoring: solve for censor_rate that yields ~event_frac events.
-  # P(event) = h0*exp(eta) / (h0*exp(eta) + censor_rate) (in expectation).
-  # Use the mean hazard as the reference for tuning.
-  if (is.null(censor_rate)) {
-    mean_haz <- h0 * mean(exp(eta_c))
-    # P(event) = mean_haz / (mean_haz + cr) = event_frac
-    # => cr = mean_haz * (1 - event_frac) / event_frac
-    censor_rate <- mean_haz * (1 - event_frac) / event_frac
-  }
-  C <- stats::rexp(n, rate = censor_rate)
+    # Censoring: solve for censor_rate that yields ~event_frac events.
+    # P(event) = h0*exp(eta) / (h0*exp(eta) + censor_rate) (in expectation).
+    # Use the mean hazard as the reference for tuning.
+    if (is.null(censor_rate)) {
+        mean_haz <- h0 * mean(exp(eta_c))
+        # P(event) = mean_haz / (mean_haz + cr) = event_frac
+        # => cr = mean_haz * (1 - event_frac) / event_frac
+        censor_rate <- mean_haz * (1 - event_frac) / event_frac
+    }
+    C <- stats::rexp(n, rate = censor_rate)
 
-  surv_time <- pmin(T_true, C)
-  surv_event <- as.integer(T_true <= C)
+    surv_time <- pmin(T_true, C)
+    surv_event <- as.integer(T_true <= C)
 
-  list(surv_time = surv_time, surv_event = surv_event,
-       true_h0 = h0, true_censor_rate = censor_rate)
+    list(surv_time = surv_time, surv_event = surv_event,
+        true_h0 = h0, true_censor_rate = censor_rate)
 }

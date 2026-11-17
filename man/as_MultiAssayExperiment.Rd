@@ -39,10 +39,10 @@ the metadata).
 }
 \examples{
 d <- iconic_data(X = rnorm(60), Y = matrix(rnorm(60 * 5), 5, 60),
-  M = rnorm(60), G = rnorm(60), Gm = rnorm(60),
-  W = matrix(rnorm(60 * 5), 5, 60))
+    M = rnorm(60), G = rnorm(60), Gm = rnorm(60),
+    W = matrix(rnorm(60 * 5), 5, 60))
 mae <- as_MultiAssayExperiment(d)
 mae
-d2 <- as_iconic_data(mae)   # round trip
+d2 <- as_iconic_data(mae) # round trip
 all.equal(d$Y, d2$Y, check.attributes = FALSE)
 }

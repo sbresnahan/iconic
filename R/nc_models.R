@@ -74,52 +74,52 @@
 #' @examples
 #' U <- matrix(rnorm(100), 100, 1)
 #' W <- nc_proxy(U, covariates = NULL,
-#'   params = list(n_features = 10, coverage = 0.7))
+#'     params = list(n_features = 10, coverage = 0.7))
 #' dim(W)
 nc_proxy <- function(U, covariates, params) {
-  n <- nrow(U); k <- ncol(U)
-  p <- params$n_features
-  cov <- if (is.null(params$coverage)) 0.7 else params$coverage
-  cap <- if (is.null(params$captured)) seq_len(k) else params$captured
-  sd0 <- if (is.null(params$noise_sd)) 0.3 else params$noise_sd
-  mm <- if (is.null(params$MMCon)) 1 else params$MMCon
-  mode <- if (is.null(params$mode)) "shared" else params$mode
-  noise_cor <- params$noise_cor # NULL or p x p correlation matrix
+    n <- nrow(U); k <- ncol(U)
+    p <- params$n_features
+    cov <- if (is.null(params$coverage)) 0.7 else params$coverage
+    cap <- if (is.null(params$captured)) seq_len(k) else params$captured
+    sd0 <- if (is.null(params$noise_sd)) 0.3 else params$noise_sd
+    mm <- if (is.null(params$MMCon)) 1 else params$MMCon
+    mode <- if (is.null(params$mode)) "shared" else params$mode
+    noise_cor <- params$noise_cor # NULL or p x p correlation matrix
 
-  cap <- cap[cap >= 1 & cap <= k]
+    cap <- cap[cap >= 1 & cap <= k]
 
-  # ── Generate the noise component ──
-  # When noise_cor is a valid p x p correlation matrix, draw correlated
-  # noise via MASS::mvrnorm. Otherwise use independent rnorm (backward
-  # compatible). The noise has two parts: (1 - cov) * noise (the
-  # "uncaptured" component) and rnorm(n, 0, sd0) (idiosyncratic). We
-  # apply the correlation to the combined noise term.
-  noise_mat <- .generate_nc_noise(n, p, noise_cor, sd0)
+    # ── Generate the noise component ──
+    # When noise_cor is a valid p x p correlation matrix, draw correlated
+    # noise via MASS::mvrnorm. Otherwise use independent rnorm (backward
+    # compatible). The noise has two parts: (1 - cov) * noise (the
+    # "uncaptured" component) and rnorm(n, 0, sd0) (idiosyncratic). We
+    # apply the correlation to the combined noise term.
+    noise_mat <- .generate_nc_noise(n, p, noise_cor, sd0)
 
-  W <- matrix(NA_real_, n, p)
+    W <- matrix(NA_real_, n, p)
 
-  if (mode == "distinct" && length(cap) > 0) {
-    # Each column captures a DIFFERENT confounder (cycling through `cap`).
-    # This gives W genuine dimensional structure so that the matrix-bridge
-    # PGC requires ncol(W) >= k for identification.
-    for (f in seq_len(p)) {
-      conf_idx <- cap[((f - 1) %% length(cap)) + 1]
-      signal <- U[, conf_idx]
-      W[, f] <- mm * cov * signal +
+    if (mode == "distinct" && length(cap) > 0) {
+        # Each column captures a DIFFERENT confounder (cycling through `cap`).
+        # This gives W genuine dimensional structure so that the matrix-bridge
+        # PGC requires ncol(W) >= k for identification.
+        for (f in seq_len(p)) {
+            conf_idx <- cap[((f - 1) %% length(cap)) + 1]
+            signal <- U[, conf_idx]
+            W[, f] <- mm * cov * signal +
                 (1 - cov) * noise_mat[, f] +
                 noise_mat[, f + p]
-    }
-  } else {
-    # Original "shared" mode: all columns carry the same averaged signal.
-    signal <- if (length(cap)) rowMeans(U[, cap, drop = FALSE]) else rep(0, n)
-    for (f in seq_len(p)) {
-      W[, f] <- mm * cov * signal +
+        }
+    } else {
+        # Original "shared" mode: all columns carry the same averaged signal.
+        signal <- if (length(cap)) rowMeans(U[, cap, drop = FALSE]) else rep(0, n)
+        for (f in seq_len(p)) {
+            W[, f] <- mm * cov * signal +
                 (1 - cov) * noise_mat[, f] +
                 noise_mat[, f + p]
+        }
     }
-  }
 
-  scale(W)
+    scale(W)
 }
 
 
@@ -139,26 +139,26 @@ nc_proxy <- function(U, covariates, params) {
 #' @return An `n x (2*p)` numeric matrix.
 #' @keywords internal
 .generate_nc_noise <- function(n, p, noise_cor, sd0) {
-  use_cor <- !is.null(noise_cor) &&
-             is.matrix(noise_cor) &&
-             nrow(noise_cor) == p && ncol(noise_cor) == p
+    use_cor <- !is.null(noise_cor) &&
+        is.matrix(noise_cor) &&
+        nrow(noise_cor) == p && ncol(noise_cor) == p
 
-  if (use_cor) {
-    # Draw 2*p correlated noise columns: first p for the (1-cov) component,
-    # next p for the idiosyncratic component.
-    # Use sd0 for idiosyncratic, unit variance for the (1-cov) component.
-    Sigma1 <- noise_cor # unit variance
-    Sigma2 <- noise_cor * (sd0^2) # scaled by sd0^2
-    noise1 <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sigma1)
-    noise2 <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sigma2)
-    if (n == 1) { noise1 <- matrix(noise1, nrow = 1); noise2 <- matrix(noise2, nrow = 1) }
-    cbind(noise1, noise2)
-  } else {
-    # Independent noise (backward compatible)
-    noise1 <- matrix(rnorm(n * p), n, p)
-    noise2 <- matrix(rnorm(n * p, 0, sd0), n, p)
-    cbind(noise1, noise2)
-  }
+    if (use_cor) {
+        # Draw 2*p correlated noise columns: first p for the (1-cov) component,
+        # next p for the idiosyncratic component.
+        # Use sd0 for idiosyncratic, unit variance for the (1-cov) component.
+        Sigma1 <- noise_cor # unit variance
+        Sigma2 <- noise_cor * (sd0^2) # scaled by sd0^2
+        noise1 <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sigma1)
+        noise2 <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sigma2)
+        if (n == 1) { noise1 <- matrix(noise1, nrow = 1); noise2 <- matrix(noise2, nrow = 1) }
+        cbind(noise1, noise2)
+    } else {
+        # Independent noise (backward compatible)
+        noise1 <- matrix(rnorm(n * p), n, p)
+        noise2 <- matrix(rnorm(n * p, 0, sd0), n, p)
+        cbind(noise1, noise2)
+    }
 }
 
 
@@ -190,42 +190,42 @@ nc_proxy <- function(U, covariates, params) {
 #' @examples
 #' U <- matrix(rnorm(100), 100, 1)
 #' W <- nc_cpg(U, covariates = NULL,
-#'   params = list(n_features = 10, coverage = 0.7, n_cpg = 20))
+#'     params = list(n_features = 10, coverage = 0.7, n_cpg = 20))
 #' dim(W)
 nc_cpg <- function(U, covariates, params) {
-  n <- nrow(U); k <- ncol(U)
-  p <- params$n_features
-  cov <- if (is.null(params$coverage)) 0.7 else params$coverage
-  cap <- if (is.null(params$captured)) seq_len(k) else params$captured
-  ncpg<- if (is.null(params$n_cpg)) 60 else params$n_cpg
-  rho <- if (is.null(params$rho)) 0.6 else params$rho
-  mmc <- if (is.null(params$MMCpG)) 1 else params$MMCpG
-  mm <- if (is.null(params$MMCon)) 1 else params$MMCon
-  noise_cor <- params$noise_cor # NULL or p x p correlation matrix
+    n <- nrow(U); k <- ncol(U)
+    p <- params$n_features
+    cov <- if (is.null(params$coverage)) 0.7 else params$coverage
+    cap <- if (is.null(params$captured)) seq_len(k) else params$captured
+    ncpg <- if (is.null(params$n_cpg)) 60 else params$n_cpg
+    rho <- if (is.null(params$rho)) 0.6 else params$rho
+    mmc <- if (is.null(params$MMCpG)) 1 else params$MMCpG
+    mm <- if (is.null(params$MMCon)) 1 else params$MMCon
+    noise_cor <- params$noise_cor # NULL or p x p correlation matrix
 
-  cap <- cap[cap >= 1 & cap <= k]
-  conf <- if (length(cap)) rowMeans(U[, cap, drop = FALSE]) else rep(0, n)
+    cap <- cap[cap >= 1 & cap <= k]
+    conf <- if (length(cap)) rowMeans(U[, cap, drop = FALSE]) else rep(0, n)
 
-  # Spatially correlated methylation: AR(1) across neighbouring CpG sites,
-  # with a confounder-driven component shared across all sites.
-  eps <- matrix(rnorm(n * ncpg), n, ncpg)
-  meth <- matrix(NA_real_, n, ncpg)
-  meth[, 1] <- eps[, 1]
-  for (s in 2:ncpg)
-    meth[, s] <- rho * meth[, s - 1] + sqrt(1 - rho^2) * eps[, s]
-  meth <- meth + mmc * cov * matrix(rep(conf, ncpg), n, ncpg)
+    # Spatially correlated methylation: AR(1) across neighbouring CpG sites,
+    # with a confounder-driven component shared across all sites.
+    eps <- matrix(rnorm(n * ncpg), n, ncpg)
+    meth <- matrix(NA_real_, n, ncpg)
+    meth[, 1] <- eps[, 1]
+    for (s in 2:ncpg)
+        meth[, s] <- rho * meth[, s - 1] + sqrt(1 - rho^2) * eps[, s]
+    meth <- meth + mmc * cov * matrix(rep(conf, ncpg), n, ncpg)
 
-  # Each negative control is a sparse linear prediction from the CpG sites,
-  # plus idiosyncratic noise (optionally correlated across features).
-  noise_mat <- .generate_nc_noise(n, p, noise_cor, 0.3)
+    # Each negative control is a sparse linear prediction from the CpG sites,
+    # plus idiosyncratic noise (optionally correlated across features).
+    noise_mat <- .generate_nc_noise(n, p, noise_cor, 0.3)
 
-  W <- matrix(NA_real_, n, p)
-  for (f in seq_len(p)) {
-    wts <- rnorm(ncpg) * rbinom(ncpg, 1, 0.3) # sparse predictor weights
-    if (all(wts == 0)) wts[sample.int(ncpg, 1)] <- 1
-    W[, f] <- mm * as.numeric(meth %*% wts) + noise_mat[, f + p]
-  }
-  scale(W)
+    W <- matrix(NA_real_, n, p)
+    for (f in seq_len(p)) {
+        wts <- rnorm(ncpg) * rbinom(ncpg, 1, 0.3) # sparse predictor weights
+        if (all(wts == 0)) wts[sample.int(ncpg, 1)] <- 1
+        W[, f] <- mm * as.numeric(meth %*% wts) + noise_mat[, f + p]
+    }
+    scale(W)
 }
 
 
@@ -238,12 +238,12 @@ nc_cpg <- function(U, covariates, params) {
 #' @keywords internal
 #' @noRd
 .resolve_nc_model <- function(nc_model) {
-  if (is.function(nc_model)) return(nc_model)
-  if (is.character(nc_model) && length(nc_model) == 1 &&
-      nc_model %in% names(.iconic_nc_registry))
-    return(.iconic_nc_registry[[nc_model]])
-  stop("`nc_model` must be a function or one of: ",
-       paste(names(.iconic_nc_registry), collapse = ", "))
+    if (is.function(nc_model)) return(nc_model)
+    if (is.character(nc_model) && length(nc_model) == 1 &&
+        nc_model %in% names(.iconic_nc_registry))
+        return(.iconic_nc_registry[[nc_model]])
+    stop("`nc_model` must be a function or one of: ",
+        paste(names(.iconic_nc_registry), collapse = ", "))
 }
 
 #' Validate that a negative-control model honours the interface (internal)
@@ -252,12 +252,12 @@ nc_cpg <- function(U, covariates, params) {
 #' @keywords internal
 #' @noRd
 .validate_nc_model <- function(nc_model, k = 2, n = 10, p = 3) {
-  f <- .resolve_nc_model(nc_model)
-  U <- matrix(rnorm(n * k), n, k)
-  W <- f(U, data.frame(row.names = seq_len(n)), list(n_features = p))
-  if (!is.matrix(W) || nrow(W) != n || ncol(W) != p)
-    stop("negative-control model must return an n x n_features numeric matrix.")
-  invisible(TRUE)
+    f <- .resolve_nc_model(nc_model)
+    U <- matrix(rnorm(n * k), n, k)
+    W <- f(U, data.frame(row.names = seq_len(n)), list(n_features = p))
+    if (!is.matrix(W) || nrow(W) != n || ncol(W) != p)
+        stop("negative-control model must return an n x n_features numeric matrix.")
+    invisible(TRUE)
 }
 
 #' List the built-in negative-control models
@@ -287,8 +287,8 @@ list_nc_models <- function() names(.iconic_nc_registry)
 #' length(g$G)
 simulate_single_genetic_instrument <- function(n, n_snps = 20, maf = 0.3,
                                                seed = NULL) {
-  if (!is.null(seed)) withr::local_seed(seed)
-  dosages <- matrix(rbinom(n * n_snps, 2, maf), n, n_snps)
-  score <- rowSums(dosages)
-  list(G = as.numeric(scale(score)), dosages = dosages, maf = maf)
+    if (!is.null(seed)) withr::local_seed(seed)
+    dosages <- matrix(rbinom(n * n_snps, 2, maf), n, n_snps)
+    score <- rowSums(dosages)
+    list(G = as.numeric(scale(score)), dosages = dosages, maf = maf)
 }

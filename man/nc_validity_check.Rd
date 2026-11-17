@@ -52,6 +52,6 @@ IV2SLS remains unbiased (it does not depend on NC completeness).
 }
 \examples{
 chk <- nc_validity_check(NULL, coverage_grid = 0.7, k_grid = 1,
-  n_iter = 2, n_samples = 100, n_features = 5)
+    n_iter = 2, n_samples = 100, n_features = 5)
 chk$verdict
 }

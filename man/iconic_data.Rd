@@ -146,26 +146,26 @@ data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100))
 
 # Full mediation with instruments and NCs
 data <- iconic_data(
-X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-W = matrix(rnorm(100 * 10), 10, 100)
+    X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
+    M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+    W = matrix(rnorm(100 * 10), 10, 100)
 )
 print(data)
 
 # Survival outcome
 data <- iconic_data(
-X = rnorm(100), outcome_type = "survival",
-surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
-M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-W = matrix(rnorm(100 * 10), 10, 100)
+    X = rnorm(100), outcome_type = "survival",
+    surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+    M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+    W = matrix(rnorm(100 * 10), 10, 100)
 )
 print(data)
 
 # Binary outcome (Y is the 0/1 outcome vector)
 data <- iconic_data(
-X = rnorm(100), Y = rbinom(100, 1, 0.4), outcome_type = "binary",
-M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
-W = matrix(rnorm(100 * 10), 10, 100)
+    X = rnorm(100), Y = rbinom(100, 1, 0.4), outcome_type = "binary",
+    M = rnorm(100), G = rnorm(100), Gm = rnorm(100),
+    W = matrix(rnorm(100 * 10), 10, 100)
 )
 print(data)
 }

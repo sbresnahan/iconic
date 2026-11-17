@@ -51,8 +51,8 @@
 #'
 #' @examples
 #' sens <- gan_pleiotropy_sensitivity(NULL,
-#'   pleio_grid = c(0, 0.10), conf_grid = 0.8,
-#'   n_iter = 2, n_samples = 100, n_features = 5)
+#'     pleio_grid = c(0, 0.10), conf_grid = 0.8,
+#'     n_iter = 2, n_samples = 100, n_features = 5)
 #' head(sens$summary)
 gan_pleiotropy_sensitivity <- function(trained_gan = NULL,
                                        pleio_grid = c(0, 0.05, 0.10),
@@ -67,42 +67,42 @@ gan_pleiotropy_sensitivity <- function(trained_gan = NULL,
                                        base_seed = 900,
                                        n_cores = 1) {
 
-  grid <- expand.grid(pleio = pleio_grid, conf_strength = conf_grid,
-                      KEEP.OUT.ATTRS = FALSE)
-  arms <- c("alt", "null")
+    grid <- expand.grid(pleio = pleio_grid, conf_strength = conf_grid,
+        KEEP.OUT.ATTRS = FALSE)
+    arms <- c("alt", "null")
 
-  smry <- lapply(seq_len(nrow(grid)), function(gi) {
-    pl <- grid$pleio[gi]; cs <- grid$conf_strength[gi]
+    smry <- lapply(seq_len(nrow(grid)), function(gi) {
+        pl <- grid$pleio[gi]; cs <- grid$conf_strength[gi]
 
-    arm_results <- lapply(arms, function(arm) {
-      eff <- if (arm == "alt") tau else 0
+        arm_results <- lapply(arms, function(arm) {
+            eff <- if (arm == "alt") tau else 0
 
-      worker <- function(i) {
-        dat <- run_single_iteration(
-          trained_gan, n_synthetic_samples = n_samples,
-          n_features = n_features, n_confounders = k,
-          effect_size = eff, conf_strength = cs, coverage = coverage,
-          nc_model = nc_model, pleio = pl,
-          seed = base_seed + gi * 1000L + if (arm == "alt") 0L else 500000L + i)
-        res <- run_methods(dat, n_features)
-        res$iter <- i
-        res
-      }
+            worker <- function(i) {
+                dat <- run_single_iteration(
+                    trained_gan, n_synthetic_samples = n_samples,
+                    n_features = n_features, n_confounders = k,
+                    effect_size = eff, conf_strength = cs, coverage = coverage,
+                    nc_model = nc_model, pleio = pl,
+                    seed = base_seed + gi * 1000L + if (arm == "alt") 0L else 500000L + i)
+                res <- run_methods(dat, n_features)
+                res$iter <- i
+                res
+            }
 
-      combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker, n_cores))
-      s <- summarise_results(combined, eff)
-      s$pleio <- pl
-      s$conf_strength <- cs
-      s$arm <- arm
-      s$true_total <- eff
-      s
+            combined <- do.call(rbind, .parallel_lapply(seq_len(n_iter), worker, n_cores))
+            s <- summarise_results(combined, eff)
+            s$pleio <- pl
+            s$conf_strength <- cs
+            s$arm <- arm
+            s$true_total <- eff
+            s
+        })
+
+        do.call(rbind, arm_results)
     })
 
-    do.call(rbind, arm_results)
-  })
-
-  summary <- do.call(rbind, smry)
-  front <- c("pleio", "conf_strength", "arm", "true_total", "method")
-  summary <- summary[, c(front, setdiff(names(summary), front))]
-  list(summary = summary, grid = grid)
+    summary <- do.call(rbind, smry)
+    front <- c("pleio", "conf_strength", "arm", "true_total", "method")
+    summary <- summary[, c(front, setdiff(names(summary), front))]
+    list(summary = summary, grid = grid)
 }

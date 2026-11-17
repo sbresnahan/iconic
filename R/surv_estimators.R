@@ -38,38 +38,38 @@
 # bulk of observed follow-up).
 # @return numeric vector of length n (the pseudo-observations).
 .rmst_pseudo <- function(time, event, tau = NULL) {
-  time <- as.numeric(time)
-  event <- as.numeric(event)
-  n <- length(time)
-  if (is.null(tau)) tau <- as.numeric(quantile(time, 0.90))
-  if (tau >= max(time)) tau <- max(time) * 0.999
+    time <- as.numeric(time)
+    event <- as.numeric(event)
+    n <- length(time)
+    if (is.null(tau)) tau <- as.numeric(quantile(time, 0.90))
+    if (tau >= max(time)) tau <- max(time) * 0.999
 
-  # Full-sample RMST (area under KM curve up to tau)
-  km_full <- survival::survfit(survival::Surv(time, event) ~ 1)
-  rmst_full <- .km_rmst(km_full, tau)
+    # Full-sample RMST (area under KM curve up to tau)
+    km_full <- survival::survfit(survival::Surv(time, event) ~ 1)
+    rmst_full <- .km_rmst(km_full, tau)
 
-  # Leave-one-out jackknife
-  psi <- numeric(n)
-  for (i in seq_len(n)) {
-    km_i <- survival::survfit(survival::Surv(time[-i], event[-i]) ~ 1)
-    rmst_i <- .km_rmst(km_i, tau)
-    psi[i] <- n * rmst_full - (n - 1) * rmst_i
-  }
-  psi
+    # Leave-one-out jackknife
+    psi <- numeric(n)
+    for (i in seq_len(n)) {
+        km_i <- survival::survfit(survival::Surv(time[-i], event[-i]) ~ 1)
+        rmst_i <- .km_rmst(km_i, tau)
+        psi[i] <- n * rmst_full - (n - 1) * rmst_i
+    }
+    psi
 }
 
 # Area under a Kaplan-Meier curve up to tau (restricted mean survival time).
 # @param km a survfit object (KM estimate).
 # @param tau restriction time.
 .km_rmst <- function(km, tau) {
-  tt <- c(0, km$time)
-  ss <- c(1, km$surv)
-  # Keep only the part of the curve up to tau
-  idx <- tt <= tau
-  tt_t <- c(tt[idx], tau)
-  ss_t <- c(ss[idx], ss[max(which(idx))])
-  # Trapezoidal integration of S(t) from 0 to tau
-  sum(diff(tt_t) * (ss_t[-length(ss_t)] + ss_t[-1]) / 2)
+    tt <- c(0, km$time)
+    ss <- c(1, km$surv)
+    # Keep only the part of the curve up to tau
+    idx <- tt <= tau
+    tt_t <- c(tt[idx], tau)
+    ss_t <- c(ss[idx], ss[max(which(idx))])
+    # Trapezoidal integration of S(t) from 0 to tau
+    sum(diff(tt_t) * (ss_t[-length(ss_t)] + ss_t[-1]) / 2)
 }
 
 # Build the outcome-stage response for a survival estimator.
@@ -79,23 +79,23 @@
 # @param effect_scale "loghr" or "rmst".
 # @param tau RMST horizon (used only when rmst).
 .make_surv_response <- function(time, event, effect_scale, tau = NULL) {
-  if (effect_scale == "rmst") {
-    .rmst_pseudo(time, event, tau)
-  } else {
-    survival::Surv(time, event)
-  }
+    if (effect_scale == "rmst") {
+        .rmst_pseudo(time, event, tau)
+    } else {
+        survival::Surv(time, event)
+    }
 }
 
 # Extract (beta, se, pvalue) for `term` from a fitted model.
 # Works for both coxph (loghr) and lm (rmst pseudo-observations).
 .extract_surv_coef <- function(fit, term) {
-  sm <- summary(fit)$coefficients
-  if (!term %in% rownames(sm)) return(NULL)
-  list(
-    b = as.numeric(coef(fit)[term]),
-    se = as.numeric(sm[term, 2]),
-    p = as.numeric(sm[term, if ("Pr(>|z|)" %in% colnames(sm)) "Pr(>|z|)" else "Pr(>|t|)"])
-  )
+    sm <- summary(fit)$coefficients
+    if (!term %in% rownames(sm)) return(NULL)
+    list(
+        b = as.numeric(coef(fit)[term]),
+        se = as.numeric(sm[term, 2]),
+        p = as.numeric(sm[term, if ("Pr(>|z|)" %in% colnames(sm)) "Pr(>|z|)" else "Pr(>|t|)"])
+    )
 }
 
 
@@ -133,25 +133,25 @@
 #' fit_unadj_surv(dat$surv_time, dat$surv_event, dat$X, effect_scale = "rmst")
 fit_unadj_surv <- function(time, event, X, covars = NULL,
                            effect_scale = c("loghr", "rmst"), tau = NULL) {
-  effect_scale <- match.arg(effect_scale)
-  NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  cnames <- if (!is.null(covars)) names(covars) else character(0)
-  cs <- .covar_str(cnames)
+    effect_scale <- match.arg(effect_scale)
+    NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    cnames <- if (!is.null(covars)) names(covars) else character(0)
+    cs <- .covar_str(cnames)
 
-  resp <- .make_surv_response(time, event, effect_scale, tau)
-  d <- .bind_covars(data.frame(y = resp, X = X), covars)
-  fml <- as.formula(paste0("y ~ X", cs))
+    resp <- .make_surv_response(time, event, effect_scale, tau)
+    d <- .bind_covars(data.frame(y = resp, X = X), covars)
+    fml <- as.formula(paste0("y ~ X", cs))
 
-  fit <- if (effect_scale == "loghr") {
-    tryCatch(survival::coxph(fml, data = d), error = function(e) NULL)
-  } else {
-    tryCatch(lm(fml, data = d), error = function(e) NULL)
-  }
-  if (is.null(fit)) return(NA_result)
+    fit <- if (effect_scale == "loghr") {
+        tryCatch(survival::coxph(fml, data = d), error = function(e) NULL)
+    } else {
+        tryCatch(lm(fml, data = d), error = function(e) NULL)
+    }
+    if (is.null(fit)) return(NA_result)
 
-  ex <- .extract_surv_coef(fit, "X")
-  if (is.null(ex)) return(NA_result)
-  list(beta = ex$b, se = ex$se, pvalue = ex$p)
+    ex <- .extract_surv_coef(fit, "X")
+    if (is.null(ex)) return(NA_result)
+    list(beta = ex$b, se = ex$se, pvalue = ex$p)
 }
 
 
@@ -181,28 +181,28 @@ fit_unadj_surv <- function(time, event, X, covars = NULL,
 #' fit_direct_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W[, 1])
 fit_direct_surv <- function(time, event, X, g, w, covars = NULL,
                             effect_scale = c("loghr", "rmst"), tau = NULL) {
-  effect_scale <- match.arg(effect_scale)
-  NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  cnames <- if (!is.null(covars)) names(covars) else character(0)
-  cs <- .covar_str(cnames)
-  we <- .expand_w(w)
+    effect_scale <- match.arg(effect_scale)
+    NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    cnames <- if (!is.null(covars)) names(covars) else character(0)
+    cs <- .covar_str(cnames)
+    we <- .expand_w(w)
 
-  resp <- .make_surv_response(time, event, effect_scale, tau)
-  d <- data.frame(y = resp, X = X, g = g)
-  d <- cbind(d, we$df)
-  d <- .bind_covars(d, covars)
-  fml <- as.formula(paste0("y ~ X + g + ", we$frag, cs))
+    resp <- .make_surv_response(time, event, effect_scale, tau)
+    d <- data.frame(y = resp, X = X, g = g)
+    d <- cbind(d, we$df)
+    d <- .bind_covars(d, covars)
+    fml <- as.formula(paste0("y ~ X + g + ", we$frag, cs))
 
-  fit <- if (effect_scale == "loghr") {
-    tryCatch(survival::coxph(fml, data = d), error = function(e) NULL)
-  } else {
-    tryCatch(lm(fml, data = d), error = function(e) NULL)
-  }
-  if (is.null(fit)) return(NA_result)
+    fit <- if (effect_scale == "loghr") {
+        tryCatch(survival::coxph(fml, data = d), error = function(e) NULL)
+    } else {
+        tryCatch(lm(fml, data = d), error = function(e) NULL)
+    }
+    if (is.null(fit)) return(NA_result)
 
-  ex <- .extract_surv_coef(fit, "X")
-  if (is.null(ex)) return(NA_result)
-  list(beta = ex$b, se = ex$se, pvalue = ex$p)
+    ex <- .extract_surv_coef(fit, "X")
+    if (is.null(ex)) return(NA_result)
+    list(beta = ex$b, se = ex$se, pvalue = ex$p)
 }
 
 
@@ -239,40 +239,40 @@ fit_direct_surv <- function(time, event, X, g, w, covars = NULL,
 #' fit_iv2sls_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W[, 1])
 fit_iv2sls_surv <- function(time, event, X, g, w, covars = NULL, min_f = 10,
                             effect_scale = c("loghr", "rmst"), tau = NULL) {
-  effect_scale <- match.arg(effect_scale)
-  NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  cnames <- if (!is.null(covars)) names(covars) else character(0)
-  cs <- .covar_str(cnames)
-  we <- .expand_w(w)
+    effect_scale <- match.arg(effect_scale)
+    NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    cnames <- if (!is.null(covars)) names(covars) else character(0)
+    cs <- .covar_str(cnames)
+    we <- .expand_w(w)
 
-  # ── First stage (OLS): X ~ g (+ W) + covars -> X_hat ──
-  d_fs <- data.frame(X = X, g = g)
-  d_fs <- .bind_covars(d_fs, we$df)
-  d_fs <- .bind_covars(d_fs, covars)
-  fml_fs <- as.formula(paste0("X ~ g", .plus_frag(we$frag), cs))
-  fs <- tryCatch(lm(fml_fs, data = d_fs), error = function(e) NULL)
-  if (is.null(fs)) return(NA_result)
-  Fst <- .partial_F(fs, "g")
-  if (is.na(Fst) || Fst < min_f) return(NA_result)
-  X_hat <- fitted(fs)
+    # ── First stage (OLS): X ~ g (+ W) + covars -> X_hat ──
+    d_fs <- data.frame(X = X, g = g)
+    d_fs <- .bind_covars(d_fs, we$df)
+    d_fs <- .bind_covars(d_fs, covars)
+    fml_fs <- as.formula(paste0("X ~ g", .plus_frag(we$frag), cs))
+    fs <- tryCatch(lm(fml_fs, data = d_fs), error = function(e) NULL)
+    if (is.null(fs)) return(NA_result)
+    Fst <- .partial_F(fs, "g")
+    if (is.na(Fst) || Fst < min_f) return(NA_result)
+    X_hat <- fitted(fs)
 
-  # ── Second stage (Cox / RMST): Surv(t,e) ~ X_hat (+ W) + covars ──
-  resp <- .make_surv_response(time, event, effect_scale, tau)
-  d_os <- data.frame(y = resp, X_hat = X_hat)
-  d_os <- .bind_covars(d_os, we$df)
-  d_os <- .bind_covars(d_os, covars)
-  fml_os <- as.formula(paste0("y ~ X_hat", .plus_frag(we$frag), cs))
+    # ── Second stage (Cox / RMST): Surv(t,e) ~ X_hat (+ W) + covars ──
+    resp <- .make_surv_response(time, event, effect_scale, tau)
+    d_os <- data.frame(y = resp, X_hat = X_hat)
+    d_os <- .bind_covars(d_os, we$df)
+    d_os <- .bind_covars(d_os, covars)
+    fml_os <- as.formula(paste0("y ~ X_hat", .plus_frag(we$frag), cs))
 
-  fit <- if (effect_scale == "loghr") {
-    tryCatch(survival::coxph(fml_os, data = d_os), error = function(e) NULL)
-  } else {
-    tryCatch(lm(fml_os, data = d_os), error = function(e) NULL)
-  }
-  if (is.null(fit)) return(NA_result)
+    fit <- if (effect_scale == "loghr") {
+        tryCatch(survival::coxph(fml_os, data = d_os), error = function(e) NULL)
+    } else {
+        tryCatch(lm(fml_os, data = d_os), error = function(e) NULL)
+    }
+    if (is.null(fit)) return(NA_result)
 
-  ex <- .extract_surv_coef(fit, "X_hat")
-  if (is.null(ex)) return(NA_result)
-  list(beta = ex$b, se = ex$se, pvalue = ex$p)
+    ex <- .extract_surv_coef(fit, "X_hat")
+    if (is.null(ex)) return(NA_result)
+    list(beta = ex$b, se = ex$se, pvalue = ex$p)
 }
 
 
@@ -306,48 +306,48 @@ fit_iv2sls_surv <- function(time, event, X, g, w, covars = NULL, min_f = 10,
 #' fit_pgc_surv(dat$surv_time, dat$surv_event, dat$X, dat$G[, 1], dat$W)
 fit_pgc_surv <- function(time, event, X, g, W, covars = NULL,
                          effect_scale = c("loghr", "rmst"), tau = NULL) {
-  effect_scale <- match.arg(effect_scale)
-  NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  cnames <- if (!is.null(covars)) names(covars) else character(0)
-  cs <- .covar_str(cnames)
+    effect_scale <- match.arg(effect_scale)
+    NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    cnames <- if (!is.null(covars)) names(covars) else character(0)
+    cs <- .covar_str(cnames)
 
-  if (!is.matrix(W)) W <- as.matrix(W)
+    if (!is.matrix(W)) W <- as.matrix(W)
 
-  # Step 1: residualise X on G -> X_resid (OLS)
-  d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
-  fit_resid <- tryCatch(
-    lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
-    error = function(e) NULL
-  )
-  if (is.null(fit_resid)) return(NA_result)
-  X_resid <- residuals(fit_resid)
+    # Step 1: residualise X on G -> X_resid (OLS)
+    d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
+    fit_resid <- tryCatch(
+        lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
+        error = function(e) NULL
+    )
+    if (is.null(fit_resid)) return(NA_result)
+    X_resid <- residuals(fit_resid)
 
-  # Step 2: bridge X_resid on the FULL W matrix -> W_hat (OLS)
-  d_b <- data.frame(X_resid = X_resid)
-  d_b <- cbind(d_b, as.data.frame(W))
-  if (!is.null(covars)) d_b <- cbind(d_b, covars)
-  w_names <- paste0("W", seq_len(ncol(W)))
-  names(d_b)[2:(ncol(W) + 1)] <- w_names
-  fml_b <- as.formula(paste0("X_resid ~ ", paste(w_names, collapse = " + "), cs))
-  fit_b <- tryCatch(lm(fml_b, data = d_b), error = function(e) NULL)
-  if (is.null(fit_b)) return(NA_result)
-  W_hat <- fitted(fit_b)
+    # Step 2: bridge X_resid on the FULL W matrix -> W_hat (OLS)
+    d_b <- data.frame(X_resid = X_resid)
+    d_b <- cbind(d_b, as.data.frame(W))
+    if (!is.null(covars)) d_b <- cbind(d_b, covars)
+    w_names <- paste0("W", seq_len(ncol(W)))
+    names(d_b)[2:(ncol(W) + 1)] <- w_names
+    fml_b <- as.formula(paste0("X_resid ~ ", paste(w_names, collapse = " + "), cs))
+    fit_b <- tryCatch(lm(fml_b, data = d_b), error = function(e) NULL)
+    if (is.null(fit_b)) return(NA_result)
+    W_hat <- fitted(fit_b)
 
-  # Step 3: survival outcome stage with W_hat as confounder proxy
-  resp <- .make_surv_response(time, event, effect_scale, tau)
-  d_f <- .bind_covars(data.frame(y = resp, X = X, W_hat = W_hat), covars)
-  fml_f <- as.formula(paste0("y ~ X + W_hat", cs))
+    # Step 3: survival outcome stage with W_hat as confounder proxy
+    resp <- .make_surv_response(time, event, effect_scale, tau)
+    d_f <- .bind_covars(data.frame(y = resp, X = X, W_hat = W_hat), covars)
+    fml_f <- as.formula(paste0("y ~ X + W_hat", cs))
 
-  fit <- if (effect_scale == "loghr") {
-    tryCatch(survival::coxph(fml_f, data = d_f), error = function(e) NULL)
-  } else {
-    tryCatch(lm(fml_f, data = d_f), error = function(e) NULL)
-  }
-  if (is.null(fit)) return(NA_result)
+    fit <- if (effect_scale == "loghr") {
+        tryCatch(survival::coxph(fml_f, data = d_f), error = function(e) NULL)
+    } else {
+        tryCatch(lm(fml_f, data = d_f), error = function(e) NULL)
+    }
+    if (is.null(fit)) return(NA_result)
 
-  ex <- .extract_surv_coef(fit, "X")
-  if (is.null(ex)) return(NA_result)
-  list(beta = ex$b, se = ex$se, pvalue = ex$p)
+    ex <- .extract_surv_coef(fit, "X")
+    if (is.null(ex)) return(NA_result)
+    list(beta = ex$b, se = ex$se, pvalue = ex$p)
 }
 
 
@@ -380,11 +380,11 @@ fit_pgc_surv <- function(time, event, X, g, W, covars = NULL,
 #' fit_coca_surv(dat$surv_time, dat$surv_event, dat$X, dat$W[, 1])
 #' # $beta [1] NA (COCA unsupported for survival outcomes)
 fit_coca_surv <- function(time, event, X, w, covars = NULL, ...) {
-  out <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  attr(out, "reason") <- paste(
-    "COCA regresses W on Y (W ~ y + X), placing the outcome on the RHS,",
-    "which is impossible with a Surv object. COCA is unsupported for",
-    "survival outcomes."
-  )
-  out
+    out <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    attr(out, "reason") <- paste(
+        "COCA regresses W on Y (W ~ y + X), placing the outcome on the RHS,",
+        "which is impossible with a Surv object. COCA is unsupported for",
+        "survival outcomes."
+    )
+    out
 }

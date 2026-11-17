@@ -21,21 +21,21 @@
 #' @keywords internal
 #' @noRd
 .norm_chr <- function(x) {
-  x <- sub("^chr", "", as.character(x), ignore.case = TRUE)
-  x[toupper(x) %in% c("M", "MT")] <- "MT"
-  x
+    x <- sub("^chr", "", as.character(x), ignore.case = TRUE)
+    x[toupper(x) %in% c("M", "MT")] <- "MT"
+    x
 }
 
 
 #' Rebuild a GRanges with normalised seqnames (internal)
 #' @noRd
 .restyle_granges <- function(gr) {
-  GenomicRanges::GRanges(
-    seqnames = .norm_chr(GenomicRanges::seqnames(gr)),
-    ranges   = IRanges::ranges(gr),
-    strand   = GenomicRanges::strand(gr),
-    S4Vectors::mcols(gr)
-  )
+    GenomicRanges::GRanges(
+        seqnames = .norm_chr(GenomicRanges::seqnames(gr)),
+        ranges   = IRanges::ranges(gr),
+        strand   = GenomicRanges::strand(gr),
+        S4Vectors::mcols(gr)
+    )
 }
 
 
@@ -52,40 +52,40 @@
 #' @keywords internal
 #' @noRd
 .as_gene_granges <- function(gene_pos, dup = c("first", "drop")) {
-  dup <- match.arg(dup)
-  if (methods::is(gene_pos, "GRanges")) {
-    ids <- S4Vectors::mcols(gene_pos)$gene
-    if (is.null(ids)) ids <- names(gene_pos)
-    if (is.null(ids))
-      stop("gene_pos GRanges needs gene IDs as names() or a `gene` ",
-           "metadata column.")
-    tss_gr <- GenomicRanges::resize(gene_pos, width = 1L, fix = "start")
-    gr <- GenomicRanges::GRanges(
-      seqnames = .norm_chr(GenomicRanges::seqnames(tss_gr)),
-      ranges   = IRanges::IRanges(GenomicRanges::start(tss_gr), width = 1L),
-      gene     = as.character(ids))
-  } else {
-    gene_pos <- as.data.frame(gene_pos)
-    if (!all(c("gene", "chr") %in% colnames(gene_pos)))
-      stop("gene_pos needs columns `gene` and `chr` (and `tss` or `start`), ",
-           "or must be a GRanges.")
-    if (!"tss" %in% colnames(gene_pos)) {
-      if (!"start" %in% colnames(gene_pos))
-        stop("gene_pos needs a `tss` or `start` column.")
-      gene_pos$tss <- gene_pos$start
+    dup <- match.arg(dup)
+    if (methods::is(gene_pos, "GRanges")) {
+        ids <- S4Vectors::mcols(gene_pos)$gene
+        if (is.null(ids)) ids <- names(gene_pos)
+        if (is.null(ids))
+            stop("gene_pos GRanges needs gene IDs as names() or a `gene` ",
+                "metadata column.")
+        tss_gr <- GenomicRanges::resize(gene_pos, width = 1L, fix = "start")
+        gr <- GenomicRanges::GRanges(
+            seqnames = .norm_chr(GenomicRanges::seqnames(tss_gr)),
+            ranges   = IRanges::IRanges(GenomicRanges::start(tss_gr), width = 1L),
+            gene     = as.character(ids))
+    } else {
+        gene_pos <- as.data.frame(gene_pos)
+        if (!all(c("gene", "chr") %in% colnames(gene_pos)))
+            stop("gene_pos needs columns `gene` and `chr` (and `tss` or `start`), ",
+                "or must be a GRanges.")
+        if (!"tss" %in% colnames(gene_pos)) {
+            if (!"start" %in% colnames(gene_pos))
+                stop("gene_pos needs a `tss` or `start` column.")
+            gene_pos$tss <- gene_pos$start
+        }
+        gr <- GenomicRanges::GRanges(
+            seqnames = .norm_chr(gene_pos$chr),
+            ranges   = IRanges::IRanges(as.integer(gene_pos$tss), width = 1L),
+            gene     = as.character(gene_pos$gene))
     }
-    gr <- GenomicRanges::GRanges(
-      seqnames = .norm_chr(gene_pos$chr),
-      ranges   = IRanges::IRanges(as.integer(gene_pos$tss), width = 1L),
-      gene     = as.character(gene_pos$gene))
-  }
-  g <- S4Vectors::mcols(gr)$gene
-  if (dup == "first") {
-    gr <- gr[!duplicated(g)]
-  } else {
-    gr <- gr[!(g %in% g[duplicated(g)])]
-  }
-  gr
+    g <- S4Vectors::mcols(gr)$gene
+    if (dup == "first") {
+        gr <- gr[!duplicated(g)]
+    } else {
+        gr <- gr[!(g %in% g[duplicated(g)])]
+    }
+    gr
 }
 
 
@@ -99,25 +99,25 @@
 #' @keywords internal
 #' @noRd
 .as_snp_granges <- function(snp_pos) {
-  if (methods::is(snp_pos, "GRanges")) {
-    ids <- S4Vectors::mcols(snp_pos)$snp
-    if (is.null(ids)) ids <- names(snp_pos)
-    if (is.null(ids))
-      stop("snp_pos GRanges needs variant IDs as names() or an `snp` ",
-           "metadata column.")
-    GenomicRanges::GRanges(
-      seqnames = .norm_chr(GenomicRanges::seqnames(snp_pos)),
-      ranges   = IRanges::IRanges(GenomicRanges::start(snp_pos), width = 1L),
-      snp      = as.character(ids))
-  } else {
-    snp_pos <- as.data.frame(snp_pos)
-    if (!all(c("snp", "chr", "pos") %in% colnames(snp_pos)))
-      stop("snp_pos needs columns `snp`, `chr`, `pos`, or must be a GRanges.")
-    GenomicRanges::GRanges(
-      seqnames = .norm_chr(snp_pos$chr),
-      ranges   = IRanges::IRanges(as.integer(snp_pos$pos), width = 1L),
-      snp      = as.character(snp_pos$snp))
-  }
+    if (methods::is(snp_pos, "GRanges")) {
+        ids <- S4Vectors::mcols(snp_pos)$snp
+        if (is.null(ids)) ids <- names(snp_pos)
+        if (is.null(ids))
+            stop("snp_pos GRanges needs variant IDs as names() or an `snp` ",
+                "metadata column.")
+        GenomicRanges::GRanges(
+            seqnames = .norm_chr(GenomicRanges::seqnames(snp_pos)),
+            ranges   = IRanges::IRanges(GenomicRanges::start(snp_pos), width = 1L),
+            snp      = as.character(ids))
+    } else {
+        snp_pos <- as.data.frame(snp_pos)
+        if (!all(c("snp", "chr", "pos") %in% colnames(snp_pos)))
+            stop("snp_pos needs columns `snp`, `chr`, `pos`, or must be a GRanges.")
+        GenomicRanges::GRanges(
+            seqnames = .norm_chr(snp_pos$chr),
+            ranges   = IRanges::IRanges(as.integer(snp_pos$pos), width = 1L),
+            snp      = as.character(snp_pos$snp))
+    }
 }
 
 
@@ -134,19 +134,19 @@
 #' @keywords internal
 #' @noRd
 .cis_snps_by_gene <- function(gene_gr, snp_gr, cis_dist) {
-  half <- as.integer(floor(cis_dist))
-  tss <- GenomicRanges::start(gene_gr)
-  win <- GenomicRanges::GRanges(
-    seqnames = GenomicRanges::seqnames(gene_gr),
-    ranges   = IRanges::IRanges(start = pmax(1L, tss - half),
-                                end   = tss + half))
-  hits <- GenomicRanges::findOverlaps(snp_gr, win, ignore.strand = TRUE)
-  q <- S4Vectors::queryHits(hits)
-  s <- S4Vectors::subjectHits(hits)
-  o <- order(s, q)
-  genes <- S4Vectors::mcols(gene_gr)$gene
-  snps  <- S4Vectors::mcols(snp_gr)$snp
-  split(snps[q[o]], factor(genes[s[o]], levels = unique(genes[s[o]])))
+    half <- as.integer(floor(cis_dist))
+    tss <- GenomicRanges::start(gene_gr)
+    win <- GenomicRanges::GRanges(
+        seqnames = GenomicRanges::seqnames(gene_gr),
+        ranges = IRanges::IRanges(start = pmax(1L, tss - half),
+            end = tss + half))
+    hits <- GenomicRanges::findOverlaps(snp_gr, win, ignore.strand = TRUE)
+    q <- S4Vectors::queryHits(hits)
+    s <- S4Vectors::subjectHits(hits)
+    o <- order(s, q)
+    genes <- S4Vectors::mcols(gene_gr)$gene
+    snps <- S4Vectors::mcols(snp_gr)$snp
+    split(snps[q[o]], factor(genes[s[o]], levels = unique(genes[s[o]])))
 }
 
 
@@ -161,32 +161,32 @@
 .prepare_cis_inputs <- function(expression, genotypes, gene_pos, snp_pos,
                                 expr_assay = 1L, geno_assay = 1L,
                                 dup = "first") {
-  if (methods::is(expression, "SummarizedExperiment")) {
-    if (is.null(gene_pos)) {
-      if (!methods::is(expression, "RangedSummarizedExperiment"))
-        stop("gene_pos is NULL but `expression` has no rowRanges(); ",
-             "supply gene_pos or a RangedSummarizedExperiment.")
-      gene_pos <- SummarizedExperiment::rowRanges(expression)
-      if (is.null(names(gene_pos)) && is.null(S4Vectors::mcols(gene_pos)$gene))
-        names(gene_pos) <- rownames(expression)
+    if (methods::is(expression, "SummarizedExperiment")) {
+        if (is.null(gene_pos)) {
+            if (!methods::is(expression, "RangedSummarizedExperiment"))
+                stop("gene_pos is NULL but `expression` has no rowRanges(); ",
+                    "supply gene_pos or a RangedSummarizedExperiment.")
+            gene_pos <- SummarizedExperiment::rowRanges(expression)
+            if (is.null(names(gene_pos)) && is.null(S4Vectors::mcols(gene_pos)$gene))
+                names(gene_pos) <- rownames(expression)
+        }
+        expression <- SummarizedExperiment::assay(expression, expr_assay)
     }
-    expression <- SummarizedExperiment::assay(expression, expr_assay)
-  }
-  if (methods::is(genotypes, "SummarizedExperiment")) {
-    if (is.null(snp_pos)) {
-      if (!methods::is(genotypes, "RangedSummarizedExperiment"))
-        stop("snp_pos is NULL but `genotypes` has no rowRanges(); ",
-             "supply snp_pos or a RangedSummarizedExperiment.")
-      snp_pos <- SummarizedExperiment::rowRanges(genotypes)
-      if (is.null(names(snp_pos)) && is.null(S4Vectors::mcols(snp_pos)$snp))
-        names(snp_pos) <- rownames(genotypes)
+    if (methods::is(genotypes, "SummarizedExperiment")) {
+        if (is.null(snp_pos)) {
+            if (!methods::is(genotypes, "RangedSummarizedExperiment"))
+                stop("snp_pos is NULL but `genotypes` has no rowRanges(); ",
+                    "supply snp_pos or a RangedSummarizedExperiment.")
+            snp_pos <- SummarizedExperiment::rowRanges(genotypes)
+            if (is.null(names(snp_pos)) && is.null(S4Vectors::mcols(snp_pos)$snp))
+                names(snp_pos) <- rownames(genotypes)
+        }
+        genotypes <- SummarizedExperiment::assay(genotypes, geno_assay)
     }
-    genotypes <- SummarizedExperiment::assay(genotypes, geno_assay)
-  }
-  if (is.null(gene_pos)) stop("gene_pos is required.")
-  if (is.null(snp_pos)) stop("snp_pos is required.")
-  list(expression = as.matrix(expression),
-       genotypes  = as.matrix(genotypes),
-       gene_gr    = .as_gene_granges(gene_pos, dup = dup),
-       snp_gr     = .as_snp_granges(snp_pos))
+    if (is.null(gene_pos)) stop("gene_pos is required.")
+    if (is.null(snp_pos)) stop("snp_pos is required.")
+    list(expression = as.matrix(expression),
+        genotypes  = as.matrix(genotypes),
+        gene_gr    = .as_gene_granges(gene_pos, dup = dup),
+        snp_gr     = .as_snp_granges(snp_pos))
 }

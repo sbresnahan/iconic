@@ -96,6 +96,6 @@ PGC2Gm) are also included.
 }
 \examples{
 res <- run_mediation_sim(n_iter = 3, n_samples = 100,
-                         mo_confounding = 0.8)
+    mo_confounding = 0.8)
 res$summary
 }

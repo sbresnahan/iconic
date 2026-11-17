@@ -72,6 +72,6 @@ Sweep mediation Type I error across confounding strength levels
 }
 \examples{
 t1e <- sweep_mediation_null_by_conf(c(0.2, 0.8), n_iter = 3,
-                                    n_samples = 100)
+    n_samples = 100)
 head(t1e)
 }

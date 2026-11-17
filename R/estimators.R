@@ -12,17 +12,17 @@
 # ============================================================
 
 
-#Internal helpers
+# Internal helpers
 
 .covar_str <- function(covar_names) {
-  if (length(covar_names) == 0) return("")
-  paste0(" + ", paste(covar_names, collapse = " + "))
+    if (length(covar_names) == 0) return("")
+    paste0(" + ", paste(covar_names, collapse = " + "))
 }
 
 # cbind() a covariate frame onto `d` only when it is non-NULL. Guards against
 # R (>= 4.4) treating `cbind(data.frame(...), NULL)` as a zero-row argument.
 .bind_covars <- function(d, covars) {
-  if (is.null(covars)) d else cbind(d, covars)
+    if (is.null(covars)) d else cbind(d, covars)
 }
 
 # Build a formula RHS fragment from an optional NC fragment. Returns "" when
@@ -30,7 +30,7 @@
 # cs) without a dangling "+". When the fragment is non-empty, returns
 # " + <frag>".
 .plus_frag <- function(frag) {
-  if (is.null(frag) || !nzchar(frag)) "" else paste0(" + ", frag)
+    if (is.null(frag) || !nzchar(frag)) "" else paste0(" + ", frag)
 }
 
 # Expand a negative-control input (vector or matrix) into a data frame
@@ -44,25 +44,25 @@
 # $df — data.frame with q columns named W1..Wq
 # $frag — character string "W1 + W2 + ... + Wq"
 .expand_w <- function(w) {
-  # When w is NULL (no negative controls supplied), return an empty-but-valid
-  # structure: df = NULL (so .bind_covars/cbind add nothing) and frag = ""
-  # (so .plus_frag yields no formula term). This lets the IV estimators run
-  # classic 2SLS on the instrument alone, with W as an optional proximal
-  # augmentation when present.
-  if (is.null(w)) return(list(df = NULL, frag = ""))
-  if (!is.matrix(w)) w <- as.matrix(w)
-  q <- ncol(w)
-  w_names <- paste0("W", seq_len(q))
-  df <- as.data.frame(w)
-  names(df) <- w_names
-  list(df = df, frag = paste(w_names, collapse = " + "))
+    # When w is NULL (no negative controls supplied), return an empty-but-valid
+    # structure: df = NULL (so .bind_covars/cbind add nothing) and frag = ""
+    # (so .plus_frag yields no formula term). This lets the IV estimators run
+    # classic 2SLS on the instrument alone, with W as an optional proximal
+    # augmentation when present.
+    if (is.null(w)) return(list(df = NULL, frag = ""))
+    if (!is.matrix(w)) w <- as.matrix(w)
+    q <- ncol(w)
+    w_names <- paste0("W", seq_len(q))
+    df <- as.data.frame(w)
+    names(df) <- w_names
+    list(df = df, frag = paste(w_names, collapse = " + "))
 }
 
 .extract_coef <- function(fit, term) {
-  sm <- summary(fit)$coefficients
-  list(b = coef(fit)[term],
-       se = sm[term, 2],
-       p = sm[term, 4])
+    sm <- summary(fit)$coefficients
+    list(b = coef(fit)[term],
+        se = sm[term, 2],
+        p = sm[term, 4])
 }
 
 # Detect whether two path-specific NC panels proxy the SAME latent confounder
@@ -84,15 +84,15 @@
 # 0.20 tips low-coverage shared draws into plain MR while almost never
 # misfiring on genuinely independent panels.
 .w_panels_collinear <- function(W1, W2, thresh = 0.20) {
-  if (is.null(W1) || is.null(W2)) return(FALSE)
-  W1 <- as.matrix(W1); W2 <- as.matrix(W2)
-  if (nrow(W1) != nrow(W2)) return(FALSE)
-  pc1 <- tryCatch(stats::prcomp(W1, center = TRUE, scale. = FALSE)$x[, 1],
-                  error = function(e) NULL)
-  pc2 <- tryCatch(stats::prcomp(W2, center = TRUE, scale. = FALSE)$x[, 1],
-                  error = function(e) NULL)
-  if (is.null(pc1) || is.null(pc2)) return(FALSE)
-  abs(stats::cor(pc1, pc2)) > thresh
+    if (is.null(W1) || is.null(W2)) return(FALSE)
+    W1 <- as.matrix(W1); W2 <- as.matrix(W2)
+    if (nrow(W1) != nrow(W2)) return(FALSE)
+    pc1 <- tryCatch(stats::prcomp(W1, center = TRUE, scale. = FALSE)$x[, 1],
+        error = function(e) NULL)
+    pc2 <- tryCatch(stats::prcomp(W2, center = TRUE, scale. = FALSE)$x[, 1],
+        error = function(e) NULL)
+    if (is.null(pc1) || is.null(pc2)) return(FALSE)
+    abs(stats::cor(pc1, pc2)) > thresh
 }
 
 # Partial F-statistic for an excluded instrument (internal)
@@ -107,13 +107,13 @@
 # @param term Name of the excluded instrument coefficient.
 # @return Scalar partial F (t^2), or NA if the term is absent.
 .partial_F <- function(fs, term) {
-  sm <- summary(fs)$coefficients
-  if (!term %in% rownames(sm)) return(NA_real_)
-  as.numeric(sm[term, "t value"]^2)
+    sm <- summary(fs)$coefficients
+    if (!term %in% rownames(sm)) return(NA_real_)
+    as.numeric(sm[term, "t value"]^2)
 }
 
 
-#1. DIRECT
+# 1. DIRECT
 
 #' DIRECT estimator: OLS with instrument and negative-control as covariates
 #'
@@ -137,32 +137,30 @@
 #' set.seed(1)
 #' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_direct(dat$Y[, 1], dat$X, dat$G[, 1], dat$W[, 1])
-
-
 fit_direct <- function(y, X, g, w, covars = NULL) {
-  NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  cnames <- if (!is.null(covars)) names(covars) else character(0)
-  we <- .expand_w(w)
-  d <- data.frame(y = y, X = X, g = g)
-  d <- cbind(d, we$df)
-  d <- .bind_covars(d, covars)
-  fml <- as.formula(paste0("y ~ X + g + ", we$frag, .covar_str(cnames)))
+    NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    cnames <- if (!is.null(covars)) names(covars) else character(0)
+    we <- .expand_w(w)
+    d <- data.frame(y = y, X = X, g = g)
+    d <- cbind(d, we$df)
+    d <- .bind_covars(d, covars)
+    fml <- as.formula(paste0("y ~ X + g + ", we$frag, .covar_str(cnames)))
 
-  fit <- tryCatch(lm(fml, data = d), error = function(e) NULL)
-  if (is.null(fit)) return(NA_result)
+    fit <- tryCatch(lm(fml, data = d), error = function(e) NULL)
+    if (is.null(fit)) return(NA_result)
 
-  sm <- summary(fit)$coefficients
-  if (!"X" %in% rownames(sm)) return(NA_result)
+    sm <- summary(fit)$coefficients
+    if (!"X" %in% rownames(sm)) return(NA_result)
 
-  list(
-    beta = as.numeric(coef(fit)["X"]),
-    se = as.numeric(sm["X", 2]),
-    pvalue = as.numeric(sm["X", 4])
-  )
+    list(
+        beta = as.numeric(coef(fit)["X"]),
+        se = as.numeric(sm["X", 2]),
+        pvalue = as.numeric(sm["X", 4])
+    )
 }
 
 
-#2. COCA
+# 2. COCA
 
 #' COCA estimator: Negative-Control Outcome Correction via ratio
 #'
@@ -192,39 +190,37 @@ fit_direct <- function(y, X, g, w, covars = NULL) {
 #' set.seed(1)
 #' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_coca(dat$Y[, 1], dat$X, rowMeans(dat$W))
-
-
 fit_coca <- function(y, X, w, covars = NULL, ratio_cap = 10, se_cap = 5) {
-  NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  cnames <- if (!is.null(covars)) names(covars) else character(0)
-  d <- .bind_covars(data.frame(w = w, y = y, X = X), covars)
-  fml <- as.formula(paste0("w ~ y + X", .covar_str(cnames)))
+    NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    cnames <- if (!is.null(covars)) names(covars) else character(0)
+    d <- .bind_covars(data.frame(w = w, y = y, X = X), covars)
+    fml <- as.formula(paste0("w ~ y + X", .covar_str(cnames)))
 
-  fit <- tryCatch(lm(fml, data = d), error = function(e) NULL)
-  if (is.null(fit)) return(NA_result)
+    fit <- tryCatch(lm(fml, data = d), error = function(e) NULL)
+    if (is.null(fit)) return(NA_result)
 
-  b <- coef(fit)
-  bZ <- b["X"]
-  bY <- b["y"]
+    b <- coef(fit)
+    bZ <- b["X"]
+    bY <- b["y"]
 
-  if (is.na(bY) || abs(bY) < 1e-8) return(NA_result)
+    if (is.na(bY) || abs(bY) < 1e-8) return(NA_result)
 
-  bhat <- -bZ / bY
-  V <- vcov(fit)[c("X", "y"), c("X", "y")]
-  grad <- c(-1 / bY, bZ / bY^2)
-  se_h <- sqrt(as.numeric(t(grad) %*% V %*% grad))
+    bhat <- -bZ / bY
+    V <- vcov(fit)[c("X", "y"), c("X", "y")]
+    grad <- c(-1 / bY, bZ / bY^2)
+    se_h <- sqrt(as.numeric(t(grad) %*% V %*% grad))
 
-  if (abs(bhat) > ratio_cap || is.nan(se_h) || se_h > se_cap) return(NA_result)
+    if (abs(bhat) > ratio_cap || is.nan(se_h) || se_h > se_cap) return(NA_result)
 
-  list(
-    beta = bhat,
-    se = se_h,
-    pvalue = 2 * (1 - pnorm(abs(bhat / se_h)))
-  )
+    list(
+        beta = bhat,
+        se = se_h,
+        pvalue = 2 * (1 - pnorm(abs(bhat / se_h)))
+    )
 }
 
 
-#3. IV2SLS
+# 3. IV2SLS
 #' IV2SLS estimator: Two-Stage Least Squares with genetic instrument
 #'
 #' Uses the genetic instrument G to instrument for the exposure X,
@@ -251,53 +247,51 @@ fit_coca <- function(y, X, w, covars = NULL, ratio_cap = 10, se_cap = 5) {
 #' set.seed(1)
 #' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_iv2sls(dat$Y[, 1], dat$X, dat$G[, 1], dat$W[, 1])
-
-
 fit_iv2sls <- function(y, X, g, w, covars = NULL, min_f = 10) {
-  NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  cnames <- if (!is.null(covars)) names(covars) else character(0)
-  cs <- .covar_str(cnames)
-  we <- .expand_w(w)
+    NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    cnames <- if (!is.null(covars)) names(covars) else character(0)
+    cs <- .covar_str(cnames)
+    we <- .expand_w(w)
 
-  # First-stage weak-instrument check: partial F for the excluded instrument G
-  # (not the overall model F, which is inflated by W sharing confounders with X)
-  d_fs <- data.frame(X = X, g = g)
-  d_fs <- .bind_covars(d_fs, we$df)
-  d_fs <- .bind_covars(d_fs, covars)
-  fml_fs <- as.formula(paste0("X ~ g", .plus_frag(we$frag), cs))
-  fs <- tryCatch(lm(fml_fs, data = d_fs), error = function(e) NULL)
-  if (is.null(fs)) return(NA_result)
-  Fst <- .partial_F(fs, "g")
-  if (is.na(Fst) || Fst < min_f) return(NA_result)
+    # First-stage weak-instrument check: partial F for the excluded instrument G
+    # (not the overall model F, which is inflated by W sharing confounders with X)
+    d_fs <- data.frame(X = X, g = g)
+    d_fs <- .bind_covars(d_fs, we$df)
+    d_fs <- .bind_covars(d_fs, covars)
+    fml_fs <- as.formula(paste0("X ~ g", .plus_frag(we$frag), cs))
+    fs <- tryCatch(lm(fml_fs, data = d_fs), error = function(e) NULL)
+    if (is.null(fs)) return(NA_result)
+    Fst <- .partial_F(fs, "g")
+    if (is.na(Fst) || Fst < min_f) return(NA_result)
 
-  # 2SLS via AER::ivreg. W enters as an optional proximal augmentation
-  # (covariate on both sides of the IV formula); with W = NULL this reduces to
-  # classic 2SLS on the instrument alone.
-  d_iv <- data.frame(y = y, X = X, G_inst = g)
-  d_iv <- .bind_covars(d_iv, we$df)
-  d_iv <- .bind_covars(d_iv, covars)
-  fml_2sls <- as.formula(
-    paste0("y ~ X", .plus_frag(we$frag), cs, " | G_inst", .plus_frag(we$frag), cs)
-  )
-  fit <- tryCatch(
-    AER::ivreg(fml_2sls, data = d_iv),
-    error = function(e) NULL
-  )
-  if (is.null(fit)) return(NA_result)
-  if (!"X" %in% names(coef(fit))) return(NA_result)
+    # 2SLS via AER::ivreg. W enters as an optional proximal augmentation
+    # (covariate on both sides of the IV formula); with W = NULL this reduces to
+    # classic 2SLS on the instrument alone.
+    d_iv <- data.frame(y = y, X = X, G_inst = g)
+    d_iv <- .bind_covars(d_iv, we$df)
+    d_iv <- .bind_covars(d_iv, covars)
+    fml_2sls <- as.formula(
+        paste0("y ~ X", .plus_frag(we$frag), cs, " | G_inst", .plus_frag(we$frag), cs)
+    )
+    fit <- tryCatch(
+        AER::ivreg(fml_2sls, data = d_iv),
+        error = function(e) NULL
+    )
+    if (is.null(fit)) return(NA_result)
+    if (!"X" %in% names(coef(fit))) return(NA_result)
 
-  sm <- summary(fit)$coefficients
-  if (!"X" %in% rownames(sm)) return(NA_result)
+    sm <- summary(fit)$coefficients
+    if (!"X" %in% rownames(sm)) return(NA_result)
 
-  list(
-    beta = as.numeric(coef(fit)["X"]),
-    se = as.numeric(sm["X", 2]),
-    pvalue = as.numeric(sm["X", 4])
-  )
+    list(
+        beta = as.numeric(coef(fit)["X"]),
+        se = as.numeric(sm["X", 2]),
+        pvalue = as.numeric(sm["X", 4])
+    )
 }
 
 
-#4a. PGC (matrix bridge) -- DEFAULT
+# 4a. PGC (matrix bridge) -- DEFAULT
 
 #' PGC estimator: Proxy G-Component Correction (matrix bridge)
 #'
@@ -336,56 +330,56 @@ fit_iv2sls <- function(y, X, g, w, covars = NULL, min_f = 10) {
 #' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_pgc(dat$Y[, 1], dat$X, dat$G[, 1], dat$W)
 fit_pgc <- function(y, X, g, W, covars = NULL) {
-  NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  cnames <- if (!is.null(covars)) names(covars) else character(0)
-  cs <- .covar_str(cnames)
+    NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    cnames <- if (!is.null(covars)) names(covars) else character(0)
+    cs <- .covar_str(cnames)
 
-  # Ensure W is a matrix
-  if (!is.matrix(W)) W <- as.matrix(W)
+    # Ensure W is a matrix
+    if (!is.matrix(W)) W <- as.matrix(W)
 
-  # Step 1: residualise X on G -> U-driven residual
-  d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
-  fit_resid <- tryCatch(
-    lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
-    error = function(e) NULL
-  )
-  if (is.null(fit_resid)) return(NA_result)
-  X_resid <- residuals(fit_resid)
+    # Step 1: residualise X on G -> U-driven residual
+    d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
+    fit_resid <- tryCatch(
+        lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
+        error = function(e) NULL
+    )
+    if (is.null(fit_resid)) return(NA_result)
+    X_resid <- residuals(fit_resid)
 
-  # Step 2: bridge X_resid on the FULL W matrix
-  # (not rowMeans -- this is what makes completeness binding)
-  d_b <- data.frame(X_resid = X_resid)
-  d_b <- cbind(d_b, as.data.frame(W))
-  if (!is.null(covars)) d_b <- cbind(d_b, covars)
-  w_names <- paste0("W", seq_len(ncol(W)))
-  names(d_b)[2:(ncol(W) + 1)] <- w_names
-  fml_b <- as.formula(paste0("X_resid ~ ",
-                             paste(w_names, collapse = " + "), cs))
-  fit_b <- tryCatch(lm(fml_b, data = d_b), error = function(e) NULL)
-  if (is.null(fit_b)) return(NA_result)
-  W_hat <- fitted(fit_b)
+    # Step 2: bridge X_resid on the FULL W matrix
+    # (not rowMeans -- this is what makes completeness binding)
+    d_b <- data.frame(X_resid = X_resid)
+    d_b <- cbind(d_b, as.data.frame(W))
+    if (!is.null(covars)) d_b <- cbind(d_b, covars)
+    w_names <- paste0("W", seq_len(ncol(W)))
+    names(d_b)[2:(ncol(W) + 1)] <- w_names
+    fml_b <- as.formula(paste0("X_resid ~ ",
+        paste(w_names, collapse = " + "), cs))
+    fit_b <- tryCatch(lm(fml_b, data = d_b), error = function(e) NULL)
+    if (is.null(fit_b)) return(NA_result)
+    W_hat <- fitted(fit_b)
 
-  # Step 3: final outcome regression with W_hat as confounder proxy
-  d_f <- .bind_covars(data.frame(y = y, X = X, W_hat = W_hat), covars)
-  fit_f <- tryCatch(
-    lm(as.formula(paste0("y ~ X + W_hat", cs)), data = d_f),
-    error = function(e) NULL
-  )
-  if (is.null(fit_f)) return(NA_result)
-  if (!"X" %in% names(coef(fit_f))) return(NA_result)
+    # Step 3: final outcome regression with W_hat as confounder proxy
+    d_f <- .bind_covars(data.frame(y = y, X = X, W_hat = W_hat), covars)
+    fit_f <- tryCatch(
+        lm(as.formula(paste0("y ~ X + W_hat", cs)), data = d_f),
+        error = function(e) NULL
+    )
+    if (is.null(fit_f)) return(NA_result)
+    if (!"X" %in% names(coef(fit_f))) return(NA_result)
 
-  sm <- summary(fit_f)$coefficients
-  if (!"X" %in% rownames(sm)) return(NA_result)
+    sm <- summary(fit_f)$coefficients
+    if (!"X" %in% rownames(sm)) return(NA_result)
 
-  list(
-    beta = as.numeric(coef(fit_f)["X"]),
-    se = as.numeric(sm["X", 2]),
-    pvalue = as.numeric(sm["X", 4])
-  )
+    list(
+        beta = as.numeric(coef(fit_f)["X"]),
+        se = as.numeric(sm["X", 2]),
+        pvalue = as.numeric(sm["X", 4])
+    )
 }
 
 
-#4b. PGC (scalar bridge) -- LEGACY / FALLBACK
+# 4b. PGC (scalar bridge) -- LEGACY / FALLBACK
 
 #' PGC estimator: Proxy G-Component Correction (scalar bridge)
 #'
@@ -418,43 +412,43 @@ fit_pgc <- function(y, X, g, W, covars = NULL) {
 #' dat <- generate_toy_data(n = 200, seed = 1)
 #' fit_pgc_scalar(dat$Y[, 1], dat$X, dat$G[, 1], rowMeans(dat$W))
 fit_pgc_scalar <- function(y, X, g, w, covars = NULL) {
-  NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
-  cnames <- if (!is.null(covars)) names(covars) else character(0)
-  cs <- .covar_str(cnames)
+    NA_result <- list(beta = NA_real_, se = NA_real_, pvalue = NA_real_)
+    cnames <- if (!is.null(covars)) names(covars) else character(0)
+    cs <- .covar_str(cnames)
 
-  # Step 1: residualise X on G -> U-driven residual
-  d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
-  fit_resid <- tryCatch(
-    lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
-    error = function(e) NULL
-  )
-  if (is.null(fit_resid)) return(NA_result)
-  X_resid <- residuals(fit_resid)
+    # Step 1: residualise X on G -> U-driven residual
+    d_r <- .bind_covars(data.frame(Xc = X, g = g), covars)
+    fit_resid <- tryCatch(
+        lm(as.formula(paste0("Xc ~ g", cs)), data = d_r),
+        error = function(e) NULL
+    )
+    if (is.null(fit_resid)) return(NA_result)
+    X_resid <- residuals(fit_resid)
 
-  # Step 2: bridge W (scalar) on the U-component
-  d_b <- .bind_covars(data.frame(w = w, X_resid = X_resid), covars)
-  fit_b <- tryCatch(
-    lm(as.formula(paste0("w ~ X_resid", cs)), data = d_b),
-    error = function(e) NULL
-  )
-  if (is.null(fit_b)) return(NA_result)
-  W_hat <- fitted(fit_b)
+    # Step 2: bridge W (scalar) on the U-component
+    d_b <- .bind_covars(data.frame(w = w, X_resid = X_resid), covars)
+    fit_b <- tryCatch(
+        lm(as.formula(paste0("w ~ X_resid", cs)), data = d_b),
+        error = function(e) NULL
+    )
+    if (is.null(fit_b)) return(NA_result)
+    W_hat <- fitted(fit_b)
 
-  # Step 3: final outcome regression with W_hat as confounder proxy
-  d_f <- .bind_covars(data.frame(y = y, X = X, W_hat = W_hat), covars)
-  fit_f <- tryCatch(
-    lm(as.formula(paste0("y ~ X + W_hat", cs)), data = d_f),
-    error = function(e) NULL
-  )
-  if (is.null(fit_f)) return(NA_result)
-  if (!"X" %in% names(coef(fit_f))) return(NA_result)
+    # Step 3: final outcome regression with W_hat as confounder proxy
+    d_f <- .bind_covars(data.frame(y = y, X = X, W_hat = W_hat), covars)
+    fit_f <- tryCatch(
+        lm(as.formula(paste0("y ~ X + W_hat", cs)), data = d_f),
+        error = function(e) NULL
+    )
+    if (is.null(fit_f)) return(NA_result)
+    if (!"X" %in% names(coef(fit_f))) return(NA_result)
 
-  sm <- summary(fit_f)$coefficients
-  if (!"X" %in% rownames(sm)) return(NA_result)
+    sm <- summary(fit_f)$coefficients
+    if (!"X" %in% rownames(sm)) return(NA_result)
 
-  list(
-    beta = as.numeric(coef(fit_f)["X"]),
-    se = as.numeric(sm["X", 2]),
-    pvalue = as.numeric(sm["X", 4])
-  )
+    list(
+        beta = as.numeric(coef(fit_f)["X"]),
+        se = as.numeric(sm["X", 2]),
+        pvalue = as.numeric(sm["X", 4])
+    )
 }

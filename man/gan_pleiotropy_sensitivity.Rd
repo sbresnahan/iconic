@@ -71,7 +71,7 @@ shrink with sample size.
 }
 \examples{
 sens <- gan_pleiotropy_sensitivity(NULL,
-  pleio_grid = c(0, 0.10), conf_grid = 0.8,
-  n_iter = 2, n_samples = 100, n_features = 5)
+    pleio_grid = c(0, 0.10), conf_grid = 0.8,
+    n_iter = 2, n_samples = 100, n_features = 5)
 head(sens$summary)
 }

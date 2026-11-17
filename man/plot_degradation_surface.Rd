@@ -48,9 +48,9 @@ which estimator has lower |NDE bias| at each grid cell.
 }
 \examples{
 results <- expand.grid(rho_G1 = c(0, 0.2), rho_G2 = c(0, 0.2),
-  method = c("IV2SLS2", "PGC2Gm"))
+    method = c("IV2SLS2", "PGC2Gm"))
 results$NDE_bias <- rnorm(nrow(results), 0, 0.05)
 results$NIE_bias <- rnorm(nrow(results), 0, 0.05)
 plot_degradation_surface(results, rho_G1_grid = c(0, 0.2),
-  rho_G2_grid = c(0, 0.2))
+    rho_G2_grid = c(0, 0.2))
 }

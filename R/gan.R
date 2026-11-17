@@ -1,5 +1,5 @@
 # ============================================================
-#. The comprehensive draft documents the GAN texture model
+# . The comprehensive draft documents the GAN texture model
 # inline; when condensed to a journal submission, this material moves to
 # a supplementary methods section. No code change.
 # ============================================================
@@ -34,12 +34,12 @@
 #' @examples
 #' check_torch_setup()
 check_torch_setup <- function() {
-  if (!requireNamespace("torch", quietly = TRUE)) return(FALSE)
-  ok <- tryCatch({
-    torch::torch_is_installed() &&
-      is.numeric(as.numeric((torch::torch_ones(2) + torch::torch_ones(2))$sum()))
-  }, error = function(e) FALSE)
-  isTRUE(ok)
+    if (!requireNamespace("torch", quietly = TRUE)) return(FALSE)
+    ok <- tryCatch({
+        torch::torch_is_installed() &&
+            is.numeric(as.numeric((torch::torch_ones(2) + torch::torch_ones(2))$sum()))
+    }, error = function(e) FALSE)
+    isTRUE(ok)
 }
 
 
@@ -50,12 +50,12 @@ check_torch_setup <- function() {
 #' @keywords internal
 #' @noRd
 .detect_binary_cols <- function(X) {
-  if (!ncol(X)) return(character(0))
-  bin <- vapply(X, function(col) {
-    vals <- unique(as.numeric(col[!is.na(col)]))
-    length(vals) > 0 && all(vals %in% c(0, 1))
-  }, logical(1))
-  names(X)[bin]
+    if (!ncol(X)) return(character(0))
+    bin <- vapply(X, function(col) {
+        vals <- unique(as.numeric(col[!is.na(col)]))
+        length(vals) > 0 && all(vals %in% c(0, 1))
+    }, logical(1))
+    names(X)[bin]
 }
 
 #' Detect one-hot dummy groups from column names (internal)
@@ -67,16 +67,16 @@ check_torch_setup <- function() {
 #' @keywords internal
 #' @noRd
 .detect_onehot_groups <- function(columns) {
-  if (length(columns) < 2) return(list())
-  parts <- strsplit(columns, "_")
-  # A one-hot group shares everything except the last underscore-delimited
-  # segment. Build prefix = paste(all but last segment, collapse = "_").
-  prefixes <- vapply(parts, function(p) {
-    if (length(p) <= 1) "" else paste(p[-length(p)], collapse = "_")
-  }, character(1))
-  groups <- split(columns, prefixes)
-  groups <- groups[names(groups) != "" & lengths(groups) >= 2]
-  unname(groups)
+    if (length(columns) < 2) return(list())
+    parts <- strsplit(columns, "_")
+    # A one-hot group shares everything except the last underscore-delimited
+    # segment. Build prefix = paste(all but last segment, collapse = "_").
+    prefixes <- vapply(parts, function(p) {
+        if (length(p) <= 1) "" else paste(p[-length(p)], collapse = "_")
+    }, character(1))
+    groups <- split(columns, prefixes)
+    groups <- groups[names(groups) != "" & lengths(groups) >= 2]
+    unname(groups)
 }
 
 #' Round binary columns and enforce one-hot mutual exclusivity (internal)
@@ -88,26 +88,26 @@ check_torch_setup <- function() {
 #' @keywords internal
 #' @noRd
 .enforce_discrete <- function(df, binary_cols, onehot_groups) {
-  if (!length(binary_cols)) return(df)
+    if (!length(binary_cols)) return(df)
 
-  # First, enforce one-hot mutual exclusivity using the raw (pre-round) values:
-  # within each group, the column with the largest value is the "winner".
-  for (grp in onehot_groups) {
-    present <- intersect(grp, names(df))
-    if (length(present) < 2) next
-    mat <- as.matrix(df[, present, drop = FALSE])
-    winner <- max.col(mat, ties.method = "first")
-    for (j in seq_along(present))
-      df[[present[j]]] <- as.numeric(winner == j)
-  }
+    # First, enforce one-hot mutual exclusivity using the raw (pre-round) values:
+    # within each group, the column with the largest value is the "winner".
+    for (grp in onehot_groups) {
+        present <- intersect(grp, names(df))
+        if (length(present) < 2) next
+        mat <- as.matrix(df[, present, drop = FALSE])
+        winner <- max.col(mat, ties.method = "first")
+        for (j in seq_along(present))
+            df[[present[j]]] <- as.numeric(winner == j)
+    }
 
-  # Round any remaining binary columns not part of a one-hot group.
-  remaining <- setdiff(binary_cols, unlist(onehot_groups, use.names = FALSE))
-  for (cl in remaining)
-    if (cl %in% names(df))
-      df[[cl]] <- as.numeric(round(pmin(pmax(df[[cl]], 0), 1)))
+    # Round any remaining binary columns not part of a one-hot group.
+    remaining <- setdiff(binary_cols, unlist(onehot_groups, use.names = FALSE))
+    for (cl in remaining)
+        if (cl %in% names(df))
+            df[[cl]] <- as.numeric(round(pmin(pmax(df[[cl]], 0), 1)))
 
-  df
+    df
 }
 
 
@@ -121,20 +121,20 @@ check_torch_setup <- function() {
 #' @return A torch `nn_module` instance. Requires torch.
 #' @keywords internal
 create_generator <- function(output_dim, noise_dim = 100) {
-  if (!check_torch_setup()) stop("torch is not available.")
-  gen <- torch::nn_module(
-    "iconic_generator",
-    initialize = function(noise_dim, output_dim) {
-      self$net <- torch::nn_sequential(
-        torch::nn_linear(noise_dim, 256), torch::nn_relu(),
-        torch::nn_batch_norm1d(256), torch::nn_dropout(0.2),
-        torch::nn_linear(256, 512), torch::nn_relu(),
-        torch::nn_batch_norm1d(512), torch::nn_dropout(0.2),
-        torch::nn_linear(512, 1024), torch::nn_relu(),
-        torch::nn_linear(1024, output_dim))
-    },
-    forward = function(z) self$net(z))
-  gen(noise_dim = noise_dim, output_dim = output_dim)
+    if (!check_torch_setup()) stop("torch is not available.")
+    gen <- torch::nn_module(
+        "iconic_generator",
+        initialize = function(noise_dim, output_dim) {
+            self$net <- torch::nn_sequential(
+                torch::nn_linear(noise_dim, 256), torch::nn_relu(),
+                torch::nn_batch_norm1d(256), torch::nn_dropout(0.2),
+                torch::nn_linear(256, 512), torch::nn_relu(),
+                torch::nn_batch_norm1d(512), torch::nn_dropout(0.2),
+                torch::nn_linear(512, 1024), torch::nn_relu(),
+                torch::nn_linear(1024, output_dim))
+        },
+        forward = function(z) self$net(z))
+    gen(noise_dim = noise_dim, output_dim = output_dim)
 }
 
 #' Build the GAN discriminator network (internal to the torch path)
@@ -146,18 +146,18 @@ create_generator <- function(output_dim, noise_dim = 100) {
 #' @return A torch `nn_module` instance. Requires torch.
 #' @keywords internal
 create_discriminator <- function(input_dim) {
-  if (!check_torch_setup()) stop("torch is not available.")
-  disc <- torch::nn_module(
-    "iconic_discriminator",
-    initialize = function(input_dim) {
-      self$net <- torch::nn_sequential(
-        torch::nn_linear(input_dim, 1024), torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
-        torch::nn_linear(1024, 512), torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
-        torch::nn_linear(512, 256), torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
-        torch::nn_linear(256, 1))
-    },
-    forward = function(x) self$net(x))
-  disc(input_dim = input_dim)
+    if (!check_torch_setup()) stop("torch is not available.")
+    disc <- torch::nn_module(
+        "iconic_discriminator",
+        initialize = function(input_dim) {
+            self$net <- torch::nn_sequential(
+                torch::nn_linear(input_dim, 1024), torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
+                torch::nn_linear(1024, 512), torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
+                torch::nn_linear(512, 256), torch::nn_leaky_relu(0.2), torch::nn_dropout(0.3),
+                torch::nn_linear(256, 1))
+        },
+        forward = function(x) self$net(x))
+    disc(input_dim = input_dim)
 }
 
 
@@ -211,45 +211,45 @@ create_discriminator <- function(input_dim) {
 #'
 #' @examples
 #' if (check_torch_setup()) {
-#'   dat <- load_real_input_data(example = TRUE)
-#'   gan <- train_gan_on_real_data(dat$gan_training_data,
-#'     feature_correlations = dat$feature_correlations,
-#'     feature_texture = dat$feature_texture,
-#'     epochs = 5, verbose = FALSE)
-#'   head(sample_texture(gan, 5))
+#'     dat <- load_real_input_data(example = TRUE)
+#'     gan <- train_gan_on_real_data(dat$gan_training_data,
+#'         feature_correlations = dat$feature_correlations,
+#'         feature_texture = dat$feature_texture,
+#'         epochs = 5, verbose = FALSE)
+#'     head(sample_texture(gan, 5))
 #' }
 train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
                                    feature_texture = NULL,
                                    epochs = 300, batch_size = 32,
                                    lr = 2e-4, seed = NULL, verbose = TRUE) {
-  if (!is.null(seed)) withr::local_seed(seed)
+    if (!is.null(seed)) withr::local_seed(seed)
 
-  if (!check_torch_setup())
-    stop("torch is required for the generative texture model. ",
-         "Install with: install.packages('torch')")
+    if (!check_torch_setup())
+        stop("torch is required for the generative texture model. ",
+            "Install with: install.packages('torch')")
 
-  X <- as.data.frame(real_data)
-  X <- X[stats::complete.cases(X), , drop = FALSE]
-  num <- vapply(X, is.numeric, logical(1))
-  X <- X[, num, drop = FALSE]
-  if (!nrow(X) || !ncol(X)) stop("real_data has no complete numeric rows/columns to train on.")
+    X <- as.data.frame(real_data)
+    X <- X[stats::complete.cases(X), , drop = FALSE]
+    num <- vapply(X, is.numeric, logical(1))
+    X <- X[, num, drop = FALSE]
+    if (!nrow(X) || !ncol(X)) stop("real_data has no complete numeric rows/columns to train on.")
 
-  columns <- names(X)
-  binary_cols <- .detect_binary_cols(X)
-  onehot_groups <- .detect_onehot_groups(columns)
+    columns <- names(X)
+    binary_cols <- .detect_binary_cols(X)
+    onehot_groups <- .detect_onehot_groups(columns)
 
-  ctr <- vapply(X, mean, numeric(1))
-  scl <- vapply(X, stats::sd, numeric(1)); scl[scl == 0 | is.na(scl)] <- 1
-  Xn <- as.matrix(sweep(sweep(X, 2, ctr, "-"), 2, scl, "/"))
+    ctr <- vapply(X, mean, numeric(1))
+    scl <- vapply(X, stats::sd, numeric(1)); scl[scl == 0 | is.na(scl)] <- 1
+    Xn <- as.matrix(sweep(sweep(X, 2, ctr, "-"), 2, scl, "/"))
 
-  norm <- list(center = ctr, scale = scl)
-  stats <- list(mu = colMeans(as.matrix(X)), Sigma = stats::cov(as.matrix(X)),
-                n_train = nrow(X))
+    norm <- list(center = ctr, scale = scl)
+    stats <- list(mu = colMeans(as.matrix(X)), Sigma = stats::cov(as.matrix(X)),
+        n_train = nrow(X))
 
-  out <- .gan_train_loop(Xn, columns, norm, stats, epochs, batch_size, lr, seed, verbose,
-                         binary_cols, onehot_groups, feature_correlations,
-                         feature_texture)
-  out
+    out <- .gan_train_loop(Xn, columns, norm, stats, epochs, batch_size, lr, seed, verbose,
+        binary_cols, onehot_groups, feature_correlations,
+        feature_texture)
+    out
 }
 
 
@@ -260,55 +260,55 @@ train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
                             seed, verbose, binary_cols, onehot_groups,
                             feature_correlations = NULL,
                             feature_texture = NULL) {
-  if (!is.null(seed)) torch::torch_manual_seed(seed)
-  noise_dim <- 100L
-  d_in <- ncol(Xn)
-  n <- nrow(Xn)
-  bs <- min(batch_size, n)
+    if (!is.null(seed)) torch::torch_manual_seed(seed)
+    noise_dim <- 100L
+    d_in <- ncol(Xn)
+    n <- nrow(Xn)
+    bs <- min(batch_size, n)
 
-  G <- create_generator(d_in, noise_dim)
-  D <- create_discriminator(d_in)
-  g_opt <- torch::optim_adam(G$parameters, lr = lr, betas = c(0.5, 0.999))
-  d_opt <- torch::optim_adam(D$parameters, lr = lr, betas = c(0.5, 0.999))
-  bce <- function(logit, target) torch::nnf_binary_cross_entropy_with_logits(logit, target)
-  real_t <- torch::torch_tensor(Xn, dtype = torch::torch_float())
+    G <- create_generator(d_in, noise_dim)
+    D <- create_discriminator(d_in)
+    g_opt <- torch::optim_adam(G$parameters, lr = lr, betas = c(0.5, 0.999))
+    d_opt <- torch::optim_adam(D$parameters, lr = lr, betas = c(0.5, 0.999))
+    bce <- function(logit, target) torch::nnf_binary_cross_entropy_with_logits(logit, target)
+    real_t <- torch::torch_tensor(Xn, dtype = torch::torch_float())
 
-  d_hist <- numeric(epochs); g_hist <- numeric(epochs)
-  for (ep in seq_len(epochs)) {
-    idx <- sample.int(n, bs, replace = n < bs)
-    batch <- real_t[idx, , drop = FALSE]
+    d_hist <- numeric(epochs); g_hist <- numeric(epochs)
+    for (ep in seq_len(epochs)) {
+        idx <- sample.int(n, bs, replace = n < bs)
+        batch <- real_t[idx, , drop = FALSE]
 
-    # Discriminator step (detach fake so the generator is not updated here).
-    d_opt$zero_grad()
-    z <- torch::torch_randn(bs, noise_dim)
-    fake <- G(z)
-    d_real <- D(batch)
-    d_fake <- D(fake$detach())
-    d_loss <- bce(d_real, torch::torch_ones_like(d_real) * 0.9) +
-                 bce(d_fake, torch::torch_zeros_like(d_fake))
-    d_loss$backward(); d_opt$step()
+        # Discriminator step (detach fake so the generator is not updated here).
+        d_opt$zero_grad()
+        z <- torch::torch_randn(bs, noise_dim)
+        fake <- G(z)
+        d_real <- D(batch)
+        d_fake <- D(fake$detach())
+        d_loss <- bce(d_real, torch::torch_ones_like(d_real) * 0.9) +
+            bce(d_fake, torch::torch_zeros_like(d_fake))
+        d_loss$backward(); d_opt$step()
 
-    # Generator step (fresh noise/graph; non-saturating loss).
-    g_opt$zero_grad()
-    z2 <- torch::torch_randn(bs, noise_dim)
-    gen_logit <- D(G(z2))
-    g_loss <- bce(gen_logit, torch::torch_ones_like(gen_logit))
-    g_loss$backward(); g_opt$step()
+        # Generator step (fresh noise/graph; non-saturating loss).
+        g_opt$zero_grad()
+        z2 <- torch::torch_randn(bs, noise_dim)
+        gen_logit <- D(G(z2))
+        g_loss <- bce(gen_logit, torch::torch_ones_like(gen_logit))
+        g_loss$backward(); g_opt$step()
 
-    d_hist[ep] <- as.numeric(d_loss$item()); g_hist[ep] <- as.numeric(g_loss$item())
-    if (verbose && ep %% max(1L, epochs %/% 5L) == 0)
-      message(sprintf("epoch %d/%d D=%.3f G=%.3f", ep, epochs, d_hist[ep], g_hist[ep]))
-  }
-  G$eval()
+        d_hist[ep] <- as.numeric(d_loss$item()); g_hist[ep] <- as.numeric(g_loss$item())
+        if (verbose && ep %% max(1L, epochs %/% 5L) == 0)
+            message(sprintf("epoch %d/%d D=%.3f G=%.3f", ep, epochs, d_hist[ep], g_hist[ep]))
+    }
+    G$eval()
 
-  structure(list(model_type = "gan", columns = columns, norm = norm,
-                 binary_cols = binary_cols, onehot_groups = onehot_groups,
-                 feature_correlations = feature_correlations,
-                 feature_texture = feature_texture,
-                 generator = G, discriminator = D, noise_dim = noise_dim,
-                 mu = stats$mu, Sigma = stats$Sigma, n_train = stats$n_train,
-                 loss = list(d = d_hist, g = g_hist)),
-            class = "iconic_gan")
+    structure(list(model_type = "gan", columns = columns, norm = norm,
+        binary_cols = binary_cols, onehot_groups = onehot_groups,
+        feature_correlations = feature_correlations,
+        feature_texture = feature_texture,
+        generator = G, discriminator = D, noise_dim = noise_dim,
+        mu = stats$mu, Sigma = stats$Sigma, n_train = stats$n_train,
+        loss = list(d = d_hist, g = g_hist)),
+    class = "iconic_gan")
 }
 
 
@@ -326,28 +326,28 @@ train_gan_on_real_data <- function(real_data, feature_correlations = NULL,
 #' @export
 #' @examples
 #' if (check_torch_setup()) {
-#'   dat <- load_real_input_data(example = TRUE)
-#'   gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
-#'     verbose = FALSE)
-#'   head(sample_texture(gan, 5))
+#'     dat <- load_real_input_data(example = TRUE)
+#'     gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
+#'         verbose = FALSE)
+#'     head(sample_texture(gan, 5))
 #' }
 sample_texture <- function(trained_gan, n) {
-  stopifnot(inherits(trained_gan, "iconic_gan"))
-  cols <- trained_gan$columns
+    stopifnot(inherits(trained_gan, "iconic_gan"))
+    cols <- trained_gan$columns
 
-  z <- torch::torch_randn(n, trained_gan$noise_dim)
-  out <- torch::with_no_grad(as.matrix(trained_gan$generator(z)$detach()))
-  # De-normalise from the training z-scores back to the original scale.
-  out <- sweep(sweep(out, 2, trained_gan$norm$scale, "*"),
-               2, trained_gan$norm$center, "+")
-  out <- as.data.frame(out)
-  names(out) <- cols
+    z <- torch::torch_randn(n, trained_gan$noise_dim)
+    out <- torch::with_no_grad(as.matrix(trained_gan$generator(z)$detach()))
+    # De-normalise from the training z-scores back to the original scale.
+    out <- sweep(sweep(out, 2, trained_gan$norm$scale, "*"),
+        2, trained_gan$norm$center, "+")
+    out <- as.data.frame(out)
+    names(out) <- cols
 
-  # Round binary columns back to 0/1 and enforce one-hot mutual exclusivity.
-  bin <- trained_gan$binary_cols %||% character(0)
-  grps <- trained_gan$onehot_groups %||% list()
-  out <- .enforce_discrete(out, bin, grps)
-  out
+    # Round binary columns back to 0/1 and enforce one-hot mutual exclusivity.
+    bin <- trained_gan$binary_cols %||% character(0)
+    grps <- trained_gan$onehot_groups %||% list()
+    out <- .enforce_discrete(out, bin, grps)
+    out
 }
 
 
@@ -363,27 +363,27 @@ sample_texture <- function(trained_gan, n) {
 #' @export
 #' @examples
 #' if (check_torch_setup()) {
-#'   dat <- load_real_input_data(example = TRUE)
-#'   gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
-#'     verbose = FALSE)
-#'   print(gan)
+#'     dat <- load_real_input_data(example = TRUE)
+#'     gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
+#'         verbose = FALSE)
+#'     print(gan)
 #' }
 print.iconic_gan <- function(x, ...) {
-  cat("<iconic_gan>\n")
-  cat(" engine : torch GAN\n")
-  cat(" variables :", paste(x$columns, collapse = ", "), "\n")
-  cat(" trained on :", x$n_train, "samples\n")
-  bin <- x$binary_cols %||% character(0)
-  if (length(bin))
-    cat(" binary cols:", paste(bin, collapse = ", "), "\n")
-  fc <- x$feature_correlations %||% list()
-  fc_present <- names(fc)[vapply(fc, function(m) !is.null(m), logical(1))]
-  if (length(fc_present))
-    cat(" feat. cors :", paste(fc_present, collapse = ", "), "\n")
-  if (!is.null(x$feature_texture))
-    cat(" feat. tex : copula (", x$feature_texture$n_features, " features)\n", sep = "")
-  if (!is.null(x$loss))
-    cat(sprintf(" final loss : D=%.3f G=%.3f\n",
-                utils::tail(x$loss$d, 1), utils::tail(x$loss$g, 1)))
-  invisible(x)
+    cat("<iconic_gan>\n")
+    cat(" engine : torch GAN\n")
+    cat(" variables :", paste(x$columns, collapse = ", "), "\n")
+    cat(" trained on :", x$n_train, "samples\n")
+    bin <- x$binary_cols %||% character(0)
+    if (length(bin))
+        cat(" binary cols:", paste(bin, collapse = ", "), "\n")
+    fc <- x$feature_correlations %||% list()
+    fc_present <- names(fc)[vapply(fc, function(m) !is.null(m), logical(1))]
+    if (length(fc_present))
+        cat(" feat. cors :", paste(fc_present, collapse = ", "), "\n")
+    if (!is.null(x$feature_texture))
+        cat(" feat. tex : copula (", x$feature_texture$n_features, " features)\n", sep = "")
+    if (!is.null(x$loss))
+        cat(sprintf(" final loss : D=%.3f G=%.3f\n",
+            utils::tail(x$loss$d, 1), utils::tail(x$loss$g, 1)))
+    invisible(x)
 }

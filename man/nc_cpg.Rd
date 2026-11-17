@@ -38,6 +38,6 @@ cross-feature correlations conditional on the confounder.
 \examples{
 U <- matrix(rnorm(100), 100, 1)
 W <- nc_cpg(U, covariates = NULL,
-  params = list(n_features = 10, coverage = 0.7, n_cpg = 20))
+    params = list(n_features = 10, coverage = 0.7, n_cpg = 20))
 dim(W)
 }

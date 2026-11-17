@@ -105,22 +105,22 @@ supplied, all estimators whose required inputs are present are run.
 \examples{
 set.seed(1)
 data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 diag <- iconic_diagnose(data)
 est <- iconic_estimate(data, diagnosis = diag)
 head(est)
 
 # Survival outcome
 sdat <- iconic_data(X = rnorm(100), outcome_type = "survival",
-surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
-G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+    surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 est <- iconic_estimate(sdat, effect_scale = "loghr")
 est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
 
 # Binary outcome
 bdat <- iconic_data(X = rnorm(100), Y = rbinom(100, 1, 0.4),
-outcome_type = "binary",
-G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+    outcome_type = "binary",
+    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 est <- iconic_estimate(bdat, effect_scale = "logor")
 est_rd <- iconic_estimate(bdat, effect_scale = "riskdiff")
 }

@@ -22,9 +22,9 @@ de-normalisation, and one-hot dummy groups are made mutually exclusive
 }
 \examples{
 if (check_torch_setup()) {
-  dat <- load_real_input_data(example = TRUE)
-  gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
-    verbose = FALSE)
-  head(sample_texture(gan, 5))
+    dat <- load_real_input_data(example = TRUE)
+    gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
+        verbose = FALSE)
+    head(sample_texture(gan, 5))
 }
 }

@@ -67,11 +67,12 @@ covariance-capture versus true coverage omega, (E) A3 support
 R2(Utilde | W) versus omega.
 }
 \examples{
-\donttest{
-panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
-  contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
-  eqtl_grid = c(0, 0.1), omega_grid = c(0, 0.5), n_perm = 20)
+## A deliberately tiny sweep (two grid points per panel, two
+## replicates) so the example runs in a few seconds. Real sweeps use
+## the defaults (n_samples = 500, n_iter = 50, n_perm = 200).
+panels <- sweep_nc_validity(n_samples = 60, n_iter = 2,
+  contam_grid = c(0, 0.3), meqtl_grid = c(0, 0.3),
+  eqtl_grid = c(0, 0.3), omega_grid = c(0, 0.8), n_perm = 10)
 panels$panel_a
-panels$panel_capture_support
-}
+head(panels$panel_capture_support)
 }

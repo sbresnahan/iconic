@@ -152,7 +152,7 @@ NDE/NIE bias).
 
 ``` r
 res <- sweep_mediation_param("conf_str", c(0.2, 0.8), n_iter = 3,
-                             n_samples = 100)
+    n_samples = 100)
 res$summary
 #>       param param_value true_NDE true_NIE method     NDE_mean   NDE_bias
 #> 1  conf_str         0.2      0.1     0.15  UNADJ -0.052175951 -0.1521760

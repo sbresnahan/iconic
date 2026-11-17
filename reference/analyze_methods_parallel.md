@@ -50,7 +50,7 @@ Data frame: `feature`, `method`, `beta`, `se`, `pvalue`, `significant`.
 
 ``` r
 dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
-  n_features = 5, n_confounders = 1, seed = 1)
+    n_features = 5, n_confounders = 1, seed = 1)
 analyze_methods_parallel(dat, n_cores = 1)
 #> analyze_methods_parallel: 5 tasks (sequential)
 #>  analyze_methods_parallel: 20% (1/5) [0.1s]

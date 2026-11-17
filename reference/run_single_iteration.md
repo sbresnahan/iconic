@@ -256,7 +256,7 @@ parameter is non-default, also includes `G1`, `G2`, `W1`, `W2`,
 
 ``` r
 dat <- run_single_iteration(NULL, n_synthetic_samples = 100,
-  n_features = 5, n_confounders = 1, seed = 1)
+    n_features = 5, n_confounders = 1, seed = 1)
 analyze_methods_robust(dat)
 #>         feature method       beta         se       pvalue significant
 #> UNADJ         1  UNADJ  0.5261014 0.05357861 2.987041e-16        TRUE

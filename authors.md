@@ -3,22 +3,27 @@
 ## Authors
 
 - **Sean T. Bresnahan**. Author, maintainer.
+  [](https://orcid.org/0000-0001-6685-1930)
 
 - **Charis Xiong**. Author.
 
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/sbresnahan/iconic/blob/main/DESCRIPTION)
+[`inst/CITATION`](https://github.com/sbresnahan/iconic/blob/main/inst/CITATION)
 
-Bresnahan S, Xiong C (2026). *iconic: Causal Model Selection with
-Genetic Instruments and Negative Controls*. R package version 0.99.4,
-<https://seantbresnahan.com/iconic/>.
+Bresnahan S, Xiong C, Head S, Chang Y, Bhattacharya A, Huang J (2026).
+“ICONIC: An R Package for Integrating Instrumental Variable- and
+Negative-Control-Informed Causal Discovery and Diagnostics in Multiomic
+Studies.” *medRxiv*.
+[doi:10.64898/2026.08.26.26361466](https://doi.org/10.64898/2026.08.26.26361466).
+Preprint.
 
-    @Manual{,
-      title = {iconic: Causal Model Selection with Genetic Instruments and Negative Controls},
-      author = {Sean T. Bresnahan and Charis Xiong},
+    @Article{,
+      title = {ICONIC: An R Package for Integrating Instrumental Variable- and Negative-Control-Informed Causal Discovery and Diagnostics in Multiomic Studies},
+      author = {Sean T. Bresnahan and Charis Xiong and S. Taylor Head and Yung-Han Chang and Arjun Bhattacharya and Jonathan Yinhao Huang},
+      journal = {medRxiv},
       year = {2026},
-      note = {R package version 0.99.4},
-      url = {https://seantbresnahan.com/iconic/},
+      doi = {10.64898/2026.08.26.26361466},
+      note = {Preprint},
     }

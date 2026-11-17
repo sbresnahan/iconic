@@ -69,7 +69,7 @@ correlations conditional on the confounder. When `noise_cor` is `NULL`
 ``` r
 U <- matrix(rnorm(100), 100, 1)
 W <- nc_proxy(U, covariates = NULL,
-  params = list(n_features = 10, coverage = 0.7))
+    params = list(n_features = 10, coverage = 0.7))
 dim(W)
 #> [1] 100  10
 ```

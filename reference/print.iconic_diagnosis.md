@@ -29,7 +29,7 @@ side effect of printing a human-readable summary.
 ``` r
 set.seed(1)
 data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-  G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 diag <- iconic_diagnose(data)
 #> NC validity screen: 10 tasks (sequential)
 #>  NC validity screen: 10% (1/10) [0s]
@@ -92,7 +92,7 @@ diag <- iconic_diagnose(data)
 #>  omega_2 NC coverage: 30% (3/10) [0s]
 #>  omega_2 NC coverage: 40% (4/10) [0s]
 #>  omega_2 NC coverage: 50% (5/10) [0s]
-#>  omega_2 NC coverage: 60% (6/10) [0s]
+#>  omega_2 NC coverage: 60% (6/10) [0.1s]
 #>  omega_2 NC coverage: 70% (7/10) [0.1s]
 #>  omega_2 NC coverage: 80% (8/10) [0.1s]
 #>  omega_2 NC coverage: 90% (9/10) [0.1s]
@@ -109,16 +109,16 @@ diag <- iconic_diagnose(data)
 #>  k permutation analysis: 90% (90/100) [0s]
 #>  k permutation analysis: 100% (100/100) [0s]
 #> NC capture null: 200 tasks (sequential)
-#>  NC capture null: 10% (20/200) [0.3s]
-#>  NC capture null: 20% (40/200) [0.6s]
-#>  NC capture null: 30% (60/200) [0.9s]
-#>  NC capture null: 40% (80/200) [1.1s]
-#>  NC capture null: 50% (100/200) [1.4s]
-#>  NC capture null: 60% (120/200) [1.7s]
-#>  NC capture null: 70% (140/200) [2s]
-#>  NC capture null: 80% (160/200) [2.3s]
-#>  NC capture null: 90% (180/200) [2.6s]
-#>  NC capture null: 100% (200/200) [2.9s]
+#>  NC capture null: 10% (20/200) [0.4s]
+#>  NC capture null: 20% (40/200) [0.9s]
+#>  NC capture null: 30% (60/200) [1.3s]
+#>  NC capture null: 40% (80/200) [1.7s]
+#>  NC capture null: 50% (100/200) [2.1s]
+#>  NC capture null: 60% (120/200) [2.5s]
+#>  NC capture null: 70% (140/200) [3s]
+#>  NC capture null: 80% (160/200) [3.4s]
+#>  NC capture null: 90% (180/200) [3.8s]
+#>  NC capture null: 100% (200/200) [4.2s]
 #> iconic_diagnose complete. Call summary() or print() on the result for the full diagnosis.
 print(diag)
 #> <iconic_diagnosis>

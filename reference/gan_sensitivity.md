@@ -128,7 +128,7 @@ A list with `summary` (one row per scenario x method, with
 
 ``` r
 sens <- gan_sensitivity(NULL, conf_grid = 0.8, coverage_grid = 0.7,
-  n_iter = 2, n_samples = 100, n_features = 5)
+    n_iter = 2, n_samples = 100, n_features = 5)
 head(sens$summary)
 #>   conf_strength coverage k true_total method       mean     median         sd
 #> 1           0.8      0.7 1       0.25  UNADJ  0.6288594  0.6377314 0.07535704

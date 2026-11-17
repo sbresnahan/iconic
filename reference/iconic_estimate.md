@@ -132,7 +132,7 @@ supplied, all estimators whose required inputs are present are run.
 ``` r
 set.seed(1)
 data <- iconic_data(X = rnorm(100), Y = matrix(rnorm(100 * 10), 10, 100),
-G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 diag <- iconic_diagnose(data)
 #> NC validity screen: 10 tasks (sequential)
 #>  NC validity screen: 10% (1/10) [0s]
@@ -171,7 +171,7 @@ diag <- iconic_diagnose(data)
 #>  Estimating features: 10% (1/10) [0s]
 #>  Estimating features: 20% (2/10) [0s]
 #>  Estimating features: 30% (3/10) [0s]
-#>  Estimating features: 40% (4/10) [0s]
+#>  Estimating features: 40% (4/10) [0.1s]
 #>  Estimating features: 50% (5/10) [0.1s]
 #>  Estimating features: 60% (6/10) [0.1s]
 #>  Estimating features: 70% (7/10) [0.1s]
@@ -195,9 +195,9 @@ diag <- iconic_diagnose(data)
 #>  omega_2 NC coverage: 30% (3/10) [0s]
 #>  omega_2 NC coverage: 40% (4/10) [0s]
 #>  omega_2 NC coverage: 50% (5/10) [0s]
-#>  omega_2 NC coverage: 60% (6/10) [0s]
-#>  omega_2 NC coverage: 70% (7/10) [0s]
-#>  omega_2 NC coverage: 80% (8/10) [0s]
+#>  omega_2 NC coverage: 60% (6/10) [0.1s]
+#>  omega_2 NC coverage: 70% (7/10) [0.1s]
+#>  omega_2 NC coverage: 80% (8/10) [0.1s]
 #>  omega_2 NC coverage: 90% (9/10) [0.1s]
 #>  omega_2 NC coverage: 100% (10/10) [0.1s]
 #> k permutation analysis: 100 tasks (sequential)
@@ -212,16 +212,16 @@ diag <- iconic_diagnose(data)
 #>  k permutation analysis: 90% (90/100) [0s]
 #>  k permutation analysis: 100% (100/100) [0s]
 #> NC capture null: 200 tasks (sequential)
-#>  NC capture null: 10% (20/200) [0.3s]
-#>  NC capture null: 20% (40/200) [0.6s]
-#>  NC capture null: 30% (60/200) [0.9s]
-#>  NC capture null: 40% (80/200) [1.2s]
-#>  NC capture null: 50% (100/200) [1.5s]
-#>  NC capture null: 60% (120/200) [1.8s]
-#>  NC capture null: 70% (140/200) [2.1s]
-#>  NC capture null: 80% (160/200) [2.4s]
-#>  NC capture null: 90% (180/200) [2.7s]
-#>  NC capture null: 100% (200/200) [3s]
+#>  NC capture null: 10% (20/200) [0.4s]
+#>  NC capture null: 20% (40/200) [0.8s]
+#>  NC capture null: 30% (60/200) [1.2s]
+#>  NC capture null: 40% (80/200) [1.6s]
+#>  NC capture null: 50% (100/200) [2s]
+#>  NC capture null: 60% (120/200) [2.5s]
+#>  NC capture null: 70% (140/200) [2.9s]
+#>  NC capture null: 80% (160/200) [3.3s]
+#>  NC capture null: 90% (180/200) [3.7s]
+#>  NC capture null: 100% (200/200) [4.1s]
 #> iconic_diagnose complete. Call summary() or print() on the result for the full diagnosis.
 est <- iconic_estimate(data, diagnosis = diag)
 #> Estimating features: 10 tasks (sequential)
@@ -246,15 +246,15 @@ head(est)
 
 # Survival outcome
 sdat <- iconic_data(X = rnorm(100), outcome_type = "survival",
-surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
-G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+    surv_time = rexp(100), surv_event = rbinom(100, 1, 0.6),
+    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 est <- iconic_estimate(sdat, effect_scale = "loghr")
 est_rmst <- iconic_estimate(sdat, effect_scale = "rmst")
 
 # Binary outcome
 bdat <- iconic_data(X = rnorm(100), Y = rbinom(100, 1, 0.4),
-outcome_type = "binary",
-G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
+    outcome_type = "binary",
+    G = rnorm(100), W = matrix(rnorm(100 * 10), 10, 100))
 est <- iconic_estimate(bdat, effect_scale = "logor")
 est_rd <- iconic_estimate(bdat, effect_scale = "riskdiff")
 ```

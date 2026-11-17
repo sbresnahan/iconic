@@ -296,11 +296,15 @@ pros <- iconic_prospect(idat, confounding = "inferred")
 
 ## Citation
 
-Cite the accompanying manuscript (in preparation):
+If you use `iconic`, please cite the accompanying preprint:
 
-> Bresnahan ST, Xiong C, et al. ICONIC: An R Package for Integrating
-> Instrumental Variable- and Negative-Control-Informed Causal Discovery
-> and Diagnostics in Multiomic Studies.
+> Bresnahan ST, Xiong C, Head ST, Chang Y-H, Bhattacharya A, Huang JY.
+> ICONIC: An R Package for Integrating Instrumental Variable- and
+> Negative-Control-Informed Causal Discovery and Diagnostics in
+> Multiomic Studies. *medRxiv* (2026).
+> [doi:10.64898/2026.08.26.26361466](https://doi.org/10.64898/2026.08.26.26361466)
+
+The citation is also available from R with `citation("iconic")`.
 
 ## License
 

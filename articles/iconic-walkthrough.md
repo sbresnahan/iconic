@@ -7,6 +7,13 @@ simulated dataset: assembling an `iconic_data` object, diagnosing
 estimator eligibility, estimating natural direct and indirect effects,
 stress-testing the result, and planning a prospective study.
 
+The estimators, diagnostics and the generative texture model are
+described in the accompanying preprint, which also applies `iconic` to
+two case studies (Bresnahan et al. 2026,
+[doi:10.64898/2026.08.26.26361466](https://doi.org/10.64898/2026.08.26.26361466)).
+Please cite it if you use the package; `citation("iconic")` gives the
+full reference.
+
 ## Installation
 
 `iconic` is being submitted to Bioconductor. Once accepted, install the
@@ -101,14 +108,14 @@ se_panel <- function(m, prefix) {
 }
 mae <- MultiAssayExperiment(
     experiments = ExperimentList(
-        transcriptome = se_panel(t(dat$Y), "feature_"),  # outcome panel Y
+        transcriptome = se_panel(t(dat$Y), "feature_"), # outcome panel Y
         mediator      = se_panel(t(dat$M), "mediator_"), # mediator M
-        nc_panel      = se_panel(t(dat$W), "nc_")        # negative controls W
+        nc_panel      = se_panel(t(dat$W), "nc_") # negative controls W
     ),
     # Sample-level variables: exposure, instrument (e.g. a PGS), covariates
     colData = DataFrame(
         exposure = dat$X,
-        pgs      = dat$G[, 1],
+        pgs = dat$G[, 1],
         dat$synthetic_data,
         row.names = ids
     )
@@ -297,16 +304,16 @@ practice you would train for more epochs on your own cohort with
 
 # Train a texture model once (few epochs for the vignette).
 input <- load_real_input_data(
-  X_matrix = matrix(dat$X, nrow = 1),
-  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
-  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
+    X_matrix = matrix(dat$X, nrow = 1),
+    Y_matrix = t(dat$Y), M_matrix = t(dat$M),
+    W_matrix = t(dat$W), covariates_df = dat$synthetic_data
 )
 
 gan <- train_gan_on_real_data(
-  input$gan_training_data,
-  feature_correlations = input$feature_correlations,
-  feature_texture = input$feature_texture,
-  epochs = 5, seed = 1, verbose = FALSE
+    input$gan_training_data,
+    feature_correlations = input$feature_correlations,
+    feature_texture = input$feature_texture,
+    epochs = 5, seed = 1, verbose = FALSE
 )
 
 # Attach it: iconic_sensitivity() and iconic_prospect() will now reuse it.
@@ -415,17 +422,17 @@ for familiarity.
 
 set.seed(1)
 sdat <- generate_toy_data(
-  n = 100, n_features = 3,
-  outcome_type = "survival", seed = 1
+    n = 100, n_features = 3,
+    outcome_type = "survival", seed = 1
 )
 
 # For survival, pass surv_time + surv_event instead of Y.
 sdata <- iconic_data(
-  X = sdat$X,
-  surv_time = sdat$surv_time, surv_event = sdat$surv_event,
-  G = sdat$G, W = sdat$W,
-  outcome_type = "survival",
-  covariates = sdat$synthetic_data
+    X = sdat$X,
+    surv_time = sdat$surv_time, surv_event = sdat$surv_event,
+    G = sdat$G, W = sdat$W,
+    outcome_type = "survival",
+    covariates = sdat$synthetic_data
 )
 
 sest <- iconic_estimate(sdata)
@@ -497,11 +504,11 @@ sessionInfo()
 
     #> R version 4.6.2 (2026-10-29)
     #> Platform: x86_64-pc-linux-gnu
-    #> Running under: Ubuntu 24.04.5 LTS
+    #> Running under: Ubuntu 26.04.1 LTS
     #> 
     #> Matrix products: default
     #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-    #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+    #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
     #> 
     #> locale:
     #>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -522,7 +529,7 @@ sessionInfo()
     #>  [5] Seqinfo_1.2.0               IRanges_2.46.0             
     #>  [7] S4Vectors_0.50.3            BiocGenerics_0.58.1        
     #>  [9] generics_0.1.4              MatrixGenerics_1.24.0      
-    #> [11] matrixStats_1.5.0           iconic_0.99.4              
+    #> [11] matrixStats_1.5.0           iconic_0.99.5              
     #> [13] BiocStyle_2.40.0           
     #> 
     #> loaded via a namespace (and not attached):
@@ -540,5 +547,5 @@ sessionInfo()
     #> [34] lifecycle_1.0.5     fs_2.1.0            bit_4.6.0          
     #> [37] ragg_1.5.2          desc_1.4.3          callr_3.8.0        
     #> [40] pkgdown_2.2.1       bslib_0.12.0        Rcpp_1.1.2         
-    #> [43] systemfonts_1.3.2   xfun_0.62           knitr_1.52         
+    #> [43] systemfonts_1.3.3   xfun_0.62           knitr_1.52         
     #> [46] htmltools_0.5.9     rmarkdown_2.32      compiler_4.6.2

@@ -60,15 +60,15 @@ negative controls, then run the diagnosis.
 ``` r
 
 dat <- generate_toy_data(
-  n = 100, n_features = 5, seed = 1,
-  phi = 0.8, omega_1 = 0.7, omega_2 = 0.7
+    n = 100, n_features = 5, seed = 1,
+    phi = 0.8, omega_1 = 0.7, omega_2 = 0.7
 )
 
 idat <- iconic_data(
-  X = dat$X, Y = dat$Y, M = dat$M,
-  G = dat$G, Gm = dat$Gm,
-  W1 = dat$W1, W2 = dat$W2,
-  covariates = dat$synthetic_data
+    X = dat$X, Y = dat$Y, M = dat$M,
+    G = dat$G, Gm = dat$Gm,
+    W1 = dat$W1, W2 = dat$W2,
+    covariates = dat$synthetic_data
 )
 ```
 
@@ -262,11 +262,11 @@ sessionInfo()
 
     #> R version 4.6.2 (2026-10-29)
     #> Platform: x86_64-pc-linux-gnu
-    #> Running under: Ubuntu 24.04.5 LTS
+    #> Running under: Ubuntu 26.04.1 LTS
     #> 
     #> Matrix products: default
     #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-    #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+    #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
     #> 
     #> locale:
     #>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -281,14 +281,14 @@ sessionInfo()
     #> [1] stats     graphics  grDevices utils     datasets  methods   base     
     #> 
     #> other attached packages:
-    #> [1] iconic_0.99.4    BiocStyle_2.40.0
+    #> [1] iconic_0.99.5    BiocStyle_2.40.0
     #> 
     #> loaded via a namespace (and not attached):
     #>  [1] Matrix_1.7-6                jsonlite_2.0.0             
     #>  [3] compiler_4.6.2              BiocManager_1.30.27        
     #>  [5] SummarizedExperiment_1.42.0 Biobase_2.72.0             
     #>  [7] GenomicRanges_1.64.0        jquerylib_0.1.4            
-    #>  [9] systemfonts_1.3.2           IRanges_2.46.0             
+    #>  [9] systemfonts_1.3.3           IRanges_2.46.0             
     #> [11] Seqinfo_1.2.0               textshaping_1.0.5          
     #> [13] yaml_2.3.12                 fastmap_1.2.0              
     #> [15] lattice_0.23-1              XVector_0.52.0             

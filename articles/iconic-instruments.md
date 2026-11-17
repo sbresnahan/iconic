@@ -494,11 +494,11 @@ sessionInfo()
 
     #> R version 4.6.2 (2026-10-29)
     #> Platform: x86_64-pc-linux-gnu
-    #> Running under: Ubuntu 24.04.5 LTS
+    #> Running under: Ubuntu 26.04.1 LTS
     #> 
     #> Matrix products: default
     #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-    #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+    #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
     #> 
     #> locale:
     #>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -521,7 +521,7 @@ sessionInfo()
     #>  [9] S4Vectors_0.50.3            BiocGenerics_0.58.1        
     #> [11] generics_0.1.4              doRNG_1.8.6.3              
     #> [13] rngtools_1.5.2              foreach_1.5.2              
-    #> [15] iconic_0.99.4               BiocStyle_2.40.0           
+    #> [15] iconic_0.99.5               BiocStyle_2.40.0           
     #> 
     #> loaded via a namespace (and not attached):
     #>  [1] gtable_0.3.6        shape_1.4.6.1       xfun_0.62          
@@ -547,5 +547,5 @@ sessionInfo()
     #> [61] knitr_1.52          doParallel_1.0.17   irlba_2.4.1        
     #> [64] rlang_1.3.0         Rcpp_1.1.2          glue_1.8.1         
     #> [67] BiocManager_1.30.27 jsonlite_2.0.0      R6_2.6.1           
-    #> [70] bigsnpr_1.12.21     systemfonts_1.3.2   fs_2.1.0           
+    #> [70] bigsnpr_1.12.21     systemfonts_1.3.3   fs_2.1.0           
     #> [73] flock_0.7

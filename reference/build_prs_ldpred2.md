@@ -152,20 +152,20 @@ a PLINK/bed-format LD reference panel converted with
 
 ``` r
 if (requireNamespace("bigsnpr", quietly = TRUE)) {
-  # Tiny fake genotype panel standing in for an LD reference
-  # (snp_fake genotypes are all-missing mocks; fill with random dosages)
-  fake <- bigsnpr::snp_fake(100, 500)
-  fake$genotypes[] <- rbinom(100 * 500, 2, 0.3)
-  fake$map$chromosome <- 1L
-  fake$map$physical.pos <- sort(sample(1:1e6, 500))
-  ss <- data.frame(
-    chr = fake$map$chromosome, pos = fake$map$physical.pos,
-    a0 = fake$map$allele2, a1 = fake$map$allele1,
-    beta = rnorm(500, 0, 0.05), beta_se = 0.02, n_eff = 20000
-  )
-  prs <- build_prs_ldpred2(ss, ld_ref = fake, n_chains = 3,
-                           burn_in = 50, num_iter = 50, verbose = FALSE)
-  str(prs$beta)
+    # Tiny fake genotype panel standing in for an LD reference
+    # (snp_fake genotypes are all-missing mocks; fill with random dosages)
+    fake <- bigsnpr::snp_fake(100, 500)
+    fake$genotypes[] <- rbinom(100 * 500, 2, 0.3)
+    fake$map$chromosome <- 1L
+    fake$map$physical.pos <- sort(sample(1:1e6, 500))
+    ss <- data.frame(
+        chr = fake$map$chromosome, pos = fake$map$physical.pos,
+        a0 = fake$map$allele2, a1 = fake$map$allele1,
+        beta = rnorm(500, 0, 0.05), beta_se = 0.02, n_eff = 20000
+    )
+    prs <- build_prs_ldpred2(ss, ld_ref = fake, n_chains = 3,
+        burn_in = 50, num_iter = 50, verbose = FALSE)
+    str(prs$beta)
 }
 #> 500 variants to be matched.
 #> 0 ambiguous SNPs have been removed.

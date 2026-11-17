@@ -75,7 +75,7 @@ A list with raw, summary, iter_bias, true_total, params.
 
 ``` r
 res <- run_simulation(n_iter = 3, n_samples = 100, beta_X = 0.1,
-                      conf_str = 0.8)
+    conf_str = 0.8)
 res$summary
 #>   method       mean     median         sd        bias   abs_bias       rmse
 #> 1  UNADJ 0.57509719 0.56731766 0.07836763  0.32509719 0.32509719 0.33425635

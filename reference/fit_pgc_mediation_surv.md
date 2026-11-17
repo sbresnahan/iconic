@@ -92,7 +92,7 @@ Returns all-NA if the first-stage partial F for G is below `min_f`.
 set.seed(1)
 dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_pgc_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
-dat$G[, 1], dat$W)
+    dat$G[, 1], dat$W)
 #> $NDE
 #> [1] 0.2197512
 #> 

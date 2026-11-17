@@ -58,7 +58,7 @@ Named list: `NDE`, `NDE_se`, `NDE_p`, `NIE`, `NIE_se`, `NIE_p`,
 ``` r
 set.seed(1)
 dat <- generate_toy_data(n = 200, outcome_type = "survival",
-mo_confounding = 0.8, seed = 1)
+    mo_confounding = 0.8, seed = 1)
 fit_unadj_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M)
 #> $NDE
 #> [1] -0.3825676

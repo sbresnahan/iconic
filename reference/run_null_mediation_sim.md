@@ -119,7 +119,7 @@ A list with `rates` (data frame: method, NIE_type1, NDE_type1) and `raw`
 
 ``` r
 null <- run_null_mediation_sim(n_iter = 2, n_samples = 100,
-  n_features = 5, mo_confounding = 0.8, phi = 0.8)
+    n_features = 5, mo_confounding = 0.8, phi = 0.8)
 null$rates
 #>    method NIE_type1 NDE_type1
 #> 1   UNADJ       0.1       1.0

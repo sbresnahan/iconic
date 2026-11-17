@@ -84,10 +84,10 @@ before bridging W2.
 ``` r
 set.seed(1)
 dat <- generate_toy_data(n = 500, outcome_type = "binary",
-mo_confounding = 0.8, rho_G2 = 0.3,
-lambda_XM = c(1, 0), lambda_MY = c(0, 1), seed = 1)
+    mo_confounding = 0.8, rho_G2 = 0.3,
+    lambda_XM = c(1, 0), lambda_MY = c(0, 1), seed = 1)
 fit_pgc_mediation2_bin(dat$y_bin, dat$X, dat$M,
-dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
+    dat$G[, 1], dat$W1, dat$W2, gm = dat$Gm)
 #> $NDE
 #> [1] -0.5286415
 #> 

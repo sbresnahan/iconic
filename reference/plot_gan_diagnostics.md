@@ -42,9 +42,9 @@ Called for its side effects; invisibly returns `NULL`.
 
 ``` r
 if (check_torch_setup()) {
-  dat <- load_real_input_data(example = TRUE)
-  gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
-    verbose = FALSE)
-  plot_gan_diagnostics(gan, dat$gan_training_data)
+    dat <- load_real_input_data(example = TRUE)
+    gan <- train_gan_on_real_data(dat$gan_training_data, epochs = 5,
+        verbose = FALSE)
+    plot_gan_diagnostics(gan, dat$gan_training_data)
 }
 ```

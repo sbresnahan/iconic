@@ -141,7 +141,7 @@ also included.
 
 ``` r
 res <- run_mediation_sim(n_iter = 3, n_samples = 100,
-                         mo_confounding = 0.8)
+    mo_confounding = 0.8)
 res$summary
 #>   method   NDE_mean   NDE_bias NDE_pct_bias     NDE_sd  NDE_rmse NDE_mean_se
 #> 1  UNADJ -0.4692764 -0.5692764    -5.692764 0.13046612 0.5837922  0.06182445

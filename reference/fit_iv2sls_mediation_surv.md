@@ -88,7 +88,7 @@ Named list (same fields as
 set.seed(1)
 dat <- generate_toy_data(n = 200, outcome_type = "survival", seed = 1)
 fit_iv2sls_mediation_surv(dat$surv_time, dat$surv_event, dat$X, dat$M,
-dat$G[, 1], dat$W[, 1])
+    dat$G[, 1], dat$W[, 1])
 #> $NDE
 #> [1] -0.03876021
 #> 

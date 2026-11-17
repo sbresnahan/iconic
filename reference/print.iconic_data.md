@@ -28,7 +28,7 @@ effect of printing a human-readable summary.
 
 ``` r
 data <- iconic_data(X = rnorm(50), Y = matrix(rnorm(50 * 5), 5, 50),
-  G = rnorm(50), W = matrix(rnorm(50 * 5), 5, 50))
+    G = rnorm(50), W = matrix(rnorm(50 * 5), 5, 50))
 print(data)
 #> <iconic_data> 50 samples, 5 outcome features
 #>  Available: G (exposure instrument), W (negative controls), W1/W2 (path-specific NCs) 

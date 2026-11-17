@@ -78,7 +78,7 @@ Returns all-NA if the first-stage partial F for G is below `min_f`.
 ``` r
 set.seed(1)
 dat <- generate_toy_data(n = 500, outcome_type = "binary",
-mo_confounding = 0.8, seed = 1)
+    mo_confounding = 0.8, seed = 1)
 fit_iv2sls_mediation_bin(dat$y_bin, dat$X, dat$M, dat$G[, 1], dat$W[, 1])
 #> $NDE
 #> [1] -0.2332658

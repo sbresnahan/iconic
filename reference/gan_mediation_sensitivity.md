@@ -175,8 +175,8 @@ enabling point identification of NDE/NIE under M-O confounding.
 
 ``` r
 sens <- gan_mediation_sensitivity(NULL, conf_grid = 0.8,
-  coverage_grid = 0.7, mo_confounding = 0.8,
-  n_iter = 2, n_samples = 100, n_features = 5)
+    coverage_grid = 0.7, mo_confounding = 0.8,
+    n_iter = 2, n_samples = 100, n_features = 5)
 head(sens$summary)
 #>   conf_strength coverage k mo_confounding phi rho_G1 rho_G2 rho_pop true_NDE
 #> 1           0.8      0.7 1            0.8   0      0      0       0      0.1

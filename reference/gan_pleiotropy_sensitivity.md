@@ -100,8 +100,8 @@ shrink with sample size.
 
 ``` r
 sens <- gan_pleiotropy_sensitivity(NULL,
-  pleio_grid = c(0, 0.10), conf_grid = 0.8,
-  n_iter = 2, n_samples = 100, n_features = 5)
+    pleio_grid = c(0, 0.10), conf_grid = 0.8,
+    n_iter = 2, n_samples = 100, n_features = 5)
 head(sens$summary)
 #>   pleio conf_strength  arm true_total method       mean     median          sd
 #> 1     0           0.8  alt       0.25  UNADJ  0.5600946  0.5828345 0.072883744

@@ -99,31 +99,31 @@ We simulate a small panel and train the texture model briefly:
 ``` r
 
 dat <- generate_toy_data(
-  n = 100, n_features = 5, seed = 1,
-  phi = 0.8, omega_1 = 0.7, omega_2 = 0.7
+    n = 100, n_features = 5, seed = 1,
+    phi = 0.8, omega_1 = 0.7, omega_2 = 0.7
 )
 
 idat <- iconic_data(
-  X = dat$X, Y = dat$Y, M = dat$M,
-  G = dat$G, Gm = dat$Gm,
-  W1 = dat$W1, W2 = dat$W2,
-  covariates = dat$synthetic_data
+    X = dat$X, Y = dat$Y, M = dat$M,
+    G = dat$G, Gm = dat$Gm,
+    W1 = dat$W1, W2 = dat$W2,
+    covariates = dat$synthetic_data
 )
 ```
 
 ``` r
 
 input <- load_real_input_data(
-  X_matrix = matrix(dat$X, nrow = 1),
-  Y_matrix = t(dat$Y), M_matrix = t(dat$M),
-  W_matrix = t(dat$W), covariates_df = dat$synthetic_data
+    X_matrix = matrix(dat$X, nrow = 1),
+    Y_matrix = t(dat$Y), M_matrix = t(dat$M),
+    W_matrix = t(dat$W), covariates_df = dat$synthetic_data
 )
 
 gan <- train_gan_on_real_data(
-  input$gan_training_data,
-  feature_correlations = input$feature_correlations,
-  feature_texture = input$feature_texture,
-  epochs = 5, seed = 1, verbose = FALSE
+    input$gan_training_data,
+    feature_correlations = input$feature_correlations,
+    feature_texture = input$feature_texture,
+    epochs = 5, seed = 1, verbose = FALSE
 )
 
 gan
@@ -186,11 +186,11 @@ sessionInfo()
 
     #> R version 4.6.2 (2026-10-29)
     #> Platform: x86_64-pc-linux-gnu
-    #> Running under: Ubuntu 24.04.5 LTS
+    #> Running under: Ubuntu 26.04.1 LTS
     #> 
     #> Matrix products: default
     #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-    #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+    #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
     #> 
     #> locale:
     #>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -205,7 +205,7 @@ sessionInfo()
     #> [1] stats     graphics  grDevices utils     datasets  methods   base     
     #> 
     #> other attached packages:
-    #> [1] iconic_0.99.4    BiocStyle_2.40.0
+    #> [1] iconic_0.99.5    BiocStyle_2.40.0
     #> 
     #> loaded via a namespace (and not attached):
     #>  [1] sass_0.4.10                 generics_0.1.4             
@@ -233,7 +233,7 @@ sessionInfo()
     #> [45] ragg_1.5.2                  desc_1.4.3                 
     #> [47] callr_3.8.0                 pkgdown_2.2.1              
     #> [49] bslib_0.12.0                Rcpp_1.1.2                 
-    #> [51] systemfonts_1.3.2           xfun_0.62                  
+    #> [51] systemfonts_1.3.3           xfun_0.62                  
     #> [53] GenomicRanges_1.64.0        MatrixGenerics_1.24.0      
     #> [55] knitr_1.52                  htmltools_0.5.9            
     #> [57] rmarkdown_2.32              compiler_4.6.2

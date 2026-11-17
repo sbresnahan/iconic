@@ -31,7 +31,7 @@ method minimising worst-case RMSE).
 
 ``` r
 sens <- gan_sensitivity(NULL, conf_grid = 0.8, coverage_grid = 0.7,
-  n_iter = 2, n_samples = 100, n_features = 5)
+    n_iter = 2, n_samples = 100, n_features = 5)
 recommend_estimator(sens)
 #> $per_scenario
 #>           conf_strength coverage k best_method       rmse

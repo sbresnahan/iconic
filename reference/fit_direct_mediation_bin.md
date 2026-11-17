@@ -57,9 +57,9 @@ Named list (same fields as
 ``` r
 set.seed(1)
 dat <- generate_toy_data(n = 200, outcome_type = "binary",
-mo_confounding = 0.8, seed = 1)
+    mo_confounding = 0.8, seed = 1)
 fit_direct_mediation_bin(dat$y_bin, dat$X, dat$M,
-dat$G[, 1], dat$W[, 1])
+    dat$G[, 1], dat$W[, 1])
 #> $NDE
 #> [1] -1.516507
 #> 

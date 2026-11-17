@@ -30,7 +30,18 @@ restricted-mean-survival-time scales. Binary outcomes are supported on
 the log-odds-ratio (logistic two-stage predictor-substitution outcome
 stage) and risk-difference (linear probability model) scales. The torch
 package is required for the generative texture model (sensitivity and
-prospective analysis); all other functionality works without it.
+prospective analysis); all other functionality works without it. The
+methods are described in Bresnahan et al. (2026)
+[doi:10.64898/2026.08.26.26361466](https://doi.org/10.64898/2026.08.26.26361466)
+.
+
+## References
+
+Bresnahan ST, Xiong C, Head ST, Chang Y-H, Bhattacharya A, Huang JY.
+ICONIC: An R Package for Integrating Instrumental Variable- and
+Negative-Control-Informed Causal Discovery and Diagnostics in Multiomic
+Studies. medRxiv (2026).
+[doi:10.64898/2026.08.26.26361466](https://doi.org/10.64898/2026.08.26.26361466)
 
 ## See also
 
@@ -45,9 +56,11 @@ Useful links:
 ## Author
 
 **Maintainer**: Sean T. Bresnahan <seantbresnahan3@gmail.com>
+([ORCID](https://orcid.org/0000-0001-6685-1930))
 
 Authors:
 
 - Sean T. Bresnahan <seantbresnahan3@gmail.com>
+  ([ORCID](https://orcid.org/0000-0001-6685-1930))
 
 - Charis Xiong <charis.xiong@gmail.com>

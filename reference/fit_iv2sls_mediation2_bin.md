@@ -113,10 +113,10 @@ an instrumental variable. *Biometrics*.
 ``` r
 set.seed(1)
 dat <- generate_toy_data(n = 500, outcome_type = "binary",
-mo_confounding = 0.8, phi = 0.8, lambda_XM = c(1, 0),
-lambda_MY = c(0, 1), omega_1 = 0.7, omega_2 = 0.7, seed = 1)
+    mo_confounding = 0.8, phi = 0.8, lambda_XM = c(1, 0),
+    lambda_MY = c(0, 1), omega_1 = 0.7, omega_2 = 0.7, seed = 1)
 fit_iv2sls_mediation2_bin(dat$y_bin, dat$X, dat$M,
-dat$G[, 1], dat$Gm, W1 = dat$W1, W2 = dat$W2)
+    dat$G[, 1], dat$Gm, W1 = dat$W1, W2 = dat$W2)
 #> $NDE
 #> [1] 0.0816587
 #> 

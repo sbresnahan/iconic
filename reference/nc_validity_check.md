@@ -70,7 +70,7 @@ completeness).
 
 ``` r
 chk <- nc_validity_check(NULL, coverage_grid = 0.7, k_grid = 1,
-  n_iter = 2, n_samples = 100, n_features = 5)
+    n_iter = 2, n_samples = 100, n_features = 5)
 chk$verdict
 #>       coverage k identified nc_abs_bias                 diagnosis
 #> 0.7.1      0.7 1       TRUE       0.307 negative controls holding

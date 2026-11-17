@@ -28,6 +28,6 @@ error rates by method.
 
 ``` r
 t1e <- sweep_null_by_conf(0.8, n_iter = 2, n_samples = 100,
-  n_features = 5)
+    n_features = 5)
 plot_type1_error(t1e)
 ```

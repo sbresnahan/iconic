@@ -95,11 +95,13 @@ when `include_a3_grid = TRUE`.
 ## Examples
 
 ``` r
-# \donttest{
-panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
-  contam_grid = c(0, 0.1), meqtl_grid = c(0, 0.1),
-  eqtl_grid = c(0, 0.1), omega_grid = c(0, 0.5), n_perm = 20)
-#> Running NC validity sweeps (n_iter = 2, n = 100) ...
+## A deliberately tiny sweep (two grid points per panel, two
+## replicates) so the example runs in a few seconds. Real sweeps use
+## the defaults (n_samples = 500, n_iter = 50, n_perm = 200).
+panels <- sweep_nc_validity(n_samples = 60, n_iter = 2,
+    contam_grid = c(0, 0.3), meqtl_grid = c(0, 0.3),
+    eqtl_grid = c(0, 0.3), omega_grid = c(0, 0.8), n_perm = 10)
+#> Running NC validity sweeps (n_iter = 2, n = 60) ...
 #>  Panel A: nc_validity_screen (A1)
 #>  Panel A replicates: 2 tasks (sequential)
 #> NC validity screen: 10 tasks (sequential)
@@ -255,65 +257,64 @@ panels <- sweep_nc_validity(n_samples = 100, n_iter = 2,
 #>   Panel C replicates: 100% (2/2) [0s]
 #>  Panels D-E: nc_completeness_capture + nc_support_check vs omega
 #>   omega = 0: 2 tasks (sequential)
-#> NC capture null: 20 tasks (sequential)
-#>  NC capture null: 10% (2/20) [0s]
-#>  NC capture null: 20% (4/20) [0.1s]
-#>  NC capture null: 30% (6/20) [0.1s]
-#>  NC capture null: 40% (8/20) [0.1s]
-#>  NC capture null: 50% (10/20) [0.2s]
-#>  NC capture null: 60% (12/20) [0.2s]
-#>  NC capture null: 70% (14/20) [0.2s]
-#>  NC capture null: 80% (16/20) [0.3s]
-#>  NC capture null: 90% (18/20) [0.3s]
-#>  NC capture null: 100% (20/20) [0.3s]
-#>    omega = 0: 50% (1/2) [0.4s]
-#> NC capture null: 20 tasks (sequential)
-#>  NC capture null: 10% (2/20) [0s]
-#>  NC capture null: 20% (4/20) [0.1s]
-#>  NC capture null: 30% (6/20) [0.1s]
-#>  NC capture null: 40% (8/20) [0.1s]
-#>  NC capture null: 50% (10/20) [0.2s]
-#>  NC capture null: 60% (12/20) [0.2s]
-#>  NC capture null: 70% (14/20) [0.2s]
-#>  NC capture null: 80% (16/20) [0.3s]
-#>  NC capture null: 90% (18/20) [0.3s]
-#>  NC capture null: 100% (20/20) [0.3s]
-#>    omega = 0: 100% (2/2) [0.7s]
-#>   omega = 0.5: 2 tasks (sequential)
-#> NC capture null: 20 tasks (sequential)
-#>  NC capture null: 10% (2/20) [0s]
-#>  NC capture null: 20% (4/20) [0.1s]
-#>  NC capture null: 30% (6/20) [0.1s]
-#>  NC capture null: 40% (8/20) [0.1s]
-#>  NC capture null: 50% (10/20) [0.2s]
-#>  NC capture null: 60% (12/20) [0.2s]
-#>  NC capture null: 70% (14/20) [0.2s]
-#>  NC capture null: 80% (16/20) [0.3s]
-#>  NC capture null: 90% (18/20) [0.3s]
-#>  NC capture null: 100% (20/20) [0.3s]
-#>    omega = 0.5: 50% (1/2) [0.4s]
-#> NC capture null: 20 tasks (sequential)
-#>  NC capture null: 10% (2/20) [0s]
-#>  NC capture null: 20% (4/20) [0.1s]
-#>  NC capture null: 30% (6/20) [0.1s]
-#>  NC capture null: 40% (8/20) [0.1s]
-#>  NC capture null: 50% (10/20) [0.2s]
-#>  NC capture null: 60% (12/20) [0.2s]
-#>  NC capture null: 70% (14/20) [0.2s]
-#>  NC capture null: 80% (16/20) [0.3s]
-#>  NC capture null: 90% (18/20) [0.3s]
-#>  NC capture null: 100% (20/20) [0.3s]
-#>    omega = 0.5: 100% (2/2) [0.7s]
-#>  Done in 1.6 s
+#> NC capture null: 10 tasks (sequential)
+#>  NC capture null: 10% (1/10) [0s]
+#>  NC capture null: 20% (2/10) [0s]
+#>  NC capture null: 30% (3/10) [0.1s]
+#>  NC capture null: 40% (4/10) [0.1s]
+#>  NC capture null: 50% (5/10) [0.1s]
+#>  NC capture null: 60% (6/10) [0.1s]
+#>  NC capture null: 70% (7/10) [0.2s]
+#>  NC capture null: 80% (8/10) [0.2s]
+#>  NC capture null: 90% (9/10) [0.2s]
+#>  NC capture null: 100% (10/10) [0.2s]
+#>    omega = 0: 50% (1/2) [0.3s]
+#> NC capture null: 10 tasks (sequential)
+#>  NC capture null: 10% (1/10) [0s]
+#>  NC capture null: 20% (2/10) [0s]
+#>  NC capture null: 30% (3/10) [0.7s]
+#>  NC capture null: 40% (4/10) [0.7s]
+#>  NC capture null: 50% (5/10) [0.7s]
+#>  NC capture null: 60% (6/10) [0.8s]
+#>  NC capture null: 70% (7/10) [0.8s]
+#>  NC capture null: 80% (8/10) [0.8s]
+#>  NC capture null: 90% (9/10) [0.8s]
+#>  NC capture null: 100% (10/10) [0.8s]
+#>    omega = 0: 100% (2/2) [1.2s]
+#>   omega = 0.8: 2 tasks (sequential)
+#> NC capture null: 10 tasks (sequential)
+#>  NC capture null: 10% (1/10) [0s]
+#>  NC capture null: 20% (2/10) [0s]
+#>  NC capture null: 30% (3/10) [0.1s]
+#>  NC capture null: 40% (4/10) [0.1s]
+#>  NC capture null: 50% (5/10) [0.1s]
+#>  NC capture null: 60% (6/10) [0.1s]
+#>  NC capture null: 70% (7/10) [0.2s]
+#>  NC capture null: 80% (8/10) [0.2s]
+#>  NC capture null: 90% (9/10) [0.2s]
+#>  NC capture null: 100% (10/10) [0.2s]
+#>    omega = 0.8: 50% (1/2) [0.3s]
+#> NC capture null: 10 tasks (sequential)
+#>  NC capture null: 10% (1/10) [0s]
+#>  NC capture null: 20% (2/10) [0s]
+#>  NC capture null: 30% (3/10) [0.1s]
+#>  NC capture null: 40% (4/10) [0.1s]
+#>  NC capture null: 50% (5/10) [0.1s]
+#>  NC capture null: 60% (6/10) [0.1s]
+#>  NC capture null: 70% (7/10) [0.2s]
+#>  NC capture null: 80% (8/10) [0.2s]
+#>  NC capture null: 90% (9/10) [0.2s]
+#>  NC capture null: 100% (10/10) [0.2s]
+#>    omega = 0.8: 100% (2/2) [0.6s]
+#>  Done in 1.9 s
 panels$panel_a
 #>   contamination violated_mean violated_sd confounding_mean confounding_sd
 #> 1           0.0           0.0   0.0000000                1              0
-#> 2           0.1           0.3   0.1414214                1              0
-panels$panel_capture_support
-#>   omega rep capture_R2 capture_p    null_R2 support_R2 frac_adds_coverage
-#> 1   0.0   1 0.07755442      0.75 0.10999436 0.11589077                0.0
-#> 2   0.0   2 0.04619164      0.90 0.09367601 0.05081462                0.0
-#> 3   0.5   1 0.49594649      0.00 0.08636304 0.65417453                0.4
-#> 4   0.5   2 0.48886836      0.00 0.10329703 0.63588698                0.2
-# }
+#> 2           0.3           0.8   0.2828427                1              0
+head(panels$panel_capture_support)
+#>   omega rep capture_R2 capture_p   null_R2 support_R2 frac_adds_coverage
+#> 1   0.0   1  0.1417120       0.7 0.1819838  0.2602545                0.1
+#> 2   0.0   2  0.3645873       0.0 0.1789871  0.2203801                0.0
+#> 3   0.8   1  0.6858016       0.0 0.1559064  0.7884724                0.2
+#> 4   0.8   2  0.5830428       0.0 0.2011580  0.6470371                0.0
 ```

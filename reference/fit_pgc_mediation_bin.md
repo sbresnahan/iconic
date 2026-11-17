@@ -80,7 +80,7 @@ Named list (same fields as
 ``` r
 set.seed(1)
 dat <- generate_toy_data(n = 500, outcome_type = "binary",
-mo_confounding = 0.8, seed = 1)
+    mo_confounding = 0.8, seed = 1)
 fit_pgc_mediation_bin(dat$y_bin, dat$X, dat$M, dat$G[, 1], dat$W)
 #> $NDE
 #> [1] -0.5448331

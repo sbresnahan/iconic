@@ -49,7 +49,7 @@ sensitivity heatmap.
 
 ``` r
 sens <- gan_sensitivity(NULL, conf_grid = c(0.5, 0.8),
-  coverage_grid = c(0.3, 0.7), n_iter = 2, n_samples = 100,
-  n_features = 5)
+    coverage_grid = c(0.3, 0.7), n_iter = 2, n_samples = 100,
+    n_features = 5)
 plot_sensitivity_heatmap(sens)
 ```

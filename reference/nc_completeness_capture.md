@@ -77,7 +77,7 @@ nc_completeness_capture(dat, n_perm = 99)
 #>  NC capture null: 20% (20/99) [0.3s]
 #>  NC capture null: 30% (30/99) [0.4s]
 #>  NC capture null: 40% (40/99) [0.5s]
-#>  NC capture null: 51% (50/99) [0.7s]
+#>  NC capture null: 51% (50/99) [0.6s]
 #>  NC capture null: 61% (60/99) [0.8s]
 #>  NC capture null: 71% (70/99) [0.9s]
 #>  NC capture null: 81% (80/99) [1s]

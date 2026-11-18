@@ -6,6 +6,12 @@ Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repost
 [![Codecov test
 coverage](https://codecov.io/gh/sbresnahan/iconic/graph/badge.svg)](https://app.codecov.io/gh/sbresnahan/iconic)
 
+> **Note:** This repository and its [documentation
+> site](https://seantbresnahan.com/iconic/) track the **development
+> version** of `iconic`. The latest stable release is distributed
+> through [Bioconductor](https://bioconductor.org/packages/iconic); see
+> [Installation](#installation).
+
 ## About the Package
 
 The R package `iconic` (Inference with Causal Observational
@@ -164,23 +170,44 @@ data texture and known ground truth.
 
 ## Installation
 
-`iconic` is being submitted to Bioconductor. Once accepted, install the
-release with:
+### Release version (Bioconductor)
+
+The latest release of `iconic` is available from
+[Bioconductor](https://bioconductor.org/packages/iconic):
 
 ``` r
 
-# install.packages("BiocManager")
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
 BiocManager::install("iconic")
 ```
 
-The development version is available from GitHub:
+If installation fails, `iconic` may not be in your Bioconductor release
+yet. Try installing it from Bioconductor devel instead (this needs the R
+version that Bioconductor devel requires, and switches your installation
+to devel):
+
+``` r
+
+BiocManager::install("iconic", version = "devel")
+```
+
+### Development version (GitHub)
+
+The development version documented here may include changes that are not
+yet in the Bioconductor release:
 
 ``` r
 
 # install.packages("remotes")
 remotes::install_github("sbresnahan/iconic")
+```
 
-# The generative texture model (GAN) requires torch:
+The generative texture model (GAN) requires torch:
+
+``` r
+
 install.packages("torch")
 ```
 

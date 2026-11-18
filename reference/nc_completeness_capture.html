@@ -3,7 +3,7 @@
 negative-control panel W captures the confounder covariance — i.e.,
 whether adding W reduces U's contribution to the outcome toward zero."><meta property="og:description" content="Operationalizes the proximal completeness condition as whether the
 negative-control panel W captures the confounder covariance — i.e.,
-whether adding W reduces U's contribution to the outcome toward zero."><meta property="og:image" content="https://seantbresnahan.com/iconic/reference/figures/social-preview.jpg"><meta property="og:image:alt" content="Inference with Causal Observational Negative-control Instruments and Controls"></head><body>
+whether adding W reduces U's contribution to the outcome toward zero."><meta property="og:image" content="https://seantbresnahan.com/iconic/reference/figures/social-preview.png"><meta property="og:image:alt" content="Inference with Causal Observational Negative-control Instruments and Controls"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -118,16 +118,16 @@ that together capture it well.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="run_single_iteration.html">run_single_iteration</a></span><span class="op">(</span>n_features <span class="op">=</span> <span class="fl">10</span>, n_confounders <span class="op">=</span> <span class="fl">1</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">nc_completeness_capture</span><span class="op">(</span><span class="va">dat</span>, n_perm <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> NC capture null: 99 tasks (sequential)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 10% (10/99) [0.2s]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 20% (20/99) [0.5s]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 30% (30/99) [0.7s]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 40% (40/99) [0.9s]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 51% (50/99) [1.2s]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 61% (60/99) [1.4s]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 71% (70/99) [1.7s]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 81% (80/99) [1.9s]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 91% (90/99) [2.1s]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 100% (99/99) [2.3s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 10% (10/99) [0.1s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 20% (20/99) [0.3s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 30% (30/99) [0.4s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 40% (40/99) [0.5s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 51% (50/99) [0.7s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 61% (60/99) [0.8s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 71% (70/99) [0.9s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 81% (80/99) [1s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 91% (90/99) [1.2s]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  NC capture null: 100% (99/99) [1.3s]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $capture_R2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.616692</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

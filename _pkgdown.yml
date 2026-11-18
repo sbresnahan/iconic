@@ -4,7 +4,7 @@ template:
   bootstrap: 5
   opengraph:
     image:
-      src: man/figures/social-preview.jpg
+      src: man/figures/social-preview.png
       alt: "Inference with Causal Observational Negative-control Instruments and Controls"
 
 navbar:
